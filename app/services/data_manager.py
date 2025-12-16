@@ -4,7 +4,8 @@ from flask import session
 import os
 import json
 from typing import Optional
-from app.config.database_config import database_config
+from pathlib import Path
+from app.config.database_config import database_config, DATABASE_DATA_DIR
 
 class DataManager:
     _server_instances = []
@@ -32,7 +33,7 @@ class DataManager:
         
         try:
             config = database_config.get_source_config(self._current_source)
-            file_path = config.file_path if config else f'database/data/{database_config.get_filename_for_source(self._current_source)}'
+            file_path = config.file_path if config else str(DATABASE_DATA_DIR / database_config.get_filename_for_source(self._current_source))
             
             self._df = pd.read_csv(file_path, sep=';')
 
@@ -44,7 +45,7 @@ class DataManager:
                 self._current_source = default_source
                 self._save_session_source(self._current_source)
                 config = database_config.get_source_config(self._current_source)
-                file_path = config.file_path if config else f'database/data/{database_config.get_filename_for_source(self._current_source)}'
+                file_path = config.file_path if config else str(DATABASE_DATA_DIR / database_config.get_filename_for_source(self._current_source))
                 self._df = pd.read_csv(file_path, sep=';')
                 print(f"Fallback to default data source: {self._current_source}")
             else:
@@ -70,7 +71,7 @@ class DataManager:
             
             # Load the new data
             config = database_config.get_source_config(self._current_source)
-            file_path = config.file_path if config else f'database/data/{database_config.get_filename_for_source(self._current_source)}'
+            file_path = config.file_path if config else str(DATABASE_DATA_DIR / database_config.get_filename_for_source(self._current_source))
             self._df = pd.read_csv(file_path, sep=';')
             
             # Data source switched successfully
@@ -88,7 +89,7 @@ class DataManager:
             self._save_session_source(self._current_source)
             try:
                 config = database_config.get_source_config(self._current_source)
-                file_path = config.file_path if config else f'database/data/{self._current_source}'
+                file_path = config.file_path if config else str(DATABASE_DATA_DIR / database_config.get_filename_for_source(self._current_source))
                 self._df = pd.read_csv(file_path, sep=';')
                 print(f"✅ Rolled back to: {self._current_source}")
             except Exception as rollback_error:
@@ -97,7 +98,7 @@ class DataManager:
                 self._current_source = database_config.get_default_source()
                 self._save_session_source(self._current_source)
                 config = database_config.get_source_config(self._current_source)
-                file_path = config.file_path if config else f'database/data/{self._current_source}'
+                file_path = config.file_path if config else str(DATABASE_DATA_DIR / database_config.get_filename_for_source(self._current_source))
                 self._df = pd.read_csv(file_path, sep=';')
             
             return False
@@ -212,7 +213,7 @@ class DataManager:
         # Reload data with the new source
         try:
             config = database_config.get_source_config(source)
-            file_path = config.file_path if config else f'database/data/{source}'
+            file_path = config.file_path if config else str(DATABASE_DATA_DIR / database_config.get_filename_for_source(source))
             self._df = pd.read_csv(file_path, sep=';')
             print(f"✅ Successfully switched to: {source}")
             return True

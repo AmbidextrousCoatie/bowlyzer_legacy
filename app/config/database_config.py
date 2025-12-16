@@ -6,6 +6,12 @@ Manages available data sources and their settings
 import os
 from typing import Dict, List, Optional
 from dataclasses import dataclass
+from pathlib import Path
+
+# Get the league_analyzer_v1 directory (parent of app directory)
+APP_DIR = Path(__file__).parent.parent
+LEGACY_V1_DIR = APP_DIR.parent if APP_DIR.name == 'app' else APP_DIR
+DATABASE_DATA_DIR = LEGACY_V1_DIR / 'database' / 'data'
 
 @dataclass
 class DataSourceConfig:
@@ -19,7 +25,8 @@ class DataSourceConfig:
     
     def __post_init__(self):
         if self.file_path is None:
-            self.file_path = f'database/data/{self.filename}'
+            # Use absolute path relative to league_analyzer_v1 directory
+            self.file_path = str(DATABASE_DATA_DIR / self.filename)
 
 class DatabaseConfig:
     """Centralized database configuration management"""
@@ -57,7 +64,7 @@ class DatabaseConfig:
         for source_id, config in self._sources.items():
             if config.is_enabled:
                 if not os.path.exists(config.file_path):
-                    print(f"⚠️ Warning: Data source file not found: {config.file_path}")
+                    print(f"Warning: Data source file not found: {config.file_path}")
                     config.is_enabled = False
     
     def get_available_sources(self) -> List[str]:

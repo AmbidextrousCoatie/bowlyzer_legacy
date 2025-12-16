@@ -285,7 +285,7 @@ class DatabaseSelector {
             console.log(`🔄 Switching database to: ${sourceId}`);
             
             // First, try to switch via AJAX to avoid page reload
-            const response = await fetch('/main/switch-database', {
+            const response = await fetch('/switch-database', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

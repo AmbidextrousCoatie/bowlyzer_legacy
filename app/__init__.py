@@ -3,8 +3,14 @@ import os
 import time
 
 def create_app():
+    # Get absolute paths for templates and static files
+    app_dir = os.path.dirname(os.path.abspath(__file__))
+    template_folder = os.path.join(app_dir, 'templates')
+    static_folder = os.path.join(app_dir, 'static')
+    
     app = Flask(__name__,
-                template_folder=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates'))
+                template_folder=template_folder,
+                static_folder=static_folder)
     app.secret_key = 'your-secret-key-here'
     
     # Configure session for production
@@ -17,7 +23,7 @@ def create_app():
     def ensure_fresh_data():
         """Ensure DataManager loads fresh data from session on every request"""
         try:
-            from app.services.data_manager import DataManager
+            from app.services.data_manager import DataManager  # noqa: F401
             # Create a DataManager instance to ensure it loads from session
             # This is crucial for production with multiple worker processes
             data_manager = DataManager()

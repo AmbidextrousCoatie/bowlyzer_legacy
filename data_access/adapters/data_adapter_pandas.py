@@ -50,9 +50,19 @@ class DataAdapterPandas(DataAdapter):
         if self.database is None:
             raise ValueError("Database parameter is required")
         
-        # Construct path to the database file
-        database_path = pathlib.Path("database", "data", self.database).absolute()
-
+        # Get the full path from database_config
+        try:
+            from app.config.database_config import database_config, DATABASE_DATA_DIR
+            config = database_config.get_source_config(self.database)
+            if config and config.file_path:
+                database_path = pathlib.Path(config.file_path)
+            else:
+                # Fallback: construct path from filename
+                filename = database_config.get_filename_for_source(self.database)
+                database_path = pathlib.Path(DATABASE_DATA_DIR) / filename
+        except ImportError:
+            # Fallback if config not available
+            database_path = pathlib.Path("database", "data", self.database).absolute()
         
         if not database_path.exists():
             raise ValueError(f"Database file not found: {database_path}")

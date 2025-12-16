@@ -16,7 +16,9 @@ def get_file_version(filepath):
 
 def static_url_with_version(filename):
     """Generate a static URL with version parameter for cache busting"""
-    static_folder = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static')
+    # Get absolute path to static folder (app/static)
+    app_dir = os.path.dirname(os.path.dirname(__file__))
+    static_folder = os.path.join(app_dir, 'static')
     filepath = os.path.join(static_folder, filename)
     version = get_file_version(filepath)
     return f"/static/{filename}?v={version}"

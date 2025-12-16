@@ -18,23 +18,33 @@ class DataAdapterFactory:
         if adapter_type == DataAdapterSelector.PANDAS:
             from data_access.adapters.data_adapter_pandas import DataAdapterPandas
             if database:
-                # Map abstract database ID to actual filename
+                # Map abstract database ID to actual file path
                 from app.config.database_config import database_config
-                actual_filename = database_config.get_filename_for_source(database)
-                return DataAdapterPandas(database=actual_filename)
+                config = database_config.get_source_config(database)
+                if config and config.file_path:
+                    # Use the full path from config
+                    return DataAdapterPandas(path_to_csv_data=pathlib.Path(config.file_path))
+                else:
+                    # Fallback: construct path from filename
+                    from app.config.database_config import DATABASE_DATA_DIR
+                    actual_filename = database_config.get_filename_for_source(database)
+                    return DataAdapterPandas(path_to_csv_data=pathlib.Path(DATABASE_DATA_DIR) / actual_filename)
             else:
                 # Fallback to current DataManager logic
                 try:
                     from app.services.data_manager import DataManager
+                    from app.config.database_config import database_config, DATABASE_DATA_DIR
                     data_manager = DataManager()
                     current_source = data_manager.current_source
 
-                    # Create path to current data source
-                    current_path = pathlib.Path(
-                        "database",
-                        "data",
-                        current_source
-                    ).absolute()
+                    # Create path to current data source using database_config
+                    config = database_config.get_source_config(current_source)
+                    if config and config.file_path:
+                        current_path = pathlib.Path(config.file_path)
+                    else:
+                        # Fallback: construct path from source ID
+                        filename = database_config.get_filename_for_source(current_source)
+                        current_path = pathlib.Path(DATABASE_DATA_DIR) / filename
 
                     return DataAdapterPandas(path_to_csv_data=current_path)
                 except ImportError:
