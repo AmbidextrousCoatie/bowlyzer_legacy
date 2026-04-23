@@ -1,0 +1,81 @@
+Player;Player ID;Franchise;Club;Power;Consistency
+Luke Skywalker;91905;Star Wars;Star Wars - Jedi Order;10;0.322
+Obi-Wan Kenobi;57296;Star Wars;Star Wars - Jedi Order;8;0.357
+Ahsoka Tano;51639;Star Wars;Star Wars - Jedi Order;6;0.726
+Mace Windu;98598;Star Wars;Star Wars - Jedi Order;5;0.686
+Darth Vader;68024;Star Wars;Star Wars - Sith Empire;10;0.676
+Emperor Palpatine;66049;Star Wars;Star Wars - Sith Empire;9;0.747
+Darth Maul;64628;Star Wars;Star Wars - Sith Empire;5;0.547
+Count Dooku;59144;Star Wars;Star Wars - Sith Empire;4;0.942
+Gandalf;98265;Lord of the Rings;Lord of the Rings - Free Peoples;10;0.716
+Aragorn;56717;Lord of the Rings;Lord of the Rings - Free Peoples;7;0.713
+Legolas;94348;Lord of the Rings;Lord of the Rings - Free Peoples;5;0.372
+Gimli;98540;Lord of the Rings;Lord of the Rings - Free Peoples;3;0.804
+Sauron;85741;Lord of the Rings;Lord of the Rings - Forces of Mordor;10;0.401
+Witch-king;55697;Lord of the Rings;Lord of the Rings - Forces of Mordor;7;0.885
+Saruman;88698;Lord of the Rings;Lord of the Rings - Forces of Mordor;7;0.857
+Uruk-hai Lurtz;77651;Lord of the Rings;Lord of the Rings - Forces of Mordor;4;0.359
+Harry Potter;52082;Harry Potter;Harry Potter - Order of the Phoenix;10;0.497
+Hermione Granger;51952;Harry Potter;Harry Potter - Order of the Phoenix;9;0.544
+Albus Dumbledore;56140;Harry Potter;Harry Potter - Order of the Phoenix;6;0.305
+Severus Snape;64328;Harry Potter;Harry Potter - Order of the Phoenix;5;0.621
+Lord Voldemort;65247;Harry Potter;Harry Potter - Death Eaters;10;0.76
+Bellatrix Lestrange;83118;Harry Potter;Harry Potter - Death Eaters;8;0.873
+Lucius Malfoy;89453;Harry Potter;Harry Potter - Death Eaters;6;0.471
+Barty Crouch Jr.;51739;Harry Potter;Harry Potter - Death Eaters;3;0.582
+Jon Snow;86781;Game of Thrones;Game of Thrones - Stark-Targaryen Alliance;9;0.767
+Daenerys Targaryen;63031;Game of Thrones;Game of Thrones - Stark-Targaryen Alliance;7;0.315
+Arya Stark;96925;Game of Thrones;Game of Thrones - Stark-Targaryen Alliance;5;0.794
+Bran Stark;92590;Game of Thrones;Game of Thrones - Stark-Targaryen Alliance;4;0.647
+Cersei Lannister;95962;Game of Thrones;Game of Thrones - Lannister-Crown;10;0.486
+Jaime Lannister;85713;Game of Thrones;Game of Thrones - Lannister-Crown;8;0.597
+Tywin Lannister;77493;Game of Thrones;Game of Thrones - Lannister-Crown;7;0.846
+The Mountain;64446;Game of Thrones;Game of Thrones - Lannister-Crown;3;0.71
+Kyle Katarn;79439;LucasArts Games;LucasArts Games - Jedi Knight Era;9;0.711
+Mara Jade;88618;LucasArts Games;LucasArts Games - Jedi Knight Era;9;0.763
+Jaden Korr;68231;LucasArts Games;LucasArts Games - Jedi Knight Era;7;0.455
+Jan Ors;50425;LucasArts Games;LucasArts Games - Jedi Knight Era;4;0.526
+Guybrush Threepwood;99729;LucasArts Games;LucasArts Games - Monkey Island & Legacy;10;0.202
+LeChuck;60463;LucasArts Games;LucasArts Games - Monkey Island & Legacy;9;0.857
+Elaine Marley;95753;LucasArts Games;LucasArts Games - Monkey Island & Legacy;6;0.929
+Manny Calavera;77696;LucasArts Games;LucasArts Games - Monkey Island & Legacy;3;0.581
+Paul Atreides;72298;Dune;Dune - House Atreides;9;0.853
+Lady Jessica;68210;Dune;Dune - House Atreides;8;0.831
+Duncan Idaho;60189;Dune;Dune - House Atreides;7;0.657
+Gurney Halleck;64110;Dune;Dune - House Atreides;3;0.48
+Baron Harkonnen;72059;Dune;Dune - Harkonnen-Sardaukar;9;0.605
+Feyd-Rautha;56698;Dune;Dune - Harkonnen-Sardaukar;9;0.889
+Count Fenring;56078;Dune;Dune - Harkonnen-Sardaukar;7;0.443
+Glossu Rabban;74898;Dune;Dune - Harkonnen-Sardaukar;3;0.284
+Jean-Luc Picard;56338;Star Trek;Star Trek - Federation;10;0.859
+Spock;73526;Star Trek;Star Trek - Federation;8;0.38
+Benjamin Sisko;72541;Star Trek;Star Trek - Federation;5;0.859
+Kathryn Janeway;89565;Star Trek;Star Trek - Federation;3;0.264
+Worf;67335;Star Trek;Star Trek - Klingon-Romulan;10;0.812
+Gowron;52847;Star Trek;Star Trek - Klingon-Romulan;9;0.774
+Commander Sela;97823;Star Trek;Star Trek - Klingon-Romulan;5;0.695
+General Chang;80108;Star Trek;Star Trek - Klingon-Romulan;5;0.324
+Commander Shepard;85142;Mass Effect;Mass Effect - Alliance Crew;10;0.854
+Garrus Vakarian;58180;Mass Effect;Mass Effect - Alliance Crew;8;0.923
+Liara T'Soni;74807;Mass Effect;Mass Effect - Alliance Crew;7;0.766
+Tali'Zorah;55164;Mass Effect;Mass Effect - Alliance Crew;5;0.351
+Illusive Man;86178;Mass Effect;Mass Effect - Cerberus-Reapers;10;0.499
+Harbinger;69213;Mass Effect;Mass Effect - Cerberus-Reapers;9;0.687
+Kai Leng;91198;Mass Effect;Mass Effect - Cerberus-Reapers;6;0.875
+Saren Arterius;90535;Mass Effect;Mass Effect - Cerberus-Reapers;4;0.291
+Roboute Guilliman;73700;Warhammer 40K;Warhammer 40K - Imperium;9;0.248
+Marneus Calgar;87837;Warhammer 40K;Warhammer 40K - Imperium;7;0.641
+Saint Celestine;62601;Warhammer 40K;Warhammer 40K - Imperium;5;0.641
+Inquisitor Eisenhorn;96174;Warhammer 40K;Warhammer 40K - Imperium;3;0.253
+Abaddon the Despoiler;54558;Warhammer 40K;Warhammer 40K - Chaos;10;0.244
+Magnus the Red;53003;Warhammer 40K;Warhammer 40K - Chaos;7;0.879
+Ahriman;93336;Warhammer 40K;Warhammer 40K - Chaos;6;0.253
+Kharn the Betrayer;64935;Warhammer 40K;Warhammer 40K - Chaos;3;0.409
+Mickey Mouse;68965;Disney Characters;Disney Characters - Heroes;10;0.361
+Mulan;55229;Disney Characters;Disney Characters - Heroes;7;0.743
+Simba;65256;Disney Characters;Disney Characters - Heroes;7;0.632
+Moana;56619;Disney Characters;Disney Characters - Heroes;3;0.788
+Maleficent;74911;Disney Characters;Disney Characters - Villains;10;0.343
+Scar;68217;Disney Characters;Disney Characters - Villains;7;0.694
+Ursula;79714;Disney Characters;Disney Characters - Villains;6;0.518
+Jafar;91660;Disney Characters;Disney Characters - Villains;4;0.848

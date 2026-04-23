@@ -55,24 +55,10 @@ class DatabaseConfig:
     
     def __init__(self):
         self._sources = {
-            'db_sim': DataSourceConfig(
-                filename='bowling_ergebnisse.csv',
-                display_name='Simulated Data',
-                description='Generated test data for development and testing',
-                is_default=False,
-                is_enabled=True
-            ),
             'db_real': DataSourceConfig(
                 filename='bowling_ergebnisse_real.csv',
                 display_name='Real Data (2024/25)',
                 description='Bowling league export CSV (2024/25 season snapshot)',
-                is_default=False,
-                is_enabled=True
-            ),
-            'db_real_bowlingbayern': DataSourceConfig(
-                filename='bowling_ergebnisse_real_from_bowlingbayern.csv',
-                display_name='Real Data (Bowling Bayern)',
-                description='Bowling Bayern liga export CSV (canonical input)',
                 is_default=False,
                 is_enabled=True
             ),
@@ -83,6 +69,13 @@ class DatabaseConfig:
                 is_default=True,
                 is_enabled=True,
                 file_path=str(PIPELINE_GF_LEGACY_CSV),
+            ),
+            'db_tournament_geek_2026': DataSourceConfig(
+                filename='tournament_geek_classic_2026_postprocessed.csv',
+                display_name='Tournament Data (Geek Classic 2026)',
+                description='Synthetic geek crossover tournament dataset with power/consistency dynamics',
+                is_default=False,
+                is_enabled=True
             ),
         }
 
