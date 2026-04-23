@@ -34,7 +34,7 @@
     const container = document.getElementById("tournamentCards");
     if (!container) return;
     if (!cards || cards.length === 0) {
-      container.innerHTML = '<div class="col-12"><div class="alert alert-info">No summary cards available.</div></div>';
+      container.innerHTML = '<div class="alert alert-info">No summary cards available.</div>';
       return;
     }
     const tournamentCard = cards.find((c) => String(c.title || "").toLowerCase() === "tournament");
@@ -106,6 +106,24 @@
     const container = document.getElementById(containerId);
     if (!container) return;
     container.innerHTML = '<div class="alert alert-warning">Tabulator renderer unavailable.</div>';
+  }
+
+  function enablePlayerCellNavigation(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container || container.dataset.playerCellNavBound === "1") return;
+    container.dataset.playerCellNavBound = "1";
+    container.addEventListener("click", async (event) => {
+      const cell = event.target.closest(".tabulator-cell");
+      if (!cell) return;
+      const field = String(cell.getAttribute("tabulator-field") || "").toLowerCase();
+      if (field !== "player") return;
+      const playerName = String(cell.textContent || "").trim();
+      if (!playerName) return;
+      const input = document.getElementById("tournamentPlayerInput");
+      if (!input) return;
+      input.value = playerName;
+      await onPlayerChanged();
+    });
   }
 
   function renderEffortRows(items) {
@@ -778,6 +796,8 @@
     renderBestEfforts(section.best_efforts);
     renderTable("tournamentLeaderboardTable", section.leaderboard);
     renderTable("tournamentRoundResultsTable", section.round_results);
+    enablePlayerCellNavigation("tournamentLeaderboardTable");
+    enablePlayerCellNavigation("tournamentRoundResultsTable");
   }
 
   async function applyFiltersAndRender(preservePlayer = false) {
