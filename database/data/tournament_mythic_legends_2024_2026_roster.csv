@@ -1,0 +1,49 @@
+Player;Player ID;Franchise;Club;Power;Consistency
+Zeus;139274;Greek Myth;Greek Myth - Olympians;10;0.593
+Athena;142739;Greek Myth;Greek Myth - Olympians;8;0.243
+Apollo;176933;Greek Myth;Greek Myth - Olympians;7;0.208
+Artemis;103046;Greek Myth;Greek Myth - Olympians;4;0.845
+Cronus;174393;Greek Myth;Greek Myth - Titans & Primordials;10;0.493
+Rhea;104221;Greek Myth;Greek Myth - Titans & Primordials;7;0.297
+Atlas;118236;Greek Myth;Greek Myth - Titans & Primordials;6;0.559
+Hyperion;120144;Greek Myth;Greek Myth - Titans & Primordials;3;0.492
+Ra;143286;Egyptian Myth;Egyptian Myth - Solar Court;9;0.297
+Horus;174473;Egyptian Myth;Egyptian Myth - Solar Court;7;0.432
+Bastet;182554;Egyptian Myth;Egyptian Myth - Solar Court;7;0.699
+Thoth;179036;Egyptian Myth;Egyptian Myth - Solar Court;3;0.653
+Osiris;179670;Egyptian Myth;Egyptian Myth - Underworld Powers;10;0.641
+Anubis;175219;Egyptian Myth;Egyptian Myth - Underworld Powers;9;0.738
+Set;151234;Egyptian Myth;Egyptian Myth - Underworld Powers;6;0.407
+Sekhmet;149980;Egyptian Myth;Egyptian Myth - Underworld Powers;3;0.943
+Odin;126765;Norse Myth;Norse Myth - Aesir;10;0.248
+Thor;151201;Norse Myth;Norse Myth - Aesir;8;0.654
+Tyr;108350;Norse Myth;Norse Myth - Aesir;5;0.594
+Frigg;170056;Norse Myth;Norse Myth - Aesir;5;0.859
+Loki;150650;Norse Myth;Norse Myth - Giants & Tricksters;10;0.547
+Hel;124685;Norse Myth;Norse Myth - Giants & Tricksters;7;0.753
+Fenrir;162230;Norse Myth;Norse Myth - Giants & Tricksters;6;0.685
+Jormungandr;114239;Norse Myth;Norse Myth - Giants & Tricksters;4;0.46
+The Dagda;143101;Celtic Myth;Celtic Myth - Tuatha De Danann;10;0.794
+Lugh;174647;Celtic Myth;Celtic Myth - Tuatha De Danann;8;0.66
+Brigid;159183;Celtic Myth;Celtic Myth - Tuatha De Danann;5;0.511
+Nuada;183755;Celtic Myth;Celtic Myth - Tuatha De Danann;3;0.875
+Balor;139930;Celtic Myth;Celtic Myth - Fomorians;10;0.524
+Bres;112221;Celtic Myth;Celtic Myth - Fomorians;8;0.883
+Elatha;122468;Celtic Myth;Celtic Myth - Fomorians;5;0.724
+Tethra;113672;Celtic Myth;Celtic Myth - Fomorians;3;0.495
+Marduk;188458;Mesopotamian Myth;Mesopotamian Myth - Sky Kings;9;0.38
+Ishtar;172470;Mesopotamian Myth;Mesopotamian Myth - Sky Kings;7;0.405
+Shamash;123283;Mesopotamian Myth;Mesopotamian Myth - Sky Kings;7;0.603
+Nanna;104202;Mesopotamian Myth;Mesopotamian Myth - Sky Kings;5;0.887
+Tiamat;190311;Mesopotamian Myth;Mesopotamian Myth - Chaos Ancients;10;0.745
+Kingu;179084;Mesopotamian Myth;Mesopotamian Myth - Chaos Ancients;7;0.882
+Nergal;164043;Mesopotamian Myth;Mesopotamian Myth - Chaos Ancients;6;0.944
+Ereshkigal;103517;Mesopotamian Myth;Mesopotamian Myth - Chaos Ancients;5;0.291
+Indra;124470;Hindu Myth;Hindu Myth - Devas;10;0.257
+Vishnu;126083;Hindu Myth;Hindu Myth - Devas;7;0.578
+Shiva;109108;Hindu Myth;Hindu Myth - Devas;6;0.508
+Durga;150579;Hindu Myth;Hindu Myth - Devas;3;0.39
+Mahishasura;137200;Hindu Myth;Hindu Myth - Asuras;10;0.233
+Ravana;126986;Hindu Myth;Hindu Myth - Asuras;7;0.255
+Hiranyakashipu;130544;Hindu Myth;Hindu Myth - Asuras;7;0.707
+Vritra;138155;Hindu Myth;Hindu Myth - Asuras;4;0.486

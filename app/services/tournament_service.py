@@ -44,8 +44,17 @@ class TournamentService:
             return []
         return sorted([x for x in df[Columns.event_name].dropna().astype(str).unique().tolist() if x.strip()])
 
-    def get_players(self, season: str, tournament: str) -> List[str]:
+    def get_seasons(self, tournament: Optional[str] = None) -> List[str]:
+        df = self._get_tournament_df(season=None, tournament=tournament)
+        if df.empty or Columns.season not in df.columns:
+            return []
+        vals = [str(x).strip() for x in df[Columns.season].dropna().astype(str).tolist() if str(x).strip()]
+        return sorted(list(set(vals)))
+
+    def get_players(self, season: str, tournament: str, round_number: Optional[int] = None) -> List[str]:
         df = self._get_tournament_df(season=season, tournament=tournament)
+        if round_number is not None and not df.empty:
+            df = self._scope_df(df, round_number)
         if df.empty or Columns.player_name not in df.columns:
             return []
         return sorted([x for x in df[Columns.player_name].dropna().astype(str).unique().tolist() if x.strip()])
@@ -216,6 +225,7 @@ class TournamentService:
         # Tournament leader should reflect cumulative totals up to the selected stage.
         # If no stage is selected, use the latest available stage as the cutoff.
         tournament_leader = None
+        tournament_leader_avg = None
         if stage_round_number is not None:
             cumulative_df = df[pd.to_numeric(df[Columns.round_number], errors="coerce").le(float(stage_round_number))].copy()
             if not cumulative_df.empty:
@@ -229,19 +239,28 @@ class TournamentService:
                 )
                 if not tournament_totals.empty:
                     tournament_leader = tournament_totals.iloc[0]
+                    leader_name = str(tournament_leader[Columns.player_name])
+                    leader_games = int(
+                        cumulative_df[cumulative_df[Columns.player_name].astype(str).eq(leader_name)][Columns.score].count()
+                    )
+                    if leader_games > 0:
+                        tournament_leader_avg = round(float(tournament_leader["total_score"]) / leader_games, 1)
 
         # Stage winner remains stage-specific for the selected/latest stage.
         stage_leaderboard = self._build_leaderboard_df(df, stage_round_number) if stage_round_number is not None else pd.DataFrame()
         stage_winner = stage_leaderboard.iloc[0] if not stage_leaderboard.empty else None
+        stage_winner_avg = None
+        if stage_winner is not None and stage_round_number is not None:
+            stage_df = df[pd.to_numeric(df[Columns.round_number], errors="coerce").eq(float(stage_round_number))].copy()
+            stage_df[Columns.score] = pd.to_numeric(stage_df[Columns.score], errors="coerce").fillna(0)
+            stage_winner_name = str(stage_winner["player"])
+            stage_total = float(stage_winner["total_score"])
+            stage_games = int(stage_df[stage_df[Columns.player_name].astype(str).eq(stage_winner_name)][Columns.score].count())
+            if stage_games > 0:
+                stage_winner_avg = round(stage_total / stage_games, 1)
 
         cards = [
             {"title": "Tournament", "value": tournament, "subtitle": season, "type": "stat"},
-            {
-                "title": "Participants",
-                "value": participants,
-                "subtitle": "Field size",
-                "type": "stat",
-            },
             {
                 "title": "Current Round",
                 "value": latest_round.get("round_name") or f"Round {latest_round.get('round_number')}",
@@ -249,6 +268,7 @@ class TournamentService:
                 "type": "stat",
             },
         ]
+        cut_line_card = None
         if Columns.cut_line in scope_df.columns and latest_round.get("round_number") is not None:
             latest_round_df = scope_df[pd.to_numeric(scope_df[Columns.round_number], errors="coerce").eq(float(latest_round["round_number"]))].copy()
             if not latest_round_df.empty:
@@ -256,23 +276,49 @@ class TournamentService:
                 latest_snap = latest_round_df[pd.to_numeric(latest_round_df[Columns.game_number], errors="coerce").eq(max_game)]
                 cut_vals = pd.to_numeric(latest_snap[Columns.cut_line], errors="coerce").dropna()
                 if not cut_vals.empty:
-                    cards.append(
-                        {
-                            "title": "Cut Line",
-                            "value": int(cut_vals.iloc[0]),
-                            "subtitle": "Current threshold",
-                            "type": "stat",
-                        }
-                    )
+                    cut_score = int(cut_vals.iloc[0])
+                    games_in_scope = int(max_game) + 1 if pd.notna(max_game) else 0
+                    if games_in_scope > 0:
+                        cut_display = f"{cut_score} pins (\u2300{(cut_score / games_in_scope):.1f})"
+                    else:
+                        cut_display = f"{cut_score} pins"
+
+                    # Prefer the player sitting right on the cut score.
+                    cut_player = "N/A"
+                    if Columns.cumulative_score in latest_snap.columns and Columns.player_name in latest_snap.columns:
+                        score_col = pd.to_numeric(latest_snap[Columns.cumulative_score], errors="coerce")
+                        candidates = latest_snap[score_col.eq(float(cut_score))].copy()
+                        if not candidates.empty:
+                            if Columns.stage_rank in candidates.columns:
+                                candidates["__rank_num__"] = pd.to_numeric(candidates[Columns.stage_rank], errors="coerce")
+                                candidates = candidates.sort_values(by="__rank_num__", ascending=False)
+                            cut_player = str(candidates.iloc[0].get(Columns.player_name, "N/A"))
+                    cut_line_card = {
+                        "title": "Cut Line",
+                        "value": cut_player,
+                        "subtitle": cut_display,
+                        "type": "stat",
+                    }
         if tournament_leader is not None:
+            subtitle = f"{int(tournament_leader['total_score'])} pins"
+            if tournament_leader_avg is not None:
+                subtitle = f"{subtitle} (\u2300{tournament_leader_avg:.1f})"
             cards.append(
                 {
                     "title": "Tournament Leader",
                     "value": tournament_leader[Columns.player_name],
-                    "subtitle": f"{int(tournament_leader['total_score'])} pins",
+                    "subtitle": subtitle,
                     "type": "stat",
                 }
             )
+        cards.append(
+            {
+                "title": "Participants",
+                "value": participants,
+                "subtitle": "Field size",
+                "type": "stat",
+            }
+        )
         if stage_winner is not None and stage_round_number is not None:
             stage_name = (
                 latest_round.get("round_name")
@@ -280,14 +326,19 @@ class TournamentService:
                 else str(scope_df[Columns.round_name].dropna().iloc[0]) if Columns.round_name in scope_df.columns and not scope_df[Columns.round_name].dropna().empty
                 else f"Round {stage_round_number}"
             )
+            stage_subtitle = f"{stage_name}: {int(stage_winner['total_score'])} pins"
+            if stage_winner_avg is not None:
+                stage_subtitle = f"{stage_subtitle} (\u2300{stage_winner_avg:.1f})"
             cards.append(
                 {
                     "title": "Stage Winner",
                     "value": stage_winner["player"],
-                    "subtitle": f"{stage_name}: {int(stage_winner['total_score'])} pins",
+                    "subtitle": stage_subtitle,
                     "type": "stat",
                 }
             )
+        if cut_line_card is not None:
+            cards.append(cut_line_card)
         return {"cards": cards}
 
     def _build_leaderboard_df(self, df: pd.DataFrame, round_number: Optional[int] = None) -> pd.DataFrame:
@@ -706,9 +757,16 @@ class TournamentService:
 
         avg_series: List[float] = []
         position_series: List[int] = []
+        tournament_leader_avg_series: List[Optional[float]] = []
         round_end_lines: List[int] = []
         cut_lines_avg: List[float] = []
         cut_lines_position: List[int] = []
+        cut_lines_avg_dynamic_q: List[Optional[float]] = []
+        cut_lines_avg_dynamic_r2: List[Optional[float]] = []
+        last_q_cut_avg: Optional[float] = None
+        last_r2_cut_avg: Optional[float] = None
+        q_hold_remaining = 0
+        r2_hold_remaining = 0
 
         cum_player_score = 0
         cum_player_games = 0
@@ -754,8 +812,50 @@ class TournamentService:
                 rank_map = {name: idx + 1 for idx, (name, _) in enumerate(ranked)}
                 position_series.append(int(rank_map.get(player, position_series[-1] if position_series else len(ranked) + 1)))
 
+                # Tournament leader pace: cumulative average of the current leader at this game.
+                add_games = upto_round.groupby(Columns.player_name, dropna=False)[Columns.score].count().to_dict()
+                games_played = {}
+                for p_name in set(list(base_games.keys()) + list(add_games.keys())):
+                    games_played[p_name] = int(base_games.get(p_name, 0)) + int(add_games.get(p_name, 0))
+                if ranked:
+                    leader_name = ranked[0][0]
+                    leader_total = float(scores.get(leader_name, 0.0))
+                    leader_games = max(int(games_played.get(leader_name, 0)), 1)
+                    tournament_leader_avg_series.append(round(leader_total / leader_games, 2))
+                else:
+                    tournament_leader_avg_series.append(None)
+
+                # Dynamic cut-line averages by global game index.
+                # Round 1 uses top-40 threshold; Round 2 uses top-20 threshold.
+                total_games_upto_point = sum(l for rno, _, l in round_lengths if rno < rn) + (g + 1)
+                q_val: Optional[float] = None
+                r2_val: Optional[float] = None
+                if rn == 1 and len(ranked) >= 40:
+                    q_score = float(ranked[39][1])
+                    q_val = round(q_score / max(total_games_upto_point, 1), 2)
+                    last_q_cut_avg = q_val
+                elif rn == 2 and len(ranked) >= 20:
+                    r2_score = float(ranked[19][1])
+                    r2_val = round(r2_score / max(total_games_upto_point, 1), 2)
+                    last_r2_cut_avg = r2_val
+
+                # After the cut stage ends, keep the last cut value for one additional game,
+                # then drop back to missing values so frontend can hide the line.
+                if q_val is None and rn > 1 and q_hold_remaining > 0 and last_q_cut_avg is not None:
+                    q_val = last_q_cut_avg
+                    q_hold_remaining -= 1
+                if r2_val is None and rn > 2 and r2_hold_remaining > 0 and last_r2_cut_avg is not None:
+                    r2_val = last_r2_cut_avg
+                    r2_hold_remaining -= 1
+                cut_lines_avg_dynamic_q.append(q_val)
+                cut_lines_avg_dynamic_r2.append(r2_val)
+
             x_cursor += length
             round_end_lines.append(x_cursor)
+            if rn == 1 and last_q_cut_avg is not None:
+                q_hold_remaining = 1
+            if rn == 2 and last_r2_cut_avg is not None:
+                r2_hold_remaining = 1
 
             # Cut line averages should be based on cumulative standings at cut points.
             # This avoids stage-only cut values distorting cumulative average reference lines.
@@ -784,14 +884,25 @@ class TournamentService:
             avg_series.append(avg_series[-1] if avg_series else 0.0)
         while len(position_series) < total_games:
             position_series.append(position_series[-1] if position_series else 999)
+        while len(tournament_leader_avg_series) < total_games:
+            tournament_leader_avg_series.append(None)
+        while len(cut_lines_avg_dynamic_q) < total_games:
+            cut_lines_avg_dynamic_q.append(None)
+        while len(cut_lines_avg_dynamic_r2) < total_games:
+            cut_lines_avg_dynamic_r2.append(None)
 
         return {
             "labels": labels,
             "avg_series": avg_series[:total_games],
             "position_series": position_series[:total_games],
+            "tournament_leader_avg_series": tournament_leader_avg_series[:total_games],
             "round_end_lines": round_end_lines,
             "cut_lines_avg": cut_lines_avg,
             "cut_lines_position": cut_lines_position,
+            "cut_lines_avg_dynamic": {
+                "qualifying": cut_lines_avg_dynamic_q[:total_games],
+                "round2": cut_lines_avg_dynamic_r2[:total_games],
+            },
         }
 
     def get_tournament_section(self, season: str, tournament: str, round_number: Optional[int] = None, top_n: int = 5) -> Dict[str, Any]:

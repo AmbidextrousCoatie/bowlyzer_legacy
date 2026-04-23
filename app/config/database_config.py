@@ -71,11 +71,18 @@ class DatabaseConfig:
                 file_path=str(PIPELINE_GF_LEGACY_CSV),
             ),
             'db_tournament_geek_2026': DataSourceConfig(
-                filename='tournament_geek_classic_2026_postprocessed.csv',
-                display_name='Tournament Data (Geek Classic 2026)',
-                description='Synthetic geek crossover tournament dataset with power/consistency dynamics',
+                filename='tournament_combined_2024_2026_postprocessed.csv',
+                display_name='Tournament Data (Combined 2024-2026)',
+                description='Combined synthetic tournament dataset (Geek Masters + Mythic Legends) across seasons 2024-2026',
                 is_default=False,
-                is_enabled=True
+                is_enabled=False
+            ),
+            'db_tournament_myth_2024_2026': DataSourceConfig(
+                filename='tournament_mythic_legends_2024_2026_postprocessed.csv',
+                display_name='Tournament Data (Mythic Legends 2024-2026)',
+                description='Synthetic mythology tournament dataset (Greek, Egyptian, Norse, and more) across seasons 2024-2026',
+                is_default=False,
+                is_enabled=False
             ),
         }
 

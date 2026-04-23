@@ -9,9 +9,17 @@ bp = Blueprint("tournament", __name__)
 
 def _resolve_default_tournament_source() -> str:
     """
-    Pick a default source that actually contains tournament rows.
-    Falls back to global default if none is tournament-capable.
+    Prefer the combined tournament dataset source.
+    Falls back to any tournament-capable source, then global default.
     """
+    preferred_source = "db_tournament_geek_2026"
+    try:
+        preferred_service = TournamentService(database=preferred_source)
+        if preferred_service.get_tournaments():
+            return preferred_source
+    except Exception:
+        pass
+
     for source_id in database_config.get_available_sources():
         try:
             svc = TournamentService(database=source_id)
@@ -43,6 +51,12 @@ def get_available_tournaments():
     service = get_tournament_service()
     return jsonify(service.get_tournaments(season=season))
 
+@bp.route("/tournament/get_available_seasons")
+def get_available_seasons():
+    tournament = request.args.get("tournament")
+    service = get_tournament_service()
+    return jsonify(service.get_seasons(tournament=tournament))
+
 
 @bp.route("/tournament/get_available_rounds")
 def get_available_rounds():
@@ -57,10 +71,11 @@ def get_available_rounds():
 def get_available_players():
     season = request.args.get("season")
     tournament = request.args.get("tournament")
+    round_number = request.args.get("round", type=int)
     if not season or not tournament:
         return jsonify({"error": "season and tournament are required"}), 400
     service = get_tournament_service()
-    return jsonify(service.get_players(season=season, tournament=tournament))
+    return jsonify(service.get_players(season=season, tournament=tournament, round_number=round_number))
 
 
 @bp.route("/tournament/get_summary_cards")
