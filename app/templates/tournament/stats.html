@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% include "components/tables.html" %}
+{% include "components/charts.html" %}
+
+<div class="container-fluid mt-3">
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4>Tournament Statistics</h4>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label for="tournamentSeason" class="form-label">Season</label>
+                    <input id="tournamentSeason" class="form-control" value="2026" />
+                </div>
+                <div class="col-md-4">
+                    <label for="tournamentName" class="form-label">Tournament</label>
+                    <select id="tournamentName" class="form-select"></select>
+                </div>
+                <div class="col-md-4">
+                    <label for="tournamentRound" class="form-label">Round (optional)</label>
+                    <select id="tournamentRound" class="form-select"></select>
+                </div>
+            </div>
+            <div class="row g-3 mt-1">
+                <div class="col-md-6">
+                    <label for="tournamentPlayerInput" class="form-label">Player</label>
+                    <input id="tournamentPlayerInput" class="form-control" list="tournamentPlayersList" placeholder="Type to filter players..." />
+                    <datalist id="tournamentPlayersList"></datalist>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tournamentCards" class="row mb-4"></div>
+
+    <div id="tournamentBestEfforts" class="mb-4"></div>
+    <div id="tournamentPlayerSection" class="mb-4"></div>
+
+    <div class="card mb-4" id="tournamentLeaderboardCard">
+        <div class="card-header"><h5>Leaderboard</h5></div>
+        <div class="card-body">
+            <div id="tournamentLeaderboardTable"></div>
+        </div>
+    </div>
+
+    <div class="card mb-4" id="tournamentRoundResultsCard">
+        <div class="card-header"><h5>Round Results</h5></div>
+        <div class="card-body">
+            <div id="tournamentRoundResultsTable"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ static_url('js/tournament-stats-app.js') }}"></script>
+{% endblock %}

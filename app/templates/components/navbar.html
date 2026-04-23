@@ -13,6 +13,9 @@
                     <a class="nav-link" href="{{ url_for('league.stats') }}?database={{ default_database }}&season=latest" id="leagueStatsLink">League Stats</a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('tournament.tournament_stats') }}?season=2026" id="tournamentStatsLink">Tournament Stats</a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('team.stats') }}" id="teamStatsLink">Team Stats</a>
                 </li>
                 {# <li class="nav-item">
