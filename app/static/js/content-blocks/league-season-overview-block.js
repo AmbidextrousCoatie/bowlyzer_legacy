@@ -30,7 +30,6 @@ class LeagueSeasonOverviewBlock extends BaseContentBlock {
             // Load season-specific data
             await this.loadSeasonData(state);
             
-            console.log('league-season-overview: League season overview rendered');
         } catch (error) {
             console.error('Error rendering league season overview:', error);
             this.container.innerHTML = this.renderError('Failed to load league season overview');
@@ -44,7 +43,6 @@ class LeagueSeasonOverviewBlock extends BaseContentBlock {
         const hasWeek = state.week && state.week !== '' && state.week !== 'null';
         const hasTeam = state.team && state.team !== '' && state.team !== 'null';
         const shouldShow = hasLeague && hasSeason && !hasWeek && !hasTeam;
-        console.log(`LeagueSeasonOverviewBlock shouldRender: league="${state.league}", season="${state.season}", week="${state.week}", team="${state.team}", result=${shouldShow}`);
         return shouldShow;
     }
 
@@ -277,7 +275,6 @@ class LeagueSeasonOverviewBlock extends BaseContentBlock {
     }
 
     createTimetable(data) {
-        console.log('DEBUG: createTimetable called with data:', data);
         const container = document.getElementById('seasonTimetable');
         if (!container || !data) {
             console.warn('No container or data for timetable');
@@ -286,7 +283,6 @@ class LeagueSeasonOverviewBlock extends BaseContentBlock {
 
         // Use Tabulator renderer for structured table data
         if (typeof createTableTabulator === 'function' && data.columns && data.data) {
-            console.log('Creating timetable using Tabulator');
             createTableTabulator('seasonTimetable', data, { 
                 disablePositionCircle: true,
                 enableSpecialRowStyling: true,
@@ -313,7 +309,6 @@ class LeagueSeasonOverviewBlock extends BaseContentBlock {
 
 
     createPointsChart(data) {
-        console.log('DEBUG: createPointsChart called with data:', data);
         
         if (typeof createLineChart === 'function' && data && data.data_accumulated) {
             const firstTeamData = Object.values(data.data_accumulated)[0];
@@ -344,7 +339,6 @@ class LeagueSeasonOverviewBlock extends BaseContentBlock {
     }
 
     createPositionsChart(data) {
-        console.log('DEBUG: createPositionsChart called with data:', data);
         
         if (typeof createLineChart === 'function' && data && data.data) {
             const firstTeamData = Object.values(data.data)[0];
@@ -375,7 +369,6 @@ class LeagueSeasonOverviewBlock extends BaseContentBlock {
     }
 
     createWeeklyPointsChart(data) {
-        console.log('DEBUG: createWeeklyPointsChart called with data:', data);
         
         if (typeof createScatterChartMultiAxis === 'function' && data && data.data) {
             const firstTeamData = Object.values(data.data)[0];

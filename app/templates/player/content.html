@@ -21,6 +21,10 @@
                 <!-- Players will be loaded here -->
             </datalist>
         </div>
+        <div class="mb-3">
+            <h6 class="mb-2">Season Scope</h6>
+            <div id="playerSeasonButtons" class="btn-group-horizontal w-100"></div>
+        </div>
         <div id="playerStats" class="mt-4">
             <!-- Basic player info will be here -->
         </div>
@@ -90,11 +94,12 @@
                 <thead>
                     <tr>
                         <th>Season</th>
+                        <th>Competition</th>
+                        <th>Club</th>
                         <th>Games</th>
                         <th>Total Pins</th>
                         <th>Average</th>
-                        <th>Dev. from Avg</th>
-                        <th>vs Last Season</th>
+                        <th>Rank</th>
                         <th>Best Game</th>
                         <th>Worst Game</th>
                     </tr>
@@ -125,14 +130,26 @@
 document.addEventListener('DOMContentLoaded', function() {
     const playerInput = document.getElementById('playerInput');
     const playerList = document.getElementById('playerList');
+    const seasonButtons = document.getElementById('playerSeasonButtons');
+    let selectedSeason = 'all';
     
     // Parse URL parameters
     function parseUrlParams() {
         const params = new URLSearchParams(window.location.search);
         return {
             player_name: params.get('player_name'),
-            database: params.get('database')
+            database: params.get('database'),
+            season: params.get('season') || 'all'
         };
+    }
+
+    function updateUrlParams(playerName, season) {
+        const url = new URL(window.location.href);
+        if (playerName) url.searchParams.set('player_name', playerName);
+        else url.searchParams.delete('player_name');
+        if (season && season !== 'all') url.searchParams.set('season', season);
+        else url.searchParams.delete('season');
+        window.history.replaceState({}, '', url);
     }
 
     function escapeAttr(s) {
@@ -140,6 +157,31 @@ document.addEventListener('DOMContentLoaded', function() {
             .replace(/&/g, '&amp;')
             .replace(/"/g, '&quot;')
             .replace(/</g, '&lt;');
+    }
+
+    function escapeHtml(s) {
+        return String(s)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function competitionCellHtml(season, competition, isTournament, rowType) {
+        const label = competition || '-';
+        if (rowType !== 'competition' || !competition) {
+            return escapeHtml(label);
+        }
+        const params = new URLSearchParams(window.location.search);
+        const database = params.get('database');
+        const qs = new URLSearchParams();
+        qs.set('season', String(season || ''));
+        const targetPath = isTournament ? '/tournament/stats' : '/league/stats';
+        if (isTournament) qs.set('tournament', String(competition));
+        else qs.set('league', String(competition));
+        if (database) qs.set('database', database);
+        return `<a href="${targetPath}?${qs.toString()}">${escapeHtml(label)}</a>`;
     }
 
     async function reloadPlayerSearchList() {
@@ -169,6 +211,49 @@ document.addEventListener('DOMContentLoaded', function() {
         return players;
     }
 
+    function renderSeasonButtons(seasons) {
+        if (!seasonButtons) return;
+        const items = [{ value: 'all', label: 'All Time' }].concat(
+            (seasons || []).map(s => ({ value: String(s), label: String(s) }))
+        );
+        if (!items.some(i => i.value === selectedSeason)) {
+            selectedSeason = 'all';
+        }
+        seasonButtons.innerHTML = items.map(item => `
+            <button type="button"
+                    class="btn btn-sm ${item.value === selectedSeason ? 'btn-primary' : 'btn-outline-primary'} me-2 mb-2"
+                    data-season="${escapeAttr(item.value)}">
+                ${item.label}
+            </button>
+        `).join('');
+        seasonButtons.querySelectorAll('button[data-season]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const playerName = (playerInput.value || '').trim();
+                selectedSeason = btn.getAttribute('data-season') || 'all';
+                renderSeasonButtons(seasons);
+                if (playerName) {
+                    updateUrlParams(playerName, selectedSeason);
+                    loadPlayerStats(playerName);
+                }
+            });
+        });
+    }
+
+    async function loadPlayerSeasons(playerName) {
+        if (!playerName) {
+            renderSeasonButtons([]);
+            return;
+        }
+        try {
+            const response = await fetchWithDatabase(`{{ url_for("player.get_available_seasons") }}?player_name=${encodeURIComponent(playerName)}`);
+            const seasons = await response.json();
+            renderSeasonButtons(Array.isArray(seasons) ? seasons : []);
+        } catch (e) {
+            console.error('Failed to load player seasons:', e);
+            renderSeasonButtons([]);
+        }
+    }
+
     // Load all players immediately
     reloadPlayerSearchList().then(players => {
             // Check for URL parameters and auto-select player
@@ -184,6 +269,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (matchingPlayer) {
                     console.log('Found matching player:', matchingPlayer);
                     playerInput.value = matchingPlayer.name;
+                    selectedSeason = urlParams.season || 'all';
+                    loadPlayerSeasons(matchingPlayer.name);
                     loadPlayerStats(matchingPlayer.name);
                 } else {
                     console.warn('Player not found in database:', urlParams.player_name);
@@ -203,6 +290,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (option) {
             // Use the selected name directly since id and name are the same
+            selectedSeason = 'all';
+            loadPlayerSeasons(selectedName);
+            updateUrlParams(selectedName, selectedSeason);
             loadPlayerStats(selectedName);
         }
     });
@@ -215,7 +305,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         console.log("loadPlayerStats: " + name);
-        fetchWithDatabase(`{{ url_for("player.get_lifetime_stats") }}?player_name=${encodeURIComponent(name)}`)
+        fetchWithDatabase(`{{ url_for("player.get_lifetime_stats") }}?player_name=${encodeURIComponent(name)}&season=${encodeURIComponent(selectedSeason)}`)
             .then(response => response.json())
             .then(data => {
                 // Check if data is null or missing required properties
@@ -243,6 +333,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 displayLifetimeStats(data.lifetime);
                 displaySeasonStats(data.seasons);
                 updateTrendChart(data);  // We'll keep the existing chart functionality
+                updateUrlParams(name, selectedSeason);
             })
             .catch(error => {
                 console.error('Error loading player stats:', error);
@@ -253,6 +344,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 `;
             });
     }
+
+    renderSeasonButtons([]);
 
     window.reloadPlayerSearchList = reloadPlayerSearchList;
     window.loadPlayerStats = loadPlayerStats;
@@ -294,18 +387,27 @@ document.addEventListener('DOMContentLoaded', function() {
     function displaySeasonStats(seasons) {
         const tbody = document.getElementById('seasonStatsBody');
         if (!seasons || !Array.isArray(seasons) || seasons.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No season data available</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">No season data available</td></tr>';
             return;
         }
         
         tbody.innerHTML = seasons.map(season => `
-            <tr>
+            <tr ${
+                season.row_type === 'season_total'
+                    ? 'class="table-info fw-bold"'
+                    : (season.row_type === 'competition' ? 'class="table-light"' : '')
+            }>
                 <td>${season.season || '-'}</td>
+                <td>${competitionCellHtml(season.season, season.competition, season.is_tournament, season.row_type)}</td>
+                <td>${season.club || '-'}</td>
                 <td>${season.games || 0}</td>
                 <td>${(season.total_pins || 0).toLocaleString()}</td>
-                <td>${(season.average || 0).toFixed(2)}</td>
-                <td>${(season.dev_from_avg || 0) > 0 ? '+' : ''}${(season.dev_from_avg || 0).toFixed(2)}</td>
-                <td>${season.vs_last_season !== null ? (season.vs_last_season > 0 ? '+' : '') + season.vs_last_season.toFixed(2) : '-'}</td>
+                <td>${
+                    season.vs_last_season !== null && season.vs_last_season !== undefined
+                        ? `${(season.average || 0).toFixed(2)} (${season.vs_last_season > 0 ? '+' : ''}${season.vs_last_season.toFixed(2)})`
+                        : `${(season.average || 0).toFixed(2)}`
+                }</td>
+                <td>${season.rank !== null && season.rank !== undefined ? season.rank : '-'}</td>
                 <td title="${season.best_game?.date || ''} - ${season.best_game?.event || ''}">${season.best_game?.score || '-'}</td>
                 <td title="${season.worst_game?.date || ''} - ${season.worst_game?.event || ''}">${season.worst_game?.score || '-'}</td>
             </tr>
@@ -328,11 +430,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         ctx.style.display = 'block';
 
+        const seasonTotals = (data.seasons || []).filter(s => (s.row_type || 'season_total') === 'season_total');
         const chartData = {
             datasets: [
                 {
                     label: 'Season Average',
-                    data: data.seasons.map((season, i) => ({
+                    data: seasonTotals.map((season, i) => ({
                         x: season.season || `Season ${i}`,
                         y: season.average || 0,
                         r: (season.games || 0) / 5
@@ -344,7 +447,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 {
                     label: 'Trend Line',
                     showInLegend: false,
-                    data: data.seasons.map((season, i) => ({
+                    data: seasonTotals.map((season, i) => ({
                         x: season.season || `Season ${i}`,
                         y: season.average || 0
                     })),
@@ -357,7 +460,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 {
                     label: 'All-Time Average',
-                    data: data.seasons.map(season => ({
+                    data: seasonTotals.map(season => ({
                         x: season.season || 'Unknown',
                         y: data.lifetime.average_score || 0
                     })),
@@ -400,8 +503,8 @@ document.addEventListener('DOMContentLoaded', function() {
                                 const dataIndex = context.dataIndex;
                                 if (context.dataset.label === 'Season Average') {
                                     return [
-                                        `Average: ${(data.seasons[dataIndex]?.average || 0).toFixed(1)}`,
-                                        `Games: ${data.seasons[dataIndex]?.games || 0}`
+                                        `Average: ${(seasonTotals[dataIndex]?.average || 0).toFixed(1)}`,
+                                        `Games: ${seasonTotals[dataIndex]?.games || 0}`
                                     ];
                                 }
                                 return `All-Time Average: ${(data.lifetime?.average_score || 0).toFixed(1)}`;

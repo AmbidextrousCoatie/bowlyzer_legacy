@@ -52,7 +52,6 @@ class GameTeamDetailsBlock extends BaseContentBlock {
             // Load game team details data
             await this.loadGameTeamDetailsData(state);
             
-            console.log('game-team-details: Game team details content rendered');
         } catch (error) {
             console.error('Error rendering game team details content:', error);
             this.container.innerHTML = this.renderError('Failed to load game team details content');
@@ -63,16 +62,6 @@ class GameTeamDetailsBlock extends BaseContentBlock {
         // Show only when season, league, week, team, and round are all selected
         const hasRound = state.round && state.round !== '' && state.round !== 'null' && state.round !== null;
         const shouldShow = state.season && state.league && state.week && state.team && hasRound;
-        console.log(`🎮 GameTeamDetailsBlock.shouldRender:`, {
-            season: state.season,
-            league: state.league,
-            week: state.week,
-            team: state.team,
-            round: state.round,
-            roundType: typeof state.round,
-            hasRound,
-            shouldShow
-        });
         return shouldShow;
     }
 
@@ -147,13 +136,11 @@ class GameTeamDetailsBlock extends BaseContentBlock {
                 return;
             }
             
-            console.log('Game team details data:', tableData);
             
             const container = document.getElementById('tableGameTeamDetails');
             if (container) {
                 // Use Tabulator for the game team details table
                 if (typeof createTableTabulator === 'function') {
-                    console.log('Using createTableTabulator function for game team details table');
                     createTableTabulator('tableGameTeamDetails', tableData, { 
                         disablePositionCircle: true, // Game team details doesn't need team color circles
                         enableSpecialRowStyling: true,
@@ -162,7 +149,6 @@ class GameTeamDetailsBlock extends BaseContentBlock {
                         enableHeatMap: true // Enable heatmap coloring for pins and points columns
                     });
                 } else if (typeof createTableBootstrap3 === 'function') {
-                    console.log('Fallback: Using createTableBootstrap3 function');
                     createTableBootstrap3('tableGameTeamDetails', tableData, { 
                         disablePositionCircle: true,
                         enableSpecialRowStyling: true,

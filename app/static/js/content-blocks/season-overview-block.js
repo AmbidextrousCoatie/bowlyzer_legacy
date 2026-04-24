@@ -52,7 +52,6 @@ class SeasonOverviewBlock extends BaseContentBlock {
             // Load data and create charts
             await this.loadSeasonData(state);
             
-            console.log('season-overview: Season overview rendered');
         } catch (error) {
             console.error('Error rendering season overview:', error);
             this.container.innerHTML = this.renderError('Failed to load season overview');
@@ -192,19 +191,16 @@ class SeasonOverviewBlock extends BaseContentBlock {
             const response = await fetchWithDatabase(`/league/get_league_history?season=${season}&league=${league}`);
             const tableData = await response.json();
             
-            console.log('League history table data:', tableData); // Debug logging
             
             const container = document.getElementById('leagueTableHistory');
             if (container) {
                 // Use the proper createTableBootstrap3 function for structured TableData
                 if (typeof createTableBootstrap3 === 'function') {
-                    console.log('Using createTableBootstrap3 function for TableData');
                     createTableBootstrap3('leagueTableHistory', tableData, { 
                         disablePositionCircle: false, // League history should show team color circles
                         enableSpecialRowStyling: true 
                     });
                 } else if (typeof createTable === 'function') {
-                    console.log('Fallback: Using createTable function');
                     const tableHTML = createTable(tableData);
                     container.innerHTML = tableHTML;
                 } else {
@@ -226,7 +222,6 @@ class SeasonOverviewBlock extends BaseContentBlock {
             const response = await fetchWithDatabase(`/league/get_team_positions?season=${season}&league=${league}`);
             const data = await response.json();
             
-            console.log('Position chart data:', data); // Debug logging
             
             // Check if data has expected structure
             if (!data || !data.data) {

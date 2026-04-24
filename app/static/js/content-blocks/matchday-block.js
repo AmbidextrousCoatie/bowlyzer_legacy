@@ -52,7 +52,6 @@ class MatchDayBlock extends BaseContentBlock {
             // Load match day data
             await this.loadMatchDayData(state);
             
-            console.log('matchday: Match day content rendered');
         } catch (error) {
             console.error('Error rendering match day content:', error);
             this.container.innerHTML = this.renderError('Failed to load match day content');
@@ -181,7 +180,6 @@ class MatchDayBlock extends BaseContentBlock {
             const response = await fetchWithDatabase(`/league/get_league_week_table?season=${season}&league=${league}&week=${week}`);
             const tableData = await response.json();
             
-            console.log('League week table data:', tableData); // Debug logging
             
             // Use shared utility function
             if (typeof window.renderLeagueStandingsTable === 'function') {
@@ -220,7 +218,6 @@ class MatchDayBlock extends BaseContentBlock {
             const response = await fetchWithDatabase(`/league/get_honor_scores?season=${season}&league=${league}&week=${week}`);
             const data = await response.json();
             
-            console.log('Honor scores data:', data); // Debug logging
             
             // Populate honor scores sections
             this.populateHonorScores(data);
@@ -232,7 +229,6 @@ class MatchDayBlock extends BaseContentBlock {
     }
 
     populateHonorScores(data) {
-        console.log('Populating honor scores with data:', data); // Debug logging
         
         // Use shared utility function
         if (typeof window.populateHonorScores === 'function') {

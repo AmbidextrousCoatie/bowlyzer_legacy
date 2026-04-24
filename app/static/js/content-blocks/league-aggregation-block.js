@@ -30,7 +30,6 @@ class LeagueAggregationBlock extends BaseContentBlock {
             // Load aggregated data
             await this.loadAggregatedData(state);
             
-            console.log('league-aggregation: League aggregation rendered');
         } catch (error) {
             console.error('Error rendering league aggregation:', error);
             this.container.innerHTML = this.renderError('Failed to load league aggregation data');
@@ -42,7 +41,6 @@ class LeagueAggregationBlock extends BaseContentBlock {
         const hasLeague = state.league && state.league !== '' && state.league !== 'null';
         const hasSeason = state.season && state.season !== '' && state.season !== 'null';
         const shouldShow = hasLeague && !hasSeason;
-        console.log(`LeagueAggregationBlock shouldRender: league="${state.league}", season="${state.season}", result=${shouldShow}`);
         return shouldShow;
     }
 
@@ -166,12 +164,9 @@ class LeagueAggregationBlock extends BaseContentBlock {
 
     async loadPointsToWin(league) {
         try {
-            //console.log(`DEBUG: loadPointsToWin called for league: ${league}`);
             const url = `/league/get_points_to_win_history?league=${league}`;
-            //console.log(`DEBUG: Fetching from: ${url}`);
             
             const response = await fetchWithDatabase(url);
-            //console.log(`DEBUG: Response status: ${response.status}, ok: ${response.ok}`);
             
             if (!response.ok) {
                 console.error(`DEBUG: Response not ok: ${response.status} ${response.statusText}`);
@@ -179,7 +174,6 @@ class LeagueAggregationBlock extends BaseContentBlock {
             }
             
             const data = await response.json();
-            //console.log(`DEBUG: Points to win data received:`, data);
             return data;
         } catch (error) {
             //console.error('DEBUG: Error in loadPointsToWin:', error);
@@ -195,12 +189,9 @@ class LeagueAggregationBlock extends BaseContentBlock {
 
     async loadTopIndividuals(league) {
         try {
-            //console.log(`DEBUG: loadTopIndividuals called for league: ${league}`);
             const url = `/league/get_top_individual_performances?league=${league}`;
-            c//onsole.log(`DEBUG: Fetching from: ${url}`);
             
             const response = await fetchWithDatabase(url);
-            //console.log(`DEBUG: Response status: ${response.status}, ok: ${response.ok}`);
             
             if (!response.ok) {
                 console.error(`DEBUG: Response not ok: ${response.status} ${response.statusText}`);
@@ -210,9 +201,6 @@ class LeagueAggregationBlock extends BaseContentBlock {
             }
             
             const data = await response.json();
-            //console.log(`DEBUG: Top individuals data received:`, data);
-            c//onsole.log(`DEBUG: Data structure - columns: ${data.columns ? data.columns.length : 'none'}, data: ${data.data ? data.data.length : 'none'} rows`);
-            
             return data;
         } catch (error) {
             console.error('DEBUG: Error in loadTopIndividuals:', error);
@@ -222,12 +210,9 @@ class LeagueAggregationBlock extends BaseContentBlock {
 
     async loadRecordIndividualGames(league) {
         try {
-            //console.log(`DEBUG: loadRecordIndividualGames called for league: ${league}`);
             const url = `/league/get_record_individual_games?league=${league}`;
-            //console.log(`DEBUG: Fetching from: ${url}`);
             
             const response = await fetchWithDatabase(url);
-            //console.log(`DEBUG: Response status: ${response.status}, ok: ${response.ok}`);
             
             if (!response.ok) {
                 console.error(`DEBUG: Response not ok: ${response.status} ${response.statusText}`);
@@ -235,7 +220,6 @@ class LeagueAggregationBlock extends BaseContentBlock {
             }
             
             const data = await response.json();
-            //console.log(`DEBUG: Record individual games data received:`, data);
             return data;
         } catch (error) {
             console.error('DEBUG: Error in loadRecordIndividualGames:', error);
@@ -245,12 +229,9 @@ class LeagueAggregationBlock extends BaseContentBlock {
 
     async loadRecordTeamGames(league) {
         try {
-            //console.log(`DEBUG: loadRecordTeamGames called for league: ${league}`);
             const url = `/league/get_record_team_games?league=${league}`;
-            //console.log(`DEBUG: Fetching from: ${url}`);
             
             const response = await fetchWithDatabase(url);
-            //console.log(`DEBUG: Response status: ${response.status}, ok: ${response.ok}`);
             
             if (!response.ok) {
                 console.error(`DEBUG: Response not ok: ${response.status} ${response.statusText}`);
@@ -258,7 +239,6 @@ class LeagueAggregationBlock extends BaseContentBlock {
             }
             
             const data = await response.json();
-            //console.log(`DEBUG: Record team games data received:`, data);
             return data;
         } catch (error) {
             console.error('DEBUG: Error in loadRecordTeamGames:', error);
@@ -273,9 +253,7 @@ class LeagueAggregationBlock extends BaseContentBlock {
 
     createLeagueAveragesChart(data) {
         // Create line chart showing league averages over seasons
-        console.log('createLeagueAveragesChart called with data:', data);
         if (typeof createLineChart === 'function' && data && data.data) {
-            console.log('Creating league averages chart with data:', data.data);
             
             createLineChart(
                 data.data,                              // {League Average: [240.1, 235.8, ...]}
@@ -298,15 +276,9 @@ class LeagueAggregationBlock extends BaseContentBlock {
 
     createPointsToWinChart(data) {
         // Create line chart showing points needed to win each season
-        console.log('createPointsToWinChart called with data:', data);
         if (typeof createLineChart === 'function' && data && data.data) {
-            console.log('Creating points to win chart with data:', data.data);
-            console.log('Chart container ID: chartPointsToWin');
-            console.log('Labels:', data.labels || data.seasons);
-            
             // Check if container exists
             const container = document.getElementById('chartPointsToWin');
-            console.log('Container found:', !!container);
             
             createLineChart(
                 data.data,                              // {Points to Win: [169.2, 176.3, ...]}
@@ -340,18 +312,12 @@ class LeagueAggregationBlock extends BaseContentBlock {
 
     createTopIndividualsTable(data) {
         // Create table for top individual performances
-        console.log(`DEBUG: createTopIndividualsTable called with data:`, data);
-        console.log(`DEBUG: createTableTabulator function available: ${typeof createTableTabulator === 'function'}`);
-        console.log(`DEBUG: Data is truthy: ${!!data}`);
-        
         if (typeof createTableTabulator === 'function' && data) {
-            console.log(`DEBUG: Creating top individuals table with ${data.data ? data.data.length : 'unknown'} rows`);
             createTableTabulator('tableTopIndividuals', data, {
                 disablePositionCircle: true, // Individual players don't need color circles
                 enableSpecialRowStyling: true,
                 tooltips: true
             });
-            console.log(`DEBUG: Top individuals table creation completed`);
         } else {
             console.warn(`DEBUG: Cannot create top individuals table - function available: ${typeof createTableTabulator === 'function'}, data: ${!!data}`);
         }
@@ -359,15 +325,12 @@ class LeagueAggregationBlock extends BaseContentBlock {
 
     createRecordIndividualGamesTable(data) {
         // Create table for record individual games
-        console.log(`DEBUG: createRecordIndividualGamesTable called with data:`, data);
         if (typeof createTableTabulator === 'function' && data) {
-            console.log(`DEBUG: Creating record individual games table with ${data.data ? data.data.length : 'unknown'} rows`);
             createTableTabulator('tableRecordIndividualGames', data, {
                 disablePositionCircle: true, // Record games don't need position circles
                 enableSpecialRowStyling: true,
                 tooltips: true
             });
-            console.log(`DEBUG: Record individual games table creation completed`);
         } else {
             console.warn(`DEBUG: Cannot create record individual games table - function available: ${typeof createTableTabulator === 'function'}, data: ${!!data}`);
         }
@@ -375,15 +338,12 @@ class LeagueAggregationBlock extends BaseContentBlock {
 
     createRecordTeamGamesTable(data) {
         // Create table for record team games
-        console.log(`DEBUG: createRecordTeamGamesTable called with data:`, data);
         if (typeof createTableTabulator === 'function' && data) {
-            console.log(`DEBUG: Creating record team games table with ${data.data ? data.data.length : 'unknown'} rows`);
             createTableTabulator('tableRecordTeamGames', data, {
                 disablePositionCircle: true, // Record games don't need position circles
                 enableSpecialRowStyling: true,
                 tooltips: true
             });
-            console.log(`DEBUG: Record team games table creation completed`);
         } else {
             console.warn(`DEBUG: Cannot create record team games table - function available: ${typeof createTableTabulator === 'function'}, data: ${!!data}`);
         }

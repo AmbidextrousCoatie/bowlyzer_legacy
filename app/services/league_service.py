@@ -3025,11 +3025,17 @@ class LeagueService:
             win_percentage_series.counts[f"{team}"] = team_total_matches
             
             # Return data using existing SeriesData interface
+            player_order_by_average = sorted(
+                [str(p) for p in players],
+                key=lambda p: (float(performance_series.average.get(p, 0) or 0), p),
+                reverse=True,
+            )
             return {
                 'performance_data': performance_series.to_dict(),
                 'win_percentage_data': win_percentage_series.to_dict(),
                 'weeks': [f'Week {int(w)}' for w in weeks],
                 'players': [str(p) for p in players],
+                'player_order_by_average': player_order_by_average,
                 'team': str(team),
                 'league': str(league),
                 'season': str(season)
@@ -3118,27 +3124,26 @@ class LeagueService:
             average_dict = performance_data.get('average', {})
             counts_dict = performance_data.get('counts', {})
             
-            # Process individual players first
-            for playerName in sorted(data_dict.keys()):
-                if playerName == teamAverageKey:
-                    continue
-                
+            # Process individual players first, sorted by avg_per_game descending.
+            player_names = [name for name in data_dict.keys() if name != teamAverageKey]
+            player_names.sort(key=lambda n: (float(average_dict.get(n, 0) or 0), str(n)), reverse=True)
+            for playerName in player_names:
                 playerData = data_dict[playerName]
                 row = {
                     'player_initials': playerName[0].upper() if playerName else '',
                     'player_name': playerName
                 }
-                
+
                 # Add week data
                 for idx in range(num_weeks):
                     weekValue = playerData[idx] if idx < len(playerData) else None
                     row[f'week_{idx + 1}'] = weekValue
-                
+
                 # Add totals
                 row['total_score'] = round(total_dict.get(playerName, 0) * 100) / 100
                 row['total_games'] = counts_dict.get(playerName, 0)
                 row['avg_per_game'] = round(average_dict.get(playerName, 0) * 100) / 100
-                
+
                 table_data.append(row)
             
             # Add team average as last row
@@ -3269,11 +3274,21 @@ class LeagueService:
             total_dict = win_percentage_data.get('total', {})
             average_dict = win_percentage_data.get('average', {})
             counts_dict = win_percentage_data.get('counts', {})
+            perf_average_dict = analysis_data.get('performance_data', {}).get('average', {})
             
-            # Process individual players first
-            for playerName in sorted(data_dict.keys()):
-                if playerName == teamKey:
-                    continue
+            # Process individual players first, ordered by performance average.
+            order_from_analysis = [str(x) for x in analysis_data.get('player_order_by_average', [])]
+            player_names = [name for name in data_dict.keys() if name != teamKey]
+            if order_from_analysis:
+                order_index = {name: idx for idx, name in enumerate(order_from_analysis)}
+                player_names.sort(key=lambda n: (order_index.get(n, 10**6), n))
+            else:
+                player_names.sort(
+                    key=lambda n: (float(perf_average_dict.get(n, 0) or 0), str(n)),
+                    reverse=True
+                )
+
+            for playerName in player_names:
                 
                 playerData = data_dict[playerName]
                 row = {

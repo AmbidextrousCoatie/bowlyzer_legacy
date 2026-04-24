@@ -716,7 +716,9 @@ class Server:
 
         columns = [
             Columns.player_id, Columns.player_name, Columns.date, Columns.week, Columns.season,
-            Columns.league_name, Columns.team_name, Columns.score, Columns.points,
+            Columns.league_name, Columns.event_name, Columns.event_type,
+            Columns.round_name, Columns.round_number, Columns.game_number,
+            Columns.team_name, Columns.club, Columns.score, Columns.points,
         ]
         return self.data_adapter.get_filtered_data(columns=columns, filters=player_filters)
 

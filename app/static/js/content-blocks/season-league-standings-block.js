@@ -30,7 +30,6 @@ class SeasonLeagueStandingsBlock extends BaseContentBlock {
             // Load season league standings data
             await this.loadSeasonLeagueStandings(state);
             
-            console.log('season-league-standings: Season league standings rendered');
         } catch (error) {
             console.error('Error rendering season league standings:', error);
             this.container.innerHTML = this.renderError('Failed to load season league standings data');
@@ -42,7 +41,6 @@ class SeasonLeagueStandingsBlock extends BaseContentBlock {
         const hasSeason = state.season && state.season !== '' && state.season !== 'null';
         const hasLeague = state.league && state.league !== '' && state.league !== 'null';
         const shouldShow = hasSeason && !hasLeague;
-        console.log(`SeasonLeagueStandingsBlock shouldRender: season="${state.season}", league="${state.league}", result=${shouldShow}`);
         return shouldShow;
     }
 
@@ -70,7 +68,6 @@ class SeasonLeagueStandingsBlock extends BaseContentBlock {
         const { season } = state;
         
         try {
-            console.log(`Loading season league standings for season: ${season}`);
             
             const response = await fetchWithDatabase(`/league/get_season_league_standings?season=${season}`);
             
@@ -79,7 +76,6 @@ class SeasonLeagueStandingsBlock extends BaseContentBlock {
             }
             
             const data = await response.json();
-            console.log('Season league standings data received:', data);
             
             this.renderSeasonLeagueStandings(data, season);
             
@@ -228,7 +224,6 @@ class SeasonLeagueStandingsBlock extends BaseContentBlock {
                         window.teamColorMap = teamColorMap;
                     }
                     
-                    console.log(`Assigned colors to ${uniqueLeagueTeams.length} teams for league ${league} (starting from palette index 0)`);
                 }
             }
             

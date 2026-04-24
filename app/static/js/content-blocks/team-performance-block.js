@@ -5,6 +5,7 @@ class TeamPerformanceBlock {
         this.container = document.getElementById(this.containerId);
         this.currentFilter = 'both'; // 'points', 'score', 'both'
         this.columnMetadata = null; // Store column info for filtering
+        this.localTeamColor = null; // Deterministic color for this block render
     }
 
     shouldRender(state) {
@@ -34,6 +35,10 @@ class TeamPerformanceBlock {
                 console.error(`${this.containerId}: Container not found`);
                 return;
             }
+
+            // Deterministic color assignment for this block only:
+            // all players first, then team/team-average next color.
+            this.initializeLocalColorOrder(data);
 
             // Create the card structure - Top: Performance Table, Middle: Graphs side by side
             this.container.innerHTML = `
@@ -82,6 +87,30 @@ class TeamPerformanceBlock {
                             </div>
                         </div>
 
+                        <!-- League Season Trend Charts (All teams gray, selected team highlighted) -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6>${typeof t === 'function' ? t('points_in_season_progress', 'Points in Season Progress') : 'Points in Season Progress'}</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="team-league-points-trend-chart" style="height: 320px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6>${typeof t === 'function' ? t('position_in_season_progress', 'Position in Season Progress') : 'Position in Season Progress'}</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="team-league-position-trend-chart" style="height: 320px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Win Percentage Table (Bottom) -->
                         <div class="row">
                             <div class="col-12">
@@ -99,6 +128,10 @@ class TeamPerformanceBlock {
                     </div>
                 </div>
             `;
+
+            // Load league-wide season trend charts with selected team highlight.
+            // This also seeds the team color map with full league team ordering.
+            await this.loadLeagueSeasonTrendCharts(state);
 
             // Fetch and render tables and charts
             await Promise.all([
@@ -162,6 +195,84 @@ class TeamPerformanceBlock {
         }
     }
 
+    getExistingTeamColor(teamName, aliases = []) {
+        const normalizedTeamName = teamName ? String(teamName).trim() : '';
+        const normalizedAliases = [normalizedTeamName, ...aliases]
+            .map(alias => (alias ? String(alias).trim() : ''))
+            .filter(Boolean);
+        const playerMap = (window.ColorUtils && window.ColorUtils.playerColorMap) || window.playerColorMap;
+        if (!playerMap || typeof playerMap !== 'object') return null;
+        for (const alias of normalizedAliases) {
+            if (playerMap[alias]) return playerMap[alias];
+        }
+        return null;
+    }
+
+    initializeLocalColorOrder(analysisData) {
+        if (!analysisData) return;
+        const teamName = analysisData?.team ? String(analysisData.team).trim() : '';
+        if (!teamName) return;
+
+        const teamAliases = [`${teamName} (Team)`, `${teamName} (Team Average)`];
+        const aliasSet = new Set(teamAliases.map(a => String(a).trim()));
+
+        const orderedPlayers = Array.isArray(analysisData?.player_order_by_average)
+            ? analysisData.player_order_by_average.map(name => String(name).trim()).filter(Boolean)
+            : [];
+
+        const fallbackPlayers = analysisData?.performance_data?.data
+            ? Object.keys(analysisData.performance_data.data)
+                .map(name => String(name).trim())
+                .filter(name => name && !aliasSet.has(name))
+            : [];
+
+        const players = orderedPlayers.length ? orderedPlayers : fallbackPlayers;
+        const orderedPlayersUnique = [...new Set(players)];
+        if (!orderedPlayersUnique.length) return;
+
+        const getColorAt = (index) => {
+            if (window.ColorUtils && typeof window.ColorUtils.getPaletteColor === 'function') {
+                return window.ColorUtils.getPaletteColor(index);
+            }
+            const fallback = ['#6bbf59', '#4f86c6', '#f28e2b', '#b07aa1', '#76b7b2', '#e15759'];
+            return fallback[index % fallback.length];
+        };
+
+        // Build deterministic local mapping:
+        // players first, then ONE team color slot; aliases reuse that same team color.
+        const localMap = {};
+        orderedPlayersUnique.forEach((name, idx) => {
+            localMap[name] = getColorAt(idx);
+        });
+        const teamColor = getColorAt(orderedPlayersUnique.length);
+        localMap[teamName] = teamColor;
+        teamAliases.forEach(alias => {
+            localMap[String(alias).trim()] = teamColor;
+        });
+
+        // Apply map to BOTH stores so getTeamColor/teamColorMap/playerColorMap all resolve identically.
+        const playerMap = (window.ColorUtils && window.ColorUtils.playerColorMap) || window.playerColorMap;
+        const teamMap = (window.ColorUtils && window.ColorUtils.teamColorMap) || window.teamColorMap;
+        if (playerMap && typeof playerMap === 'object') {
+            Object.keys(localMap).forEach(name => {
+                playerMap[name] = localMap[name];
+            });
+        }
+        if (teamMap && typeof teamMap === 'object') {
+            Object.keys(localMap).forEach(name => {
+                teamMap[name] = localMap[name];
+            });
+        }
+
+        this.localTeamColor = teamColor || null;
+    }
+
+    seedPlayerAndTeamColors(playerNames = [], teamAliases = []) {
+        // Intentionally no-op: colors are initialized once via initializeLocalColorOrder()
+        // to prevent cross-view carry-over and per-widget reshuffling.
+        return;
+    }
+
     async loadPerformanceTable(state) {
         const url = new URL('/league/get_team_performance_table', window.location.origin);
         url.searchParams.append('league', state.league);
@@ -192,9 +303,7 @@ class TeamPerformanceBlock {
                 const playerNames = tableData.data
                     .map(row => row.player_name ? String(row.player_name).trim() : null)
                     .filter(name => name && name !== teamAverageKey);
-                if (window.updatePlayerColorMap && playerNames.length > 0) {
-                    window.updatePlayerColorMap(playerNames);
-                }
+                this.seedPlayerAndTeamColors(playerNames, [teamAverageKey, `${state.team} (Team)`]);
             }
 
             // Store column metadata for filtering
@@ -211,7 +320,6 @@ class TeamPerformanceBlock {
 
             // Apply current filter after table is created
             setTimeout(() => {
-                console.log('Applying default filter:', this.currentFilter, 'Column metadata:', this.columnMetadata);
                 this.applyFilter(this.currentFilter);
             }, 200);
         } catch (error) {
@@ -252,6 +360,109 @@ class TeamPerformanceBlock {
         }
     }
 
+    async loadLeagueSeasonTrendCharts(state) {
+        try {
+            const pointsResp = await fetchWithDatabase(
+                `/league/get_team_points?season=${encodeURIComponent(state.season)}&league=${encodeURIComponent(state.league)}`
+            );
+            const positionsResp = await fetchWithDatabase(
+                `/league/get_team_positions?season=${encodeURIComponent(state.season)}&league=${encodeURIComponent(state.league)}`
+            );
+            if (!pointsResp.ok || !positionsResp.ok) {
+                throw new Error(`HTTP ${pointsResp.status}/${positionsResp.status}`);
+            }
+            const pointsData = await pointsResp.json();
+            const positionsData = await positionsResp.json();
+
+            this.renderMutedLeagueTrendChart({
+                containerId: 'team-league-points-trend-chart',
+                seriesData: (pointsData && pointsData.data_accumulated) ? pointsData.data_accumulated : (pointsData?.data || {}),
+                selectedTeam: state.team,
+                invertY: false,
+                yAxisName: typeof t === 'function' ? t('points', 'Points') : 'Points',
+            });
+
+            this.renderMutedLeagueTrendChart({
+                containerId: 'team-league-position-trend-chart',
+                seriesData: positionsData?.data || {},
+                selectedTeam: state.team,
+                invertY: true,
+                yAxisName: typeof t === 'function' ? t('position', 'Position') : 'Position',
+            });
+        } catch (err) {
+            console.error('Error loading league season trend charts:', err);
+        }
+    }
+
+    renderMutedLeagueTrendChart({ containerId, seriesData, selectedTeam, invertY = false, yAxisName = '' }) {
+        const el = document.getElementById(containerId);
+        if (!el || typeof echarts === 'undefined') return;
+        const existing = echarts.getInstanceByDom(el);
+        if (existing) existing.dispose();
+        const chart = echarts.init(el);
+
+        const teamNames = Object.keys(seriesData || {});
+        if (!teamNames.length) {
+            chart.setOption({ title: { text: 'No data', left: 'center', top: 'middle' } });
+            return;
+        }
+
+        const firstSeries = seriesData[teamNames[0]] || [];
+        const labels = Array.from({ length: firstSeries.length }, (_, i) => i + 1);
+        const selectedTeamNorm = String(selectedTeam || '').trim().toLowerCase();
+        if (window.ColorUtils && typeof window.ColorUtils.updateTeamColorMap === 'function') {
+            window.ColorUtils.updateTeamColorMap(teamNames.map(name => String(name).trim()));
+        }
+        const selectedColor =
+            this.localTeamColor ||
+            (window.ColorUtils && typeof window.ColorUtils.getTeamColor === 'function' && window.ColorUtils.getTeamColor(String(selectedTeam || '').trim())) ||
+            (window.ColorUtils && typeof window.ColorUtils.getThemeColor === 'function' && window.ColorUtils.getThemeColor('primary')) ||
+            '#1f77b4';
+        const mutedColor = 'rgba(120,120,120,0.45)';
+
+        const series = teamNames.map((team) => {
+            const isSelected = String(team).trim().toLowerCase() === selectedTeamNorm;
+            const vals = (seriesData[team] || []).map(v => (v === null || v === undefined ? null : Number(v)));
+            return {
+                name: team,
+                type: 'line',
+                data: vals,
+                smooth: false,
+                showSymbol: false,
+                lineStyle: { width: isSelected ? 3 : 1.5, color: isSelected ? selectedColor : mutedColor },
+                itemStyle: { color: isSelected ? selectedColor : mutedColor },
+                z: isSelected ? 3 : 1,
+            };
+        });
+
+        chart.setOption({
+            animation: false,
+            tooltip: { trigger: 'axis' },
+            grid: { top: 20, left: 45, right: 20, bottom: 40 },
+            xAxis: {
+                type: 'category',
+                data: labels,
+                name: typeof t === 'function' ? t('week', 'Week') : 'Week',
+                nameLocation: 'middle',
+                nameGap: 28,
+            },
+            yAxis: {
+                type: 'value',
+                name: yAxisName,
+                inverse: !!invertY,
+                min: invertY ? 1 : undefined,
+            },
+            series,
+        });
+
+        const resizeHandler = () => chart.resize();
+        if (el._echartResizeHandler) {
+            window.removeEventListener('resize', el._echartResizeHandler);
+        }
+        window.addEventListener('resize', resizeHandler);
+        el._echartResizeHandler = resizeHandler;
+    }
+
     async loadWinPercentageTable(state) {
         const url = new URL('/league/get_team_win_percentage_table', window.location.origin);
         url.searchParams.append('league', state.league);
@@ -282,9 +493,7 @@ class TeamPerformanceBlock {
                 const playerNames = tableData.data
                     .map(row => row.player_name ? String(row.player_name).trim() : null)
                     .filter(name => name && name !== teamKey);
-                if (window.updatePlayerColorMap && playerNames.length > 0) {
-                    window.updatePlayerColorMap(playerNames);
-                }
+                this.seedPlayerAndTeamColors(playerNames, [teamKey, `${state.team} (Team Average)`]);
             }
 
             // Pass directly to createTableTabulator (like timetable)
@@ -316,26 +525,35 @@ class TeamPerformanceBlock {
         const winPercentageData = data.win_percentage_data;
         const labels = data.weeks;
         const teamKey = `${data.team} (Team)`;
+        const playerOrder = Array.isArray(data.player_order_by_average) ? data.player_order_by_average : [];
         
         // Ensure player colors are set - normalize player names (trim whitespace)
-        const playerNames = Object.keys(winPercentageData.data)
-            .map(name => String(name).trim())
-            .filter(name => name !== teamKey);
-        if (window.updatePlayerColorMap && playerNames.length > 0) {
-            window.updatePlayerColorMap(playerNames);
-        }
+        const playerNames = playerOrder.length
+            ? playerOrder.map(name => String(name).trim()).filter(name => name && name !== teamKey)
+            : Object.keys(winPercentageData.data)
+                .map(name => String(name).trim())
+                .filter(name => name !== teamKey);
+        this.seedPlayerAndTeamColors(playerNames, [teamKey, `${data.team} (Team Average)`]);
         
         // Convert SeriesData format to scatter chart format
         const chartData = {};
         
         // Process each player/team in the win percentage data
-        Object.keys(winPercentageData.data).forEach(playerName => {
+        const dataKeys = playerOrder.length
+            ? playerNames.concat(Object.keys(winPercentageData.data).filter(name => name !== teamKey && !playerNames.includes(name)))
+            : Object.keys(winPercentageData.data);
+        dataKeys.forEach(playerName => {
             const playerData = winPercentageData.data[playerName];
             // Filter out null/undefined values for chart display
             chartData[playerName] = playerData.map(value => 
                 value === null || value === undefined ? null : value
             );
         });
+        if (winPercentageData.data[teamKey]) {
+            chartData[teamKey] = winPercentageData.data[teamKey].map(value =>
+                value === null || value === undefined ? null : value
+            );
+        }
 
         // Generate week labels
         const weekLabel = typeof t === 'function' ? t('week', 'Week') : 'Week';
@@ -373,28 +591,37 @@ class TeamPerformanceBlock {
         const performanceData = data.performance_data;
         const labels = data.weeks;
         const teamAverageKey = `${data.team} (Team Average)`;
+        const playerOrder = Array.isArray(data.player_order_by_average) ? data.player_order_by_average : [];
         
         // Ensure player colors are set (should already be set from createPerformanceTable, but ensure it)
         // Normalize player names (trim whitespace) for consistent color mapping
-        const playerNames = Object.keys(performanceData.data)
-            .map(name => String(name).trim())
-            .filter(name => name !== teamAverageKey);
-        if (window.updatePlayerColorMap && playerNames.length > 0) {
-            window.updatePlayerColorMap(playerNames);
-        }
+        const playerNames = playerOrder.length
+            ? playerOrder.map(name => String(name).trim()).filter(name => name && name !== teamAverageKey)
+            : Object.keys(performanceData.data)
+                .map(name => String(name).trim())
+                .filter(name => name !== teamAverageKey);
+        this.seedPlayerAndTeamColors(playerNames, [teamAverageKey, `${data.team} (Team)`]);
         
         // Convert SeriesData format to scatter chart format
         // The scatter chart expects data in the same format as line chart
         const chartData = {};
         
         // Process each player/team in the performance data
-        Object.keys(performanceData.data).forEach(playerName => {
+        const dataKeys = playerOrder.length
+            ? playerNames.concat(Object.keys(performanceData.data).filter(name => name !== teamAverageKey && !playerNames.includes(name)))
+            : Object.keys(performanceData.data);
+        dataKeys.forEach(playerName => {
             const playerData = performanceData.data[playerName];
             // Filter out null/undefined values for chart display
             chartData[playerName] = playerData.map(value => 
                 value === null || value === undefined ? null : value
             );
         });
+        if (performanceData.data[teamAverageKey]) {
+            chartData[teamAverageKey] = performanceData.data[teamAverageKey].map(value =>
+                value === null || value === undefined ? null : value
+            );
+        }
 
         // Generate week labels
         const weekLabel = typeof t === 'function' ? t('week', 'Week') : 'Week';
@@ -476,7 +703,6 @@ class TeamPerformanceBlock {
         this._filterListener = (event) => {
             if (event.target.name === 'performanceFilter') {
                 this.currentFilter = event.target.value;
-                console.log('Filter changed to:', this.currentFilter);
                 this.applyFilter(this.currentFilter);
             }
         };
@@ -488,13 +714,6 @@ class TeamPerformanceBlock {
             const defaultButton = document.getElementById('performanceFilterBoth');
             const pointsButton = document.getElementById('performanceFilterPoints');
             const scoreButton = document.getElementById('performanceFilterScore');
-            
-            console.log('🔍 Filter buttons check:', {
-                both: !!defaultButton,
-                points: !!pointsButton,
-                score: !!scoreButton,
-                container: this.container ? this.container.id : 'null'
-            });
             
             if (!defaultButton || !pointsButton || !scoreButton) {
                 console.warn('⚠️ Filter buttons not found in DOM!');
@@ -517,7 +736,6 @@ class TeamPerformanceBlock {
                 }
             });
             
-            console.log('✅ Filter buttons initialized, default filter:', this.currentFilter);
         }, 100);
     }
 

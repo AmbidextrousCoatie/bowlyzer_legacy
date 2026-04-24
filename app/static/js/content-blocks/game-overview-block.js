@@ -52,7 +52,6 @@ class GameOverviewBlock extends BaseContentBlock {
             // Load game overview data
             await this.loadGameOverviewData(state);
             
-            console.log('game-overview: Game overview content rendered');
         } catch (error) {
             console.error('Error rendering game overview content:', error);
             this.container.innerHTML = this.renderError('Failed to load game overview content');
@@ -64,16 +63,6 @@ class GameOverviewBlock extends BaseContentBlock {
         const hasTeam = state.team && state.team !== '' && state.team !== 'null';
         const hasRound = state.round && state.round !== '' && state.round !== 'null' && state.round !== null;
         const shouldShow = state.season && state.league && state.week && hasRound && !hasTeam;
-        console.log(`🎮 GameOverviewBlock.shouldRender:`, {
-            season: state.season,
-            league: state.league,
-            week: state.week,
-            round: state.round,
-            roundType: typeof state.round,
-            hasTeam,
-            hasRound,
-            shouldShow
-        });
         return shouldShow;
     }
 
@@ -140,13 +129,11 @@ class GameOverviewBlock extends BaseContentBlock {
                 return;
             }
             
-            console.log('Game overview data:', tableData);
             
             const container = document.getElementById('tableGameOverview');
             if (container) {
                 // Use Tabulator for the game overview table
                 if (typeof createTableTabulator === 'function') {
-                    console.log('Using createTableTabulator function for game overview table');
                     createTableTabulator('tableGameOverview', tableData, { 
                         disablePositionCircle: false, // Enable position circles for team and opponent positions
                         enableSpecialRowStyling: true,
@@ -154,7 +141,6 @@ class GameOverviewBlock extends BaseContentBlock {
                         enableHeatMap: true // Enable heatmap coloring for pins and points columns
                     });
                 } else if (typeof createTableBootstrap3 === 'function') {
-                    console.log('Fallback: Using createTableBootstrap3 function');
                     createTableBootstrap3('tableGameOverview', tableData, { 
                         disablePositionCircle: true,
                         enableSpecialRowStyling: true 

@@ -56,7 +56,6 @@ class TeamDetailsBlock extends BaseContentBlock {
             // Load team data
             await this.loadTeamData(state);
             
-            console.log('team-details: Team details rendered');
         } catch (error) {
             console.error('Error rendering team details:', error);
             this.container.innerHTML = this.renderError('Failed to load team details');
@@ -192,12 +191,10 @@ class TeamDetailsBlock extends BaseContentBlock {
                 endpoint = '/league/get_team_week_head_to_head_table';
             }
             
-            console.log(`Loading team details with view: ${view}, endpoint: ${endpoint}`);
             
             const response = await fetchWithDatabase(`${endpoint}?season=${season}&league=${league}&week=${week}&team=${team}`);
             const tableData = await response.json();
             
-            console.log('Team week details table data:', tableData); // Debug logging
             
             const container = document.getElementById('teamTableWeekDetails');
             if (container) {
@@ -211,14 +208,12 @@ class TeamDetailsBlock extends BaseContentBlock {
                 
                 // Use Tabulator for structured TableData
                 if (typeof createTableTabulator === 'function') {
-                    console.log(`Using createTableTabulator function for team details (${view} view)`);
                     createTableTabulator('teamTableWeekDetails', tableData, {
                         ...tableOptions,
                         tooltips: true
                     });
                 } else if (typeof createTableBootstrap3 === 'function') {
                     // Fallback to Bootstrap
-                    console.log(`Fallback: Using createTableBootstrap3 function for team details (${view} view)`);
                     createTableBootstrap3('teamTableWeekDetails', tableData, tableOptions);
                 } else {
                     console.error('No table creation function available');

@@ -21,6 +21,15 @@ def search_players():
     players = player_service.search_players(search_term)
     return jsonify(json_safe(players))
 
+@bp.route('/get_available_seasons')
+def get_available_seasons():
+    player_name = request.args.get('player_name')
+    if not player_name:
+        return jsonify([])
+    player_service = get_player_service()
+    seasons = player_service.get_player_seasons(player_name)
+    return jsonify(json_safe(seasons))
+
 @bp.route('/get-stats')
 def get_stats():
     player_id = request.args.get('player_id')
@@ -32,6 +41,7 @@ def get_stats():
 def get_lifetime_stats():
    
     player_name = request.args.get('player_name')
+    season = request.args.get('season', 'all')
     
     if not player_name:
         return jsonify({'error': 'Player name is required'}), 400
@@ -39,6 +49,6 @@ def get_lifetime_stats():
     print(f"Player Route: Get Lifetime Stats - Received request with: player_name={player_name}")
     
     player_service = get_player_service()
-    stats = player_service.get_lifetime_stats(player_name)  # This will now return both lifetime and season stats
+    stats = player_service.get_lifetime_stats(player_name, season=season)  # Supports optional season scope
     
-    return jsonify(stats)
+    return jsonify(json_safe(stats))
