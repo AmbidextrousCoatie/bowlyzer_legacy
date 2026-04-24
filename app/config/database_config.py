@@ -75,7 +75,7 @@ class DatabaseConfig:
                 display_name='Tournament Data (Combined 2024-2026)',
                 description='Combined synthetic tournament dataset (Geek Masters + Mythic Legends) across seasons 2024-2026',
                 is_default=False,
-                is_enabled=False
+                is_enabled=True
             ),
             'db_tournament_myth_2024_2026': DataSourceConfig(
                 filename='tournament_mythic_legends_2024_2026_postprocessed.csv',
