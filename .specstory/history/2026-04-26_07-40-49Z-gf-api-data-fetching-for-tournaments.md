@@ -8218,3 +8218,91 @@ Correct — fixed now.
 - no cumulative carry-over influence anymore
 
 So both scope and denominator are now stage-local as requested.
+
+---
+
+_**User**_
+
+on player stats of a tournament: when a player is selected, the URI should refelct that, also when using deep links to access lets say "Timo Baumann"'s stats of the 25/26 SBM (https://www.bowlyzer.online/tournament/stats?season=25%2F26&tournament=S%C3%BCdbayerische+Meisterschaft&player=Baumann+Timo )
+the content shown is the tournament page, not the personal results page. rework URI resolution
+
+---
+
+_**Agent (default)**_
+
+I’ll rework tournament-page URL state so player selection is part of canonical routing, and make deep-link player resolution robust to name-order variants (e.g. `Baumann Timo` vs `Timo Baumann`). I’m patching `tournament-stats-app.js` now.
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: C:/Users/cfell/repos/bowlyzer_legacy/app/static/js/tournament-stats-app.js</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "C:/Users/cfell/repos/bowlyzer_legacy/app/static/js/tournament-stats-app.js"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "C:/Users/cfell/repos/bowlyzer_legacy/app/static/js/tournament-stats-app.js"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Done — URI resolution for tournament player view is now reworked.
+
+### What’s fixed
+
+- URL now reflects selected player state:
+  - adds/updates `player=<name>` when personal tournament view is active
+  - removes `player` when returning to tournament overview
+
+- Deep links now resolve robustly:
+  - supports exact match
+  - supports name-order inversion (e.g. `Baumann Timo` ↔ `Timo Baumann`)
+  - includes token-set fallback matching for common reordered-name cases
+
+- Player view routing is now canonical:
+  - on load with `player=...`, it attempts resolution against current tournament players
+  - if resolved, it auto-opens personal results section
+  - if not resolvable, it stays on overview
+
+This should make links like your example (including reordered names) open the player-specific tournament page correctly on [Bowl-A-Lyzer](https://www.bowlyzer.online/tournament/stats?season=25%2F26&tournament=S%C3%BCdbayerische+Meisterschaft&player=Baumann+Timo).

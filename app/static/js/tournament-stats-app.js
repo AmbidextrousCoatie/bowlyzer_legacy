@@ -248,6 +248,34 @@
     round: "",
   };
 
+  function normalizePlayerTokens(name) {
+    return String(name || "")
+      .trim()
+      .toLowerCase()
+      .split(/\s+/)
+      .filter(Boolean);
+  }
+
+  function resolvePlayerName(rawName, availablePlayers) {
+    const target = String(rawName || "").trim();
+    if (!target) return "";
+    const players = Array.isArray(availablePlayers) ? availablePlayers : [];
+    const exact = players.find((p) => String(p).toLowerCase() === target.toLowerCase());
+    if (exact) return exact;
+
+    const targetTokens = normalizePlayerTokens(target);
+    if (targetTokens.length === 2) {
+      const reversed = `${targetTokens[1]} ${targetTokens[0]}`;
+      const revMatch = players.find((p) => String(p).toLowerCase() === reversed);
+      if (revMatch) return revMatch;
+    }
+    // Fallback: token-set equality (handles common first/last inversion).
+    const targetKey = targetTokens.slice().sort().join("|");
+    if (!targetKey) return "";
+    const tokenMatch = players.find((p) => normalizePlayerTokens(p).slice().sort().join("|") === targetKey);
+    return tokenMatch || "";
+  }
+
   function syncUrlWithFilters() {
     const params = new URLSearchParams(window.location.search);
     if (currentFilters.season) params.set("season", currentFilters.season);
@@ -256,6 +284,9 @@
     else params.delete("tournament");
     if (currentFilters.round) params.set("round", currentFilters.round);
     else params.delete("round");
+    const selectedPlayer = getSelectedPlayer();
+    if (selectedPlayer) params.set("player", selectedPlayer);
+    else params.delete("player");
     const url = `${window.location.pathname}?${params.toString()}`;
     window.history.replaceState({}, "", url);
   }
@@ -480,6 +511,7 @@
       if (input) input.value = "";
       setPlayerMode(false);
       renderPlayerSection(null);
+      syncUrlWithFilters();
       await refreshSeasonButtons();
       await refreshTournamentButtons();
       await refreshRoundButtons();
@@ -892,16 +924,22 @@
   async function onPlayerChanged() {
     const season = currentFilters.season;
     const tournament = currentFilters.tournament;
-    const player = document.getElementById("tournamentPlayerInput").value.trim();
+    const input = document.getElementById("tournamentPlayerInput");
+    const rawPlayer = (input?.value || "").trim();
+    const player = resolvePlayerName(rawPlayer, tournamentPlayers);
     if (!season || !tournament || !player) {
+      if (input && !player) input.value = "";
       setPlayerMode(false);
       renderPlayerSection(null);
+      syncUrlWithFilters();
       return;
     }
-    const exists = tournamentPlayers.some((p) => p.toLowerCase() === player.toLowerCase());
+    if (input) input.value = player;
+    const exists = tournamentPlayers.some((p) => String(p).toLowerCase() === player.toLowerCase());
     if (!exists) {
       setPlayerMode(false);
       renderPlayerSection(null);
+      syncUrlWithFilters();
       return;
     }
     try {
@@ -913,10 +951,12 @@
         `/tournament/get_player_section?season=${encodeURIComponent(season)}&tournament=${encodeURIComponent(tournament)}&player=${encodeURIComponent(player)}`
       );
       renderPlayerSection(payload);
+      syncUrlWithFilters();
     } catch (err) {
       console.error("Failed to load player section:", err);
       setPlayerMode(false);
       renderPlayerSection(null);
+      syncUrlWithFilters();
     }
   }
 
@@ -1108,7 +1148,7 @@
     if (deepLinkedPlayer) {
       const input = document.getElementById("tournamentPlayerInput");
       if (input) {
-        input.value = deepLinkedPlayer;
+        input.value = resolvePlayerName(deepLinkedPlayer, tournamentPlayers) || deepLinkedPlayer;
         await onPlayerChanged();
       }
     }
