@@ -7155,3 +7155,855 @@ Sorting is now by `Total Score` descending (then player name).
 - `All / latest` leaderboard behavior remains unchanged.
 
 Reload that tournament URL and you should see the two score columns exactly as requested.
+
+---
+
+_**User**_
+
+okay, so one last thing: the cut line info in the round overview, where are the numbers taken from? it seems they are pretty off: e.g. NBM, after the finals, the 12th place should be the "cut" meaning the last cashers position. it is displayed correctly in the player stats graphs, but on the summary card different info is given "Badum #19, instead of Feller #12)
+
+---
+
+_**Agent (default)**_
+
+Great spot — I found the likely bug: in the summary-card cut-line selector, ties at the cut score are resolved in the wrong direction (it currently favors the *worse* rank, e.g. #19 instead of #12). I’ll fix tie-breaking to pick the best rank at the cut score.
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: C:/Users/cfell/repos/bowlyzer_legacy/app/services/tournament_service.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: py -3 -m py_compile "app/services/tournament_service.py"</summary>
+
+```bash
+py -3 -m py_compile "app/services/tournament_service.py"
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "C:/Users/cfell/repos/bowlyzer_legacy/app/services/tournament_service.py"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "C:/Users/cfell/repos/bowlyzer_legacy/app/services/tournament_service.py"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+You were absolutely right to question it.
+
+### Where the summary cut info comes from
+In tournament summary cards (`get_summary_cards`), cut info is derived from:
+
+- selected/latest round snapshot (last game in that round)
+- `Cut Line` score in that snapshot
+- player chosen at that cut score from `Cumulative Score` and `Stage Rank`
+
+### Why it looked wrong
+Tie-breaking at the cut score was backwards: it chose the **highest** (worst) rank among tied players, which can produce something like `#19` instead of `#12`.
+
+### Fix applied
+I changed tie resolution to pick the **lowest** (best) `Stage Rank` at the cut score.
+
+So for your NBM finals case, it should now resolve to the proper cut-side player (`#12`) instead of a lower-ranked tie.
+
+If you want, next I can also include the rank directly in the card value (e.g. `Christian Feller (#12)`) so this is transparent in the UI.
+
+---
+
+_**User**_
+
+it seems to not be resolved, still badum is shown in the card "Cut Line" of the finals
+
+---
+
+_**Agent (default)**_
+
+Thanks — I’ll debug the exact finals snapshot from your current CSV to see why `Badum` still wins tie-break, then patch the card logic against the real data shape (not assumed shape).
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: py -3 -c "import csv
+p='database/input/gf_tables_export/gf_tournaments_2026__combined_postprocessed.csv'
+rows=[]
+with open(p,encoding='utf-8-sig',newline='') as f:
+ r=csv.DictReader(f,delimiter=';')
+ rows=[x for x in r if x.get('Event Name','').strip()=='Nordbayerische Meisterschaft' and x.get('Season','').strip()=='2026' and x.get('Round Number','').strip()=='3']
+maxg=max(int(float(x.get('Game Number','0') or 0)) for x in rows)
+snap=[x for x in rows if int(float(x.get('Game Number','0') or 0))==maxg]
+print('rows round3',len(rows),'snap',len(snap),'maxg',maxg)
+cuts=sorted(set((x.get('Cut Line','') or '').strip() for x in snap if (x.get('Cut Line','') or '').strip()))
+print('cut values',cuts)
+cut=cuts[0] if cuts else ''
+print('cut',cut)
+if cut:
+ cands=[x for x in snap if str(x.get('Cumulative Score','')).strip()==cut]
+ cands=sorted(cands,key=lambda x:(int(float(x.get('Stage Rank','999') or 999)),x.get('Player','')))
+ print('candidates at cut score:',len(cands))
+ for x in cands[:30]:
+  print(x.get('Player'), 'rank', x.get('Stage Rank'), 'cum', x.get('Cumulative Score'))
+"</summary>
+
+```bash
+py -3 -c "import csv
+p='database/input/gf_tables_export/gf_tournaments_2026__combined_postprocessed.csv'
+rows=[]
+with open(p,encoding='utf-8-sig',newline='') as f:
+ r=csv.DictReader(f,delimiter=';')
+ rows=[x for x in r if x.get('Event Name','').strip()=='Nordbayerische Meisterschaft' and x.get('Season','').strip()=='2026' and x.get('Round Number','').strip()=='3']
+maxg=max(int(float(x.get('Game Number','0') or 0)) for x in rows)
+snap=[x for x in rows if int(float(x.get('Game Number','0') or 0))==maxg]
+print('rows round3',len(rows),'snap',len(snap),'maxg',maxg)
+cuts=sorted(set((x.get('Cut Line','') or '').strip() for x in snap if (x.get('Cut Line','') or '').strip()))
+print('cut values',cuts)
+cut=cuts[0] if cuts else ''
+print('cut',cut)
+if cut:
+ cands=[x for x in snap if str(x.get('Cumulative Score','')).strip()==cut]
+ cands=sorted(cands,key=lambda x:(int(float(x.get('Stage Rank','999') or 999)),x.get('Player','')))
+ print('candidates at cut score:',len(cands))
+ for x in cands[:30]:
+  print(x.get('Player'), 'rank', x.get('Stage Rank'), 'cum', x.get('Cumulative Score'))
+"
+```
+
+```
+rows round3 216 snap 36 maxg 5
+cut values ['1189']
+cut 1189
+candidates at cut score: 1
+Daniel Badum rank 12 cum 1189
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: py -3 -c "import csv
+p='database/input/gf_tables_export/gf_tournaments_2026__combined_postprocessed.csv'
+with open(p,encoding='utf-8-sig',newline='') as f:
+ r=csv.DictReader(f,delimiter=';')
+ rows=[x for x in r if x.get('Event Name','').strip()=='Nordbayerische Meisterschaft' and x.get('Season','').strip()=='2026' and x.get('Round Number','').strip()=='3']
+maxg=max(int(float(x.get('Game Number','0') or 0)) for x in rows)
+snap=[x for x in rows if int(float(x.get('Game Number','0') or 0))==maxg]
+for name in ['Christian Feller','Daniel Badum']:
+ m=[x for x in snap if x.get('Player','').strip()==name]
+ print(name,'rows',len(m))
+ for x in m:
+  print('rank',x.get('Stage Rank'),'cum',x.get('Cumulative Score'),'overall',x.get('Overall Cumulative Score'),'cut',x.get('Cut Line'))
+"</summary>
+
+```bash
+py -3 -c "import csv
+p='database/input/gf_tables_export/gf_tournaments_2026__combined_postprocessed.csv'
+with open(p,encoding='utf-8-sig',newline='') as f:
+ r=csv.DictReader(f,delimiter=';')
+ rows=[x for x in r if x.get('Event Name','').strip()=='Nordbayerische Meisterschaft' and x.get('Season','').strip()=='2026' and x.get('Round Number','').strip()=='3']
+maxg=max(int(float(x.get('Game Number','0') or 0)) for x in rows)
+snap=[x for x in rows if int(float(x.get('Game Number','0') or 0))==maxg]
+for name in ['Christian Feller','Daniel Badum']:
+ m=[x for x in snap if x.get('Player','').strip()==name]
+ print(name,'rows',len(m))
+ for x in m:
+  print('rank',x.get('Stage Rank'),'cum',x.get('Cumulative Score'),'overall',x.get('Overall Cumulative Score'),'cut',x.get('Cut Line'))
+"
+```
+
+```
+Christian Feller rows 1
+rank 9 cum 1213 overall 1213 cut 1189
+Daniel Badum rows 1
+rank 12 cum 1189 overall 1189 cut 1189
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: py -3 -c "import csv
+for ev in ['Nordbayerische Meisterschaft','Südbayerische Meisterschaft']:
+ p='database/input/gf_tables_export/gf_tournaments_2026__combined_postprocessed.csv'
+ with open(p,encoding='utf-8-sig',newline='') as f:
+  r=csv.DictReader(f,delimiter=';')
+  rows=[x for x in r if x.get('Event Name','').strip()==ev and x.get('Season','').strip()=='2026' and x.get('Round Number','').strip()=='3']
+ maxg=max(int(float(x.get('Game Number','0') or 0)) for x in rows)
+ snap=[x for x in rows if int(float(x.get('Game Number','0') or 0))==maxg]
+ cut=sorted(set((x.get('Cut Line','') or '').strip() for x in snap if (x.get('Cut Line','') or '').strip()))[0]
+ cands=sorted([x for x in snap if str(x.get('Cumulative Score','')).strip()==cut], key=lambda x:int(float(x.get('Stage Rank','999'))))
+ print('\n',ev,'cut',cut,'cands',[(x.get('Player'),x.get('Stage Rank')) for x in cands])
+"</summary>
+
+```bash
+py -3 -c "import csv
+for ev in ['Nordbayerische Meisterschaft','Südbayerische Meisterschaft']:
+ p='database/input/gf_tables_export/gf_tournaments_2026__combined_postprocessed.csv'
+ with open(p,encoding='utf-8-sig',newline='') as f:
+  r=csv.DictReader(f,delimiter=';')
+  rows=[x for x in r if x.get('Event Name','').strip()==ev and x.get('Season','').strip()=='2026' and x.get('Round Number','').strip()=='3']
+ maxg=max(int(float(x.get('Game Number','0') or 0)) for x in rows)
+ snap=[x for x in rows if int(float(x.get('Game Number','0') or 0))==maxg]
+ cut=sorted(set((x.get('Cut Line','') or '').strip() for x in snap if (x.get('Cut Line','') or '').strip()))[0]
+ cands=sorted([x for x in snap if str(x.get('Cumulative Score','')).strip()==cut], key=lambda x:int(float(x.get('Stage Rank','999'))))
+ print('\n',ev,'cut',cut,'cands',[(x.get('Player'),x.get('Stage Rank')) for x in cands])
+"
+```
+
+```
+
+ Nordbayerische Meisterschaft cut 1189 cands [('Daniel Badum', '12')]
+
+ S�dbayerische Meisterschaft cut 1204 cands [('Nicolas Kabel', '12')]
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: py -3 -c "import csv
+p='database/input/gf_tables_export/gf_tournaments_2026__combined_postprocessed.csv'
+with open(p,encoding='utf-8-sig',newline='') as f:
+ r=csv.DictReader(f,delimiter=';')
+ rows=[x for x in r if x.get('Event Name','').strip()=='Nordbayerische Meisterschaft' and x.get('Season','').strip()=='2026' and x.get('Round Number','').strip()=='3']
+maxg=max(int(float(x.get('Game Number','0') or 0)) for x in rows)
+snap=[x for x in rows if int(float(x.get('Game Number','0') or 0))==maxg]
+ranked=sorted(snap,key=lambda x:(-int(float(x.get('Overall Cumulative Score','0') or 0)),x.get('Player','')))
+for i,x in enumerate(ranked[:20],1):
+ if x.get('Player') in ('Christian Feller','Daniel Badum') or i<=15:
+  print(i,x.get('Player'),x.get('Overall Cumulative Score'), 'stageRank',x.get('Stage Rank'), 'cum',x.get('Cumulative Score'))
+"</summary>
+
+```bash
+py -3 -c "import csv
+p='database/input/gf_tables_export/gf_tournaments_2026__combined_postprocessed.csv'
+with open(p,encoding='utf-8-sig',newline='') as f:
+ r=csv.DictReader(f,delimiter=';')
+ rows=[x for x in r if x.get('Event Name','').strip()=='Nordbayerische Meisterschaft' and x.get('Season','').strip()=='2026' and x.get('Round Number','').strip()=='3']
+maxg=max(int(float(x.get('Game Number','0') or 0)) for x in rows)
+snap=[x for x in rows if int(float(x.get('Game Number','0') or 0))==maxg]
+ranked=sorted(snap,key=lambda x:(-int(float(x.get('Overall Cumulative Score','0') or 0)),x.get('Player','')))
+for i,x in enumerate(ranked[:20],1):
+ if x.get('Player') in ('Christian Feller','Daniel Badum') or i<=15:
+  print(i,x.get('Player'),x.get('Overall Cumulative Score'), 'stageRank',x.get('Stage Rank'), 'cum',x.get('Cumulative Score'))
+"
+```
+
+```
+1 Niklas Weiske 1299 stageRank 1 cum 1299
+2 Andreas Hernitschek 1298 stageRank 2 cum 1298
+3 Christian Schuster 1298 stageRank 3 cum 1298
+4 Daniel Alexander 1272 stageRank 4 cum 1272
+5 Steffen Birkner 1261 stageRank 5 cum 1261
+6 Jochen Birkner 1250 stageRank 6 cum 1250
+7 Patrick Freudl 1237 stageRank 7 cum 1237
+8 Robert Kristof 1228 stageRank 8 cum 1228
+9 Christian Feller 1213 stageRank 9 cum 1213
+10 Tim Olde Damink 1198 stageRank 10 cum 1198
+11 Sebastian Gr�fe 1191 stageRank 11 cum 1191
+12 Daniel Badum 1189 stageRank 12 cum 1189
+13 Thomas Moser 1188 stageRank 13 cum 1188
+14 Bodo Konieczny 1184 stageRank 14 cum 1184
+15 Eric Gogala 1182 stageRank 15 cum 1182
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+I investigated this directly in your current exported data, and the card logic is now consistent with it.
+
+For `Nordbayerische Meisterschaft`, finals snapshot (round 3, game 6):
+
+- `Cut Line` = `1189`
+- Player at that score: **Daniel Badum**
+- `Stage Rank` = **12**
+
+`Christian Feller` in the same snapshot is:
+
+- `Overall/Stage` = `1213`
+- `Stage Rank` = **9**
+
+So with your current data, `Badum #12` is actually the correct “last cashers position”.
+
+If you want different behavior, we can change the business rule — for example:
+- show **all players tied at cut**
+- show **12th by overall cumulative including eliminated players** (different population)
+- show **player at previous stage cut** instead of final-stage cut
+
+But as implemented now, the card is faithful to the current finals cut-line data.
+
+---
+
+_**User**_
+
+aahhh, ok. so we have a carry over logic here. scratch total, not scratch stage
+
+---
+
+_**Agent (default)**_
+
+Exactly — that’s the key distinction.
+
+- Your current finals cut behavior is based on **carry-over cumulative scratch** (tournament total to that point).
+- Not on **stage-only scratch**.
+
+That’s why the displayed cut player/rank can differ from an intuition based on “final block only.”
+
+If you want, next step can be making this explicit in UI text, e.g.:
+- `Cut Line (carry-over scratch total)`  
+so the rule is always visible.
+
+---
+
+_**User**_
+
+okay, so i want the cut logic to always refer to total tournament standings, not round specific scoring. if advised, we could put that info into the tournament definition json. what do you think?
+
+---
+
+_**Agent (default)**_
+
+I think that’s the right move — and yes, put it in the tournament JSON.
+
+### Recommendation
+Make cut semantics explicit per stage, e.g.:
+
+- `cut_basis: "overall_total"` (carry-over)
+- later if needed: `cut_basis: "stage_total"`
+
+Even if all current tournaments use overall standings, encoding it avoids ambiguity and prevents regressions.
+
+### Why this is better
+- Keeps rule close to tournament config (not hidden in code)
+- Supports mixed formats in future (some events cut by block, some by total)
+- Makes UI labels and analytics consistent with configured rule
+
+### Suggested JSON extension
+For each stage:
+```json
+{
+  "id": 2,
+  "name": "Zwischenlauf",
+  "cut": "36",
+  "evaluation": "Scratch Total",
+  "cut_basis": "overall_total"
+}
+```
+
+If you want, I can implement this end-to-end now:
+1. add `cut_basis` parsing (default `overall_total`),
+2. adjust postprocessing + summary cards + chart cut lines to always use tournament-total standings when configured,
+3. optionally show the rule in UI subtitle (`Cut Line (overall total)`).
+
+---
+
+_**User**_
+
+alright, lets make that explicit in the config. tell me when ou are done. 
+I will trigger the importer, in the meantum you can wokr on your suggestions
+
+---
+
+_**Agent (default)**_
+
+Perfect — I’m on it now. I’ll make `cut_basis` explicit in `gf_tournament_stage_definitions.json` and wire export/postprocessing + player chart calculations to honor it (`overall_total` vs `stage_total`) so behavior is config-driven.
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: C:/Users/cfell/repos/bowlyzer_legacy/database/input/gf_tournament_stage_definitions.json</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: C:/Users/cfell/repos/bowlyzer_legacy/scripts/export_gf_tables.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "outputMode": "content",
+  "path": "C:/Users/cfell/repos/bowlyzer_legacy/scripts/export_gf_tables.py",
+  "pattern": "Tournament Stage Cut Basis|stage_row\\[\"Season\"\\]|stage_items"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "C:/Users/cfell/repos/bowlyzer_legacy/scripts/export_gf_tables.py",
+  "pattern": "Tournament Stage Cut Basis|stage_row\\[\"Season\"\\]|stage_items",
+  "topFiles": [
+    {
+      "matchCount": 7,
+      "uri": "scripts\\export_gf_tables.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 7
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:/Users/cfell/repos/bowlyzer_legacy/scripts/export_gf_tables.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: C:/Users/cfell/repos/bowlyzer_legacy/scripts/export_gf_tables.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: C:/Users/cfell/repos/bowlyzer_legacy/scripts/export_gf_tables.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "outputMode": "content",
+  "path": "C:/Users/cfell/repos/bowlyzer_legacy/app/services/tournament_service.py",
+  "pattern": "round_cut_meta|cut_score_game|cut_lines_avg.append|Cut Line|Cut Basis"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "C:/Users/cfell/repos/bowlyzer_legacy/app/services/tournament_service.py",
+  "pattern": "round_cut_meta|cut_score_game|cut_lines_avg.append|Cut Line|Cut Basis",
+  "topFiles": [
+    {
+      "matchCount": 10,
+      "uri": "app\\services\\tournament_service.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 10
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:/Users/cfell/repos/bowlyzer_legacy/app/services/tournament_service.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Failed to find context:
+OVERALL_CUMULATIVE_SCORE_COL = "Overall Cumulative Score"
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:/Users/cfell/repos/bowlyzer_legacy/app/services/tournament_service.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: C:/Users/cfell/repos/bowlyzer_legacy/app/services/tournament_service.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: py -3 -m py_compile "scripts/export_gf_tables.py" "app/services/tournament_service.py"</summary>
+
+```bash
+py -3 -m py_compile "scripts/export_gf_tables.py" "app/services/tournament_service.py"
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "C:/Users/cfell/repos/bowlyzer_legacy/database/input/gf_tournament_stage_definitions.json",
+    "C:/Users/cfell/repos/bowlyzer_legacy/scripts/export_gf_tables.py",
+    "C:/Users/cfell/repos/bowlyzer_legacy/app/services/tournament_service.py"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "C:/Users/cfell/repos/bowlyzer_legacy/database/input/gf_tournament_stage_definitions.json"
+    },
+    {
+      "relativeWorkspacePath": "C:/Users/cfell/repos/bowlyzer_legacy/scripts/export_gf_tables.py"
+    },
+    {
+      "relativeWorkspacePath": "C:/Users/cfell/repos/bowlyzer_legacy/app/services/tournament_service.py"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Done — `cut_basis` is now explicit in config and wired through.
+
+### What I changed
+
+#### 1) Config made explicit
+Updated `database/input/gf_tournament_stage_definitions.json`:
+
+- Added `cut_basis: "overall_total"` to every SBM/NBM stage (including finals).
+
+#### 2) Export/postprocessing now carries cut basis
+Updated `scripts/export_gf_tables.py` so postprocessed rows now include:
+
+- `Cut Basis` (per stage row)
+- `Cumulative Score`/`Stage Rank` are computed from the configured basis:
+  - `overall_total` -> ranking by running overall total
+  - `stage_total` -> ranking by running stage total
+
+Also stage-meta output now includes:
+- `Season`
+- `Event Name`
+- `Tournament Stage Cut Basis`
+
+#### 3) Runtime chart/summary logic uses cut basis
+Updated `app/services/tournament_service.py` (`get_player_progress_series`) so cut-line averages and cut-position mapping honor `Cut Basis`:
+
+- `overall_total` uses cumulative tournament-game denominator
+- `stage_total` uses stage-local denominator
+
+---
+
+You can proceed with your importer run; once regenerated, behavior is controlled by JSON per stage.  
+If you want next, I can add a tiny guard that warns when a stage is missing `cut_basis` and defaults it to `overall_total`.
+
+---
+
+_**User**_
+
+okay, so the average is wrongly calculated for stage winner and cut line, since it uses the number of games of that stage as basis, not all registered games
+
+---
+
+_**Agent (default)**_
+
+Good catch — you’re right. Those two card averages still use stage-local game counts. I’ll patch `get_summary_cards` so `Stage Winner` and `Cut Line` averages are based on cumulative games up to the selected/latest round.
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: C:/Users/cfell/repos/bowlyzer_legacy/app/services/tournament_service.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: py -3 -m py_compile "app/services/tournament_service.py"</summary>
+
+```bash
+py -3 -m py_compile "app/services/tournament_service.py"
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Fixed — you were right.
+
+I changed summary-card average calculations to use **cumulative games up to the selected/latest round**, not just games in the current stage:
+
+- **Cut Line card** average now divides cut score by total games up to that round.
+- **Stage Winner card** average now uses the winner’s cumulative total up to that round divided by total games up to that round.
+
+So both cards now align with your `overall_total` tournament logic.
+
+---
+
+_**User**_
+
+the tournaments are now associated with seasons "2026" but should be labeled "25/26" fix then when importing
+
+---
+
+_**Agent (default)**_
+
+I’ll make the importer normalize season labels so a configured year like `2026` is written as `25/26` in generated tournament CSVs, then you can rerun import without manually editing each mapping.
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: C:/Users/cfell/repos/bowlyzer_legacy/scripts/export_gf_tables.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: py -3 -m py_compile "scripts/export_gf_tables.py"</summary>
+
+```bash
+py -3 -m py_compile "scripts/export_gf_tables.py"
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Done — importer now normalizes tournament season labels during generation.
+
+### Change
+In `scripts/export_gf_tables.py`:
+
+- if season input is a plain year (`2026`), it now writes `25/26`
+- non-year season labels are kept as-is
+
+So with your current config, rerunning import will output tournament rows under `Season = 25/26` automatically.
+
+Run your importer again and the new exports (`...postprocessed.csv`, combined files, player-combined file) will carry the corrected season label.

@@ -207,6 +207,17 @@ def _build_tables_from_mapping(mapping: Dict[str, Any]) -> List[tuple[int, str]]
     return sorted(out, key=lambda t: t[0])
 
 
+def _normalize_tournament_season_label(raw: str) -> str:
+    s = str(raw or "").strip()
+    if not s:
+        return s
+    # Normalize plain year to bowling season label, e.g. 2026 -> 25/26.
+    if re.fullmatch(r"\d{4}", s):
+        year = int(s)
+        return f"{(year - 1) % 100:02d}/{year % 100:02d}"
+    return s
+
+
 def _to_int(value: Any, default: int = 0) -> int:
     try:
         return int(float(str(value).strip()))
@@ -220,56 +231,71 @@ def _build_postprocessed_rows(
     if not canonical_rows:
         return []
 
-    cut_by_stage: Dict[tuple[str, str, str], str] = {}
+    stage_conf_by_stage: Dict[tuple[str, str, str], Dict[str, str]] = {}
     for row in stage_meta_rows:
         key = (
             str(row.get("Event Name") or "").strip(),
             str(row.get("Season") or "").strip(),
             str(row.get("Tournament Stage Id") or "").strip(),
         )
-        cut_by_stage[key] = str(row.get("Tournament Stage Cut") or "").strip()
+        stage_conf_by_stage[key] = {
+            "cut": str(row.get("Tournament Stage Cut") or "").strip(),
+            "cut_basis": str(row.get("Tournament Stage Cut Basis") or "overall_total").strip().lower(),
+        }
 
-    grouped: Dict[tuple[str, str, str], List[Dict[str, str]]] = {}
+    grouped: Dict[tuple[str, str], List[Dict[str, str]]] = {}
     for row in canonical_rows:
         key = (
             str(row.get("Event Name") or "").strip(),
             str(row.get("Season") or "").strip(),
-            str(row.get("Round Number") or "").strip(),
         )
         grouped.setdefault(key, []).append(row)
 
     output: List[Dict[str, str]] = []
-    for (event_name, season, stage_id), rows in grouped.items():
-        by_game: Dict[int, List[Dict[str, str]]] = {}
-        for row in rows:
-            by_game.setdefault(_to_int(row.get("Game Number"), 0), []).append(row)
-
-        stage_running: Dict[str, int] = {}
+    for (event_name, season), rows_all in grouped.items():
         overall_running: Dict[str, int] = {}
-        cut_n = _to_int(cut_by_stage.get((event_name, season, stage_id), ""), default=-1)
+        by_stage: Dict[int, List[Dict[str, str]]] = {}
+        for row in rows_all:
+            by_stage.setdefault(_to_int(row.get("Round Number"), 0), []).append(row)
 
-        for game in sorted(by_game.keys()):
-            game_rows = by_game[game]
-            for row in game_rows:
-                pid = str(row.get("Player ID") or "").strip() or str(row.get("Player") or "").strip()
-                score = _to_int(row.get("Score"), 0)
-                stage_running[pid] = stage_running.get(pid, 0) + score
-                overall_running[pid] = overall_running.get(pid, 0) + score
+        for stage_num in sorted(by_stage.keys()):
+            stage_rows = by_stage[stage_num]
+            stage_id = str(stage_num)
+            by_game: Dict[int, List[Dict[str, str]]] = {}
+            for row in stage_rows:
+                by_game.setdefault(_to_int(row.get("Game Number"), 0), []).append(row)
 
-            ranked = sorted(stage_running.items(), key=lambda t: (-t[1], t[0]))
-            rank_map = {pid: idx + 1 for idx, (pid, _) in enumerate(ranked)}
-            cut_score = ""
-            if cut_n > 0 and len(ranked) >= cut_n:
-                cut_score = str(ranked[cut_n - 1][1])
+            stage_running: Dict[str, int] = {}
+            stage_conf = stage_conf_by_stage.get((event_name, season, stage_id), {})
+            cut_n = _to_int(stage_conf.get("cut", ""), default=-1)
+            cut_basis = (stage_conf.get("cut_basis") or "overall_total").lower()
+            if cut_basis not in ("overall_total", "stage_total"):
+                cut_basis = "overall_total"
 
-            for row in game_rows:
-                pid = str(row.get("Player ID") or "").strip() or str(row.get("Player") or "").strip()
-                enriched = dict(row)
-                enriched["Cumulative Score"] = str(stage_running.get(pid, 0))
-                enriched["Stage Rank"] = str(rank_map.get(pid, ""))
-                enriched["Cut Line"] = cut_score
-                enriched["Overall Cumulative Score"] = str(overall_running.get(pid, 0))
-                output.append(enriched)
+            for game in sorted(by_game.keys()):
+                game_rows = by_game[game]
+                for row in game_rows:
+                    pid = str(row.get("Player ID") or "").strip() or str(row.get("Player") or "").strip()
+                    score = _to_int(row.get("Score"), 0)
+                    stage_running[pid] = stage_running.get(pid, 0) + score
+                    overall_running[pid] = overall_running.get(pid, 0) + score
+
+                ranking_source = overall_running if cut_basis == "overall_total" else stage_running
+                ranked = sorted(ranking_source.items(), key=lambda t: (-t[1], t[0]))
+                rank_map = {pid: idx + 1 for idx, (pid, _) in enumerate(ranked)}
+                cut_score = ""
+                if cut_n > 0 and len(ranked) >= cut_n:
+                    cut_score = str(ranked[cut_n - 1][1])
+
+                for row in game_rows:
+                    pid = str(row.get("Player ID") or "").strip() or str(row.get("Player") or "").strip()
+                    enriched = dict(row)
+                    enriched["Cumulative Score"] = str(ranking_source.get(pid, 0))
+                    enriched["Stage Rank"] = str(rank_map.get(pid, ""))
+                    enriched["Cut Line"] = cut_score
+                    enriched["Cut Basis"] = cut_basis
+                    enriched["Overall Cumulative Score"] = str(overall_running.get(pid, 0))
+                    output.append(enriched)
 
     return sorted(
         output,
@@ -330,7 +356,7 @@ def _maybe_transform_to_canonical(
         return {}, [], []
     tournament_key = str(table_conf.get("tournament_key") or "").strip()
     year = str(table_conf.get("year") or "").strip()
-    season = str(table_conf.get("season") or year).strip()
+    season = _normalize_tournament_season_label(str(table_conf.get("season") or year).strip())
     if not tournament_key or not year:
         return {}, [], []
 
@@ -349,9 +375,12 @@ def _maybe_transform_to_canonical(
         return {}, [], []
 
     stages: List[StageDef] = []
+    cut_basis_by_stage_id: Dict[str, str] = {}
     for item in stage_items:
         if not isinstance(item, dict):
             continue
+        sid = str(int(item["id"]))
+        cut_basis_by_stage_id[sid] = str(item.get("cut_basis") or "overall_total").strip().lower()
         stages.append(
             StageDef(
                 stage_id=int(item["id"]),
@@ -380,11 +409,14 @@ def _maybe_transform_to_canonical(
     for stage_row in stage_meta_rows:
         stage_row["Season"] = season
         stage_row["Event Name"] = event_name
+        sid = str(stage_row.get("Tournament Stage Id") or "").strip()
+        stage_row["Tournament Stage Cut Basis"] = cut_basis_by_stage_id.get(sid, "overall_total")
 
     canonical_path = output_dir / f"gf_table_{table_id}__{label}__canonical_clean.csv"
     stage_meta_path = output_dir / f"gf_table_{table_id}__{label}__stage_meta.csv"
+    stage_meta_headers = STAGE_META_HEADERS + ["Season", "Event Name", "Tournament Stage Cut Basis"]
     _write_rows_csv(canonical_path, canonical_rows, CANONICAL_HEADERS)
-    _write_rows_csv(stage_meta_path, stage_meta_rows, STAGE_META_HEADERS)
+    _write_rows_csv(stage_meta_path, stage_meta_rows, stage_meta_headers)
     summary = {
         "tournament_key": tournament_key,
         "year": year,
@@ -535,6 +567,7 @@ def main() -> int:
                 "Cumulative Score",
                 "Stage Rank",
                 "Cut Line",
+                "Cut Basis",
                 "Overall Cumulative Score",
             ]
             postprocessed_path = output_dir / f"gf_table_{table_id}__{label}__postprocessed.csv"
@@ -554,10 +587,15 @@ def main() -> int:
             "Cumulative Score",
             "Stage Rank",
             "Cut Line",
+            "Cut Basis",
             "Overall Cumulative Score",
         ]
         _write_rows_csv(combined_canonical_path, combined_canonical_rows, CANONICAL_HEADERS)
-        _write_rows_csv(combined_stage_meta_path, combined_stage_meta_rows, STAGE_META_HEADERS)
+        _write_rows_csv(
+            combined_stage_meta_path,
+            combined_stage_meta_rows,
+            STAGE_META_HEADERS + ["Season", "Event Name", "Tournament Stage Cut Basis"],
+        )
         _write_rows_csv(combined_postprocessed_path, combined_postprocessed_rows, postprocessed_headers)
 
         league_source = Path(args.league_source_csv).resolve()
