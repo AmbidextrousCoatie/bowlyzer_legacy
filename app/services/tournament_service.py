@@ -426,30 +426,69 @@ class TournamentService:
 
         # Single-stage mode: keep stage-specific leaderboard behavior.
         if round_number is not None:
-            leaderboard = self._build_leaderboard_df(df, round_number)
-            games_df = df[pd.to_numeric(df[Columns.round_number], errors="coerce").eq(float(round_number))].copy()
-            games_per_player = (
-                games_df.groupby([Columns.player_name], dropna=False).size().to_dict()
-                if not games_df.empty and "player" in leaderboard.columns and Columns.player_name in games_df.columns
-                else {}
+            work = df.copy()
+            work[Columns.score] = pd.to_numeric(work[Columns.score], errors="coerce").fillna(0)
+            work[Columns.round_number] = pd.to_numeric(work[Columns.round_number], errors="coerce")
+            scoped = work[work[Columns.round_number].eq(float(round_number))].copy()
+            if scoped.empty:
+                return TableData(columns=[], data=[], title=f"{tournament} Leaderboard")
+
+            id_col = Columns.player_id if Columns.player_id in work.columns else "__player_id_missing__"
+            if id_col == "__player_id_missing__":
+                work[id_col] = work[Columns.player_name].astype(str)
+                scoped[id_col] = scoped[Columns.player_name].astype(str)
+
+            group_keys = [Columns.player_name, id_col]
+            if include_club:
+                group_keys.append(Columns.club)
+
+            # Selected round score.
+            round_scores = (
+                scoped.groupby(group_keys, dropna=False)[Columns.score]
+                .sum()
+                .reset_index(name="round_score")
             )
-            if not leaderboard.empty:
-                leaderboard["avg_score"] = leaderboard.apply(
-                    lambda r: round(float(r["total_score"]) / max(int(games_per_player.get(r["player"], 1)), 1), 1),
-                    axis=1,
-                )
+
+            # Tournament total up to selected round.
+            upto = work[work[Columns.round_number].le(float(round_number))].copy()
+            total_scores = (
+                upto.groupby(group_keys, dropna=False)[Columns.score]
+                .sum()
+                .reset_index(name="total_score")
+            )
+
+            leaderboard = round_scores.merge(total_scores, on=group_keys, how="left")
+            leaderboard["rank"] = leaderboard["total_score"].rank(method="min", ascending=False).astype(int)
+            games_per_player = scoped.groupby([Columns.player_name], dropna=False).size().to_dict()
+            leaderboard["avg_score"] = leaderboard.apply(
+                lambda r: round(float(r["round_score"]) / max(int(games_per_player.get(r[Columns.player_name], 1)), 1), 1),
+                axis=1,
+            )
+            leaderboard = leaderboard.sort_values(
+                by=["total_score", Columns.player_name], ascending=[False, True]
+            ).reset_index(drop=True)
+
             columns = [
                 Column(title="#", field="rank", width="60px", align="center", decimal_places=0),
                 Column(title="Player", field="player", width="220px", align="left"),
-                Column(title="Total", field="total_score", width="90px", align="center", decimal_places=0),
+                Column(title="Total Score", field="total_score", width="110px", align="center", decimal_places=0),
+                Column(title="Round Score", field="round_score", width="110px", align="center", decimal_places=0),
                 Column(title="Average", field="avg_score", width="90px", align="center", decimal_places=1),
             ]
+            data_cols = ["rank", Columns.player_name]
             if include_club:
                 columns.insert(2, Column(title="Club", field="club", width="220px", align="left"))
-                data_cols = ["rank", "player", "club", "total_score", "avg_score"]
-            else:
-                data_cols = ["rank", "player", "total_score", "avg_score"]
-            data = leaderboard[data_cols].values.tolist() if not leaderboard.empty else []
+                data_cols.append(Columns.club)
+            data_cols.extend(["total_score", "round_score", "avg_score"])
+            data = []
+            for _, row in leaderboard.iterrows():
+                entry = [int(row["rank"]), str(row.get(Columns.player_name, ""))]
+                if include_club:
+                    entry.append(str(row.get(Columns.club, "")))
+                entry.append(int(row.get("total_score", 0)))
+                entry.append(int(row.get("round_score", 0)))
+                entry.append(float(row.get("avg_score", 0.0)))
+                data.append(entry)
             return TableData(columns=columns, data=data, title=f"{tournament} Leaderboard")
 
         # Multi-stage mode: total = sum across all rounds, plus one column per round.

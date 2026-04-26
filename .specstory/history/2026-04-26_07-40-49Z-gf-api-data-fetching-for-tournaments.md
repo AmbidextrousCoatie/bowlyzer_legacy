@@ -7054,3 +7054,104 @@ Done — that link now deep-links to the player-specific tournament view.
   - automatically opens that player’s individual tournament section
 
 So clicking `Südbayerische Meisterschaft` (or any tournament row) from player stats should now jump directly to that player’s personal tournament page context, not just the generic tournament overview.
+
+---
+
+_**User**_
+
+great. so on the "Leaderboard" of a tournament, e.g. http://127.0.0.1:5000/tournament/stats?season=2026&tournament=S%C3%BCdbayerische+Meisterschaft&player=Torsten+Fliegner&database=db_real_pipeline_gf&round=1 
+i want to have  col for total score and one col for the selected round's score. sorted by total score
+
+---
+
+_**Agent (default)**_
+
+Got it — I’ll update tournament leaderboard logic so in a selected-round view it shows both `Total Score` (tournament cumulative) and `Round Score` (selected round only), sorted by `Total Score`. I’m patching backend table generation now.
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: C:/Users/cfell/repos/bowlyzer_legacy/app/services/tournament_service.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: py -3 -m py_compile "app/services/tournament_service.py"</summary>
+
+```bash
+py -3 -m py_compile "app/services/tournament_service.py"
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "C:/Users/cfell/repos/bowlyzer_legacy/app/services/tournament_service.py"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "C:/Users/cfell/repos/bowlyzer_legacy/app/services/tournament_service.py"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Implemented for selected-round leaderboard view.
+
+### New behavior (`round` selected)
+Leaderboard now shows:
+
+- `Total Score` = cumulative tournament score up to selected round
+- `Round Score` = score in selected round only
+- `Average` = average for selected round
+
+Sorting is now by `Total Score` descending (then player name).
+
+### Notes
+- Club column still appears only when club data exists.
+- `All / latest` leaderboard behavior remains unchanged.
+
+Reload that tournament URL and you should see the two score columns exactly as requested.
