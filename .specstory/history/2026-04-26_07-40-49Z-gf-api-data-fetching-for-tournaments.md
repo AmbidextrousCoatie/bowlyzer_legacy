@@ -8007,3 +8007,214 @@ In `scripts/export_gf_tables.py`:
 So with your current config, rerunning import will output tournament rows under `Season = 25/26` automatically.
 
 Run your importer again and the new exports (`...postprocessed.csv`, combined files, player-combined file) will carry the corrected season label.
+
+---
+
+_**User**_
+
+okay, so back to tournament page: the leaderboard should also get a col "Total Average" after "Total Score"
+
+---
+
+_**Agent (default)**_
+
+I’ll add `Total Average` directly after `Total Score` in tournament leaderboard, computed cumulatively (same scope as `Total Score`). I’ll keep the existing round average column in selected-round view so both perspectives remain visible.
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: C:/Users/cfell/repos/bowlyzer_legacy/app/services/tournament_service.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: py -3 -m py_compile "app/services/tournament_service.py"</summary>
+
+```bash
+py -3 -m py_compile "app/services/tournament_service.py"
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "C:/Users/cfell/repos/bowlyzer_legacy/app/services/tournament_service.py"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "C:/Users/cfell/repos/bowlyzer_legacy/app/services/tournament_service.py"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Added.
+
+Tournament leaderboard now includes **`Total Average`** immediately after **`Total Score`**.
+
+### Details
+- In selected-round view:
+  - `Total Score`
+  - `Total Average` (cumulative up to selected round)
+  - `Round Score`
+  - `Round Average`
+- In all-round view:
+  - `Total`
+  - `Total Average`
+  - existing `Average` remains (same value)
+
+Reload the tournament page and you’ll see the new column placement.
+
+---
+
+_**User**_
+
+hmhmhmmm .... so back to the overview card: the stage winner indeed just the one who did best during taht stage. no relation to other games. ergo, score of that stage / number of games in taht stage. right now it is the same logic as the tourmnemtn leader, fix that
+
+---
+
+_**Agent (default)**_
+
+You’re absolutely right — `Stage Winner` should be stage-only again. I’ll switch that card back to stage-local average (`stage total / games in stage`) while keeping `Tournament Leader` as cumulative logic.
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: C:/Users/cfell/repos/bowlyzer_legacy/app/services/tournament_service.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: py -3 -m py_compile "app/services/tournament_service.py"</summary>
+
+```bash
+py -3 -m py_compile "app/services/tournament_service.py"
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Fixed.
+
+`Stage Winner` in overview cards is now **stage-local again**:
+
+- winner = best in that stage
+- average = `stage pins / stage games`
+
+`Tournament Leader` remains cumulative tournament logic.
+
+So the two cards now represent distinct concepts correctly.
+
+---
+
+_**User**_
+
+you only adapted the number of games, not the scope. only sum up the games of that stage, not all performed games until then
+
+---
+
+_**Agent (default)**_
+
+You’re right — good correction. I’ll change `Stage Winner` to be determined from **stage-only totals** (winner + pins + average), independent of cumulative leaderboard scope.
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: C:/Users/cfell/repos/bowlyzer_legacy/app/services/tournament_service.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: py -3 -m py_compile "app/services/tournament_service.py"</summary>
+
+```bash
+py -3 -m py_compile "app/services/tournament_service.py"
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Correct — fixed now.
+
+`Stage Winner` card is now fully stage-scoped:
+
+- winner selected by **sum of scores in selected stage only**
+- average computed as **that stage total / games in that stage**
+- no cumulative carry-over influence anymore
+
+So both scope and denominator are now stage-local as requested.

@@ -294,9 +294,9 @@ class TournamentService:
                     if leader_games > 0:
                         tournament_leader_avg = round(float(tournament_leader["total_score"]) / leader_games, 1)
 
-        # Stage winner remains stage-specific for the selected/latest stage.
-        stage_leaderboard = self._build_leaderboard_df(df, stage_round_number) if stage_round_number is not None else pd.DataFrame()
-        stage_winner = stage_leaderboard.iloc[0] if not stage_leaderboard.empty else None
+        # Stage winner remains stage-specific for the selected/latest stage:
+        # winner is determined from stage-only scores (not cumulative totals).
+        stage_winner = None
         stage_winner_avg = None
         if stage_winner is not None and stage_round_number is not None:
             stage_df = df[pd.to_numeric(df[Columns.round_number], errors="coerce").eq(float(stage_round_number))].copy()
@@ -306,6 +306,26 @@ class TournamentService:
             stage_games = int(stage_df[stage_df[Columns.player_name].astype(str).eq(stage_winner_name)][Columns.score].count())
             if stage_games > 0:
                 stage_winner_avg = round(stage_total / stage_games, 1)
+        elif stage_round_number is not None:
+            stage_df = df[pd.to_numeric(df[Columns.round_number], errors="coerce").eq(float(stage_round_number))].copy()
+            stage_df[Columns.score] = pd.to_numeric(stage_df[Columns.score], errors="coerce").fillna(0)
+            if not stage_df.empty:
+                grouped = (
+                    stage_df.groupby(Columns.player_name, dropna=False)[Columns.score]
+                    .sum()
+                    .reset_index(name="total_score")
+                    .sort_values(by=["total_score", Columns.player_name], ascending=[False, True])
+                    .reset_index(drop=True)
+                )
+                if not grouped.empty:
+                    winner_name = str(grouped.iloc[0][Columns.player_name])
+                    winner_total = float(grouped.iloc[0]["total_score"])
+                    stage_games = int(
+                        stage_df[stage_df[Columns.player_name].astype(str).eq(winner_name)][Columns.score].count()
+                    )
+                    stage_winner = {"player": winner_name, "total_score": winner_total}
+                    if stage_games > 0:
+                        stage_winner_avg = round(winner_total / stage_games, 1)
 
         cards = [
             {"title": "Tournament", "value": tournament, "subtitle": season, "type": "stat"},
@@ -378,16 +398,14 @@ class TournamentService:
             )
             stage_subtitle = f"{stage_name}: {int(stage_winner['total_score'])} pins"
             if stage_winner_avg is not None:
-                # Show cumulative average up to selected/latest round.
-                cumulative_games = _games_upto_round(int(stage_round_number))
-                if cumulative_games > 0:
-                    stage_winner_name = str(stage_winner["player"])
-                    cumulative_df = df[pd.to_numeric(df[Columns.round_number], errors="coerce").le(float(stage_round_number))].copy()
-                    cumulative_df[Columns.score] = pd.to_numeric(cumulative_df[Columns.score], errors="coerce").fillna(0)
-                    cumulative_total = float(
-                        cumulative_df[cumulative_df[Columns.player_name].astype(str).eq(stage_winner_name)][Columns.score].sum()
-                    )
-                    stage_winner_avg = round(cumulative_total / cumulative_games, 1)
+                # Stage Winner is stage-local: stage total divided by games in this stage.
+                stage_df = df[pd.to_numeric(df[Columns.round_number], errors="coerce").eq(float(stage_round_number))].copy()
+                stage_df[Columns.score] = pd.to_numeric(stage_df[Columns.score], errors="coerce").fillna(0)
+                stage_winner_name = str(stage_winner["player"])
+                stage_total = float(stage_winner["total_score"])
+                stage_games = int(stage_df[stage_df[Columns.player_name].astype(str).eq(stage_winner_name)][Columns.score].count())
+                if stage_games > 0:
+                    stage_winner_avg = round(stage_total / stage_games, 1)
                 stage_subtitle = f"{stage_subtitle} (\u2300{stage_winner_avg:.1f})"
             cards.append(
                 {
