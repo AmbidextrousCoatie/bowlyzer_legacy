@@ -48,6 +48,20 @@
     const headerText = roundText ? `${titleText} - ${roundText}` : titleText;
     const innerCards = cards.filter((c) => c !== tournamentCard && c !== currentRoundCard);
 
+    const isPlayerCard = (card) => {
+      const title = String(card?.title || "").toLowerCase();
+      const value = String(card?.value ?? "").trim();
+      if (!value) return false;
+      if (["n/a", "-", "unknown"].includes(value.toLowerCase())) return false;
+      return title.includes("leader") || title.includes("winner") || title.includes("cut line");
+    };
+
+    const renderCardValue = (card) => {
+      const value = card?.value ?? "";
+      if (!isPlayerCard(card)) return String(value);
+      return `<a href="#" class="tournament-player-link" data-player-name="${String(value).replace(/"/g, "&quot;")}">${String(value)}</a>`;
+    };
+
     container.innerHTML = `
       <div class="card mb-4">
         <div class="card-header">
@@ -62,7 +76,7 @@
                   <div class="card h-100" id="tournamentOverviewStatCard_${idx}">
                     <div class="card-header"><h6 class="mb-0">${card.title || ""}</h6></div>
                     <div class="card-body">
-                      <div class="h5 mb-1">${card.value ?? ""}</div>
+                      <div class="h5 mb-1">${renderCardValue(card)}</div>
                       <small class="text-muted">${card.subtitle || ""}</small>
                     </div>
                   </div>
@@ -92,6 +106,18 @@
         header.style.color = "#132";
       }
     });
+
+    container.querySelectorAll(".tournament-player-link").forEach((el) => {
+      el.addEventListener("click", async (evt) => {
+        evt.preventDefault();
+        const playerName = String(el.getAttribute("data-player-name") || "").trim();
+        if (!playerName) return;
+        const input = document.getElementById("tournamentPlayerInput");
+        if (!input) return;
+        input.value = playerName;
+        await onPlayerChanged();
+      });
+    });
   }
 
   function renderTable(containerId, tableData) {
@@ -106,6 +132,27 @@
     const container = document.getElementById(containerId);
     if (!container) return;
     container.innerHTML = '<div class="alert alert-warning">Tabulator renderer unavailable.</div>';
+  }
+
+  function updateRoundResultsHeader(section) {
+    const headerEl = document.querySelector("#tournamentRoundResultsCard .card-header h5");
+    if (!headerEl) return;
+    const roundValue = String(currentFilters.round || "").trim();
+    if (!roundValue) {
+      headerEl.textContent = "Round Results";
+      return;
+    }
+    const rounds = Array.isArray(section?.rounds) ? section.rounds : [];
+    const selected = rounds.find((r) => String(r?.round_number ?? "") === roundValue);
+    const stageName = selected?.round_name ? String(selected.round_name).trim() : `Round ${roundValue}`;
+    headerEl.textContent = `Round Results - ${stageName}`;
+  }
+
+  function setRoundResultsVisibility() {
+    const card = document.getElementById("tournamentRoundResultsCard");
+    if (!card) return;
+    const roundValue = String(currentFilters.round || "").trim();
+    card.style.display = roundValue ? "" : "none";
   }
 
   function enablePlayerCellNavigation(containerId) {
@@ -448,6 +495,8 @@
     }
     const totalGames = series.labels.length;
     const gameLabels = Array.from({ length: totalGames }, (_, i) => i + 1);
+    const colorCutUnified =
+      (typeof getSemanticColor === "function" && getSemanticColor("negative")) || "#D62728";
     const roundEnds = (series.round_end_lines || [])
       .map((v) => Number(v))
       .filter((v) => Number.isFinite(v) && v >= 1 && v <= totalGames);
@@ -474,6 +523,42 @@
       const maxX = totalGames + 0.5;
       const firstBoundary = roundBoundaries[0] ?? maxX;
       const secondBoundary = roundBoundaries[1] ?? maxX;
+
+      const collectNumericValues = (arr) =>
+        (Array.isArray(arr) ? arr : [])
+          .map((v) => Number(v))
+          .filter((v) => Number.isFinite(v));
+
+      // Auto-scale average chart so low cut lines are not clamped at 150.
+      if (yName === "Average") {
+        const nums = [
+          ...collectNumericValues(dataSeries),
+          ...collectNumericValues(cutLines),
+        ];
+        if (Array.isArray(series?.cut_line_series)) {
+          series.cut_line_series.forEach((line) => {
+            nums.push(...collectNumericValues(line?.data));
+          });
+        } else if (series?.cut_lines_avg_dynamic && typeof series.cut_lines_avg_dynamic === "object") {
+          Object.values(series.cut_lines_avg_dynamic).forEach((vals) => {
+            nums.push(...collectNumericValues(vals));
+          });
+        }
+        if (Array.isArray(extraLines)) {
+          extraLines.forEach((line) => nums.push(...collectNumericValues(line?.data)));
+        }
+        if (nums.length > 0) {
+          const minVal = Math.min(...nums);
+          const maxVal = Math.max(...nums);
+          const padding = Math.max(3, (maxVal - minVal) * 0.05);
+          yMin = Math.floor((minVal - padding) / 5) * 5;
+          yMax = Math.ceil((maxVal + padding) / 5) * 5;
+          // Keep tournament average plots readable and comparable.
+          yMin = Math.max(120, yMin);
+          yMax = Math.min(260, yMax);
+          if (yMax <= yMin) yMax = yMin + 10;
+        }
+      }
 
       const buildPointSeries = (arr, startX = 0, endX = maxX, extendStart = false, extendEnd = false) => {
         const points = [];
@@ -502,16 +587,70 @@
 
       const clamped = buildPointSeries(dataSeries || [], 0, maxX, false, false);
 
-      const dynamicQualifyingRaw =
-        series.cut_lines_avg_dynamic && Array.isArray(series.cut_lines_avg_dynamic.qualifying)
-          ? series.cut_lines_avg_dynamic.qualifying
-          : [];
-      const dynamicRound2Raw =
-        series.cut_lines_avg_dynamic && Array.isArray(series.cut_lines_avg_dynamic.round2)
-          ? series.cut_lines_avg_dynamic.round2
-          : [];
-      const dynamicQualifying = buildPointSeries(dynamicQualifyingRaw, 0, firstBoundary, false, true);
-      const dynamicRound2 = buildPointSeries(dynamicRound2Raw, firstBoundary, secondBoundary, true, true);
+      const dynamicCutSeries = [];
+      const positionCutSeries = [];
+      if (cutLineMode === "dynamic" && yName === "Average" && Array.isArray(series.cut_line_series)) {
+        const lines = [...series.cut_line_series].sort((a, b) => Number(a?.round_number || 0) - Number(b?.round_number || 0));
+        const segments = [];
+        lines.forEach((line) => {
+          const raw = line?.data;
+          if (!Array.isArray(raw)) return;
+          const pts = buildPointSeries(raw, 0, maxX, false, false);
+          if (!pts.length) return;
+          segments.push(pts);
+        });
+        if (segments.length) {
+          const stitched = [...segments[0]];
+          for (let i = 1; i < segments.length; i += 1) {
+            const prev = segments[i - 1];
+            const next = segments[i];
+            const prevLast = prev[prev.length - 1];
+            const nextFirst = next[0];
+            if (prevLast && nextFirst) {
+              // Add a vertical jump at stage transition (e.g. x=6.5).
+              const boundaryX = (Number(prevLast[0]) + Number(nextFirst[0])) / 2;
+              stitched.push([boundaryX, Number(prevLast[1])]);
+              stitched.push([boundaryX, Number(nextFirst[1])]);
+            }
+            stitched.push(...next);
+          }
+          dynamicCutSeries.push({
+            name: "Cut Line",
+            type: "line",
+            data: stitched,
+            smooth: false,
+            connectNulls: false,
+            showSymbol: false,
+            lineStyle: { width: 2, type: "dashed", color: colorCutUnified },
+            itemStyle: { color: colorCutUnified },
+            z: 1,
+          });
+        }
+      } else if (cutLineMode === "dynamic" && yName === "Average" && series.cut_lines_avg_dynamic && typeof series.cut_lines_avg_dynamic === "object") {
+        // Backward-compatible fallback in case browser still receives legacy payload shape.
+        const keys = Object.keys(series.cut_lines_avg_dynamic).sort((a, b) => {
+          const na = Number(String(a).replace("round_", ""));
+          const nb = Number(String(b).replace("round_", ""));
+          return na - nb;
+        });
+        keys.forEach((key) => {
+          const raw = series.cut_lines_avg_dynamic[key];
+          if (!Array.isArray(raw)) return;
+          const pts = buildPointSeries(raw, 0, maxX, false, false);
+          if (!pts.length) return;
+          dynamicCutSeries.push({
+            name: "Cut Line",
+            type: "line",
+            data: pts,
+            smooth: false,
+            connectNulls: false,
+            showSymbol: false,
+            lineStyle: { width: 2, type: "dashed", color: colorCutUnified },
+            itemStyle: { color: colorCutUnified },
+            z: 1,
+          });
+        });
+      }
 
       const markLines = [];
       // Vertical round separators
@@ -538,33 +677,40 @@
           ]);
         }
       }
-
-      const extraCutSeries = [];
-      if (cutLineMode === "dynamic" && yName === "Average") {
-        extraCutSeries.push(
-          {
-            name: "Cut Qualifying",
-            type: "line",
-            data: dynamicQualifying,
-            smooth: false,
-            connectNulls: false,
-            showSymbol: false,
-            lineStyle: { width: 2, type: "dashed", color: colorCutQualifying },
-            itemStyle: { color: colorCutQualifying },
-            z: 1,
-          },
-          {
-            name: "Cut Round 2",
-            type: "line",
-            data: dynamicRound2,
-            smooth: false,
-            connectNulls: false,
-            showSymbol: false,
-            lineStyle: { width: 2, type: "dashed", color: colorCutRound2 },
-            itemStyle: { color: colorCutRound2 },
-            z: 1,
+      // Position chart should always show cut-position references as horizontal lines.
+      if (yName === "Rank") {
+        const cutValues = (cutLines || [])
+          .map((v) => Number(v))
+          .filter((v) => Number.isFinite(v));
+        cutValues.forEach((v, idx) => {
+          const y = Math.max(yMin, Math.min(yMax, v));
+          const startX = idx === 0 ? 0 : (roundBoundaries[idx - 1] ?? 0);
+          const endX = roundBoundaries[idx] ?? maxX;
+          markLines.push([
+            { coord: [startX, y], lineStyle: { color: colorCutUnified, type: "dashed", width: 2 } },
+            { coord: [endX, y] },
+          ]);
+          // Sample the horizontal cut line at integer game ticks so tooltip
+          // follows player progression game-by-game.
+          const sampled = [];
+          for (let game = 1; game <= totalGames; game += 1) {
+            if (game > startX && game <= endX) {
+              sampled.push([game, y]);
+            }
           }
-        );
+          if (!sampled.length) return;
+          positionCutSeries.push({
+            name: "Cut Line",
+            type: "line",
+            data: sampled,
+            smooth: false,
+            connectNulls: false,
+            showSymbol: false,
+            lineStyle: { width: 2, type: "dashed", color: colorCutUnified },
+            itemStyle: { color: colorCutUnified },
+            z: 1,
+          });
+        });
       }
 
       const extraOverlaySeries = (extraLines || []).map((line) => {
@@ -589,7 +735,38 @@
       chart.setOption(
         {
           animation: false,
-          tooltip: { trigger: "axis" },
+          tooltip: {
+            trigger: "axis",
+            formatter: function (params) {
+              const rows = Array.isArray(params) ? [...params] : [params];
+              const isRankChart = yName === "Rank";
+              rows.sort((a, b) => {
+                const av = Number(a?.value?.[1]);
+                const bv = Number(b?.value?.[1]);
+                if (isRankChart) {
+                  const aNum = Number.isFinite(av) ? av : Number.POSITIVE_INFINITY;
+                  const bNum = Number.isFinite(bv) ? bv : Number.POSITIVE_INFINITY;
+                  return aNum - bNum; // rank: lower is better
+                }
+                const aNum = Number.isFinite(av) ? av : Number.NEGATIVE_INFINITY;
+                const bNum = Number.isFinite(bv) ? bv : Number.NEGATIVE_INFINITY;
+                return bNum - aNum; // average: higher is better
+              });
+              if (!rows.length) return "";
+              const axisRaw = Number(rows[0]?.axisValue);
+              const axisLabel = Number.isFinite(axisRaw) ? `Spiel #${Math.round(axisRaw)}` : "";
+              const lines = rows.map((r) => {
+                const marker = r.marker || "";
+                const name = r.seriesName || "";
+                const y = Number(r?.value?.[1]);
+                const val = Number.isFinite(y)
+                  ? (isRankChart ? String(Math.round(y)) : y.toFixed(1))
+                  : "-";
+                return `${marker}${name}: <b>${val}</b>`;
+              });
+              return [axisLabel, ...lines].join("<br/>");
+            },
+          },
           legend: { show: false },
           grid: { top: "10%", right: "5%", bottom: "14%", left: "10%", containLabel: true },
           xAxis: {
@@ -635,7 +812,8 @@
               },
               z: 2,
             },
-            ...extraCutSeries,
+            ...dynamicCutSeries,
+            ...positionCutSeries,
             ...extraOverlaySeries,
           ],
         },
@@ -699,12 +877,14 @@
           <span>${label}</span>
         </div>
       `;
+      const dynamicCutLegend = cutLineMode === "dynamic"
+        ? [item("Cut Line (pace)", colorCutUnified, true)]
+        : [item("Cut Line", colorCutUnified, true)];
       legendContainer.innerHTML = [
         item(playerName, colorPlayer, false),
         item("Tournament Leader", colorLeader, true),
         item("Round Boundary", colorRoundBoundary, false),
-        item(cutLineMode === "dynamic" ? "Cut Qualifying (pace)" : "Cut Qualifying", colorCutQualifying, true),
-        item(cutLineMode === "dynamic" ? "Cut Round 2 (pace)" : "Cut Round 2", colorCutRound2, true),
+        ...dynamicCutLegend,
       ].join("");
     }
   }
@@ -795,7 +975,11 @@
     renderCards(section.cards || []);
     renderBestEfforts(section.best_efforts);
     renderTable("tournamentLeaderboardTable", section.leaderboard);
-    renderTable("tournamentRoundResultsTable", section.round_results);
+    setRoundResultsVisibility();
+    if (String(currentFilters.round || "").trim()) {
+      updateRoundResultsHeader(section);
+      renderTable("tournamentRoundResultsTable", section.round_results);
+    }
     enablePlayerCellNavigation("tournamentLeaderboardTable");
     enablePlayerCellNavigation("tournamentRoundResultsTable");
   }

@@ -1,0 +1,23 @@
+field_id;input_id;label;admin_label;resolved_label;is_compound_input
+1;;EDV-Nummer;;EDV-Nummer;false
+3;;Name;;Name;false
+4;;Spiel 1;;Spiel 1;false
+11;;Spiel 2;;Spiel 2;false
+10;;Spiel 3;;Spiel 3;false
+9;;Spiel 4;;Spiel 4;false
+8;;Spiel 5;;Spiel 5;false
+7;;Spiel 6;;Spiel 6;false
+6;;Spiel 7;;Spiel 7;false
+5;;Spiel 8;;Spiel 8;false
+16;;Spiel 9;;Spiel 9;false
+15;;Spiel 10;;Spiel 10;false
+14;;Spiel 11;;Spiel 11;false
+13;;Spiel 12;;Spiel 12;false
+23;;Spiel 13;;Spiel 13;false
+22;;Spiel 14;;Spiel 14;false
+21;;Spiel 15;;Spiel 15;false
+20;;Spiel 16;;Spiel 16;false
+19;;Spiel 17;;Spiel 17;false
+18;;Spiel 18;;Spiel 18;false
+12;;Spiele;;Spiele;false
+17;;Gesamt;;Gesamt;false

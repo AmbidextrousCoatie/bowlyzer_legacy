@@ -12,7 +12,7 @@ def _resolve_default_tournament_source() -> str:
     Prefer the combined tournament dataset source.
     Falls back to any tournament-capable source, then global default.
     """
-    preferred_source = "db_tournament_geek_2026"
+    preferred_source = "db_tournament_regions_2026_gf"
     try:
         preferred_service = TournamentService(database=preferred_source)
         if preferred_service.get_tournaments():

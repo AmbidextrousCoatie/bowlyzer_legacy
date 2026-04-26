@@ -36,6 +36,16 @@ class TournamentService:
             tournament_norm = str(tournament).strip()
             df = df[df[Columns.event_name].astype(str).str.strip().eq(tournament_norm)]
 
+        # Normalize frequently used tournament keys so downstream groupby/pivot
+        # logic is stable even when source CSV has empty cells (read as NaN).
+        if Columns.club in df.columns:
+            df[Columns.club] = df[Columns.club].fillna("").astype(str).str.strip()
+        if Columns.player_name in df.columns:
+            df[Columns.player_name] = df[Columns.player_name].fillna("").astype(str).str.strip()
+        if Columns.player_id in df.columns:
+            df[Columns.player_id] = df[Columns.player_id].fillna("").astype(str).str.strip()
+        if Columns.round_name in df.columns:
+            df[Columns.round_name] = df[Columns.round_name].fillna("").astype(str).str.strip()
         return df
 
     def get_tournaments(self, season: Optional[str] = None) -> List[str]:
@@ -85,6 +95,13 @@ class TournamentService:
         if round_number is None:
             return df.copy()
         return df[pd.to_numeric(df[Columns.round_number], errors="coerce").eq(float(round_number))].copy()
+
+    @staticmethod
+    def _has_any_club_value(df: pd.DataFrame) -> bool:
+        if Columns.club not in df.columns:
+            return False
+        vals = df[Columns.club].fillna("").astype(str).str.strip()
+        return vals.ne("").any()
 
     def _top_n_games(self, scope_df: pd.DataFrame, n: int) -> List[Dict[str, Any]]:
         if scope_df.empty:
@@ -218,6 +235,19 @@ class TournamentService:
             {"round_number": round_number, "round_name": str(scope_df[Columns.round_name].dropna().iloc[0]) if Columns.round_name in scope_df.columns and not scope_df[Columns.round_name].dropna().empty else f"Round {round_number}"}
         ]
         latest_round = rounds[-1] if rounds else {"round_number": None, "round_name": ""}
+        latest_round_date_subtitle = ""
+        if latest_round.get("round_number") is not None and Columns.date in scope_df.columns:
+            latest_round_df_for_date = scope_df[
+                pd.to_numeric(scope_df[Columns.round_number], errors="coerce").eq(float(latest_round["round_number"]))
+            ].copy()
+            date_vals = (
+                latest_round_df_for_date[Columns.date].dropna().astype(str).str.strip().tolist()
+                if not latest_round_df_for_date.empty
+                else []
+            )
+            date_vals = sorted([d for d in date_vals if d])
+            if date_vals:
+                latest_round_date_subtitle = date_vals[0] if len(set(date_vals)) == 1 else f"{date_vals[0]} to {date_vals[-1]}"
 
         # Stage winner is specific to selected stage (or latest stage when none selected).
         stage_round_number = round_number if round_number is not None else latest_round.get("round_number")
@@ -264,7 +294,8 @@ class TournamentService:
             {
                 "title": "Current Round",
                 "value": latest_round.get("round_name") or f"Round {latest_round.get('round_number')}",
-                "subtitle": f"#{latest_round.get('round_number')}" if latest_round.get("round_number") else "",
+                "subtitle": latest_round_date_subtitle
+                or (f"#{latest_round.get('round_number')}" if latest_round.get("round_number") else ""),
                 "type": "stat",
             },
         ]
@@ -347,6 +378,7 @@ class TournamentService:
             work = work[pd.to_numeric(work[Columns.round_number], errors="coerce").eq(float(round_number))]
         if work.empty:
             return pd.DataFrame()
+        include_club = self._has_any_club_value(work)
 
         # If postprocessed data exists, use the last game snapshot per player.
         if Columns.cumulative_score in work.columns and Columns.stage_rank in work.columns:
@@ -357,23 +389,32 @@ class TournamentService:
             snap["total_score"] = pd.to_numeric(snap[Columns.cumulative_score], errors="coerce")
             snap["player"] = snap[Columns.player_name].astype(str)
             snap["player_id"] = snap[Columns.player_id].astype(str)
-            snap["club"] = snap.get(Columns.club, "").astype(str)
-            out = snap[["rank", "player", "player_id", "club", "total_score"]].dropna(subset=["total_score"])
+            snap["club"] = snap.get(Columns.club, "").astype(str) if include_club else ""
+            out_cols = ["rank", "player", "player_id", "total_score"]
+            if include_club:
+                out_cols.insert(3, "club")
+            out = snap[out_cols].dropna(subset=["total_score"])
             return out.sort_values(by=["rank", "player"]).reset_index(drop=True)
 
+        group_keys = [Columns.player_name, Columns.player_id]
+        if include_club:
+            group_keys.append(Columns.club)
         grouped = (
-            work.groupby([Columns.player_name, Columns.player_id, Columns.club], dropna=False)[Columns.score]
+            work.groupby(group_keys, dropna=False)[Columns.score]
             .sum()
             .reset_index()
             .rename(
                 columns={
                     Columns.player_name: "player",
                     Columns.player_id: "player_id",
-                    Columns.club: "club",
                     Columns.score: "total_score",
                 }
             )
         )
+        if include_club:
+            grouped = grouped.rename(columns={Columns.club: "club"})
+        else:
+            grouped["club"] = ""
         grouped["rank"] = grouped["total_score"].rank(method="min", ascending=False).astype(int)
         return grouped.sort_values(by=["rank", "player"]).reset_index(drop=True)
 
@@ -381,6 +422,7 @@ class TournamentService:
         df = self._get_tournament_df(season=season, tournament=tournament)
         if df.empty:
             return TableData(columns=[], data=[], title=f"{tournament} Leaderboard")
+        include_club = self._has_any_club_value(df)
 
         # Single-stage mode: keep stage-specific leaderboard behavior.
         if round_number is not None:
@@ -399,11 +441,15 @@ class TournamentService:
             columns = [
                 Column(title="#", field="rank", width="60px", align="center", decimal_places=0),
                 Column(title="Player", field="player", width="220px", align="left"),
-                Column(title="Club", field="club", width="220px", align="left"),
                 Column(title="Total", field="total_score", width="90px", align="center", decimal_places=0),
                 Column(title="Average", field="avg_score", width="90px", align="center", decimal_places=1),
             ]
-            data = leaderboard[["rank", "player", "club", "total_score", "avg_score"]].values.tolist() if not leaderboard.empty else []
+            if include_club:
+                columns.insert(2, Column(title="Club", field="club", width="220px", align="left"))
+                data_cols = ["rank", "player", "club", "total_score", "avg_score"]
+            else:
+                data_cols = ["rank", "player", "total_score", "avg_score"]
+            data = leaderboard[data_cols].values.tolist() if not leaderboard.empty else []
             return TableData(columns=columns, data=data, title=f"{tournament} Leaderboard")
 
         # Multi-stage mode: total = sum across all rounds, plus one column per round.
@@ -455,8 +501,9 @@ class TournamentService:
         columns = [
             Column(title="#", field="rank", width="60px", align="center", decimal_places=0),
             Column(title="Player", field="player", width="220px", align="left"),
-            Column(title="Club", field="club", width="220px", align="left"),
         ]
+        if include_club:
+            columns.append(Column(title="Club", field="club", width="220px", align="left"))
         for rn in round_numbers:
             title = round_name_map.get(rn) or f"Round {rn}"
             columns.append(Column(title=title, field=f"round_{rn}", width="110px", align="center", decimal_places=0))
@@ -465,11 +512,9 @@ class TournamentService:
 
         data = []
         for _, row in pivot.iterrows():
-            entry = [
-                int(row["rank"]),
-                str(row.get(Columns.player_name, "")),
-                str(row.get(Columns.club, "")),
-            ]
+            entry = [int(row["rank"]), str(row.get(Columns.player_name, ""))]
+            if include_club:
+                entry.append(str(row.get(Columns.club, "")))
             for rn in round_numbers:
                 entry.append(int(row.get(rn, 0)))
             entry.append(int(row.get("total_score", 0)))
@@ -482,6 +527,7 @@ class TournamentService:
         df = self._get_tournament_df(season=season, tournament=tournament)
         if df.empty:
             return TableData(columns=[], data=[], title=f"{tournament} Round Results")
+        include_club = self._has_any_club_value(df)
 
         work = df.copy()
         if round_number is not None:
@@ -496,7 +542,9 @@ class TournamentService:
         if id_col == "__player_id_missing__":
             work[id_col] = work[Columns.player_name].astype(str)
 
-        key_cols = [Columns.round_number, Columns.round_name, Columns.player_name, id_col, Columns.club]
+        key_cols = [Columns.round_number, Columns.round_name, Columns.player_name, id_col]
+        if include_club:
+            key_cols.append(Columns.club)
 
         # One row per stage + player with explicit game columns.
         game_numbers = sorted([int(g) for g in work[Columns.game_number].dropna().unique().tolist()])
@@ -532,11 +580,13 @@ class TournamentService:
             ascending=[True, False, True],
         ).reset_index(drop=True)
 
-        columns = [
-            Column(title="Stage", field="round_name", width="150px", align="left"),
-            Column(title="Player", field="player", width="220px", align="left"),
-            Column(title="Club", field="club", width="220px", align="left"),
-        ]
+        include_stage_column = round_number is None
+        columns = []
+        if include_stage_column:
+            columns.append(Column(title="Stage", field="round_name", width="150px", align="left"))
+        columns.append(Column(title="Player", field="player", width="220px", align="left"))
+        if include_club:
+            columns.append(Column(title="Club", field="club", width="220px", align="left"))
         for g in game_numbers:
             columns.append(
                 Column(
@@ -558,17 +608,22 @@ class TournamentService:
         data = []
         previous_player_key = None
         for _, row in pivot.iterrows():
-            player_key = (str(row.get(Columns.player_name, "")), str(row.get(id_col, "")), str(row.get(Columns.club, "")))
+            player_key = (
+                str(row.get(Columns.player_name, "")),
+                str(row.get(id_col, "")),
+                str(row.get(Columns.club, "")) if include_club else "",
+            )
             show_player = True
             if round_number is None and previous_player_key == player_key:
                 # Visual "merge": blank repeated cells for player/club across stages.
                 show_player = False
 
-            entry = [
-                str(row.get(Columns.round_name, "")),
-                str(row.get(Columns.player_name, "")) if show_player else "",
-                str(row.get(Columns.club, "")) if show_player else "",
-            ]
+            entry = []
+            if include_stage_column:
+                entry.append(str(row.get(Columns.round_name, "")))
+            entry.append(str(row.get(Columns.player_name, "")) if show_player else "")
+            if include_club:
+                entry.append(str(row.get(Columns.club, "")) if show_player else "")
             for g in game_numbers:
                 entry.append(int(row.get(g, 0)))
             entry.append(int(row.get("round_total", 0)))
@@ -748,8 +803,44 @@ class TournamentService:
             (int(r[Columns.round_number]), str(r.get(Columns.round_name, "")), int(r[Columns.game_number]) + 1)
             for _, r in round_meta.iterrows()
         ]
+        round_name_map = {rn: name for rn, name, _ in round_lengths}
         total_games = sum(length for _, _, length in round_lengths)
         labels = [f"G{i}" for i in range(1, total_games + 1)]
+
+        # Derive per-round cut metadata from actual data snapshots (postprocessed CSV),
+        # avoiding hardcoded cut positions that differ between tournaments.
+        round_cut_meta: Dict[int, Dict[str, Optional[float]]] = {}
+        if Columns.cut_line in all_df.columns:
+            for rn, _, _ in round_lengths:
+                stage_df = all_df[all_df[Columns.round_number].eq(float(rn))].copy()
+                if stage_df.empty:
+                    continue
+                max_game = pd.to_numeric(stage_df[Columns.game_number], errors="coerce").max()
+                snap = stage_df[pd.to_numeric(stage_df[Columns.game_number], errors="coerce").eq(max_game)].copy()
+                if snap.empty:
+                    continue
+
+                cut_vals = pd.to_numeric(snap[Columns.cut_line], errors="coerce").dropna()
+                if cut_vals.empty:
+                    continue
+                cut_score = float(cut_vals.iloc[0])
+
+                cut_position: Optional[float] = None
+                if Columns.cumulative_score in snap.columns and Columns.stage_rank in snap.columns:
+                    cum = pd.to_numeric(snap[Columns.cumulative_score], errors="coerce")
+                    ranks = pd.to_numeric(snap[Columns.stage_rank], errors="coerce")
+                    eq = ranks[cum.eq(cut_score)].dropna()
+                    if not eq.empty:
+                        cut_position = float(eq.max())
+                    else:
+                        ge = ranks[cum.ge(cut_score)].dropna()
+                        if not ge.empty:
+                            cut_position = float(ge.max())
+
+                round_cut_meta[rn] = {"cut_score": cut_score, "cut_position": cut_position}
+        cut_rounds_sorted = sorted(round_cut_meta.keys())
+        qualifying_cut_round = cut_rounds_sorted[0] if len(cut_rounds_sorted) >= 1 else None
+        round2_cut_round = cut_rounds_sorted[1] if len(cut_rounds_sorted) >= 2 else None
 
         player_df = all_df[all_df[Columns.player_name].astype(str).str.strip().eq(str(player).strip())].copy()
         if player_df.empty:
@@ -761,12 +852,7 @@ class TournamentService:
         round_end_lines: List[int] = []
         cut_lines_avg: List[float] = []
         cut_lines_position: List[int] = []
-        cut_lines_avg_dynamic_q: List[Optional[float]] = []
-        cut_lines_avg_dynamic_r2: List[Optional[float]] = []
-        last_q_cut_avg: Optional[float] = None
-        last_r2_cut_avg: Optional[float] = None
-        q_hold_remaining = 0
-        r2_hold_remaining = 0
+        dynamic_cut_series: Dict[int, List[Optional[float]]] = {rn: [] for rn in cut_rounds_sorted}
 
         cum_player_score = 0
         cum_player_games = 0
@@ -825,59 +911,35 @@ class TournamentService:
                 else:
                     tournament_leader_avg_series.append(None)
 
-                # Dynamic cut-line averages by global game index.
-                # Round 1 uses top-40 threshold; Round 2 uses top-20 threshold.
-                total_games_upto_point = sum(l for rno, _, l in round_lengths if rno < rn) + (g + 1)
-                q_val: Optional[float] = None
-                r2_val: Optional[float] = None
-                if rn == 1 and len(ranked) >= 40:
-                    q_score = float(ranked[39][1])
-                    q_val = round(q_score / max(total_games_upto_point, 1), 2)
-                    last_q_cut_avg = q_val
-                elif rn == 2 and len(ranked) >= 20:
-                    r2_score = float(ranked[19][1])
-                    r2_val = round(r2_score / max(total_games_upto_point, 1), 2)
-                    last_r2_cut_avg = r2_val
+                # Dynamic cut-line averages by stage-local progress.
+                # Cut Line in our data is stage cumulative, so divide by games played in THIS stage.
+                games_in_stage_so_far = g + 1
+                cut_avg_game: Optional[float] = None
+                cut_vals_game = pd.to_numeric(
+                    round_all[round_all[Columns.game_number].eq(float(g))][Columns.cut_line]
+                    if Columns.cut_line in round_all.columns
+                    else pd.Series([], dtype=float),
+                    errors="coerce",
+                ).dropna()
+                cut_score_game = float(cut_vals_game.iloc[0]) if not cut_vals_game.empty else None
+                if cut_score_game is not None:
+                    cut_avg_game = round(cut_score_game / max(games_in_stage_so_far, 1), 2)
 
-                # After the cut stage ends, keep the last cut value for one additional game,
-                # then drop back to missing values so frontend can hide the line.
-                if q_val is None and rn > 1 and q_hold_remaining > 0 and last_q_cut_avg is not None:
-                    q_val = last_q_cut_avg
-                    q_hold_remaining -= 1
-                if r2_val is None and rn > 2 and r2_hold_remaining > 0 and last_r2_cut_avg is not None:
-                    r2_val = last_r2_cut_avg
-                    r2_hold_remaining -= 1
-                cut_lines_avg_dynamic_q.append(q_val)
-                cut_lines_avg_dynamic_r2.append(r2_val)
+                for cut_rn in cut_rounds_sorted:
+                    dynamic_cut_series[cut_rn].append(cut_avg_game if rn == cut_rn else None)
 
             x_cursor += length
             round_end_lines.append(x_cursor)
-            if rn == 1 and last_q_cut_avg is not None:
-                q_hold_remaining = 1
-            if rn == 2 and last_r2_cut_avg is not None:
-                r2_hold_remaining = 1
-
-            # Cut line averages should be based on cumulative standings at cut points.
-            # This avoids stage-only cut values distorting cumulative average reference lines.
-            total_games_upto = sum(l for rno, _, l in round_lengths if rno <= rn)
-            upto_all = all_df[all_df[Columns.round_number].le(float(rn))].copy()
-            cum_totals = (
-                upto_all.groupby(Columns.player_name, dropna=False)[Columns.score]
-                .sum()
-                .sort_values(ascending=False)
-                .tolist()
-            )
-            # position cut targets by round number from configured format
-            if rn == 1:
-                cut_lines_position.append(40)
-                if len(cum_totals) >= 40:
-                    cut_lines_avg.append(round(float(cum_totals[39]) / max(total_games_upto, 1), 2))
-            elif rn == 2:
-                cut_lines_position.append(20)
-                if len(cum_totals) >= 20:
-                    cut_lines_avg.append(round(float(cum_totals[19]) / max(total_games_upto, 1), 2))
-            elif rn == 3:
-                cut_lines_position.append(1)
+            # Horizontal cut-line references for stage-end snapshots.
+            # Stage cut is stage cumulative, so normalize by stage length.
+            stage_games = max(length, 1)
+            cut_meta = round_cut_meta.get(rn) or {}
+            cut_score = cut_meta.get("cut_score")
+            cut_pos = cut_meta.get("cut_position")
+            if cut_score is not None:
+                cut_lines_avg.append(round(float(cut_score) / stage_games, 2))
+            if cut_pos is not None:
+                cut_lines_position.append(int(cut_pos))
 
         # pad to total length (flat line after elimination)
         while len(avg_series) < total_games:
@@ -886,10 +948,20 @@ class TournamentService:
             position_series.append(position_series[-1] if position_series else 999)
         while len(tournament_leader_avg_series) < total_games:
             tournament_leader_avg_series.append(None)
-        while len(cut_lines_avg_dynamic_q) < total_games:
-            cut_lines_avg_dynamic_q.append(None)
-        while len(cut_lines_avg_dynamic_r2) < total_games:
-            cut_lines_avg_dynamic_r2.append(None)
+        for cut_rn in cut_rounds_sorted:
+            while len(dynamic_cut_series[cut_rn]) < total_games:
+                dynamic_cut_series[cut_rn].append(None)
+
+        cut_line_series = []
+        for rn in cut_rounds_sorted:
+            cut_line_series.append(
+                {
+                    "key": f"round_{rn}",
+                    "round_number": rn,
+                    "label": round_name_map.get(rn) or f"Round {rn}",
+                    "data": dynamic_cut_series[rn][:total_games],
+                }
+            )
 
         return {
             "labels": labels,
@@ -899,9 +971,9 @@ class TournamentService:
             "round_end_lines": round_end_lines,
             "cut_lines_avg": cut_lines_avg,
             "cut_lines_position": cut_lines_position,
+            "cut_line_series": cut_line_series,
             "cut_lines_avg_dynamic": {
-                "qualifying": cut_lines_avg_dynamic_q[:total_games],
-                "round2": cut_lines_avg_dynamic_r2[:total_games],
+                f"round_{rn}": dynamic_cut_series[rn][:total_games] for rn in cut_rounds_sorted
             },
         }
 

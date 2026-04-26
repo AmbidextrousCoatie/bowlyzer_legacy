@@ -16,6 +16,10 @@ DATABASE_DATA_DIR = LEGACY_V1_DIR / 'database' / 'data'
 PIPELINE_GF_LEGACY_CSV = (
     LEGACY_V1_DIR / "database" / "pipeline" / "bowling_bayern" / "legacy_out" / "latest.csv"
 )
+GF_TOURNAMENT_EXPORT_DIR = LEGACY_V1_DIR / "database" / "input" / "gf_tables_export"
+GF_SBM_CANONICAL_CSV = GF_TOURNAMENT_EXPORT_DIR / "gf_table_124__sbm_suedbayerische_meisterschaft_2026__canonical_clean.csv"
+GF_NBM_CANONICAL_CSV = GF_TOURNAMENT_EXPORT_DIR / "gf_table_125__nbm_nordbayerische_meisterschaft_2026__canonical_clean.csv"
+GF_REGIONAL_COMBINED_POSTPROCESSED_CSV = GF_TOURNAMENT_EXPORT_DIR / "gf_tournaments_2026__combined_postprocessed.csv"
 
 
 def _ensure_pipeline_gf_legacy_csv_stub() -> None:
@@ -32,6 +36,38 @@ def _ensure_pipeline_gf_legacy_csv_stub() -> None:
 
     with path.open("w", encoding="utf-8", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=OUTPUT_HEADERS, delimiter=";")
+        writer.writeheader()
+
+
+def _ensure_tournament_postprocessed_csv_stub(path: Path) -> None:
+    """
+    Keep configured tournament sources visible in the UI even before the
+    GF tournament export has been run; real export overwrites this file.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if path.is_file():
+        return
+    headers = [
+        "Season",
+        "Date",
+        "Location",
+        "Event Type",
+        "Event Name",
+        "Round Number",
+        "Round Name",
+        "Player",
+        "Player ID",
+        "Club",
+        "Game Number",
+        "Score",
+        "Handicap",
+        "Cumulative Score",
+        "Stage Rank",
+        "Cut Line",
+        "Overall Cumulative Score",
+    ]
+    with path.open("w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=headers, delimiter=";")
         writer.writeheader()
 
 
@@ -84,10 +120,37 @@ class DatabaseConfig:
                 is_default=False,
                 is_enabled=False
             ),
+            'db_tournament_sbm_2026_gf': DataSourceConfig(
+                filename='gf_table_124__sbm_suedbayerische_meisterschaft_2026__canonical_clean.csv',
+                display_name='Tournament Data (SBM 2026, GF)',
+                description='Südbayerische Meisterschaft 2026 transformed from GF export into canonical tournament format',
+                is_default=False,
+                is_enabled=False,
+                file_path=str(GF_SBM_CANONICAL_CSV),
+            ),
+            'db_tournament_nbm_2026_gf': DataSourceConfig(
+                filename='gf_table_125__nbm_nordbayerische_meisterschaft_2026__canonical_clean.csv',
+                display_name='Tournament Data (NBM 2026, GF)',
+                description='Nordbayerische Meisterschaft 2026 transformed from GF export into canonical tournament format',
+                is_default=False,
+                is_enabled=False,
+                file_path=str(GF_NBM_CANONICAL_CSV),
+            ),
+            'db_tournament_regions_2026_gf': DataSourceConfig(
+                filename='gf_tournaments_2026__combined_postprocessed.csv',
+                display_name='Tournament Data (SBM+NBM 2026, GF)',
+                description='Combined regional tournament dataset (SBM + NBM) transformed and postprocessed from GF exports',
+                is_default=False,
+                is_enabled=True,
+                file_path=str(GF_REGIONAL_COMBINED_POSTPROCESSED_CSV),
+            ),
         }
 
         try:
             _ensure_pipeline_gf_legacy_csv_stub()
+            _ensure_tournament_postprocessed_csv_stub(GF_SBM_CANONICAL_CSV)
+            _ensure_tournament_postprocessed_csv_stub(GF_NBM_CANONICAL_CSV)
+            _ensure_tournament_postprocessed_csv_stub(GF_REGIONAL_COMBINED_POSTPROCESSED_CSV)
         except (ImportError, OSError) as exc:
             print(
                 "Warning: could not create pipeline GF legacy stub "
