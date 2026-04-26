@@ -20,6 +20,7 @@ GF_TOURNAMENT_EXPORT_DIR = LEGACY_V1_DIR / "database" / "input" / "gf_tables_exp
 GF_SBM_CANONICAL_CSV = GF_TOURNAMENT_EXPORT_DIR / "gf_table_124__sbm_suedbayerische_meisterschaft_2026__canonical_clean.csv"
 GF_NBM_CANONICAL_CSV = GF_TOURNAMENT_EXPORT_DIR / "gf_table_125__nbm_nordbayerische_meisterschaft_2026__canonical_clean.csv"
 GF_REGIONAL_COMBINED_POSTPROCESSED_CSV = GF_TOURNAMENT_EXPORT_DIR / "gf_tournaments_2026__combined_postprocessed.csv"
+GF_PLAYER_COMBINED_CSV = GF_TOURNAMENT_EXPORT_DIR / "gf_player_stats__league_plus_tournaments.csv"
 
 
 def _ensure_pipeline_gf_legacy_csv_stub() -> None:
@@ -144,6 +145,14 @@ class DatabaseConfig:
                 is_enabled=True,
                 file_path=str(GF_REGIONAL_COMBINED_POSTPROCESSED_CSV),
             ),
+            'db_player_combined_gf': DataSourceConfig(
+                filename='gf_player_stats__league_plus_tournaments.csv',
+                display_name='Player Data (League+Tournament GF)',
+                description='Combined player source with league pipeline rows plus tournament rows (SBM+NBM)',
+                is_default=False,
+                is_enabled=True,
+                file_path=str(GF_PLAYER_COMBINED_CSV),
+            ),
         }
 
         try:
@@ -151,6 +160,7 @@ class DatabaseConfig:
             _ensure_tournament_postprocessed_csv_stub(GF_SBM_CANONICAL_CSV)
             _ensure_tournament_postprocessed_csv_stub(GF_NBM_CANONICAL_CSV)
             _ensure_tournament_postprocessed_csv_stub(GF_REGIONAL_COMBINED_POSTPROCESSED_CSV)
+            _ensure_tournament_postprocessed_csv_stub(GF_PLAYER_COMBINED_CSV)
         except (ImportError, OSError) as exc:
             print(
                 "Warning: could not create pipeline GF legacy stub "

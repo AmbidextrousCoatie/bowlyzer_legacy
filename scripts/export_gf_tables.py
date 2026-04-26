@@ -22,6 +22,7 @@ DEFAULT_TABLES: tuple[tuple[int, str], ...] = (
 )
 DEFAULT_STAGE_DEFINITIONS_JSON = "database/input/gf_tournament_stage_definitions.json"
 DEFAULT_TABLE_TOURNAMENT_MAP_JSON = "database/input/gf_table_tournament_map.json"
+DEFAULT_LEAGUE_SOURCE_CSV = "database/pipeline/bowling_bayern/legacy_out/latest.csv"
 
 
 def _slugify(text: str) -> str:
@@ -282,6 +283,32 @@ def _build_postprocessed_rows(
     )
 
 
+def _build_player_combined_rows(
+    league_rows: List[Dict[str, str]], tournament_rows: List[Dict[str, str]]
+) -> Tuple[List[str], List[Dict[str, str]]]:
+    headers = sorted({k for r in (league_rows + tournament_rows) for k in r.keys()})
+    out: List[Dict[str, str]] = []
+
+    for row in league_rows:
+        merged = {h: str(row.get(h, "")) for h in headers}
+        if not str(merged.get("Event Type", "")).strip():
+            merged["Event Type"] = "league"
+        if not str(merged.get("Event Name", "")).strip():
+            merged["Event Name"] = str(merged.get("League", "")).strip()
+        if not str(merged.get("Club", "")).strip():
+            merged["Club"] = str(merged.get("Team", "")).strip()
+        out.append(merged)
+
+    for row in tournament_rows:
+        merged = {h: str(row.get(h, "")) for h in headers}
+        # Player page filters individual rows via Input/Computed flags.
+        merged["Input Data"] = "True"
+        merged["Computed Data"] = "False"
+        out.append(merged)
+
+    return headers, out
+
+
 def _maybe_transform_to_canonical(
     output_dir: Path,
     table_id: int,
@@ -396,6 +423,11 @@ def main() -> int:
         "--table-tournament-map-json",
         default=DEFAULT_TABLE_TOURNAMENT_MAP_JSON,
         help="Table ID to tournament mapping JSON path.",
+    )
+    parser.add_argument(
+        "--league-source-csv",
+        default=DEFAULT_LEAGUE_SOURCE_CSV,
+        help="League source CSV used to build combined player stats source.",
     )
     parser.add_argument("--site", required=False, help="WordPress site base URL.")
     parser.add_argument("--ck", required=False, help="GF consumer key.")
@@ -527,6 +559,18 @@ def main() -> int:
         _write_rows_csv(combined_canonical_path, combined_canonical_rows, CANONICAL_HEADERS)
         _write_rows_csv(combined_stage_meta_path, combined_stage_meta_rows, STAGE_META_HEADERS)
         _write_rows_csv(combined_postprocessed_path, combined_postprocessed_rows, postprocessed_headers)
+
+        league_source = Path(args.league_source_csv).resolve()
+        combined_player_source_path = output_dir / "gf_player_stats__league_plus_tournaments.csv"
+        if league_source.is_file():
+            with league_source.open("r", encoding="utf-8-sig", newline="") as f:
+                reader = csv.DictReader(f, delimiter=";")
+                league_rows = [{k: (v or "") for k, v in row.items()} for row in reader]
+            combined_headers, combined_rows = _build_player_combined_rows(
+                league_rows=league_rows, tournament_rows=combined_postprocessed_rows
+            )
+            _write_rows_csv(combined_player_source_path, combined_rows, combined_headers)
+
         summary["combined"] = {
             "canonical_clean_csv": str(combined_canonical_path),
             "stage_meta_csv": str(combined_stage_meta_path),
@@ -535,6 +579,8 @@ def main() -> int:
             "stage_meta_rows": len(combined_stage_meta_rows),
             "postprocessed_rows": len(combined_postprocessed_rows),
         }
+        if combined_player_source_path.is_file():
+            summary["combined"]["player_stats_source_csv"] = str(combined_player_source_path)
 
     print(json.dumps(summary, indent=2, ensure_ascii=False))
     return 0

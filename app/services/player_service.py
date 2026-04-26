@@ -26,31 +26,87 @@ class PlayerService:
         self.server = Server(database=database)
         self.stats_service = StatisticsService(database=database)
 
-    def get_all_players(self):
-        """Get list of all players for selection"""
+    @staticmethod
+    def _normalize_player_id(value: Any) -> str:
+        raw = str(value).strip() if value is not None else ""
+        if not raw:
+            return ""
+        try:
+            return str(int(float(raw)))
+        except ValueError:
+            return raw
+
+    def _canonical_name_for_player_id(self, player_id: str, names: List[str]) -> str:
+        """
+        Pick one stable display name per player id.
+        Heuristic for two-token reversals (A B vs B A):
+        prefer orientation that matches global first/last token tendencies.
+        """
+        cleaned = [str(n).strip() for n in names if str(n).strip()]
+        if not cleaned:
+            return ""
+        if len(set(cleaned)) == 1:
+            return cleaned[0]
+
+        df = self.data_manager.df
+        token_rows = []
+        if df is not None and not df.empty and Columns.player_name in df.columns:
+            for raw in df[Columns.player_name].dropna().astype(str).tolist():
+                parts = raw.strip().split()
+                if len(parts) >= 2:
+                    token_rows.append((parts[0], parts[-1]))
+        first_counts: Dict[str, int] = {}
+        last_counts: Dict[str, int] = {}
+        for first, last in token_rows:
+            first_counts[first] = first_counts.get(first, 0) + 1
+            last_counts[last] = last_counts.get(last, 0) + 1
+
+        def score(name: str) -> int:
+            parts = name.split()
+            if len(parts) < 2:
+                return 0
+            first, last = parts[0], parts[-1]
+            return (first_counts.get(first, 0) - last_counts.get(first, 0)) + (
+                last_counts.get(last, 0) - first_counts.get(last, 0)
+            )
+
+        best = sorted(cleaned, key=lambda n: (-score(n), -len(n), n.lower()))[0]
+        return best
+
+    def _player_catalog(self) -> List[Dict[str, str]]:
         df = self.data_manager.df
         if df is None or df.empty or Columns.player_name not in df.columns:
             return []
+
         sub = df
         if Columns.input_data in df.columns and Columns.computed_data in df.columns:
-            sub = df[
-                _csv_bool_is_true(df[Columns.input_data])
-                & _csv_bool_is_false(df[Columns.computed_data])
-            ]
-        names = sub[Columns.player_name].dropna()
-        cleaned: List[str] = []
-        seen: set = set()
-        for raw in names.unique():
-            label = str(raw).strip()
-            low = label.lower()
-            if not label or low in ("nan", "none", "<na>", "nat", "#n/a"):
+            sub = df[_csv_bool_is_true(df[Columns.input_data]) & _csv_bool_is_false(df[Columns.computed_data])]
+        if Columns.player_id not in sub.columns:
+            # fallback: name-only
+            names = sorted({str(n).strip() for n in sub[Columns.player_name].dropna().tolist() if str(n).strip()})
+            return [{"id": n, "name": n} for n in names]
+
+        grouped: Dict[str, List[str]] = {}
+        for _, row in sub[[Columns.player_id, Columns.player_name]].dropna(subset=[Columns.player_name]).iterrows():
+            pid = self._normalize_player_id(row.get(Columns.player_id))
+            name = str(row.get(Columns.player_name) or "").strip()
+            if not name or name == "Team Total":
                 continue
-            if label == "Team Total":
-                continue
-            if label not in seen:
-                seen.add(label)
-                cleaned.append(label)
-        return [{"id": n, "name": n} for n in sorted(cleaned)]
+            key = pid or name
+            grouped.setdefault(key, [])
+            if name not in grouped[key]:
+                grouped[key].append(name)
+
+        out = []
+        for pid, names in grouped.items():
+            canonical = self._canonical_name_for_player_id(pid, names)
+            if canonical:
+                out.append({"id": pid, "name": canonical})
+        return sorted(out, key=lambda x: x["name"].lower())
+
+    def get_all_players(self):
+        """Get list of all players for selection"""
+        return self._player_catalog()
 
     def get_player_statistics(self, player_name: str, season: str) -> PlayerStatistics:
         """Get comprehensive player statistics"""
@@ -155,11 +211,16 @@ class PlayerService:
         
         return all_players
 
-    def get_player_seasons(self, player_name: str) -> List[str]:
+    def get_player_seasons(self, player_name: str, player_id: str = "") -> List[str]:
         """Get sorted season list for a specific player."""
-        if not player_name:
+        if not player_name and not player_id:
             return []
-        games_df = self.server.get_games_for_player(player_name)
+        games_df = self.data_manager.df.copy()
+        pid = self._normalize_player_id(player_id)
+        if pid and Columns.player_id in games_df.columns:
+            games_df = games_df[games_df[Columns.player_id].astype(str).map(self._normalize_player_id).eq(pid)]
+        else:
+            games_df = self.server.get_games_for_player(player_name)
         if games_df is None or games_df.empty or Columns.season not in games_df.columns:
             return []
         seasons = [str(s).strip() for s in games_df[Columns.season].dropna().unique().tolist() if str(s).strip()]
@@ -169,12 +230,15 @@ class PlayerService:
         """Get historical performance data"""
         pass
 
-    def get_lifetime_stats(self, player_name, season: str = "all"):
+    def get_lifetime_stats(self, player_name, season: str = "all", player_id: str = ""):
         """Get lifetime statistics for a player."""
-
-        
-        # Get all games for the player
-        games_df = self.server.get_games_for_player(player_name)
+        base = self.data_manager.df.copy()
+        pid = self._normalize_player_id(player_id)
+        if pid and Columns.player_id in base.columns:
+            id_series = base[Columns.player_id].astype(str).map(self._normalize_player_id)
+            games_df = base[id_series.eq(pid)]
+        else:
+            games_df = self.server.get_games_for_player(player_name)
         if season and str(season).strip().lower() != "all":
             season_norm = str(season).strip()
             if Columns.season in games_df.columns:
@@ -238,7 +302,7 @@ class PlayerService:
                 out = out[_csv_bool_is_false(out[Columns.computed_data])]
             return out
 
-        def league_average_rank(season_value: Any, league_value: str, player_value: str) -> Optional[int]:
+        def league_average_rank(season_value: Any, league_value: str, player_value: str, player_id_value: str = "") -> Optional[int]:
             base = self.data_manager.df.copy()
             if base.empty:
                 return None
@@ -249,17 +313,21 @@ class PlayerService:
             base = _safe_player_rows(base)
             if base.empty or Columns.player_name not in base.columns or Columns.score not in base.columns:
                 return None
-            grouped = (
-                base.groupby(Columns.player_name, dropna=False)[Columns.score]
-                .mean()
-                .sort_values(ascending=False)
-            )
+            pid_norm = self._normalize_player_id(player_id_value)
+            if pid_norm and Columns.player_id in base.columns:
+                base[Columns.player_id] = base[Columns.player_id].astype(str).map(self._normalize_player_id)
+                grouped = base.groupby(Columns.player_id, dropna=False)[Columns.score].mean().sort_values(ascending=False)
+                if pid_norm not in grouped.index:
+                    return None
+                rank_series = grouped.rank(method="min", ascending=False)
+                return int(rank_series[pid_norm])
+            grouped = base.groupby(Columns.player_name, dropna=False)[Columns.score].mean().sort_values(ascending=False)
             if player_value not in grouped.index:
                 return None
             rank_series = grouped.rank(method="min", ascending=False)
             return int(rank_series[player_value])
 
-        def tournament_final_rank(season_value: Any, event_value: str, player_value: str) -> Optional[int]:
+        def tournament_final_rank(season_value: Any, event_value: str, player_value: str, player_id_value: str = "") -> Optional[int]:
             base = self.data_manager.df.copy()
             if base.empty:
                 return None
@@ -306,6 +374,30 @@ class PlayerService:
                     .sum()
                     .sort_values(ascending=False)
                 )
+
+            pid_norm = self._normalize_player_id(player_id_value)
+            if pid_norm and Columns.player_id in base.columns:
+                work = base.copy()
+                work[Columns.player_id] = work[Columns.player_id].astype(str).map(self._normalize_player_id)
+                if (
+                    OVERALL_CUMULATIVE_SCORE_COL in work.columns
+                    and Columns.round_number in work.columns
+                    and Columns.game_number in work.columns
+                ):
+                    work[Columns.round_number] = pd.to_numeric(work[Columns.round_number], errors="coerce")
+                    work[Columns.game_number] = pd.to_numeric(work[Columns.game_number], errors="coerce")
+                    work[OVERALL_CUMULATIVE_SCORE_COL] = pd.to_numeric(work[OVERALL_CUMULATIVE_SCORE_COL], errors="coerce")
+                    work = work.dropna(subset=[OVERALL_CUMULATIVE_SCORE_COL])
+                    work = work.sort_values(by=[Columns.player_id, Columns.round_number, Columns.game_number], ascending=[True, True, True])
+                    latest = work.groupby(Columns.player_id, dropna=False).tail(1)
+                    totals_by_id = latest.groupby(Columns.player_id, dropna=False)[OVERALL_CUMULATIVE_SCORE_COL].max().sort_values(ascending=False)
+                else:
+                    work[Columns.score] = pd.to_numeric(work[Columns.score], errors="coerce").fillna(0)
+                    totals_by_id = work.groupby(Columns.player_id, dropna=False)[Columns.score].sum().sort_values(ascending=False)
+                if pid_norm not in totals_by_id.index:
+                    return None
+                rank_series = totals_by_id.rank(method="min", ascending=False)
+                return int(rank_series[pid_norm])
 
             if player_value not in totals.index:
                 return None
@@ -389,9 +481,9 @@ class PlayerService:
                         'average': float(round(comp_avg, 2)),
                         'vs_last_season': None,
                         'rank': (
-                            tournament_final_rank(season, str(comp_name), player_name)
+                            tournament_final_rank(season, str(comp_name), player_name, pid)
                             if (Columns.event_type in cdf.columns and cdf[Columns.event_type].astype(str).str.lower().eq("tournament").any())
-                            else league_average_rank(season, str(comp_name), player_name)
+                            else league_average_rank(season, str(comp_name), player_name, pid)
                         ),
                         'row_type': 'competition',
                         'best_game': {

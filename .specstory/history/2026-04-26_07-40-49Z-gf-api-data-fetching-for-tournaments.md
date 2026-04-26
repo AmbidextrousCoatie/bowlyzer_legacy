@@ -6031,3 +6031,1026 @@ Added — player names in stage summary cards are now clickable.
 - Non-player values like `N/A`, `-`, numeric stats are not linked.
 
 If you want, I can also add a small “open in player view” icon next to those names for clearer affordance.
+
+---
+
+_**User**_
+
+nice, now one big step: when looking at player stats: http://127.0.0.1:5000/player/stats?player_name=Christian+Feller 
+i want to display both league and tournament data. 
+first analyze: is hte data of both leagues and tournaments searchable at this point? 
+then: by waht info would we match both sources? is the player ID available in both?
+
+---
+
+_**Agent (default)**_
+
+I’ll do a quick feasibility check in two parts: (1) whether the current player-stats flow can query both league and tournament datasets, and (2) whether a stable cross-source key exists (especially `Player ID`) for matching.
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:/Users/cfell/repos/bowlyzer_legacy/app/services/player_service.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:/Users/cfell/repos/bowlyzer_legacy/app/routes/player_routes.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:/Users/cfell/repos/bowlyzer_legacy/app/templates/player/content.html</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+I checked the player-page code path; now I’ll verify the actual CSV schemas/values to answer concretely whether league+tournament can both be searched together and whether `Player ID` exists reliably in both sources.
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: py -3 -c "import csv
+files=[('league','database/pipeline/bowling_bayern/legacy_out/latest.csv'),('tournament','database/input/gf_tables_export/gf_tournaments_2026__combined_postprocessed.csv')]
+for kind,p in files:
+ with open(p,encoding='utf-8-sig',newline='') as f:
+  r=csv.DictReader(f,delimiter=';'); rows=list(r); h=r.fieldnames or []
+ print('---',kind,p)
+ print('rows',len(rows))
+ print('has Player ID', 'Player ID' in h)
+ print('has Event Type', 'Event Type' in h)
+ print('sample non-empty player ids', sorted({str(x.get('Player ID','')).strip() for x in rows if str(x.get('Player ID','')).strip()})[:10])
+ for name in ['Christian Feller','Feller, Christian']:
+  m=[x for x in rows if str(x.get('Player','')).strip()==name]
+  if m:
+   ids=sorted({str(x.get('Player ID','')).strip() for x in m})
+   print('name',name,'matches',len(m),'ids',ids[:5])
+"</summary>
+
+```bash
+py -3 -c "import csv
+files=[('league','database/pipeline/bowling_bayern/legacy_out/latest.csv'),('tournament','database/input/gf_tables_export/gf_tournaments_2026__combined_postprocessed.csv')]
+for kind,p in files:
+ with open(p,encoding='utf-8-sig',newline='') as f:
+  r=csv.DictReader(f,delimiter=';'); rows=list(r); h=r.fieldnames or []
+ print('---',kind,p)
+ print('rows',len(rows))
+ print('has Player ID', 'Player ID' in h)
+ print('has Event Type', 'Event Type' in h)
+ print('sample non-empty player ids', sorted({str(x.get('Player ID','')).strip() for x in rows if str(x.get('Player ID','')).strip()})[:10])
+ for name in ['Christian Feller','Feller, Christian']:
+  m=[x for x in rows if str(x.get('Player','')).strip()==name]
+  if m:
+   ids=sorted({str(x.get('Player ID','')).strip() for x in m})
+   print('name',name,'matches',len(m),'ids',ids[:5])
+"
+```
+
+```
+--- league database/pipeline/bowling_bayern/legacy_out/latest.csv
+rows 9175
+has Player ID True
+has Event Type False
+sample non-empty player ids ['0', '10622', '10706', '10903', '12248', '12850', '13606', '15911', '16002', '16007']
+name Christian Feller matches 37 ids ['16007']
+--- tournament database/input/gf_tables_export/gf_tournaments_2026__combined_postprocessed.csv
+rows 2600
+has Player ID True
+has Event Type True
+sample non-empty player ids ['10080', '10124', '10678', '10797', '10903', '12248', '16002', '16007', '16024', '16069']
+name Christian Feller matches 18 ids ['16007']
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Great question. Short answer:
+
+- **Data exists in both** league + tournament files.
+- **`Player ID` is available in both** and is the right join key.
+- **Current player page can only query one source at a time** (selected `database`), so it does *not* yet search both simultaneously.
+
+### What I verified
+
+I checked your current files directly:
+
+- League source: `database/pipeline/bowling_bayern/legacy_out/latest.csv`
+  - has `Player ID`: ✅
+- Tournament source: `database/input/gf_tables_export/gf_tournaments_2026__combined_postprocessed.csv`
+  - has `Player ID`: ✅
+
+For your example player:
+
+- `Christian Feller` appears in both
+- in both files, mapped to `Player ID = 16007`
+
+So matching by ID is feasible and consistent here.
+
+### Current limitation in app flow
+
+`/player/stats` uses one `PlayerService`, which uses one `DataManager(source=database)`.  
+That means one dataset per request (`db_real_pipeline_gf` **or** `db_tournament_regions_2026_gf`), not both together yet.
+
+### Matching recommendation
+
+Use:
+- **Primary key:** `Player ID`
+- **Fallback/display only:** `Player` name (for missing/invalid IDs like `0` or legacy edge cases)
+
+If you want, next step I can implement a **combined player stats mode** that:
+1. loads both sources,
+2. joins by `Player ID`,
+3. shows separate league/tournament sections plus unified lifetime totals.
+
+---
+
+_**User**_
+
+it shoud already be imoplemented, since i used that feature for our artficial data. figure out, how to incorporate both data sources without changing the logic too much
+
+---
+
+_**Agent (default)**_
+
+Makes sense — I’ll locate the existing “combined/artificial” mechanism you used before and mirror that pattern for real data with minimal logic changes (prefer config/source composition over service rewrites). I’ll inspect data-source setup + any pre-merged CSV pipeline used by player stats.
+
+_**Agent (default)**_
+
+rg: : IO error for operation on : Das System kann den angegebenen Pfad nicht finden. (os error 3)
+
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **4** results in **1** directory</summary>
+
+Directory: **C:/Users/cfell/repos/bowlyzer_legacy/database** (4 files)
+
+| File |
+|------|
+| `../../../../../../database/data/tournament_combined_2024_2026_postprocessed.csv` |
+| `../../../../../../database\input\gf_tables_export\gf_tournaments_2026__combined_canonical_clean.csv` |
+| `../../../../../../database\input\gf_tables_export\gf_tournaments_2026__combined_stage_meta.csv` |
+| `../../../../../../database\input\gf_tables_export\gf_tournaments_2026__combined_postprocessed.csv` |
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:/Users/cfell/repos/bowlyzer_legacy/app/config/database_config.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:/Users/cfell/repos/bowlyzer_legacy/data_access/adapters/data_adapter_pandas.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: py -3 -c "import csv,glob,os
+candidates=['database/data/bowling_ergebnisse_real.csv','database/pipeline/bowling_bayern/legacy_out/latest.csv','database/data/tournament_combined_2024_2026_postprocessed.csv','database/input/gf_tables_export/gf_tournaments_2026__combined_postprocessed.csv']
+for p in candidates:
+ if not os.path.exists(p):
+  continue
+ with open(p,encoding='utf-8-sig',newline='') as f:
+  r=csv.DictReader(f,delimiter=';'); rows=list(r); h=r.fieldnames or []
+ et='Event Type' in h
+ vals={str(x.get('Event Type','')).strip().lower() for x in rows} if et else set()
+ print(p,'rows',len(rows),'has_event_type',et,'event_types',sorted(v for v in vals if v)[:5])"</summary>
+
+```bash
+py -3 -c "import csv,glob,os
+candidates=['database/data/bowling_ergebnisse_real.csv','database/pipeline/bowling_bayern/legacy_out/latest.csv','database/data/tournament_combined_2024_2026_postprocessed.csv','database/input/gf_tables_export/gf_tournaments_2026__combined_postprocessed.csv']
+for p in candidates:
+ if not os.path.exists(p):
+  continue
+ with open(p,encoding='utf-8-sig',newline='') as f:
+  r=csv.DictReader(f,delimiter=';'); rows=list(r); h=r.fieldnames or []
+ et='Event Type' in h
+ vals={str(x.get('Event Type','')).strip().lower() for x in rows} if et else set()
+ print(p,'rows',len(rows),'has_event_type',et,'event_types',sorted(v for v in vals if v)[:5])"
+```
+
+```
+database/data/bowling_ergebnisse_real.csv rows 3900 has_event_type False event_types []
+database/pipeline/bowling_bayern/legacy_out/latest.csv rows 9175 has_event_type False event_types []
+database/data/tournament_combined_2024_2026_postprocessed.csv rows 6474 has_event_type True event_types ['tournament']
+database/input/gf_tables_export/gf_tournaments_2026__combined_postprocessed.csv rows 2600 has_event_type True event_types ['tournament']
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "outputMode": "content",
+  "path": "C:/Users/cfell/repos/bowlyzer_legacy/business_logic/server.py",
+  "pattern": "get_games_for_player|input_data|computed_data|event_type"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "C:/Users/cfell/repos/bowlyzer_legacy/business_logic/server.py",
+  "pattern": "get_games_for_player|input_data|computed_data|event_type",
+  "topFiles": [
+    {
+      "matchCount": 22,
+      "uri": "business_logic\\server.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 22
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:/Users/cfell/repos/bowlyzer_legacy/business_logic/server.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+I found the low-impact path: create one **combined player source CSV** (league + tournament rows) and point the player page at that source by default, without changing player stats logic itself. I’m implementing that now in export + datasource config.
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: C:/Users/cfell/repos/bowlyzer_legacy/scripts/export_gf_tables.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: C:/Users/cfell/repos/bowlyzer_legacy/app/config/database_config.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: C:/Users/cfell/repos/bowlyzer_legacy/app/routes/player_routes.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: py -3 -c "import csv, os
+league='database/pipeline/bowling_bayern/legacy_out/latest.csv'
+tour='database/input/gf_tables_export/gf_tournaments_2026__combined_postprocessed.csv'
+out='database/input/gf_tables_export/gf_player_stats__league_plus_tournaments.csv'
+if os.path.exists(league) and os.path.exists(tour):
+  with open(league,encoding='utf-8-sig',newline='') as f: lr=list(csv.DictReader(f,delimiter=';'))
+  with open(tour,encoding='utf-8-sig',newline='') as f: tr=list(csv.DictReader(f,delimiter=';'))
+  headers=sorted({k for r in (lr+tr) for k in r.keys()})
+  rows=[]
+  for r in lr:
+    m={h:str(r.get(h,'')) for h in headers};
+    if not str(m.get('Event Type','')).strip(): m['Event Type']='league'
+    if not str(m.get('Event Name','')).strip(): m['Event Name']=str(m.get('League','')).strip()
+    if not str(m.get('Club','')).strip(): m['Club']=str(m.get('Team','')).strip()
+    rows.append(m)
+  for r in tr:
+    m={h:str(r.get(h,'')) for h in headers}; m['Input Data']='True'; m['Computed Data']='False'; rows.append(m)
+  os.makedirs(os.path.dirname(out),exist_ok=True)
+  with open(out,'w',encoding='utf-8',newline='') as f:
+    w=csv.DictWriter(f,fieldnames=headers,delimiter=';',extrasaction='ignore'); w.writeheader(); w.writerows(rows)
+  print('wrote',len(rows),'rows to',out)
+else:
+  print('missing input files')"</summary>
+
+```bash
+py -3 -c "import csv, os
+league='database/pipeline/bowling_bayern/legacy_out/latest.csv'
+tour='database/input/gf_tables_export/gf_tournaments_2026__combined_postprocessed.csv'
+out='database/input/gf_tables_export/gf_player_stats__league_plus_tournaments.csv'
+if os.path.exists(league) and os.path.exists(tour):
+  with open(league,encoding='utf-8-sig',newline='') as f: lr=list(csv.DictReader(f,delimiter=';'))
+  with open(tour,encoding='utf-8-sig',newline='') as f: tr=list(csv.DictReader(f,delimiter=';'))
+  headers=sorted({k for r in (lr+tr) for k in r.keys()})
+  rows=[]
+  for r in lr:
+    m={h:str(r.get(h,'')) for h in headers};
+    if not str(m.get('Event Type','')).strip(): m['Event Type']='league'
+    if not str(m.get('Event Name','')).strip(): m['Event Name']=str(m.get('League','')).strip()
+    if not str(m.get('Club','')).strip(): m['Club']=str(m.get('Team','')).strip()
+    rows.append(m)
+  for r in tr:
+    m={h:str(r.get(h,'')) for h in headers}; m['Input Data']='True'; m['Computed Data']='False'; rows.append(m)
+  os.makedirs(os.path.dirname(out),exist_ok=True)
+  with open(out,'w',encoding='utf-8',newline='') as f:
+    w=csv.DictWriter(f,fieldnames=headers,delimiter=';',extrasaction='ignore'); w.writeheader(); w.writerows(rows)
+  print('wrote',len(rows),'rows to',out)
+else:
+  print('missing input files')"
+```
+
+```
+wrote 11775 rows to database/input/gf_tables_export/gf_player_stats__league_plus_tournaments.csv
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: py -3 -m py_compile "scripts/export_gf_tables.py" "app/config/database_config.py" "app/routes/player_routes.py"</summary>
+
+```bash
+py -3 -m py_compile "scripts/export_gf_tables.py" "app/config/database_config.py" "app/routes/player_routes.py"
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "C:/Users/cfell/repos/bowlyzer_legacy/scripts/export_gf_tables.py",
+    "C:/Users/cfell/repos/bowlyzer_legacy/app/config/database_config.py",
+    "C:/Users/cfell/repos/bowlyzer_legacy/app/routes/player_routes.py"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "C:/Users/cfell/repos/bowlyzer_legacy/scripts/export_gf_tables.py"
+    },
+    {
+      "relativeWorkspacePath": "C:/Users/cfell/repos/bowlyzer_legacy/app/config/database_config.py"
+    },
+    {
+      "relativeWorkspacePath": "C:/Users/cfell/repos/bowlyzer_legacy/app/routes/player_routes.py"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Found and implemented a minimal-change path that matches your request.
+
+### What was true before
+- Player page queried only one selected data source.
+- League and tournament were in separate CSVs, so `/player/stats` couldn’t see both at once unless a merged source existed.
+
+### What I changed (minimal logic change)
+I did **not** rewrite player stats logic.  
+Instead I added a **combined source file** and plugged it into existing source selection.
+
+#### 1) New combined player source CSV
+- File: `database/input/gf_tables_export/gf_player_stats__league_plus_tournaments.csv`
+- Contains:
+  - all league rows from `database/pipeline/bowling_bayern/legacy_out/latest.csv`
+  - all tournament rows from `database/input/gf_tables_export/gf_tournaments_2026__combined_postprocessed.csv`
+- I generated it now (11775 rows), and export script can regenerate it.
+
+#### 2) Export pipeline now supports this
+- `scripts/export_gf_tables.py` now builds this combined player source automatically when combined tournament export exists.
+
+#### 3) Registered as data source
+- Added source id: `db_player_combined_gf`
+- In `app/config/database_config.py`
+- Display name: `Player Data (League+Tournament GF)`
+
+#### 4) Player page defaults to it
+- In `app/routes/player_routes.py`:
+  - if no `database` query param is provided, player routes now prefer `db_player_combined_gf` when available.
+  - fallback remains existing default.
+
+---
+
+### Matching key confirmation
+Yes, `Player ID` exists in both league and tournament data and is the right key to unify records.  
+This approach keeps current logic mostly intact while giving player stats visibility into both sources.
+
+If you want next, I can add a small label on `/player/stats` indicating which source is currently active so it’s obvious when it’s using the combined one.
+
+---
+
+_**User**_
+
+so, basically the data is not presented. I cannot see any difference. only league data is reported, altough "Christian Feller" has competed in NBM as well
+
+---
+
+_**Agent (default)**_
+
+I’ll trace the actual player source used by `/player/stats` and inspect `Christian Feller` rows in the combined file to see whether tournament rows are present but filtered out, or whether the page is still bound to league-only source.
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: py -3 -c "import csv,collections
+p='database/input/gf_tables_export/gf_player_stats__league_plus_tournaments.csv'
+with open(p,encoding='utf-8-sig',newline='') as f:
+ r=csv.DictReader(f,delimiter=';'); rows=[x for x in r if str(x.get('Player','')).strip()=='Christian Feller']
+print('rows',len(rows))
+print('event types',collections.Counter(str(x.get('Event Type','')).strip().lower() for x in rows))
+print('event names',collections.Counter(str(x.get('Event Name','')).strip() for x in rows).most_common(10))
+print('sample', {k:rows[0].get(k) for k in ['Season','Event Type','Event Name','Player','Player ID','Round Name','Game Number','Score','Input Data','Computed Data']} if rows else None)"</summary>
+
+```bash
+py -3 -c "import csv,collections
+p='database/input/gf_tables_export/gf_player_stats__league_plus_tournaments.csv'
+with open(p,encoding='utf-8-sig',newline='') as f:
+ r=csv.DictReader(f,delimiter=';'); rows=[x for x in r if str(x.get('Player','')).strip()=='Christian Feller']
+print('rows',len(rows))
+print('event types',collections.Counter(str(x.get('Event Type','')).strip().lower() for x in rows))
+print('event names',collections.Counter(str(x.get('Event Name','')).strip() for x in rows).most_common(10))
+print('sample', {k:rows[0].get(k) for k in ['Season','Event Type','Event Name','Player','Player ID','Round Name','Game Number','Score','Input Data','Computed Data']} if rows else None)"
+```
+
+```
+rows 55
+event types Counter({'league': 37, 'tournament': 18})
+event names [('BayL', 37), ('Nordbayerische Meisterschaft', 18)]
+sample {'Season': '25/26', 'Event Type': 'league', 'Event Name': 'BayL', 'Player': 'Christian Feller', 'Player ID': '16007', 'Round Name': '', 'Game Number': '', 'Score': '154', 'Input Data': 'True', 'Computed Data': 'False'}
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+I confirmed the combined player file contains both league and NBM rows for `Christian Feller` (`37 league + 18 tournament`), so the issue is source selection at request time. I’ll make player routes auto-upgrade from `db_real_pipeline_gf` to the combined player source when available, unless you explicitly request another non-league source.
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: C:/Users/cfell/repos/bowlyzer_legacy/app/routes/player_routes.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: py -3 -m py_compile "app/routes/player_routes.py"</summary>
+
+```bash
+py -3 -m py_compile "app/routes/player_routes.py"
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "C:/Users/cfell/repos/bowlyzer_legacy/app/routes/player_routes.py"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "C:/Users/cfell/repos/bowlyzer_legacy/app/routes/player_routes.py"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+You were right to push on this. I verified:
+
+- `gf_player_stats__league_plus_tournaments.csv` **does** include tournament rows for Christian Feller.
+- So the missing display was a **source-selection issue**, not missing data.
+
+### Fix applied
+In `app/routes/player_routes.py`, `get_player_service()` now:
+
+- auto-uses `db_player_combined_gf` when available
+- and if request passes `database=db_real_pipeline_gf`, it transparently upgrades to combined (league-only -> league+tournament)
+
+This keeps behavior minimal and compatible while making player stats include both data sources by default.
+
+### What to do
+Reload server/page and open:
+- `/player/stats?player_name=Christian+Feller`
+
+You should now see both:
+- league competition rows (e.g. `BayL`)
+- tournament competition rows (e.g. `Nordbayerische Meisterschaft`)
+
+---
+
+_**User**_
+
+nice! now about name normalization: i know, we need a proper player db, but when i do a search for Thorsten Fliegener in the player stats page, there are both combos:
+Fliegener Thorsten and Thorsten Fliegener. Can you do a normalization here and decide on one version per player id? and perform the filtering not on the name but the player ID
+
+---
+
+_**Agent (default)**_
+
+Great call — this is exactly the right incremental fix before a full player DB. I’ll implement ID-based normalization and filtering for the player page so each `Player ID` resolves to one canonical display name, and stats/seasons are fetched by `Player ID` first (name only as fallback).
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: C:/Users/cfell/repos/bowlyzer_legacy/app/services/player_service.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: C:/Users/cfell/repos/bowlyzer_legacy/app/routes/player_routes.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Failed to find context:
+    async function loadPlayerSeasons(playerName) {
+        if (!playerName) {
+            renderSeasonButtons([]);
+            return;
+        }
+        try {
+            const response = await fetchWithDatabase(`{{ url_for("player.get_available_seasons") }}?player_name=${encodeURIComponent(playerName)}`);
+            const seasons = await response.json();
+            renderSeasonButtons(Array.isArray(seasons) ? seasons : []);
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "outputMode": "content",
+  "path": "C:/Users/cfell/repos/bowlyzer_legacy/app/templates/player/content.html",
+  "pattern": "function updateUrlParams|async function loadPlayerSeasons|function loadPlayerStats|playerInput.addEventListener\\('change'|parseUrlParams|selectedSeason"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "C:/Users/cfell/repos/bowlyzer_legacy/app/templates/player/content.html",
+  "pattern": "function updateUrlParams|async function loadPlayerSeasons|function loadPlayerStats|playerInput.addEventListener\\('change'|parseUrlParams|selectedSeason",
+  "topFiles": [
+    {
+      "matchCount": 17,
+      "uri": "app\\templates\\player\\content.html"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 17
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:/Users/cfell/repos/bowlyzer_legacy/app/templates/player/content.html</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: C:/Users/cfell/repos/bowlyzer_legacy/app/templates/player/content.html</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: py -3 -m py_compile "app/services/player_service.py" "app/routes/player_routes.py"</summary>
+
+```bash
+py -3 -m py_compile "app/services/player_service.py" "app/routes/player_routes.py"
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "C:/Users/cfell/repos/bowlyzer_legacy/app/services/player_service.py",
+    "C:/Users/cfell/repos/bowlyzer_legacy/app/routes/player_routes.py",
+    "C:/Users/cfell/repos/bowlyzer_legacy/app/templates/player/content.html"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "C:/Users/cfell/repos/bowlyzer_legacy/app/services/player_service.py"
+    },
+    {
+      "relativeWorkspacePath": "C:/Users/cfell/repos/bowlyzer_legacy/app/routes/player_routes.py"
+    },
+    {
+      "relativeWorkspacePath": "C:/Users/cfell/repos/bowlyzer_legacy/app/templates/player/content.html"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Implemented — normalization is now ID-centric with minimal disruption.
+
+### What changed
+
+- Player selection/search is now effectively **one entry per `Player ID`**:
+  - `PlayerService.get_all_players()` now builds a catalog grouped by `Player ID`
+  - picks one canonical display name per ID (including handling reversed token variants)
+
+- Player stats/seasons endpoints now support **ID-first filtering**:
+  - `/player/get_available_seasons` accepts `player_id`
+  - `/player/get_lifetime_stats` accepts `player_id`
+  - `PlayerService.get_lifetime_stats(..., player_id=...)` filters by ID when available
+  - name matching is fallback only
+
+- Player page frontend now carries and uses `player_id`:
+  - datalist already had `data-id`; now it’s used
+  - URL now stores `player_id`
+  - all stats/seasons fetches include `player_id`
+  - deep links continue to work with `player_name`, and now also `player_id`
+
+### Why this solves your case
+
+For entries like:
+- `Fliegener Thorsten`
+- `Thorsten Fliegener`
+
+if both map to same `Player ID`, they now collapse to one selectable player entry and stats aggregate by ID instead of fragile name matching.
+
+If you want, next I can add a tiny admin/debug endpoint that lists IDs with >1 name variant so you can audit normalization quality quickly.
+
+---
+
+_**User**_
+
+great! now we already have a link to "Süberbyerische Meisterschaften" there, but i dont want o navigat to the tournament page, but to that players individual tournament page
+
+---
+
+_**Agent (default)**_
+
+Perfect — I’ll change those tournament links to deep-link directly into the tournament page with the current player preselected, and wire the tournament page to auto-open that player’s individual section from URL params.
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: C:/Users/cfell/repos/bowlyzer_legacy/app/templates/player/content.html</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: C:/Users/cfell/repos/bowlyzer_legacy/app/static/js/tournament-stats-app.js</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "C:/Users/cfell/repos/bowlyzer_legacy/app/templates/player/content.html",
+    "C:/Users/cfell/repos/bowlyzer_legacy/app/static/js/tournament-stats-app.js"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "C:/Users/cfell/repos/bowlyzer_legacy/app/templates/player/content.html"
+    },
+    {
+      "relativeWorkspacePath": "C:/Users/cfell/repos/bowlyzer_legacy/app/static/js/tournament-stats-app.js"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Done — that link now deep-links to the player-specific tournament view.
+
+### What changed
+
+- In player stats table, tournament competition links now include:
+  - `player=<current player name>`
+  - plus existing `season`, `tournament`, `database`
+
+- Tournament page now reads `player` from URL on load and:
+  - pre-fills player input
+  - automatically opens that player’s individual tournament section
+
+So clicking `Südbayerische Meisterschaft` (or any tournament row) from player stats should now jump directly to that player’s personal tournament page context, not just the generic tournament overview.

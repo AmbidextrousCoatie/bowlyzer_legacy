@@ -7,7 +7,19 @@ bp = Blueprint('player', __name__, url_prefix='/player')
 
 def get_player_service():
     """Helper function to get PlayerService with database parameter"""
-    database = request.args.get('database') or database_config.get_default_source()
+    requested = request.args.get('database')
+    has_combined = database_config.validate_source('db_player_combined_gf')
+    if requested:
+        # Player stats should include league+tournament by default.
+        # If caller passes the league-only default source, transparently upgrade.
+        if requested == 'db_real_pipeline_gf' and has_combined:
+            database = 'db_player_combined_gf'
+        else:
+            database = requested
+    elif has_combined:
+        database = 'db_player_combined_gf'
+    else:
+        database = database_config.get_default_source()
     return PlayerService(database=database)
 
 @bp.route('/stats')
@@ -24,10 +36,11 @@ def search_players():
 @bp.route('/get_available_seasons')
 def get_available_seasons():
     player_name = request.args.get('player_name')
-    if not player_name:
+    player_id = request.args.get('player_id', '')
+    if not player_name and not player_id:
         return jsonify([])
     player_service = get_player_service()
-    seasons = player_service.get_player_seasons(player_name)
+    seasons = player_service.get_player_seasons(player_name or '', player_id=player_id)
     return jsonify(json_safe(seasons))
 
 @bp.route('/get-stats')
@@ -41,14 +54,15 @@ def get_stats():
 def get_lifetime_stats():
    
     player_name = request.args.get('player_name')
+    player_id = request.args.get('player_id', '')
     season = request.args.get('season', 'all')
     
-    if not player_name:
+    if not player_name and not player_id:
         return jsonify({'error': 'Player name is required'}), 400
     
     print(f"Player Route: Get Lifetime Stats - Received request with: player_name={player_name}")
     
     player_service = get_player_service()
-    stats = player_service.get_lifetime_stats(player_name, season=season)  # Supports optional season scope
+    stats = player_service.get_lifetime_stats(player_name or '', season=season, player_id=player_id)  # Supports optional season scope
     
     return jsonify(json_safe(stats))

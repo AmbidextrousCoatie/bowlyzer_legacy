@@ -1090,6 +1090,7 @@
 
   async function init() {
     const params = new URLSearchParams(window.location.search);
+    const deepLinkedPlayer = (params.get("player") || "").trim();
     const seasons = await getAvailableSeasons();
     const seasonItems = seasons.map((s) => ({ value: String(s), label: String(s) }));
     currentFilters.season = pickValue(seasonItems, params.get("season"));
@@ -1103,6 +1104,14 @@
     await refreshRoundButtons();
 
     await applyFiltersAndRender(true);
+
+    if (deepLinkedPlayer) {
+      const input = document.getElementById("tournamentPlayerInput");
+      if (input) {
+        input.value = deepLinkedPlayer;
+        await onPlayerChanged();
+      }
+    }
 
     document.getElementById("tournamentPlayerInput")?.addEventListener("change", onPlayerChanged);
     document.getElementById("tournamentPlayerInput")?.addEventListener("blur", onPlayerChanged);

@@ -131,6 +131,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const playerInput = document.getElementById('playerInput');
     const playerList = document.getElementById('playerList');
     const seasonButtons = document.getElementById('playerSeasonButtons');
+    let selectedPlayerId = '';
     let selectedSeason = 'all';
     
     // Parse URL parameters
@@ -138,15 +139,18 @@ document.addEventListener('DOMContentLoaded', function() {
         const params = new URLSearchParams(window.location.search);
         return {
             player_name: params.get('player_name'),
+            player_id: params.get('player_id'),
             database: params.get('database'),
             season: params.get('season') || 'all'
         };
     }
 
-    function updateUrlParams(playerName, season) {
+    function updateUrlParams(playerName, season, playerId = '') {
         const url = new URL(window.location.href);
         if (playerName) url.searchParams.set('player_name', playerName);
         else url.searchParams.delete('player_name');
+        if (playerId) url.searchParams.set('player_id', playerId);
+        else url.searchParams.delete('player_id');
         if (season && season !== 'all') url.searchParams.set('season', season);
         else url.searchParams.delete('season');
         window.history.replaceState({}, '', url);
@@ -180,6 +184,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const targetPath = isTournament ? '/tournament/stats' : '/league/stats';
         if (isTournament) qs.set('tournament', String(competition));
         else qs.set('league', String(competition));
+        const selectedPlayerName = (playerInput && playerInput.value ? playerInput.value.trim() : '');
+        if (isTournament && selectedPlayerName) {
+            qs.set('player', selectedPlayerName);
+        }
         if (database) qs.set('database', database);
         return `<a href="${targetPath}?${qs.toString()}">${escapeHtml(label)}</a>`;
     }
@@ -232,20 +240,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 selectedSeason = btn.getAttribute('data-season') || 'all';
                 renderSeasonButtons(seasons);
                 if (playerName) {
-                    updateUrlParams(playerName, selectedSeason);
-                    loadPlayerStats(playerName);
+                    updateUrlParams(playerName, selectedSeason, selectedPlayerId);
+                    loadPlayerStats(playerName, selectedPlayerId);
                 }
             });
         });
     }
 
-    async function loadPlayerSeasons(playerName) {
-        if (!playerName) {
+    async function loadPlayerSeasons(playerName, playerId = '') {
+        if (!playerName && !playerId) {
             renderSeasonButtons([]);
             return;
         }
         try {
-            const response = await fetchWithDatabase(`{{ url_for("player.get_available_seasons") }}?player_name=${encodeURIComponent(playerName)}`);
+            const response = await fetchWithDatabase(
+                `{{ url_for("player.get_available_seasons") }}?player_name=${encodeURIComponent(playerName || '')}&player_id=${encodeURIComponent(playerId || selectedPlayerId || '')}`
+            );
             const seasons = await response.json();
             renderSeasonButtons(Array.isArray(seasons) ? seasons : []);
         } catch (e) {
@@ -263,15 +273,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Find the player in the list
                 const matchingPlayer = players.find(player => 
-                    player.name === urlParams.player_name || player.id === urlParams.player_name
+                    player.name === urlParams.player_name
+                    || player.id === urlParams.player_name
+                    || (urlParams.player_id && player.id === urlParams.player_id)
                 );
                 
                 if (matchingPlayer) {
                     console.log('Found matching player:', matchingPlayer);
                     playerInput.value = matchingPlayer.name;
+                    selectedPlayerId = matchingPlayer.id || '';
                     selectedSeason = urlParams.season || 'all';
-                    loadPlayerSeasons(matchingPlayer.name);
-                    loadPlayerStats(matchingPlayer.name);
+                    loadPlayerSeasons(matchingPlayer.name, selectedPlayerId);
+                    loadPlayerStats(matchingPlayer.name, selectedPlayerId);
                 } else {
                     console.warn('Player not found in database:', urlParams.player_name);
                     document.getElementById('playerStats').innerHTML = `
@@ -289,23 +302,24 @@ document.addEventListener('DOMContentLoaded', function() {
         const option = Array.from(playerList.options).find(opt => opt.value === selectedName);
         
         if (option) {
-            // Use the selected name directly since id and name are the same
+            selectedPlayerId = option.getAttribute('data-id') || '';
             selectedSeason = 'all';
-            loadPlayerSeasons(selectedName);
-            updateUrlParams(selectedName, selectedSeason);
-            loadPlayerStats(selectedName);
+            loadPlayerSeasons(selectedName, selectedPlayerId);
+            updateUrlParams(selectedName, selectedSeason, selectedPlayerId);
+            loadPlayerStats(selectedName, selectedPlayerId);
         }
     });
 
-    function loadPlayerStats(playerName) {
+    function loadPlayerStats(playerName, playerId = '') {
         const name = (playerName != null && String(playerName).trim() !== '')
             ? String(playerName).trim()
             : (playerInput && playerInput.value ? playerInput.value.trim() : '');
         if (!name) {
             return;
         }
+        const pid = playerId || selectedPlayerId || '';
         console.log("loadPlayerStats: " + name);
-        fetchWithDatabase(`{{ url_for("player.get_lifetime_stats") }}?player_name=${encodeURIComponent(name)}&season=${encodeURIComponent(selectedSeason)}`)
+        fetchWithDatabase(`{{ url_for("player.get_lifetime_stats") }}?player_name=${encodeURIComponent(name)}&player_id=${encodeURIComponent(pid)}&season=${encodeURIComponent(selectedSeason)}`)
             .then(response => response.json())
             .then(data => {
                 // Check if data is null or missing required properties
@@ -333,7 +347,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 displayLifetimeStats(data.lifetime);
                 displaySeasonStats(data.seasons);
                 updateTrendChart(data);  // We'll keep the existing chart functionality
-                updateUrlParams(name, selectedSeason);
+                updateUrlParams(name, selectedSeason, pid);
             })
             .catch(error => {
                 console.error('Error loading player stats:', error);
