@@ -39,11 +39,6 @@
             transition: background-color 0.3s ease, color 0.3s ease;
         }
         
-        /* Dark mode body styles */
-        body.dark-mode {
-            background-color: var(--theme-background);
-            color: var(--theme-text-on-light);
-        }
 
         .navbar {
             background-color: var(--theme-primary) !important;
@@ -68,10 +63,6 @@
             transition: background-color 0.3s ease, color 0.3s ease;
         }
         
-        /* Dark mode card adjustments */
-        body.dark-mode .card {
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        }
 
         /* Button Styles */
         .btn-primary {
@@ -190,7 +181,6 @@
     <!-- Initialize theme colors from ColorUtils -->
     <script>
         // Initialize CSS variables from ColorUtils immediately (ColorUtils is loaded above)
-        // Dark mode initialization happens in ColorUtils.applyDarkMode()
         (function() {
             if (window.ColorUtils && window.ColorUtils.THEME_COLORS) {
                 const root = document.documentElement;
@@ -213,7 +203,7 @@
                 root.style.setProperty('--theme-table-body-text', theme.tableBodyText);
                 root.style.setProperty('--theme-table-muted-text', theme.tableMutedText);
                 
-                // Dark mode will be applied by ColorUtils.applyDarkMode() if needed
+                // Theme variables are applied by ColorUtils on load.
             }
         })();
     </script>

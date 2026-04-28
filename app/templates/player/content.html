@@ -438,7 +438,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const rows = seasons.map(season => ([
             season.season || '-',
-            season.competition || '-',
+            competitionCellHtml(
+                season.season,
+                season.competition,
+                season.is_tournament,
+                season.row_type,
+                season.club,
+                season.team_name,
+                season.team_number
+            ),
             season.row_type === 'season_total'
                 ? ''
                 : ((season.club || '-') + (season.team_number ? ` ${season.team_number}` : '')),
@@ -459,7 +467,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 title: '',
                 columns: [
                     { title: i18nText('ui.player.season', 'Season'), field: 'season' },
-                    { title: i18nText('ui.player.competition', 'Competition'), field: 'competition' },
+                    { title: i18nText('ui.player.competition', 'Competition'), field: 'competition', is_html: true },
                     { title: i18nText('ui.player.club', 'Club'), field: 'club' },
                     { title: i18nText('ui.player.games', 'Games'), field: 'games' },
                     { title: i18nText('ui.player.total_pins_col', 'Total Pins'), field: 'total_pins' },
@@ -526,42 +534,32 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // Inject competition links after the table is rendered (supports both Tabulator and plain tables).
-        const injectCompetitionLinks = () => {
-            const tabulatorCells = tableContainer.querySelectorAll('.tabulator-cell[tabulator-field="competition"]');
-            if (tabulatorCells.length > 0) {
-                tabulatorCells.forEach((cell, index) => {
-                    const season = seasons[index];
-                    if (!season) return;
-                    cell.innerHTML = competitionCellHtml(
-                        season.season,
-                        season.competition,
-                        season.is_tournament,
-                        season.row_type,
-                        season.club,
-                        season.team_name,
-                        season.team_number
-                    );
-                });
-                return;
-            }
+        // Ensure deep links are reliable on touch devices where Tabulator cell
+        // handlers can swallow the first tap.
+        if (!tableContainer.dataset.deepLinkHandlersBound) {
+            let lastTouchNavTs = 0;
+            const navigateFromEvent = (event, isTouch = false) => {
+                const link = event.target && event.target.closest
+                    ? event.target.closest('a[href]')
+                    : null;
+                if (!link) return;
+                const href = link.getAttribute('href');
+                if (!href || href.startsWith('#') || href.startsWith('javascript:')) {
+                    return;
+                }
+                if (isTouch) {
+                    lastTouchNavTs = Date.now();
+                } else if (Date.now() - lastTouchNavTs < 450) {
+                    return;
+                }
+                event.preventDefault();
+                window.location.href = href;
+            };
 
-            const competitionCells = tableContainer.querySelectorAll('tbody tr td:nth-child(2)');
-            seasons.forEach((season, index) => {
-                const cell = competitionCells[index];
-                if (!cell) return;
-                cell.innerHTML = competitionCellHtml(
-                    season.season,
-                    season.competition,
-                    season.is_tournament,
-                    season.row_type,
-                    season.club,
-                    season.team_name,
-                    season.team_number
-                );
-            });
-        };
-        requestAnimationFrame(() => requestAnimationFrame(injectCompetitionLinks));
+            tableContainer.addEventListener('touchend', (event) => navigateFromEvent(event, true), { passive: false });
+            tableContainer.addEventListener('click', (event) => navigateFromEvent(event, false));
+            tableContainer.dataset.deepLinkHandlersBound = 'true';
+        }
     }
 
     function updateTrendChart(data) {
