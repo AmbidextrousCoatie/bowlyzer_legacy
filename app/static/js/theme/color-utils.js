@@ -62,50 +62,6 @@
         danger: "#f8d7da",            // Danger states
     };
 
-    // Dark mode theme colors
-    const THEME_COLORS_DARK = {
-        // Primary colors (same as light mode)
-        primary: "#1B8CA6",
-        secondary: "#4aa8c2",
-        accent: "#7dcfe6",
-        
-        // Background colors (dark)
-        background: "#0f172a",        // Dark slate background
-        surface: "#1e293b",           // Dark surface
-        surfaceAlt: "#334155",        // Alternate dark surface
-        surfaceLight: "#475569",      // Light dark variant
-        
-        // Text colors (light for dark backgrounds)
-        textOnPrimary: "#ffffff",
-        textOnSecondary: "#ffffff",
-        textOnLight: "#e2e8f0",       // Light text on dark background
-        
-        // Border colors (light for dark mode)
-        border: "#475569",            // Lighter border for dark mode
-        borderLight: "#64748b",       // Light border
-        borderSoft: "rgba(226, 232, 240, 0.12)", // Soft border (dark mode)
-        
-        // Table colors (dark)
-        tableHeaderBg: "#182645",     // Dark table header background
-        tableHeaderText: "#e2e8f0",   // Light table header text
-        tableBodyText: "#f1f5f9",     // Light table body text
-        tableMutedText: "#94a3b8",    // Muted text (dark mode)
-        
-        // Heat map colors (same as light mode)
-        heatMapStart: "#dddddd",
-        heatMapEnd: "#1b8da7",
-        heatMapLow: "#d9596a",
-        heatMapHigh: "#1b8da7",
-        heatMapHighBand: "#ffe7a3",
-        heatMapPerfect: "#ffc107",
-        heatMapPerfectBorder: "#b77900",
-        
-        // Status colors (adjusted for dark mode)
-        warning: "#86e1b3",
-        info: "#a1e8c4",
-        success: "#d4edda",
-        danger: "#f8d7da",
-    };
 
     // Heatmap palettes - separate from THEME_COLORS for easier switching
     const HEATMAP_PALETTES = {
@@ -511,47 +467,10 @@
         return fallbacks[semanticName] || "#888";
     }
 
-    // Dark mode management
-    function isDarkMode() {
-        if (typeof localStorage !== 'undefined') {
-            const stored = localStorage.getItem('darkMode');
-            if (stored !== null) {
-                return stored === 'true';
-            }
-        }
-        // Check if system prefers dark mode
-        if (typeof window !== 'undefined' && window.matchMedia) {
-            return window.matchMedia('(prefers-color-scheme: dark)').matches;
-        }
-        return false;
-    }
-
-    function setDarkMode(enabled) {
-        if (typeof localStorage !== 'undefined') {
-            localStorage.setItem('darkMode', enabled ? 'true' : 'false');
-        }
-        applyDarkMode(enabled);
-    }
-
-    function toggleDarkMode() {
-        const current = isDarkMode();
-        setDarkMode(!current);
-        return !current;
-    }
-
-    function applyDarkMode(enabled) {
+    function applyThemeColors() {
         const root = document.documentElement;
-        const body = document.body;
-        const theme = enabled ? THEME_COLORS_DARK : THEME_COLORS;
-        
-        // Set data-theme attribute
-        if (enabled) {
-            root.setAttribute('data-theme', 'dark');
-            body.classList.add('dark-mode');
-        } else {
-            root.setAttribute('data-theme', 'light');
-            body.classList.remove('dark-mode');
-        }
+        const theme = THEME_COLORS;
+        root.setAttribute("data-theme", "light");
         
         // Apply theme colors as CSS variables
         Object.keys(theme).forEach(key => {
@@ -559,49 +478,33 @@
             root.style.setProperty(cssKey, theme[key]);
         });
         
-        // Apply table-specific dark mode variables
-        if (enabled) {
-            root.style.setProperty('--table-surface', theme.surface);
-            root.style.setProperty('--table-surface-alt', theme.surfaceAlt);
-            root.style.setProperty('--table-border-soft', theme.borderSoft);
-            root.style.setProperty('--table-header-bg', theme.tableHeaderBg);
-            root.style.setProperty('--table-header-text', theme.tableHeaderText);
-            root.style.setProperty('--table-body-text', theme.tableBodyText);
-            root.style.setProperty('--table-muted-text', theme.tableMutedText);
-            root.style.setProperty('--table-hover-bg', 'rgba(56, 189, 248, 0.14)');
-            root.style.setProperty('--table-selected-bg', 'rgba(99, 102, 241, 0.28)');
-            root.style.setProperty('--table-highlight-bg', 'rgba(14, 165, 233, 0.2)');
-            root.style.setProperty('--table-shadow', '0 12px 30px rgba(2, 6, 23, 0.65)');
-        } else {
-            root.style.setProperty('--table-surface', THEME_COLORS.surface);
-            root.style.setProperty('--table-surface-alt', '#f6f8fb');
-            root.style.setProperty('--table-border-soft', THEME_COLORS.borderSoft);
-            root.style.setProperty('--table-header-bg', THEME_COLORS.tableHeaderBg);
-            root.style.setProperty('--table-header-text', THEME_COLORS.tableHeaderText);
-            root.style.setProperty('--table-body-text', THEME_COLORS.tableBodyText);
-            root.style.setProperty('--table-muted-text', THEME_COLORS.tableMutedText);
-            root.style.setProperty('--table-hover-bg', 'rgba(59, 130, 246, 0.08)');
-            root.style.setProperty('--table-selected-bg', 'rgba(99, 102, 241, 0.18)');
-            root.style.setProperty('--table-highlight-bg', 'rgba(15, 118, 110, 0.12)');
-            root.style.setProperty('--table-shadow', '0 12px 25px rgba(15, 23, 42, 0.08)');
-        }
+        root.style.setProperty('--table-surface', THEME_COLORS.surface);
+        root.style.setProperty('--table-surface-alt', '#f6f8fb');
+        root.style.setProperty('--table-border-soft', THEME_COLORS.borderSoft);
+        root.style.setProperty('--table-header-bg', THEME_COLORS.tableHeaderBg);
+        root.style.setProperty('--table-header-text', THEME_COLORS.tableHeaderText);
+        root.style.setProperty('--table-body-text', THEME_COLORS.tableBodyText);
+        root.style.setProperty('--table-muted-text', THEME_COLORS.tableMutedText);
+        root.style.setProperty('--table-hover-bg', 'rgba(59, 130, 246, 0.08)');
+        root.style.setProperty('--table-selected-bg', 'rgba(99, 102, 241, 0.18)');
+        root.style.setProperty('--table-highlight-bg', 'rgba(15, 118, 110, 0.12)');
+        root.style.setProperty('--table-shadow', '0 12px 25px rgba(15, 23, 42, 0.08)');
         
         // Dispatch event for other components
         if (typeof window !== 'undefined') {
             window.dispatchEvent(new CustomEvent('themeChanged', { 
-                detail: { darkMode: enabled } 
+                detail: { theme: "light" } 
             }));
         }
     }
 
-    // Initialize dark mode on load
     if (typeof document !== 'undefined') {
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => {
-                applyDarkMode(isDarkMode());
+                applyThemeColors();
             });
         } else {
-            applyDarkMode(isDarkMode());
+            applyThemeColors();
         }
     }
 
@@ -609,7 +512,6 @@
         TEAM_COLOR_PALETTES,
         SEMANTIC_COLOR_MAPPINGS,
         THEME_COLORS,
-        THEME_COLORS_DARK,
         DEFAULT_STRIPE_PALETTE,
         getCurrentPaletteName: () => currentPaletteName,
         getCurrentPalette: () => [...currentPalette],
@@ -636,10 +538,7 @@
         assignGroupStripeCss,
         generateStripeCss,
         injectStripeCss,
-        isDarkMode,
-        setDarkMode,
-        toggleDarkMode,
-        applyDarkMode
+        applyThemeColors
     };
 
     globalObj.ColorUtils = ColorUtils;

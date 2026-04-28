@@ -51,12 +51,6 @@
                         <li><a class="dropdown-item palette-option" href="#" data-palette="harmonic10">Harmonic 10</a></li>
                         <li><a class="dropdown-item palette-option" href="#" data-palette="rainbowPastel">Rainbow Pastel</a></li>
                     </ul>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#" id="darkModeToggle" role="button" aria-label="Toggle dark mode">
-                        <span id="darkModeIcon">🌙</span>
-                        <span id="darkModeText" class="d-none d-md-inline">Dark Mode</span>
-                    </a>
                 </li> #}
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('main.impressum') }}" id="impressumLink">Impressum</a>
@@ -163,31 +157,6 @@
                             }, 3000);
                         });
                         
-                        /* Dark mode toggle handler (navbar control hidden)
-                        const darkModeToggle = document.getElementById('darkModeToggle');
-                        const darkModeIcon = document.getElementById('darkModeIcon');
-                        const darkModeText = document.getElementById('darkModeText');
-                        
-                        if (darkModeToggle && window.ColorUtils) {
-                            function updateDarkModeUI(isDark) {
-                                if (darkModeIcon) {
-                                    darkModeIcon.textContent = isDark ? '☀️' : '🌙';
-                                }
-                                if (darkModeText) {
-                                    darkModeText.textContent = isDark ? 'Light Mode' : 'Dark Mode';
-                                }
-                            }
-                            updateDarkModeUI(window.ColorUtils.isDarkMode());
-                            darkModeToggle.addEventListener('click', function(e) {
-                                e.preventDefault();
-                                const newState = window.ColorUtils.toggleDarkMode();
-                                updateDarkModeUI(newState);
-                            });
-                            window.addEventListener('themeChanged', function(e) {
-                                updateDarkModeUI(e.detail.darkMode);
-                            });
-                        }
-                        */
                     });
                 </script>
                 <style>

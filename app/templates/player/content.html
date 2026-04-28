@@ -562,6 +562,33 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         };
         requestAnimationFrame(() => requestAnimationFrame(injectCompetitionLinks));
+
+        // Ensure deep links are reliable on touch devices where Tabulator cell
+        // handlers can swallow the first tap.
+        if (!tableContainer.dataset.deepLinkHandlersBound) {
+            let lastTouchNavTs = 0;
+            const navigateFromEvent = (event, isTouch = false) => {
+                const link = event.target && event.target.closest
+                    ? event.target.closest('a[href]')
+                    : null;
+                if (!link) return;
+                const href = link.getAttribute('href');
+                if (!href || href.startsWith('#') || href.startsWith('javascript:')) {
+                    return;
+                }
+                if (isTouch) {
+                    lastTouchNavTs = Date.now();
+                } else if (Date.now() - lastTouchNavTs < 450) {
+                    return;
+                }
+                event.preventDefault();
+                window.location.href = href;
+            };
+
+            tableContainer.addEventListener('touchend', (event) => navigateFromEvent(event, true), { passive: false });
+            tableContainer.addEventListener('click', (event) => navigateFromEvent(event, false));
+            tableContainer.dataset.deepLinkHandlersBound = 'true';
+        }
     }
 
     function updateTrendChart(data) {
