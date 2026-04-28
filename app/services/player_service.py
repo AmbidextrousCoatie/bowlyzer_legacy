@@ -6,7 +6,7 @@ from business_logic.statistics import calculate_score_average_player, calculate_
 from business_logic.server import Server
 from app.services.statistics_service import StatisticsService
 from app.models.statistics_models import PlayerStatistics
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Tuple
 
 OVERALL_CUMULATIVE_SCORE_COL = "Overall Cumulative Score"
 
@@ -267,6 +267,13 @@ class PlayerService:
                     return vals[0]
             return "Unknown Competition"
 
+        def row_team_name(df: pd.DataFrame) -> str:
+            if Columns.team_name in df.columns:
+                vals = [str(x).strip() for x in df[Columns.team_name].dropna().tolist() if str(x).strip()]
+                if vals:
+                    return vals[0]
+            return ""
+
         def row_club(df: pd.DataFrame) -> str:
             if Columns.club in df.columns:
                 vals = [str(x).strip() for x in df[Columns.club].dropna().tolist() if str(x).strip()]
@@ -302,35 +309,45 @@ class PlayerService:
                 out = out[_csv_bool_is_false(out[Columns.computed_data])]
             return out
 
-        def league_average_rank(season_value: Any, league_value: str, player_value: str, player_id_value: str = "") -> Optional[int]:
+        def league_average_rank(
+            season_value: Any,
+            league_value: str,
+            player_value: str,
+            player_id_value: str = "",
+        ) -> Tuple[Optional[int], int]:
             base = self.data_manager.df.copy()
             if base.empty:
-                return None
+                return None, 0
             if Columns.season in base.columns:
                 base = base[base[Columns.season].astype(str).str.strip().eq(str(season_value).strip())]
             if Columns.league_name in base.columns:
                 base = base[base[Columns.league_name].astype(str).str.strip().eq(str(league_value).strip())]
             base = _safe_player_rows(base)
             if base.empty or Columns.player_name not in base.columns or Columns.score not in base.columns:
-                return None
+                return None, 0
             pid_norm = self._normalize_player_id(player_id_value)
             if pid_norm and Columns.player_id in base.columns:
                 base[Columns.player_id] = base[Columns.player_id].astype(str).map(self._normalize_player_id)
                 grouped = base.groupby(Columns.player_id, dropna=False)[Columns.score].mean().sort_values(ascending=False)
                 if pid_norm not in grouped.index:
-                    return None
+                    return None, int(len(grouped))
                 rank_series = grouped.rank(method="min", ascending=False)
-                return int(rank_series[pid_norm])
+                return int(rank_series[pid_norm]), int(len(grouped))
             grouped = base.groupby(Columns.player_name, dropna=False)[Columns.score].mean().sort_values(ascending=False)
             if player_value not in grouped.index:
-                return None
+                return None, int(len(grouped))
             rank_series = grouped.rank(method="min", ascending=False)
-            return int(rank_series[player_value])
+            return int(rank_series[player_value]), int(len(grouped))
 
-        def tournament_final_rank(season_value: Any, event_value: str, player_value: str, player_id_value: str = "") -> Optional[int]:
+        def tournament_final_rank(
+            season_value: Any,
+            event_value: str,
+            player_value: str,
+            player_id_value: str = "",
+        ) -> Tuple[Optional[int], int]:
             base = self.data_manager.df.copy()
             if base.empty:
-                return None
+                return None, 0
             if Columns.season in base.columns:
                 base = base[base[Columns.season].astype(str).str.strip().eq(str(season_value).strip())]
             if Columns.event_name in base.columns:
@@ -338,7 +355,7 @@ class PlayerService:
             if Columns.event_type in base.columns:
                 base = base[base[Columns.event_type].astype(str).str.strip().str.lower().eq("tournament")]
             if base.empty or Columns.player_name not in base.columns:
-                return None
+                return None, 0
 
             # Rank all participants by their latest cumulative tournament total.
             # This keeps eliminated players in ranking (e.g. did not reach final round).
@@ -355,7 +372,7 @@ class PlayerService:
                 )
                 work = work.dropna(subset=[OVERALL_CUMULATIVE_SCORE_COL])
                 if work.empty:
-                    return None
+                    return None, 0
                 sort_cols = [Columns.player_name, Columns.round_number, Columns.game_number]
                 work = work.sort_values(by=sort_cols, ascending=[True, True, True])
                 latest = work.groupby(Columns.player_name, dropna=False).tail(1)
@@ -366,7 +383,7 @@ class PlayerService:
                 )
             else:
                 if Columns.score not in base.columns:
-                    return None
+                    return None, 0
                 work = base.copy()
                 work[Columns.score] = pd.to_numeric(work[Columns.score], errors="coerce").fillna(0)
                 totals = (
@@ -395,14 +412,14 @@ class PlayerService:
                     work[Columns.score] = pd.to_numeric(work[Columns.score], errors="coerce").fillna(0)
                     totals_by_id = work.groupby(Columns.player_id, dropna=False)[Columns.score].sum().sort_values(ascending=False)
                 if pid_norm not in totals_by_id.index:
-                    return None
+                    return None, int(len(totals_by_id))
                 rank_series = totals_by_id.rank(method="min", ascending=False)
-                return int(rank_series[pid_norm])
+                return int(rank_series[pid_norm]), int(len(totals_by_id))
 
             if player_value not in totals.index:
-                return None
+                return None, int(len(totals))
             rank_series = totals.rank(method="min", ascending=False)
-            return int(rank_series[player_value])
+            return int(rank_series[player_value]), int(len(totals))
 
         # first handle the seasons stats
         data_grouped = games_df.groupby(Columns.season)
@@ -432,7 +449,7 @@ class PlayerService:
             season_stats.append({
                 'season': season,
                 'competition': 'All Events',
-                'club': row_club(data),
+                'club': '',
                 'games': int(total_games),
                 'total_pins': int(total_pins),
                 'average': float(round(average, 2)),
@@ -457,8 +474,15 @@ class PlayerService:
             # Add competition-specific rows inside the selected season timeframe.
             comp_group_col = Columns.event_name if Columns.event_name in data.columns else Columns.league_name
             if comp_group_col in data.columns:
-                comp_groups = data.groupby(comp_group_col)
-                for comp_name, cdf in comp_groups:
+                group_cols = [comp_group_col]
+                if Columns.team_name in data.columns:
+                    group_cols.append(Columns.team_name)
+                comp_groups = data.groupby(group_cols, dropna=False)
+                for comp_key, cdf in comp_groups:
+                    if isinstance(comp_key, tuple):
+                        comp_name, _team_name = comp_key
+                    else:
+                        comp_name, _team_name = comp_key, ""
                     if pd.isna(comp_name):
                         continue
                     comp_games = len(cdf)
@@ -468,6 +492,14 @@ class PlayerService:
                     comp_avg = comp_pins / comp_games
                     comp_best = cdf[cdf[Columns.score] == cdf[Columns.score].max()].iloc[0]
                     comp_worst = cdf[cdf[Columns.score] == cdf[Columns.score].min()].iloc[0]
+                    rank_value, competitors = (
+                        tournament_final_rank(season, str(comp_name), player_name, pid)
+                        if (
+                            Columns.event_type in cdf.columns
+                            and cdf[Columns.event_type].astype(str).str.lower().eq("tournament").any()
+                        )
+                        else league_average_rank(season, str(comp_name), player_name, pid)
+                    )
                     season_stats.append({
                         'is_tournament': bool(
                             Columns.event_type in cdf.columns
@@ -480,11 +512,8 @@ class PlayerService:
                         'total_pins': int(comp_pins),
                         'average': float(round(comp_avg, 2)),
                         'vs_last_season': None,
-                        'rank': (
-                            tournament_final_rank(season, str(comp_name), player_name, pid)
-                            if (Columns.event_type in cdf.columns and cdf[Columns.event_type].astype(str).str.lower().eq("tournament").any())
-                            else league_average_rank(season, str(comp_name), player_name, pid)
-                        ),
+                        'rank': rank_value,
+                        'competitors': competitors,
                         'row_type': 'competition',
                         'best_game': {
                             'score': int(comp_best.at[Columns.score]),

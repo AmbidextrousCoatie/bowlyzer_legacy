@@ -2,7 +2,9 @@ from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
-from app.models.table_data import Column, TableData
+from app.models.table_data import Column, ColumnGroup, TableData
+from app.services.i18n_service import i18n_service
+from app.utils.color_constants import get_theme_color
 from data_access.adapters.data_adapter_factory import DataAdapterFactory, DataAdapterSelector
 from data_access.schema import Columns
 
@@ -524,19 +526,29 @@ class TournamentService:
                 by=["total_score", Columns.player_name], ascending=[False, True]
             ).reset_index(drop=True)
 
-            columns = [
+            base_columns = [
                 Column(title="#", field="rank", width="60px", align="center", decimal_places=0),
-                Column(title="Player", field="player", width="220px", align="left"),
-                Column(title="Total Score", field="total_score", width="110px", align="center", decimal_places=0),
-                Column(title="Total Average", field="total_avg", width="110px", align="center", decimal_places=1),
-                Column(title="Round Score", field="round_score", width="110px", align="center", decimal_places=0),
-                Column(title="Round Average", field="avg_score", width="100px", align="center", decimal_places=1),
+                Column(title=i18n_service.get_text("player"), field="player", width="220px", align="left"),
             ]
-            data_cols = ["rank", Columns.player_name]
             if include_club:
-                columns.insert(2, Column(title="Club", field="club", width="220px", align="left"))
-                data_cols.append(Columns.club)
-            data_cols.extend(["total_score", "round_score", "avg_score"])
+                base_columns.append(Column(title=i18n_service.get_text("ui.player.club"), field="club", width="220px", align="left"))
+            total_group = ColumnGroup(
+                title=i18n_service.get_text("ui.tournament.total_results"),
+                highlighted=True,
+                style={"backgroundColor": get_theme_color("surface_alt")},
+                header_style={"fontWeight": "bold"},
+                columns=[
+                    Column(title=i18n_service.get_text("score"), field="total_score", width="110px", align="center", decimal_places=0),
+                    Column(title=i18n_service.get_text("average"), field="total_avg", width="110px", align="center", decimal_places=1),
+                ],
+            )
+            stage_group = ColumnGroup(
+                title=i18n_service.get_text("ui.tournament.stage_results"),
+                columns=[
+                    Column(title=i18n_service.get_text("score"), field="round_score", width="110px", align="center", decimal_places=0),
+                    Column(title=i18n_service.get_text("average"), field="avg_score", width="100px", align="center", decimal_places=1),
+                ],
+            )
             data = []
             for _, row in leaderboard.iterrows():
                 entry = [int(row["rank"]), str(row.get(Columns.player_name, ""))]
@@ -547,7 +559,20 @@ class TournamentService:
                 entry.append(int(row.get("round_score", 0)))
                 entry.append(float(row.get("avg_score", 0.0)))
                 data.append(entry)
-            return TableData(columns=columns, data=data, title=f"{tournament} Leaderboard")
+            return TableData(
+                columns=[ColumnGroup(title=i18n_service.get_text("ranking"), columns=base_columns), total_group, stage_group],
+                data=data,
+                title=f"{tournament} Leaderboard",
+                default_sort={"field": "total_score", "dir": "desc"},
+                config={
+                    "stickyHeader": True,
+                    "striped": True,
+                    "hover": True,
+                    "responsive": True,
+                    "compact": False,
+                    "stripedColGroups": True,
+                },
+            )
 
         # Multi-stage mode: total = sum across all rounds, plus one column per round.
         work = df.copy()
@@ -592,22 +617,20 @@ class TournamentService:
         pivot = pivot.merge(games_per_player_all, on=[Columns.player_name, id_col], how="left")
         pivot["games_played"] = pd.to_numeric(pivot["games_played"], errors="coerce").fillna(1)
         pivot["total_avg"] = (pivot["total_score"] / pivot["games_played"]).round(1)
-        pivot["avg_score"] = pivot["total_avg"]
         pivot = pivot.sort_values(by=["total_score", Columns.player_name], ascending=[False, True]).reset_index(drop=True)
         pivot["rank"] = pivot["total_score"].rank(method="min", ascending=False).astype(int)
 
         columns = [
             Column(title="#", field="rank", width="60px", align="center", decimal_places=0),
-            Column(title="Player", field="player", width="220px", align="left"),
+            Column(title=i18n_service.get_text("player"), field="player", width="220px", align="left"),
         ]
         if include_club:
-            columns.append(Column(title="Club", field="club", width="220px", align="left"))
+            columns.append(Column(title=i18n_service.get_text("ui.player.club"), field="club", width="220px", align="left"))
         for rn in round_numbers:
             title = round_name_map.get(rn) or f"Round {rn}"
             columns.append(Column(title=title, field=f"round_{rn}", width="110px", align="center", decimal_places=0))
-        columns.append(Column(title="Total", field="total_score", width="100px", align="center", decimal_places=0))
-        columns.append(Column(title="Total Average", field="total_avg", width="110px", align="center", decimal_places=1))
-        columns.append(Column(title="Average", field="avg_score", width="90px", align="center", decimal_places=1))
+        columns.append(Column(title=i18n_service.get_text("total"), field="total_score", width="100px", align="center", decimal_places=0))
+        columns.append(Column(title=i18n_service.get_text("average"), field="total_avg", width="110px", align="center", decimal_places=1))
 
         data = []
         for _, row in pivot.iterrows():
@@ -618,10 +641,22 @@ class TournamentService:
                 entry.append(int(row.get(rn, 0)))
             entry.append(int(row.get("total_score", 0)))
             entry.append(float(row.get("total_avg", 0.0)))
-            entry.append(float(row.get("avg_score", 0.0)))
             data.append(entry)
 
-        return TableData(columns=columns, data=data, title=f"{tournament} Leaderboard")
+        return TableData(
+            columns=columns,
+            data=data,
+            title=f"{tournament} Leaderboard",
+            default_sort={"field": "total_score", "dir": "desc"},
+            config={
+                "stickyHeader": True,
+                "striped": True,
+                "hover": True,
+                "responsive": True,
+                "compact": False,
+                "stripedColGroups": True,
+            },
+        )
 
     def get_round_results_table(self, season: str, tournament: str, round_number: Optional[int] = None) -> TableData:
         df = self._get_tournament_df(season=season, tournament=tournament)

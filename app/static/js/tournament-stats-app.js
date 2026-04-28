@@ -1,4 +1,30 @@
 (function () {
+  function tt(key, fallback) {
+    if (typeof t === "function") return t(key, fallback);
+    return fallback || key;
+  }
+
+  function localizeTournamentCardTitle(rawTitle) {
+    const title = String(rawTitle || "").trim();
+    const map = {
+      Tournament: () => tt("ui.tournament.card.tournament", "Tournament"),
+      "Current Round": () => tt("ui.tournament.card.current_round", "Current Round"),
+      "Cut Line": () => tt("ui.tournament.card.cut_line", "Cut Line"),
+      "Tournament Leader": () => tt("ui.tournament.card.tournament_leader", "Tournament Leader"),
+      Participants: () => tt("ui.tournament.card.participants", "Participants"),
+      "Stage Winner": () => tt("ui.tournament.card.stage_winner", "Stage Winner"),
+    };
+    return map[title] ? map[title]() : title;
+  }
+
+  function localizeTournamentCardSubtitle(rawSubtitle) {
+    const subtitle = String(rawSubtitle || "").trim();
+    if (subtitle === "Field size") {
+      return tt("ui.tournament.card.field_size", "Field size");
+    }
+    return subtitle;
+  }
+
   function compactClubName(club) {
     if (!club) return "";
     const text = String(club);
@@ -13,6 +39,13 @@
   function getCurrentDatabase() {
     const params = new URLSearchParams(window.location.search);
     return params.get("database");
+  }
+
+  function refreshTournamentUiText() {
+    const playerInput = document.getElementById("tournamentPlayerInput");
+    if (playerInput) {
+      playerInput.placeholder = tt("ui.tournament.player_placeholder", "Type to filter players...");
+    }
   }
 
   function withDatabase(url) {
@@ -34,16 +67,16 @@
     const container = document.getElementById("tournamentCards");
     if (!container) return;
     if (!cards || cards.length === 0) {
-      container.innerHTML = '<div class="alert alert-info">No summary cards available.</div>';
+      container.innerHTML = `<div class="alert alert-info">${tt("ui.tournament.no_summary_cards", "No summary cards available.")}</div>`;
       return;
     }
     const tournamentCard = cards.find((c) => String(c.title || "").toLowerCase() === "tournament");
     const currentRoundCard = cards.find((c) => String(c.title || "").toLowerCase() === "current round");
     const titleText = tournamentCard
-      ? `${tournamentCard.value ?? "Tournament"}${tournamentCard.subtitle ? ` - ${tournamentCard.subtitle}` : ""}`
-      : "Tournament Overview";
+      ? `${tournamentCard.value ?? tt("ui.tournament.tournament", "Tournament")}${tournamentCard.subtitle ? ` - ${tournamentCard.subtitle}` : ""}`
+      : tt("ui.tournament.overview", "Tournament Overview");
     const roundText = currentRoundCard
-      ? `${currentRoundCard.value ?? ""}${currentRoundCard.subtitle ? ` (${currentRoundCard.subtitle})` : ""}`
+      ? `${currentRoundCard.value ?? ""}`
       : "";
     const headerText = roundText ? `${titleText} - ${roundText}` : titleText;
     const innerCards = cards.filter((c) => c !== tournamentCard && c !== currentRoundCard);
@@ -74,10 +107,10 @@
                 (card, idx) => `
                 <div class="col-md-3">
                   <div class="card h-100" id="tournamentOverviewStatCard_${idx}">
-                    <div class="card-header"><h6 class="mb-0">${card.title || ""}</h6></div>
+                    <div class="card-header"><h6 class="mb-0">${localizeTournamentCardTitle(card.title || "")}</h6></div>
                     <div class="card-body">
                       <div class="h5 mb-1">${renderCardValue(card)}</div>
-                      <small class="text-muted">${card.subtitle || ""}</small>
+                      <small class="text-muted">${localizeTournamentCardSubtitle(card.subtitle || "")}</small>
                     </div>
                   </div>
                 </div>
@@ -131,7 +164,7 @@
     }
     const container = document.getElementById(containerId);
     if (!container) return;
-    container.innerHTML = '<div class="alert alert-warning">Tabulator renderer unavailable.</div>';
+    container.innerHTML = `<div class="alert alert-warning">${tt("ui.tournament.tabulator_unavailable", "Tabulator renderer unavailable.")}</div>`;
   }
 
   function updateRoundResultsHeader(section) {
@@ -139,13 +172,13 @@
     if (!headerEl) return;
     const roundValue = String(currentFilters.round || "").trim();
     if (!roundValue) {
-      headerEl.textContent = "Round Results";
+      headerEl.textContent = tt("ui.tournament.round_results", "Round Results");
       return;
     }
     const rounds = Array.isArray(section?.rounds) ? section.rounds : [];
     const selected = rounds.find((r) => String(r?.round_number ?? "") === roundValue);
-    const stageName = selected?.round_name ? String(selected.round_name).trim() : `Round ${roundValue}`;
-    headerEl.textContent = `Round Results - ${stageName}`;
+    const stageName = selected?.round_name ? String(selected.round_name).trim() : `${tt("ui.tournament.round", "Round")} ${roundValue}`;
+    headerEl.textContent = `${tt("ui.tournament.round_results", "Round Results")} - ${stageName}`;
   }
 
   function setRoundResultsVisibility() {
@@ -175,13 +208,13 @@
 
   function renderEffortRows(items) {
     if (!Array.isArray(items) || items.length === 0) {
-      return '<div class="text-muted">No entries</div>';
+      return `<div class="text-muted">${tt("ui.tournament.no_entries", "No entries")}</div>`;
     }
     return items
       .map(
         (entry) => `
           <div class="d-flex justify-content-between">
-            <span>${entry.player || "Unknown"}${entry.club ? ` (${compactClubName(entry.club)})` : ""}</span>
+            <span>${entry.player || tt("ui.tournament.unknown", "Unknown")}${entry.club ? ` (${compactClubName(entry.club)})` : ""}</span>
             <strong>${entry.display_value ?? entry.value ?? ""}</strong>
           </div>
         `
@@ -202,7 +235,7 @@
     container.innerHTML = `
       <div class="card">
         <div class="card-header">
-          <h5>Best Efforts (Top ${n})</h5>
+          <h5>${tt("ui.tournament.best_efforts_top_n", "Best Efforts (Top {n})").replace("{n}", String(n))}</h5>
         </div>
         <div class="card-body">
           <div class="row g-3">
@@ -212,19 +245,19 @@
                 <div class="col-lg-6">
                   <div class="card h-100">
                     <div class="card-header">
-                      <h6>${section.scope || "Scope"}</h6>
+                      <h6>${section.scope || tt("ui.tournament.scope", "Scope")}</h6>
                     </div>
                     <div class="card-body">
                       <div class="mb-3">
-                        <h6 class="text-muted">Best Games</h6>
+                        <h6 class="text-muted">${tt("ui.tournament.best_games", "Best Games")}</h6>
                         ${renderEffortRows(section.best_games)}
                       </div>
                       <div class="mb-3">
-                        <h6 class="text-muted">Best Pairs</h6>
+                        <h6 class="text-muted">${tt("ui.tournament.best_pairs", "Best Pairs")}</h6>
                         ${renderEffortRows(section.best_pairs)}
                       </div>
                       <div>
-                        <h6 class="text-muted">Best Blocks</h6>
+                        <h6 class="text-muted">${tt("ui.tournament.best_blocks", "Best Blocks")}</h6>
                         ${renderEffortRows(section.best_blocks)}
                       </div>
                     </div>
@@ -387,32 +420,32 @@
         <div class="card-header">
           <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
             <h5 class="mb-0">${payload.player}${payload.player_club ? ` (${payload.player_club})` : ""}</h5>
-            <button id="tournamentBackToOverviewBtn" class="btn btn-sm btn-primary">Back to Tournament Overview</button>
+            <button id="tournamentBackToOverviewBtn" class="btn btn-sm btn-primary">${tt("ui.tournament.back_to_overview", "Back to Tournament Overview")}</button>
           </div>
         </div>
         <div class="card-body">
           <div class="row g-3 mb-3">
             <div class="col-md-4">
               <div class="card h-100" id="tournamentFinalPositionCard">
-                <div class="card-header"><h6>Final Position</h6></div>
+                <div class="card-header"><h6>${tt("ui.tournament.final_position", "Final Position")}</h6></div>
                 <div class="card-body">
                   <div class="h5 mb-1">${payload.summary?.final_position ?? "-"}</div>
-                  <small class="text-muted">After final game</small>
+                  <small class="text-muted">${tt("ui.tournament.after_final_game", "After final game")}</small>
                 </div>
               </div>
             </div>
             <div class="col-md-4">
               <div class="card h-100">
-                <div class="card-header"><h6>Average</h6></div>
+                <div class="card-header"><h6>${tt("ui.tournament.average", "Average")}</h6></div>
                 <div class="card-body">
                   <div class="h5 mb-1">${payload.summary?.average ?? "-"}</div>
-                  <small class="text-muted">Cumulated</small>
+                  <small class="text-muted">${tt("ui.tournament.cumulated", "Cumulated")}</small>
                 </div>
               </div>
             </div>
             <div class="col-md-4">
               <div class="card h-100">
-                <div class="card-header"><h6>Best Position</h6></div>
+                <div class="card-header"><h6>${tt("ui.tournament.best_position", "Best Position")}</h6></div>
                 <div class="card-body">
                   <div class="h5 mb-1">${payload.summary?.best_position ?? "-"}</div>
                   <small class="text-muted">${payload.summary?.best_position_game ?? ""}</small>
@@ -423,7 +456,7 @@
           <div class="row g-3 mb-3">
             <div class="col-md-4">
               <div class="card h-100">
-                <div class="card-header"><h6>Highest Game</h6></div>
+                <div class="card-header"><h6>${tt("ui.tournament.highest_game", "Highest Game")}</h6></div>
                 <div class="card-body">
                   <div class="h5 mb-1">${payload.best_efforts?.highest_game?.score ?? "-"}</div>
                   <small class="text-muted">${payload.best_efforts?.highest_game?.stage || ""} ${payload.best_efforts?.highest_game?.game ? `(G${payload.best_efforts.highest_game.game})` : ""}</small>
@@ -432,7 +465,7 @@
             </div>
             <div class="col-md-4">
               <div class="card h-100">
-                <div class="card-header"><h6>Highest Pair</h6></div>
+                <div class="card-header"><h6>${tt("ui.tournament.highest_pair", "Highest Pair")}</h6></div>
                 <div class="card-body">
                   <div class="h5 mb-1">${payload.best_efforts?.highest_pair?.score ?? "-"}</div>
                   <small class="text-muted">${payload.best_efforts?.highest_pair?.stage || ""} ${payload.best_efforts?.highest_pair?.pair ? `(${payload.best_efforts.highest_pair.pair})` : ""}</small>
@@ -441,7 +474,7 @@
             </div>
             <div class="col-md-4">
               <div class="card h-100">
-                <div class="card-header"><h6>Highest Block</h6></div>
+                <div class="card-header"><h6>${tt("ui.tournament.highest_block", "Highest Block")}</h6></div>
                 <div class="card-body">
                   <div class="h5 mb-1">${payload.best_efforts?.highest_block?.score ?? "-"}</div>
                   <small class="text-muted">${payload.best_efforts?.highest_block?.stage || ""}</small>
@@ -452,12 +485,12 @@
           <div class="row g-3 mb-3">
             <div class="col-md-6">
               <div class="card h-100">
-                <div class="card-header"><h6>Cumulated Average Over Games</h6></div>
+                <div class="card-header"><h6>${tt("ui.tournament.cum_avg_over_games", "Cumulated Average Over Games")}</h6></div>
                 <div class="card-body">
                   <div class="d-flex justify-content-end mb-2">
-                    <div class="btn-group btn-group-sm" role="group" aria-label="Cut line mode">
-                      <button type="button" id="tournamentCutModeDynamic" class="btn ${playerCutLineMode === "dynamic" ? "btn-primary" : "btn-outline-primary"}">Dynamic Cut Pace</button>
-                      <button type="button" id="tournamentCutModeHorizontal" class="btn ${playerCutLineMode === "horizontal" ? "btn-primary" : "btn-outline-primary"}">Horizontal Cut</button>
+                    <div class="btn-group btn-group-sm" role="group" aria-label="${tt("ui.tournament.cut_line_mode", "Cut line mode")}">
+                      <button type="button" id="tournamentCutModeDynamic" class="btn ${playerCutLineMode === "dynamic" ? "btn-primary" : "btn-outline-primary"}">${tt("ui.tournament.dynamic_cut_pace", "Dynamic Cut Pace")}</button>
+                      <button type="button" id="tournamentCutModeHorizontal" class="btn ${playerCutLineMode === "horizontal" ? "btn-primary" : "btn-outline-primary"}">${tt("ui.tournament.horizontal_cut", "Horizontal Cut")}</button>
                     </div>
                   </div>
                   <div id="tournamentPlayerAvgChart" style="width:100%; min-width:100%; height:280px;"></div>
@@ -466,7 +499,7 @@
             </div>
             <div class="col-md-6">
               <div class="card h-100">
-                <div class="card-header"><h6>Cumulated Position Over Games</h6></div>
+                <div class="card-header"><h6>${tt("ui.tournament.cum_pos_over_games", "Cumulated Position Over Games")}</h6></div>
                 <div class="card-body">
                   <div id="tournamentPlayerPosChart" style="width:100%; min-width:100%; height:280px;"></div>
                 </div>
@@ -522,7 +555,7 @@
   function renderPlayerProgressCharts(series, playerName, cutLineMode = "dynamic") {
     if (!series || !Array.isArray(series.labels) || series.labels.length === 0) return;
     if (typeof echarts === "undefined") {
-      console.warn("echarts unavailable; player charts cannot render.");
+      console.warn(tt("ui.tournament.echarts_unavailable", "echarts unavailable; player charts cannot render."));
       return;
     }
     const totalGames = series.labels.length;
@@ -562,7 +595,7 @@
           .filter((v) => Number.isFinite(v));
 
       // Auto-scale average chart so low cut lines are not clamped at 150.
-      if (yName === "Average") {
+      if (yName === tt("ui.tournament.average", "Average")) {
         const nums = [
           ...collectNumericValues(dataSeries),
           ...collectNumericValues(cutLines),
@@ -621,7 +654,7 @@
 
       const dynamicCutSeries = [];
       const positionCutSeries = [];
-      if (cutLineMode === "dynamic" && yName === "Average" && Array.isArray(series.cut_line_series)) {
+      if (cutLineMode === "dynamic" && yName === tt("ui.tournament.average", "Average") && Array.isArray(series.cut_line_series)) {
         const lines = [...series.cut_line_series].sort((a, b) => Number(a?.round_number || 0) - Number(b?.round_number || 0));
         const segments = [];
         lines.forEach((line) => {
@@ -647,7 +680,7 @@
             stitched.push(...next);
           }
           dynamicCutSeries.push({
-            name: "Cut Line",
+            name: tt("ui.tournament.cut_line", "Cut Line"),
             type: "line",
             data: stitched,
             smooth: false,
@@ -658,7 +691,7 @@
             z: 1,
           });
         }
-      } else if (cutLineMode === "dynamic" && yName === "Average" && series.cut_lines_avg_dynamic && typeof series.cut_lines_avg_dynamic === "object") {
+      } else if (cutLineMode === "dynamic" && yName === tt("ui.tournament.average", "Average") && series.cut_lines_avg_dynamic && typeof series.cut_lines_avg_dynamic === "object") {
         // Backward-compatible fallback in case browser still receives legacy payload shape.
         const keys = Object.keys(series.cut_lines_avg_dynamic).sort((a, b) => {
           const na = Number(String(a).replace("round_", ""));
@@ -671,7 +704,7 @@
           const pts = buildPointSeries(raw, 0, maxX, false, false);
           if (!pts.length) return;
           dynamicCutSeries.push({
-            name: "Cut Line",
+            name: tt("ui.tournament.cut_line", "Cut Line"),
             type: "line",
             data: pts,
             smooth: false,
@@ -710,7 +743,7 @@
         }
       }
       // Position chart should always show cut-position references as horizontal lines.
-      if (yName === "Rank") {
+      if (yName === tt("ui.tournament.rank", "Rank")) {
         const cutValues = (cutLines || [])
           .map((v) => Number(v))
           .filter((v) => Number.isFinite(v));
@@ -732,7 +765,7 @@
           }
           if (!sampled.length) return;
           positionCutSeries.push({
-            name: "Cut Line",
+            name: tt("ui.tournament.cut_line", "Cut Line"),
             type: "line",
             data: sampled,
             smooth: false,
@@ -748,7 +781,7 @@
       const extraOverlaySeries = (extraLines || []).map((line) => {
         const mapped = buildPointSeries(line?.data || [], 0, maxX, false, false);
         return {
-          name: line.name || "Reference",
+          name: line.name || tt("ui.tournament.reference", "Reference"),
           type: "line",
           data: mapped,
           smooth: false,
@@ -771,7 +804,7 @@
             trigger: "axis",
             formatter: function (params) {
               const rows = Array.isArray(params) ? [...params] : [params];
-              const isRankChart = yName === "Rank";
+              const isRankChart = yName === tt("ui.tournament.rank", "Rank");
               rows.sort((a, b) => {
                 const av = Number(a?.value?.[1]);
                 const bv = Number(b?.value?.[1]);
@@ -786,7 +819,7 @@
               });
               if (!rows.length) return "";
               const axisRaw = Number(rows[0]?.axisValue);
-              const axisLabel = Number.isFinite(axisRaw) ? `Spiel #${Math.round(axisRaw)}` : "";
+              const axisLabel = Number.isFinite(axisRaw) ? `${tt("ui.tournament.game", "Game")} #${Math.round(axisRaw)}` : "";
               const lines = rows.map((r) => {
                 const marker = r.marker || "";
                 const name = r.seriesName || "";
@@ -803,7 +836,7 @@
           grid: { top: "10%", right: "5%", bottom: "14%", left: "10%", containLabel: true },
           xAxis: {
             type: "value",
-            name: "Game",
+            name: tt("ui.tournament.game", "Game"),
             nameLocation: "middle",
             nameGap: 28,
             min: 0,
@@ -862,7 +895,7 @@
     renderLine(
       "tournamentPlayerAvgChart",
       series.avg_series || [],
-      "Average",
+      tt("ui.tournament.average", "Average"),
       150,
       250,
       false,
@@ -881,7 +914,7 @@
     renderLine(
       "tournamentPlayerPosChart",
       (series.position_series || []).map((v) => Number(v)),
-      "Rank",
+      tt("ui.tournament.rank", "Rank"),
       1,
       80,
       true,
@@ -910,12 +943,12 @@
         </div>
       `;
       const dynamicCutLegend = cutLineMode === "dynamic"
-        ? [item("Cut Line (pace)", colorCutUnified, true)]
-        : [item("Cut Line", colorCutUnified, true)];
+        ? [item(tt("ui.tournament.cut_line_pace", "Cut Line (pace)"), colorCutUnified, true)]
+        : [item(tt("ui.tournament.cut_line", "Cut Line"), colorCutUnified, true)];
       legendContainer.innerHTML = [
         item(playerName, colorPlayer, false),
-        item("Tournament Leader", colorLeader, true),
-        item("Round Boundary", colorRoundBoundary, false),
+        item(tt("ui.tournament.tournament_leader", "Tournament Leader"), colorLeader, true),
+        item(tt("ui.tournament.round_boundary", "Round Boundary"), colorRoundBoundary, false),
         ...dynamicCutLegend,
       ].join("");
     }
@@ -1059,10 +1092,10 @@
 
   async function refreshRoundButtons() {
     const rounds = await getAvailableRounds(currentFilters.season, currentFilters.tournament);
-    const roundItems = [{ value: "", label: "All / latest" }].concat(
+    const roundItems = [{ value: "", label: tt("ui.tournament.all_latest", "Total") }].concat(
       rounds.map((r) => ({
         value: String(r.round_number),
-        label: `${r.round_number} - ${r.round_name || "Round"}`,
+        label: `${r.round_number} - ${r.round_name || tt("ui.tournament.round", "Round")}`,
       }))
     );
     const preferredRound = currentFilters.round;
@@ -1129,6 +1162,7 @@
   }
 
   async function init() {
+    refreshTournamentUiText();
     const params = new URLSearchParams(window.location.search);
     const deepLinkedPlayer = (params.get("player") || "").trim();
     const seasons = await getAvailableSeasons();
@@ -1155,6 +1189,11 @@
 
     document.getElementById("tournamentPlayerInput")?.addEventListener("change", onPlayerChanged);
     document.getElementById("tournamentPlayerInput")?.addEventListener("blur", onPlayerChanged);
+    window.addEventListener("translationsLoaded", async () => {
+      refreshTournamentUiText();
+      await applyFiltersAndRender(true);
+      await refreshRoundButtons();
+    });
   }
 
   document.addEventListener("DOMContentLoaded", init);

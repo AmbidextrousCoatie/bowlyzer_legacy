@@ -7,26 +7,26 @@
 <div class="container-fluid mt-3">
     <div class="card mb-4">
         <div class="card-header">
-            <h4>Tournament Statistics</h4>
+            <h4 data-i18n="ui.tournament.title">Tournament Statistics</h4>
         </div>
         <div class="card-body">
             <div class="row g-3">
                 <div class="col-md-4">
-                    <h5 class="mb-2">Season</h5>
+                    <h5 class="mb-2" data-i18n="ui.tournament.season">Season</h5>
                     <div id="tournamentSeasonButtons" class="btn-group-horizontal w-100"></div>
                 </div>
                 <div class="col-md-4">
-                    <h5 class="mb-2">Tournament</h5>
+                    <h5 class="mb-2" data-i18n="ui.tournament.tournament">Tournament</h5>
                     <div id="tournamentNameButtons" class="btn-group-horizontal w-100"></div>
                 </div>
                 <div class="col-md-4" id="tournamentRoundFilterGroup">
-                    <h5 class="mb-2">Round</h5>
+                    <h5 class="mb-2" data-i18n="ui.tournament.round">Round</h5>
                     <div id="tournamentRoundButtons" class="btn-group-horizontal w-100"></div>
                 </div>
             </div>
             <div class="row g-3 mt-1">
                 <div class="col-md-6">
-                    <label for="tournamentPlayerInput" class="form-label">Player</label>
+                    <label for="tournamentPlayerInput" class="form-label" data-i18n="ui.tournament.player">Player</label>
                     <input id="tournamentPlayerInput" class="form-control" list="tournamentPlayersList" placeholder="Type to filter players..." />
                     <datalist id="tournamentPlayersList"></datalist>
                 </div>
@@ -37,14 +37,14 @@
     <div id="tournamentCards" class="mb-4"></div>
 
     <div class="card mb-4" id="tournamentLeaderboardCard">
-        <div class="card-header"><h5>Leaderboard</h5></div>
+        <div class="card-header"><h5 data-i18n="ui.tournament.leaderboard">Leaderboard</h5></div>
         <div class="card-body">
             <div id="tournamentLeaderboardTable"></div>
         </div>
     </div>
 
     <div class="card mb-4" id="tournamentRoundResultsCard">
-        <div class="card-header"><h5>Round Results</h5></div>
+        <div class="card-header"><h5 data-i18n="ui.tournament.round_results">Round Results</h5></div>
         <div class="card-body">
             <div id="tournamentRoundResultsTable"></div>
         </div>

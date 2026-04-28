@@ -39,6 +39,8 @@ class I18nService:
             "status.initializing.team_details": {"en": "Initializing team details...", "de": "Teamdetails werden initialisiert..."},
             "status.initializing.team_performance": {"en": "Initializing team performance analysis...", "de": "Teamleistungsanalyse wird initialisiert..."},
             "status.initializing.team_win_percentage": {"en": "Initializing team win percentage analysis...", "de": "Team-Siegquotenanalyse wird initialisiert..."},
+            "status.initializing.game_overview": {"en": "Initializing game overview...", "de": "Spielübersicht wird initialisiert..."},
+            "status.initializing.game_team_details": {"en": "Initializing game team details...", "de": "Team-Spieldetails werden initialisiert..."},
 
             # Namespaced: Table headers
             "table.header.points": {"en": "Pts", "de": "Pkt."},
@@ -57,9 +59,11 @@ class I18nService:
             "block.matchday.title": {"en": "League Results - Match Day", "de": "Liga-Ergebnisse - Spieltag"},
             "block.team_performance.title": {"en": "Team Performance Analysis", "de": "Team-Leistungsanalyse"},
             "block.team_details.title": {"en": "Score Sheet for Selected Team", "de": "Spielbericht für ausgewähltes Team"},
+            "block.game_overview.title": {"en": "Game Overview", "de": "Spielübersicht"},
             "block.team_details.view.classic": {"en": "Classic", "de": "Klassisch"},
             "block.team_details.view.new": {"en": "New", "de": "Neu"},
             "game_team_details.title": {"en": "Game Team Details", "de": "Spiel-Team-Details"},
+            "block.game_team_details.title": {"en": "Game Team Details", "de": "Spiel-Team-Details"},
             "block.clutch_analysis.title": {"en": "Clutch Performance", "de": "Leistung in engen Spielen"},
             "block.clutch_analysis.description": {"en": "Performance in close games (<10 point margin)", "de": "Leistung in knappen Spielen (<10 Punkte Differenz)"},
             "block.consistency_metrics.title": {"en": "Consistency Metrics", "de": "Konsistenz-Metriken"},
@@ -122,6 +126,49 @@ class I18nService:
             "ui.heatmap.high": {"en": "High:", "de": "Hoch:"},
             "ui.range_label": {"en": "Range:", "de": "Bereich:"},
 
+            # Namespaced: Player Stats UI
+            "ui.player.title": {"en": "Player Statistics", "de": "Spielerstatistiken"},
+            "ui.player.select_player": {"en": "Select Player", "de": "Spieler auswählen"},
+            "ui.player.type_name_placeholder": {"en": "Type a player name...", "de": "Spielernamen eingeben..."},
+            "ui.player.season_scope": {"en": "Season Scope", "de": "Saisonumfang"},
+            "ui.player.all_time": {"en": "All Time", "de": "Gesamt"},
+            "ui.player.lifetime_title": {"en": "Lifetime Statistics", "de": "Karrierestatistik"},
+            "ui.player.overall_stats": {"en": "Overall Stats", "de": "Gesamtwerte"},
+            "ui.player.best_performance": {"en": "Best Performance", "de": "Beste Leistung"},
+            "ui.player.season_records": {"en": "Season Records", "de": "Saisonrekorde"},
+            "ui.player.total_games": {"en": "Total Games:", "de": "Spiele gesamt:"},
+            "ui.player.total_pins": {"en": "Total Pins:", "de": "Pins gesamt:"},
+            "ui.player.average_score": {"en": "Average Score:", "de": "Durchschnitt:"},
+            "ui.player.highest_game": {"en": "Highest Game:", "de": "Höchstes Spiel:"},
+            "ui.player.event": {"en": "Event:", "de": "Wettbewerb:"},
+            "ui.player.date": {"en": "Date:", "de": "Datum:"},
+            "ui.player.best_season": {"en": "Best Season:", "de": "Beste Saison:"},
+            "ui.player.most_improved": {"en": "Most Improved:", "de": "Meiste Verbesserung:"},
+            "ui.player.season_stats_title": {"en": "Season Statistics", "de": "Saisonstatistik"},
+            "ui.player.performance_trend": {"en": "Performance Trend", "de": "Leistungstrend"},
+            "ui.player.season_average_series": {"en": "Season Average", "de": "Saisondurchschnitt"},
+            "ui.player.trend_line_series": {"en": "Trend Line", "de": "Trendlinie"},
+            "ui.player.all_time_average_series": {"en": "All-Time Average", "de": "Gesamtdurchschnitt"},
+            "ui.player.season": {"en": "Season", "de": "Saison"},
+            "ui.player.competition": {"en": "Competition", "de": "Wettbewerb"},
+            "ui.player.club": {"en": "Club", "de": "Verein"},
+            "ui.player.games": {"en": "Games", "de": "Spiele"},
+            "ui.player.total_pins_col": {"en": "Total Pins", "de": "Pins gesamt"},
+            "ui.player.average_col": {"en": "Average", "de": "Durchschnitt"},
+            "ui.player.average_score_axis": {"en": "Average Score", "de": "Durchschnittswert"},
+            "ui.player.rank": {"en": "Rank", "de": "Rang"},
+            "ui.player.best_game": {"en": "Best Game", "de": "Bestes Spiel"},
+            "ui.player.worst_game": {"en": "Worst Game", "de": "Schlechtestes Spiel"},
+            "ui.player.selection_cleared": {"en": "Selection cleared", "de": "Auswahl entfernt"},
+            "ui.player.name_not_in_source": {"en": "that name is not in this data source. Pick a name from the list.", "de": "dieser Name ist in dieser Datenquelle nicht vorhanden. Bitte einen Namen aus der Liste wählen."},
+            "ui.player.no_data_for_player": {"en": "No data available", "de": "Keine Daten verfügbar"},
+            "ui.player.no_data_for_player_desc": {"en": "for this player in the selected database.", "de": "für diesen Spieler in der ausgewählten Datenbank."},
+            "ui.player.error_loading_for_player": {"en": "Error loading data", "de": "Fehler beim Laden der Daten"},
+            "ui.player.no_season_data": {"en": "No season data available", "de": "Keine Saisondaten verfügbar"},
+            "ui.player.player_not_found": {"en": "Player not found:", "de": "Spieler nicht gefunden:"},
+            "ui.player.player_not_found_desc": {"en": "was not found in the current database.", "de": "wurde in der aktuellen Datenbank nicht gefunden."},
+            "ui.player.loading_trend_season": {"en": "Season", "de": "Saison"},
+
             # Namespaced: Team Performance UI
             "ui.team_performance.title": {"en": "Performance Analysis", "de": "Leistungsanalyse"},
             "ui.team_performance.description": {"en": "Individual player scores and team performance over time", "de": "Einzelspielergebnisse und Teamleistung über die Zeit"},
@@ -143,10 +190,64 @@ class I18nService:
             "ui.team_history.tooltip.league": {"en": "League:", "de": "Liga:"},
             "ui.team_history.tooltip.final_position": {"en": "Final Position:", "de": "Endplatz:"},
 
+            # Namespaced: Tournament UI
+            "ui.tournament.title": {"en": "Tournament Statistics", "de": "Turnierstatistiken"},
+            "ui.tournament.season": {"en": "Season", "de": "Saison"},
+            "ui.tournament.tournament": {"en": "Tournament", "de": "Turnier"},
+            "ui.tournament.round": {"en": "Round", "de": "Runde"},
+            "ui.tournament.player": {"en": "Player", "de": "Spieler"},
+            "ui.tournament.player_placeholder": {"en": "Type to filter players...", "de": "Tippen, um Spieler zu filtern..."},
+            "ui.tournament.leaderboard": {"en": "Leaderboard", "de": "Rangliste"},
+            "ui.tournament.round_results": {"en": "Round Results", "de": "Rundenergebnisse"},
+            "ui.tournament.no_summary_cards": {"en": "No summary cards available.", "de": "Keine Übersichtskarten verfügbar."},
+            "ui.tournament.overview": {"en": "Tournament Overview", "de": "Turnierübersicht"},
+            "ui.tournament.tabulator_unavailable": {"en": "Tabulator renderer unavailable.", "de": "Tabulator-Renderer nicht verfügbar."},
+            "ui.tournament.no_entries": {"en": "No entries", "de": "Keine Einträge"},
+            "ui.tournament.unknown": {"en": "Unknown", "de": "Unbekannt"},
+            "ui.tournament.best_efforts_top_n": {"en": "Best Efforts (Top {n})", "de": "Beste Leistungen (Top {n})"},
+            "ui.tournament.scope": {"en": "Scope", "de": "Bereich"},
+            "ui.tournament.best_games": {"en": "Best Games", "de": "Beste Spiele"},
+            "ui.tournament.best_pairs": {"en": "Best Pairs", "de": "Beste Paare"},
+            "ui.tournament.best_blocks": {"en": "Best Blocks", "de": "Beste Blöcke"},
+            "ui.tournament.back_to_overview": {"en": "Back to Tournament Overview", "de": "Zurück zur Turnierübersicht"},
+            "ui.tournament.final_position": {"en": "Final Position", "de": "Endplatz"},
+            "ui.tournament.after_final_game": {"en": "After final game", "de": "Nach letztem Spiel"},
+            "ui.tournament.average": {"en": "Average", "de": "Durchschnitt"},
+            "ui.tournament.cumulated": {"en": "Cumulated", "de": "Kumuliert"},
+            "ui.tournament.best_position": {"en": "Best Position", "de": "Beste Platzierung"},
+            "ui.tournament.highest_game": {"en": "Highest Game", "de": "Höchstes Spiel"},
+            "ui.tournament.highest_pair": {"en": "Highest Pair", "de": "Höchstes Paar"},
+            "ui.tournament.highest_block": {"en": "Highest Block", "de": "Höchster Block"},
+            "ui.tournament.cum_avg_over_games": {"en": "Cumulated Average Over Games", "de": "Kumulierter Schnitt über Spiele"},
+            "ui.tournament.cut_line_mode": {"en": "Cut line mode", "de": "Cutline-Modus"},
+            "ui.tournament.dynamic_cut_pace": {"en": "Dynamic Cut Pace", "de": "Dynamisches Cut-Tempo"},
+            "ui.tournament.horizontal_cut": {"en": "Horizontal Cut", "de": "Horizontaler Cut"},
+            "ui.tournament.cum_pos_over_games": {"en": "Cumulated Position Over Games", "de": "Kumulierte Position über Spiele"},
+            "ui.tournament.echarts_unavailable": {"en": "echarts unavailable; player charts cannot render.", "de": "echarts nicht verfügbar; Spielercharts können nicht gerendert werden."},
+            "ui.tournament.cut_line": {"en": "Cut Line", "de": "Cutline"},
+            "ui.tournament.reference": {"en": "Reference", "de": "Referenz"},
+            "ui.tournament.game": {"en": "Game", "de": "Spiel"},
+            "ui.tournament.rank": {"en": "Rank", "de": "Rang"},
+            "ui.tournament.cut_line_pace": {"en": "Cut Line (pace)", "de": "Cutline (Tempo)"},
+            "ui.tournament.tournament_leader": {"en": "Tournament Leader", "de": "Turnierführender"},
+            "ui.tournament.round_boundary": {"en": "Round Boundary", "de": "Rundengrenze"},
+            "ui.tournament.all_latest": {"en": "Total", "de": "Gesamt"},
+            "ui.tournament.total_results": {"en": "Total Results", "de": "Gesamtergebnisse"},
+            "ui.tournament.stage_results": {"en": "Stage Results", "de": "Rundenergebnisse"},
+            "ui.tournament.card.tournament": {"en": "Tournament", "de": "Turnier"},
+            "ui.tournament.card.current_round": {"en": "Current Round", "de": "Aktuelle Runde"},
+            "ui.tournament.card.cut_line": {"en": "Cut Line", "de": "Cutline"},
+            "ui.tournament.card.tournament_leader": {"en": "Tournament Leader", "de": "Turnierführender"},
+            "ui.tournament.card.participants": {"en": "Participants", "de": "Teilnehmer"},
+            "ui.tournament.card.field_size": {"en": "Field size", "de": "Feldgröße"},
+            "ui.tournament.card.stage_winner": {"en": "Stage Winner", "de": "Rundensieger"},
+
             # Namespaced: Messages
             "msg.please_select.match_day": {"en": "Please select a match day.", "de": "Bitte wählen Sie einen Spieltag."},
             "msg.please_select.season_league": {"en": "Please select a combination of Season and League.", "de": "Bitte wählen Sie eine Kombination aus Saison und Liga."},
             "msg.please_select.team": {"en": "Please select a team to display the score sheet.", "de": "Bitte wählen Sie ein Team, um den Spielbericht anzuzeigen."},
+            "msg.please_select.game": {"en": "Please select a game/round.", "de": "Bitte wählen Sie ein Spiel/eine Runde."},
+            "msg.please_select.team_game": {"en": "Please select a team and game/round.", "de": "Bitte wählen Sie ein Team und ein Spiel/eine Runde."},
 
             # Common table headers
             "points": {"en": "Pts", "de": "Pkt."},
@@ -287,10 +388,13 @@ class I18nService:
         # Derive runtime per-language maps from catalog
         self._translations = self._build_translations_from_catalog(self._catalog)
         
-        # Generate version hash from catalog keys to invalidate cache when translations change
-        # Sort keys for consistent hashing
-        catalog_keys = sorted(self._catalog.keys())
-        catalog_hash = hashlib.md5(str(catalog_keys).encode()).hexdigest()[:8]
+        # Generate version hash from full catalog content (keys + values)
+        # so text updates also invalidate frontend translation cache.
+        catalog_fingerprint = []
+        for key in sorted(self._catalog.keys()):
+            vals = self._catalog.get(key, {})
+            catalog_fingerprint.append((key, vals.get("en", ""), vals.get("de", "")))
+        catalog_hash = hashlib.md5(str(catalog_fingerprint).encode()).hexdigest()[:8]
         self._translations_version = f"cat-{catalog_hash}"
     
     def get_text(self, key: str) -> str:

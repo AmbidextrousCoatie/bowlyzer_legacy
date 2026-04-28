@@ -6,6 +6,8 @@ from business_logic.statistics import query_database
 from data_access.adapters.data_adapter_factory import DataAdapterSelector
 import traceback
 import sys
+import hashlib
+import inspect
 from app.services.data_dict import DataDict
 from app.config.debug_config import debug_config
 from app.models.table_data import TableData, ColumnGroup, Column
@@ -527,11 +529,16 @@ def set_language():
 def get_translations():
     """Get all translations for the current language"""
     try:
+        # Include exposure-layer fingerprint in version so frontend cache invalidates
+        # when this endpoint's exported key list changes (even if catalog keys don't).
+        exposure_fingerprint = hashlib.md5(
+            inspect.getsource(get_translations).encode("utf-8")
+        ).hexdigest()[:8]
         return jsonify({
             "success": True,
             "current_language": i18n_service.get_current_language().value,
             "available_languages": i18n_service.get_available_languages(),
-            "translations_version": i18n_service.get_translations_version(),
+            "translations_version": f"{i18n_service.get_translations_version()}-exp-{exposure_fingerprint}",
             "translations": {
                 key: i18n_service.get_text(key) 
                 for key in [
@@ -595,6 +602,7 @@ def get_translations():
                     "status.initializing.league_season_overview", "status.initializing.season_overview",
                     "status.initializing.matchday", "status.initializing.team_details",
                     "status.initializing.team_performance", "status.initializing.team_win_percentage",
+                    "status.initializing.game_overview", "status.initializing.game_team_details",
 
                     # Namespaced: table headers
                     "table.header.points", "table.header.score", "table.header.average",
@@ -604,6 +612,7 @@ def get_translations():
 
                     # Namespaced: blocks
                     "block.matchday.title", "block.team_performance.title", "block.team_details.title",
+                    "block.game_overview.title", "block.game_team_details.title",
                     "block.team_details.view.classic", "block.team_details.view.new",
                     "block.clutch_analysis.title", "block.clutch_analysis.description",
                     "block.consistency_metrics.title", "block.consistency_metrics.description",
@@ -611,6 +620,7 @@ def get_translations():
 
                     # Namespaced: messages
                     "msg.please_select.match_day", "msg.please_select.season_league", "msg.please_select.team",
+                    "msg.please_select.game", "msg.please_select.team_game",
 
                     # Namespaced: Clutch Analysis UI
                     "ui.clutch.threshold", "ui.clutch.points", "ui.clutch.title", "ui.clutch.total_games",
@@ -644,7 +654,45 @@ def get_translations():
 
                     # Namespaced: Team History UI
                     "ui.team_history.title", "ui.team_history.description", "ui.team_history.chart_title",
-                    "ui.team_history.loading", "ui.team_history.tooltip.league", "ui.team_history.tooltip.final_position"
+                    "ui.team_history.loading", "ui.team_history.tooltip.league", "ui.team_history.tooltip.final_position",
+
+                    # Namespaced: Tournament UI
+                    "ui.tournament.title", "ui.tournament.season", "ui.tournament.tournament",
+                    "ui.tournament.round", "ui.tournament.player", "ui.tournament.player_placeholder",
+                    "ui.tournament.leaderboard", "ui.tournament.round_results", "ui.tournament.no_summary_cards",
+                    "ui.tournament.overview", "ui.tournament.tabulator_unavailable", "ui.tournament.no_entries",
+                    "ui.tournament.unknown", "ui.tournament.best_efforts_top_n", "ui.tournament.scope",
+                    "ui.tournament.best_games", "ui.tournament.best_pairs", "ui.tournament.best_blocks",
+                    "ui.tournament.back_to_overview", "ui.tournament.final_position", "ui.tournament.after_final_game",
+                    "ui.tournament.average", "ui.tournament.cumulated", "ui.tournament.best_position",
+                    "ui.tournament.highest_game", "ui.tournament.highest_pair", "ui.tournament.highest_block",
+                    "ui.tournament.cum_avg_over_games", "ui.tournament.cut_line_mode",
+                    "ui.tournament.dynamic_cut_pace", "ui.tournament.horizontal_cut",
+                    "ui.tournament.cum_pos_over_games", "ui.tournament.echarts_unavailable",
+                    "ui.tournament.cut_line", "ui.tournament.reference", "ui.tournament.game",
+                    "ui.tournament.rank", "ui.tournament.cut_line_pace", "ui.tournament.tournament_leader",
+                    "ui.tournament.round_boundary", "ui.tournament.all_latest",
+                    "ui.tournament.total_results", "ui.tournament.stage_results",
+                    "ui.tournament.card.tournament", "ui.tournament.card.current_round",
+                    "ui.tournament.card.cut_line", "ui.tournament.card.tournament_leader",
+                    "ui.tournament.card.participants", "ui.tournament.card.field_size",
+                    "ui.tournament.card.stage_winner",
+
+                    # Namespaced: Player Stats UI
+                    "ui.player.title", "ui.player.select_player", "ui.player.type_name_placeholder",
+                    "ui.player.season_scope", "ui.player.all_time", "ui.player.lifetime_title",
+                    "ui.player.overall_stats", "ui.player.best_performance", "ui.player.season_records",
+                    "ui.player.total_games", "ui.player.total_pins", "ui.player.average_score",
+                    "ui.player.highest_game", "ui.player.event", "ui.player.date",
+                    "ui.player.best_season", "ui.player.most_improved", "ui.player.season_stats_title",
+                    "ui.player.performance_trend", "ui.player.season_average_series", "ui.player.trend_line_series",
+                    "ui.player.all_time_average_series", "ui.player.season", "ui.player.competition",
+                    "ui.player.club", "ui.player.games", "ui.player.total_pins_col", "ui.player.average_col",
+                    "ui.player.average_score_axis", "ui.player.rank", "ui.player.best_game",
+                    "ui.player.worst_game", "ui.player.selection_cleared", "ui.player.name_not_in_source",
+                    "ui.player.no_data_for_player", "ui.player.no_data_for_player_desc",
+                    "ui.player.error_loading_for_player", "ui.player.no_season_data",
+                    "ui.player.player_not_found", "ui.player.player_not_found_desc"
                 ]
             }
         })

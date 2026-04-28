@@ -223,6 +223,7 @@
         // Global translations object
         let translations = {};
         let currentLanguage = 'en';
+        let translationsReady = false;
         
         // Make translations globally accessible
         window.translations = translations;
@@ -258,9 +259,31 @@
 
                     // Check cache for this language+version
                     const cached = sessionStorage.getItem(cacheKey);
+                    const requiredKeys = Array.from(
+                        new Set(
+                            Array.from(document.querySelectorAll('[data-i18n]'))
+                                .map(el => el.getAttribute('data-i18n'))
+                                .filter(Boolean)
+                        )
+                    );
+                    const hasAllRequiredKeys = (mapObj) => {
+                        if (!mapObj || typeof mapObj !== 'object') return false;
+                        return requiredKeys.every(k => typeof mapObj[k] === 'string' && mapObj[k].length > 0);
+                    };
                     if (cached) {
                         try {
-                            translations = JSON.parse(cached);
+                            const parsedCached = JSON.parse(cached);
+                            // Guard against stale cache when backend whitelist changed
+                            // but translations_version stayed the same.
+                            if (hasAllRequiredKeys(parsedCached)) {
+                                translations = parsedCached;
+                            } else {
+                                console.warn('[i18n] Cached translations incomplete for current page; refreshing from server payload');
+                                translations = data.translations || {};
+                                try {
+                                    sessionStorage.setItem(cacheKey, JSON.stringify(translations));
+                                } catch {}
+                            }
                         } catch {
                             translations = data.translations || {};
                         }
@@ -281,6 +304,11 @@
                     
                     // Update page content with new translations
                     updatePageContent();
+                    translationsReady = true;
+                    window.__translationsReady = true;
+                    window.dispatchEvent(new CustomEvent('translationsLoaded', {
+                        detail: { language: currentLanguage }
+                    }));
                 } else {
                     console.error('❌ Failed to load translations:', data.message || 'Unknown error');
                 }
@@ -290,6 +318,8 @@
         }
         
         // Update page content with translations
+        const _missingTranslationWarnings = new Set();
+
         function updatePageContent() {
             // Update all elements with data-i18n attributes
             const elements = document.querySelectorAll('[data-i18n]');
@@ -297,6 +327,9 @@
                 const key = element.getAttribute('data-i18n');
                 if (translations[key]) {
                     element.textContent = translations[key];
+                } else if (key && !_missingTranslationWarnings.has(key)) {
+                    console.warn(`[i18n] Missing data-i18n key in translation payload: ${key}`);
+                    _missingTranslationWarnings.add(key);
                 }
             });
             
@@ -380,8 +413,20 @@
         }
         
         // Helper function to get translated text
-        function t(key) {
-            return window.translations[key] || key;
+        function t(key, fallback = null) {
+            const value = window.translations ? window.translations[key] : undefined;
+            if (typeof value === 'string' && value && value !== key) {
+                return value;
+            }
+            // Avoid false positives before initial translations are loaded.
+            if ((translationsReady || window.__translationsReady) && key && !_missingTranslationWarnings.has(key)) {
+                console.warn(`[i18n] Missing translation for key: ${key}`);
+                _missingTranslationWarnings.add(key);
+            }
+            if (typeof fallback === 'string' && fallback.length > 0) {
+                return fallback;
+            }
+            return key;
         }
         
         // Setup language toggle functionality

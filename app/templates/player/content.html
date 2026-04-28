@@ -1,14 +1,15 @@
 {% extends "base.html" %}
 
 {% block content %}
+{% include "components/tables.html" %}
 <!-- Existing player selection card -->
 <div class="card mb-4">
     <div class="card-header">
-        <h4>Player Statistics</h4>
+        <h4 data-i18n="ui.player.title">Player Statistics</h4>
     </div>
     <div class="card-body">
         <div class="mb-4">
-            <label for="playerInput" class="form-label">Select Player</label>
+            <label for="playerInput" class="form-label" data-i18n="ui.player.select_player">Select Player</label>
             <input 
                 type="text" 
                 class="form-control" 
@@ -22,7 +23,7 @@
             </datalist>
         </div>
         <div class="mb-3">
-            <h6 class="mb-2">Season Scope</h6>
+            <h6 class="mb-2" data-i18n="ui.player.season_scope">Season Scope</h6>
             <div id="playerSeasonButtons" class="btn-group-horizontal w-100"></div>
         </div>
         <div id="playerStats" class="mt-4">
@@ -34,19 +35,19 @@
 <!-- Lifetime Stats Card -->
 <div class="card mb-4">
     <div class="card-header">
-        <h4>Lifetime Statistics</h4>
+        <h4 data-i18n="ui.player.lifetime_title">Lifetime Statistics</h4>
     </div>
     <div class="card-body">
         <div class="row">
             <div class="col-md-4">
                 <div class="card">
                     <div class="card-body">
-                        <h5 class="card-title">Overall Stats</h5>
+                        <h5 class="card-title" data-i18n="ui.player.overall_stats">Overall Stats</h5>
                         <table class="table table-sm">
                             <tbody>
-                                <tr><th>Total Games:</th><td id="lifetimeGames">-</td></tr>
-                                <tr><th>Total Pins:</th><td id="lifetimePins">-</td></tr>
-                                <tr><th>Average Score:</th><td id="lifetimeAvg">-</td></tr>
+                                <tr><th data-i18n="ui.player.total_games">Total Games:</th><td id="lifetimeGames">-</td></tr>
+                                <tr><th data-i18n="ui.player.total_pins">Total Pins:</th><td id="lifetimePins">-</td></tr>
+                                <tr><th data-i18n="ui.player.average_score">Average Score:</th><td id="lifetimeAvg">-</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -55,12 +56,12 @@
             <div class="col-md-4">
                 <div class="card">
                     <div class="card-body">
-                        <h5 class="card-title">Best Performance</h5>
+                        <h5 class="card-title" data-i18n="ui.player.best_performance">Best Performance</h5>
                         <table class="table table-sm">
                             <tbody>
-                                <tr><th>Highest Game:</th><td id="bestGame">-</td></tr>
-                                <tr><th>Event:</th><td id="bestGameEvent">-</td></tr>
-                                <tr><th>Date:</th><td id="bestGameDate">-</td></tr>
+                                <tr><th data-i18n="ui.player.highest_game">Highest Game:</th><td id="bestGame">-</td></tr>
+                                <tr><th data-i18n="ui.player.event">Event:</th><td id="bestGameEvent">-</td></tr>
+                                <tr><th data-i18n="ui.player.date">Date:</th><td id="bestGameDate">-</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -69,11 +70,11 @@
             <div class="col-md-4">
                 <div class="card">
                     <div class="card-body">
-                        <h5 class="card-title">Season Records</h5>
+                        <h5 class="card-title" data-i18n="ui.player.season_records">Season Records</h5>
                         <table class="table table-sm">
                             <tbody>
-                                <tr><th>Best Season:</th><td id="bestSeason">-</td></tr>
-                                <tr><th>Most Improved:</th><td id="mostImproved">-</td></tr>
+                                <tr><th data-i18n="ui.player.best_season">Best Season:</th><td id="bestSeason">-</td></tr>
+                                <tr><th data-i18n="ui.player.most_improved">Most Improved:</th><td id="mostImproved">-</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -86,36 +87,17 @@
 <!-- Season Stats Card -->
 <div class="card mb-4">
     <div class="card-header">
-        <h4>Season Statistics</h4>
+        <h4 data-i18n="ui.player.season_stats_title">Season Statistics</h4>
     </div>
     <div class="card-body">
-        <div id="seasonStats">
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Season</th>
-                        <th>Competition</th>
-                        <th>Club</th>
-                        <th>Games</th>
-                        <th>Total Pins</th>
-                        <th>Average</th>
-                        <th>Rank</th>
-                        <th>Best Game</th>
-                        <th>Worst Game</th>
-                    </tr>
-                </thead>
-                <tbody id="seasonStatsBody">
-                    <!-- Season stats will be populated here -->
-                </tbody>
-            </table>
-        </div>
+        <div id="seasonStatsTableContainer"></div>
     </div>
 </div>
 
 <!-- Existing trend chart card -->
 <div class="card mt-4">
     <div class="card-header">
-        <h5>Performance Trend</h5>
+        <h5 data-i18n="ui.player.performance_trend">Performance Trend</h5>
     </div>
     <div class="card-body">
         <canvas id="trendChart" height="300"></canvas>
@@ -133,6 +115,43 @@ document.addEventListener('DOMContentLoaded', function() {
     const seasonButtons = document.getElementById('playerSeasonButtons');
     let selectedPlayerId = '';
     let selectedSeason = 'all';
+    let availableSeasons = [];
+
+    const missingPlayerI18nWarnings = new Set();
+    function i18nText(key, fallback) {
+        const hasLoadedTranslations = !!(window.translations && Object.keys(window.translations).length > 0);
+        if (window.translations && typeof window.translations[key] === 'string' && window.translations[key] && window.translations[key] !== key) {
+            return window.translations[key];
+        }
+        // Avoid noisy false-positive warnings during initial render before translations load.
+        if (hasLoadedTranslations && key && !missingPlayerI18nWarnings.has(key)) {
+            console.warn(`[i18n][player] Missing translation key: ${key}`);
+            missingPlayerI18nWarnings.add(key);
+        }
+        if (typeof fallback === 'string' && fallback.length > 0) {
+            return fallback;
+        }
+        if (typeof t === 'function') {
+            const value = t(key);
+            if (value && value !== key) {
+                return value;
+            }
+        }
+        return key;
+    }
+    function refreshPlayerUiText() {
+        playerInput.placeholder = i18nText('ui.player.type_name_placeholder', 'Type a player name...');
+        renderSeasonButtons(availableSeasons);
+    }
+    refreshPlayerUiText();
+    window.addEventListener('languageChanged', refreshPlayerUiText);
+    window.addEventListener('translationsLoaded', () => {
+        refreshPlayerUiText();
+        const currentName = (playerInput && playerInput.value) ? playerInput.value.trim() : '';
+        if (currentName) {
+            loadPlayerStats(currentName, selectedPlayerId);
+        }
+    });
     
     // Parse URL parameters
     function parseUrlParams() {
@@ -203,7 +222,7 @@ document.addEventListener('DOMContentLoaded', function() {
             playerInput.value = '';
             document.getElementById('playerStats').innerHTML = `
                 <div class="alert alert-info">
-                    <strong>Selection cleared</strong> — that name is not in this data source. Pick a name from the list.
+                    <strong>${i18nText('ui.player.selection_cleared', 'Selection cleared')}</strong> - ${i18nText('ui.player.name_not_in_source', 'that name is not in this data source. Pick a name from the list.')}
                 </div>
             `;
             document.getElementById('lifetimeGames').textContent = '-';
@@ -214,14 +233,15 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('bestGameDate').textContent = '-';
             document.getElementById('bestSeason').textContent = '-';
             document.getElementById('mostImproved').textContent = '-';
-            document.getElementById('seasonStatsBody').innerHTML = '';
+            document.getElementById('seasonStatsTableContainer').innerHTML = '';
         }
         return players;
     }
 
     function renderSeasonButtons(seasons) {
         if (!seasonButtons) return;
-        const items = [{ value: 'all', label: 'All Time' }].concat(
+        const allTimeLabel = i18nText('ui.player.all_time', 'All Time');
+        const items = [{ value: 'all', label: allTimeLabel }].concat(
             (seasons || []).map(s => ({ value: String(s), label: String(s) }))
         );
         if (!items.some(i => i.value === selectedSeason)) {
@@ -257,9 +277,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 `{{ url_for("player.get_available_seasons") }}?player_name=${encodeURIComponent(playerName || '')}&player_id=${encodeURIComponent(playerId || selectedPlayerId || '')}`
             );
             const seasons = await response.json();
-            renderSeasonButtons(Array.isArray(seasons) ? seasons : []);
+            availableSeasons = Array.isArray(seasons) ? seasons : [];
+            renderSeasonButtons(availableSeasons);
         } catch (e) {
             console.error('Failed to load player seasons:', e);
+            availableSeasons = [];
             renderSeasonButtons([]);
         }
     }
@@ -289,7 +311,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.warn('Player not found in database:', urlParams.player_name);
                     document.getElementById('playerStats').innerHTML = `
                         <div class="alert alert-warning">
-                            <strong>Player not found:</strong> "${urlParams.player_name}" was not found in the current database.
+                            <strong>${i18nText('ui.player.player_not_found', 'Player not found:')}</strong> "${urlParams.player_name}" ${i18nText('ui.player.player_not_found_desc', 'was not found in the current database.')}
                         </div>
                     `;
                 }
@@ -328,7 +350,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Display error message to user
                     document.getElementById('playerStats').innerHTML = `
                         <div class="alert alert-warning">
-                            <strong>No data available</strong> for player "${name}" in the selected database.
+                            <strong>${i18nText('ui.player.no_data_for_player', 'No data available')}</strong> ${i18nText('ui.player.no_data_for_player_desc', 'for this player in the selected database.')}
                         </div>
                     `;
                     // Clear other sections
@@ -340,7 +362,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.getElementById('bestGameDate').textContent = '-';
                     document.getElementById('bestSeason').textContent = '-';
                     document.getElementById('mostImproved').textContent = '-';
-                    document.getElementById('seasonStatsBody').innerHTML = '';
+                    document.getElementById('seasonStatsTableContainer').innerHTML = '';
                     return;
                 }
                 
@@ -353,7 +375,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error('Error loading player stats:', error);
                 document.getElementById('playerStats').innerHTML = `
                     <div class="alert alert-danger">
-                        <strong>Error loading data</strong> for player "${name}": ${error.message}
+                        <strong>${i18nText('ui.player.error_loading_for_player', 'Error loading data')}</strong> (${name}): ${error.message}
                     </div>
                 `;
             });
@@ -394,38 +416,112 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('mostImproved').textContent = 
                 `${stats.most_improved.season} (+${stats.most_improved.improvement.toFixed(2)})`;
         } else {
-            document.getElementById('mostImproved').textContent = 'N/A';
+            document.getElementById('mostImproved').textContent = '-';
         }
     }
 
     function displaySeasonStats(seasons) {
-        const tbody = document.getElementById('seasonStatsBody');
+        const tableContainer = document.getElementById('seasonStatsTableContainer');
         if (!seasons || !Array.isArray(seasons) || seasons.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">No season data available</td></tr>';
+            tableContainer.innerHTML = `<div class="text-center text-muted py-2">${i18nText('ui.player.no_season_data', 'No season data available')}</div>`;
             return;
         }
-        
-        tbody.innerHTML = seasons.map(season => `
-            <tr ${
-                season.row_type === 'season_total'
-                    ? 'class="table-info fw-bold"'
-                    : (season.row_type === 'competition' ? 'class="table-light"' : '')
-            }>
-                <td>${season.season || '-'}</td>
-                <td>${competitionCellHtml(season.season, season.competition, season.is_tournament, season.row_type)}</td>
-                <td>${season.club || '-'}</td>
-                <td>${season.games || 0}</td>
-                <td>${(season.total_pins || 0).toLocaleString()}</td>
-                <td>${
-                    season.vs_last_season !== null && season.vs_last_season !== undefined
-                        ? `${(season.average || 0).toFixed(2)} (${season.vs_last_season > 0 ? '+' : ''}${season.vs_last_season.toFixed(2)})`
-                        : `${(season.average || 0).toFixed(2)}`
-                }</td>
-                <td>${season.rank !== null && season.rank !== undefined ? season.rank : '-'}</td>
-                <td title="${season.best_game?.date || ''} - ${season.best_game?.event || ''}">${season.best_game?.score || '-'}</td>
-                <td title="${season.worst_game?.date || ''} - ${season.worst_game?.event || ''}">${season.worst_game?.score || '-'}</td>
-            </tr>
-        `).join('');
+
+        const rows = seasons.map(season => ([
+            season.season || '-',
+            season.competition || '-',
+            season.row_type === 'season_total' ? '' : (season.club || '-'),
+            season.games || 0,
+            (season.total_pins || 0).toLocaleString(),
+            season.vs_last_season !== null && season.vs_last_season !== undefined
+                ? `${(season.average || 0).toFixed(2)} (${season.vs_last_season > 0 ? '+' : ''}${season.vs_last_season.toFixed(2)})`
+                : `${(season.average || 0).toFixed(2)}`,
+            (season.rank !== null && season.rank !== undefined)
+                ? `${season.rank}${season.competitors ? ` / ${season.competitors}` : ''}`
+                : '-',
+            season.best_game?.score || '-',
+            season.worst_game?.score || '-'
+        ]));
+
+        const tableData = {
+            columns: [{
+                title: '',
+                columns: [
+                    { title: i18nText('ui.player.season', 'Season'), field: 'season' },
+                    { title: i18nText('ui.player.competition', 'Competition'), field: 'competition' },
+                    { title: i18nText('ui.player.club', 'Club'), field: 'club' },
+                    { title: i18nText('ui.player.games', 'Games'), field: 'games' },
+                    { title: i18nText('ui.player.total_pins_col', 'Total Pins'), field: 'total_pins' },
+                    { title: i18nText('ui.player.average_col', 'Average'), field: 'average' },
+                    { title: i18nText('ui.player.rank', 'Rank'), field: 'rank' },
+                    { title: i18nText('ui.player.best_game', 'Best Game'), field: 'best_game' },
+                    { title: i18nText('ui.player.worst_game', 'Worst Game'), field: 'worst_game' }
+                ]
+            }],
+            data: rows,
+            row_metadata: seasons.map(season => ({
+                styling: season.row_type === 'season_total'
+                    ? { fontWeight: '700', backgroundColor: '#d1ecf1' }
+                    : (season.row_type === 'competition' ? { backgroundColor: '#f8f9fa' } : {})
+            })),
+            config: {
+                striped: true,
+                hover: true
+            }
+        };
+
+        tableContainer.innerHTML = '';
+
+        if (typeof createTableTabulator === 'function') {
+            createTableTabulator('seasonStatsTableContainer', tableData, {
+                disablePositionCircle: true,
+                enableSpecialRowStyling: true,
+                tooltips: true
+            });
+        } else if (typeof createTableBootstrap3 === 'function') {
+            createTableBootstrap3('seasonStatsTableContainer', tableData, {
+                disablePositionCircle: true,
+                enableSpecialRowStyling: true
+            });
+        } else if (typeof createTable === 'function') {
+            tableContainer.innerHTML = createTable({
+                data: rows,
+                columns: [
+                    { title: i18nText('ui.player.season', 'Season') },
+                    { title: i18nText('ui.player.competition', 'Competition') },
+                    { title: i18nText('ui.player.club', 'Club') },
+                    { title: i18nText('ui.player.games', 'Games') },
+                    { title: i18nText('ui.player.total_pins_col', 'Total Pins') },
+                    { title: i18nText('ui.player.average_col', 'Average') },
+                    { title: i18nText('ui.player.rank', 'Rank') },
+                    { title: i18nText('ui.player.best_game', 'Best Game') },
+                    { title: i18nText('ui.player.worst_game', 'Worst Game') }
+                ],
+                headerGroups: []
+            });
+        } else {
+            tableContainer.innerHTML = '<div class="alert alert-warning">Table creation function not available</div>';
+            return;
+        }
+
+        const tbodyRows = tableContainer.querySelectorAll('tbody tr');
+        seasons.forEach((season, index) => {
+            const row = tbodyRows[index];
+            if (!row) return;
+            if (season.row_type === 'season_total') {
+                row.classList.add('table-info', 'fw-bold');
+            } else if (season.row_type === 'competition') {
+                row.classList.add('table-light');
+            }
+        });
+
+        // Inject competition links after the table is rendered.
+        const competitionCells = tableContainer.querySelectorAll('tbody tr td:nth-child(2)');
+        seasons.forEach((season, index) => {
+            const cell = competitionCells[index];
+            if (!cell) return;
+            cell.innerHTML = competitionCellHtml(season.season, season.competition, season.is_tournament, season.row_type);
+        });
     }
 
     function updateTrendChart(data) {
@@ -448,7 +544,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const chartData = {
             datasets: [
                 {
-                    label: 'Season Average',
+                    label: i18nText('ui.player.season_average_series', 'Season Average'),
                     data: seasonTotals.map((season, i) => ({
                         x: season.season || `Season ${i}`,
                         y: season.average || 0,
@@ -459,7 +555,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     pointStyle: 'circle'
                 },
                 {
-                    label: 'Trend Line',
+                    label: i18nText('ui.player.trend_line_series', 'Trend Line'),
                     showInLegend: false,
                     data: seasonTotals.map((season, i) => ({
                         x: season.season || `Season ${i}`,
@@ -473,7 +569,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     pointRadius: 0
                 },
                 {
-                    label: 'All-Time Average',
+                    label: i18nText('ui.player.all_time_average_series', 'All-Time Average'),
                     data: seasonTotals.map(season => ({
                         x: season.season || 'Unknown',
                         y: data.lifetime.average_score || 0
@@ -499,13 +595,13 @@ document.addEventListener('DOMContentLoaded', function() {
                         type: 'category',
                         title: {
                             display: true,
-                            text: 'Season'
+                            text: i18nText('ui.player.season', 'Season')
                         }
                     },
                     y: {
                         title: {
                             display: true,
-                            text: 'Average Score'
+                            text: i18nText('ui.player.average_score_axis', 'Average Score')
                         },
                         beginAtZero: false
                     }
@@ -515,13 +611,13 @@ document.addEventListener('DOMContentLoaded', function() {
                         callbacks: {
                             label: function(context) {
                                 const dataIndex = context.dataIndex;
-                                if (context.dataset.label === 'Season Average') {
+                                if (context.datasetIndex === 0) {
                                     return [
-                                        `Average: ${(seasonTotals[dataIndex]?.average || 0).toFixed(1)}`,
-                                        `Games: ${seasonTotals[dataIndex]?.games || 0}`
+                                        `${i18nText('ui.player.average_col', 'Average')}: ${(seasonTotals[dataIndex]?.average || 0).toFixed(1)}`,
+                                        `${i18nText('ui.player.games', 'Games')}: ${seasonTotals[dataIndex]?.games || 0}`
                                     ];
                                 }
-                                return `All-Time Average: ${(data.lifetime?.average_score || 0).toFixed(1)}`;
+                                return `${i18nText('ui.player.all_time', 'All Time')} ${i18nText('ui.player.average_col', 'Average')}: ${(data.lifetime?.average_score || 0).toFixed(1)}`;
                             }
                         }
                     },
