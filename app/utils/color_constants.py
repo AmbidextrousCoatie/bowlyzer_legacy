@@ -36,6 +36,9 @@ THEME_COLORS = {
     "heat_map_end": "#1b8da7",      # Heat map end color
     "heat_map_low": "#d9596a",      # Heat map low value
     "heat_map_high": "#1b8da7",     # Heat map high value
+    "heat_map_high_band": "#0fe7a3",  # 271-299 special band
+    "heat_map_perfect": "#ffc107",    # 300 perfect game highlight
+    "heat_map_perfect_border": "#b77900",  # Perfect game border
     
     # Status colors
     "warning": "#86e1b3",            # Warning states

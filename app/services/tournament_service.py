@@ -473,6 +473,60 @@ class TournamentService:
             return TableData(columns=[], data=[], title=f"{tournament} Leaderboard")
         include_club = self._has_any_club_value(df)
 
+        def _cut_position_for_round(source_df: pd.DataFrame, target_round: int) -> Optional[int]:
+            """Resolve cut position (rank) for a given round from snapshot data."""
+            if (
+                source_df.empty
+                or Columns.cut_line not in source_df.columns
+                or Columns.round_number not in source_df.columns
+                or Columns.game_number not in source_df.columns
+            ):
+                return None
+            stage_df = source_df[pd.to_numeric(source_df[Columns.round_number], errors="coerce").eq(float(target_round))].copy()
+            if stage_df.empty:
+                return None
+            max_game = pd.to_numeric(stage_df[Columns.game_number], errors="coerce").max()
+            snap = stage_df[pd.to_numeric(stage_df[Columns.game_number], errors="coerce").eq(max_game)].copy()
+            if snap.empty:
+                return None
+            cut_vals = pd.to_numeric(snap[Columns.cut_line], errors="coerce").dropna()
+            if cut_vals.empty:
+                return None
+            cut_score = float(cut_vals.iloc[0])
+
+            # Prefer explicit rank column from postprocessed data.
+            if Columns.stage_rank in snap.columns and Columns.cumulative_score in snap.columns:
+                score_col = Columns.cumulative_score
+                if "Cut Basis" in snap.columns:
+                    basis_vals = [str(x).strip().lower() for x in snap["Cut Basis"].dropna().tolist() if str(x).strip()]
+                    if basis_vals and basis_vals[0] == "overall_total" and "Overall Cumulative Score" in snap.columns:
+                        score_col = "Overall Cumulative Score"
+                ranks = pd.to_numeric(snap[Columns.stage_rank], errors="coerce")
+                scores = pd.to_numeric(snap[score_col], errors="coerce")
+                exact = ranks[scores.eq(cut_score)].dropna()
+                if not exact.empty:
+                    return int(exact.max())
+                ge = ranks[scores.ge(cut_score)].dropna()
+                if not ge.empty:
+                    return int(ge.max())
+                return None
+
+            # Fallback: rank by stage score in snapshot if no explicit rank exists.
+            if Columns.score in snap.columns and Columns.player_name in snap.columns:
+                work = snap.copy()
+                work[Columns.score] = pd.to_numeric(work[Columns.score], errors="coerce").fillna(0)
+                ranked = (
+                    work.groupby(Columns.player_name, dropna=False)[Columns.score]
+                    .sum()
+                    .sort_values(ascending=False)
+                )
+                rank_series = ranked.rank(method="min", ascending=False)
+                # Approximate: choose worst rank at/above cut score.
+                candidates = rank_series[ranked.ge(cut_score)]
+                if not candidates.empty:
+                    return int(candidates.max())
+            return None
+
         # Single-stage mode: keep stage-specific leaderboard behavior.
         if round_number is not None:
             work = df.copy()
@@ -550,7 +604,9 @@ class TournamentService:
                 ],
             )
             data = []
-            for _, row in leaderboard.iterrows():
+            row_metadata = []
+            cell_metadata: Dict[str, Dict[str, Any]] = {}
+            for row_idx, (_, row) in enumerate(leaderboard.iterrows()):
                 entry = [int(row["rank"]), str(row.get(Columns.player_name, ""))]
                 if include_club:
                     entry.append(str(row.get(Columns.club, "")))
@@ -559,11 +615,37 @@ class TournamentService:
                 entry.append(int(row.get("round_score", 0)))
                 entry.append(float(row.get("avg_score", 0.0)))
                 data.append(entry)
+
+                # Stage table shading: qualified zone + emphasized cut row.
+                cut_pos = _cut_position_for_round(df, int(round_number))
+                rank_val = int(row.get("rank", 0))
+                style: Dict[str, Any] = {}
+                if cut_pos is not None and rank_val > 0:
+                    if rank_val == 1:
+                        style = {"backgroundColor": "#cfead6", "fontWeight": "700"}
+                    elif rank_val < cut_pos:
+                        style = {"backgroundColor": "#e6f4ea"}
+                    elif rank_val == cut_pos:
+                        style = {"backgroundColor": "#ffe8a1", "fontWeight": "700"}
+                row_metadata.append({"styling": {}})
+                if style:
+                    cell_metadata[f"{row_idx}:0"] = style
             return TableData(
-                columns=[ColumnGroup(title=i18n_service.get_text("ranking"), columns=base_columns), total_group, stage_group],
+                columns=[
+                    ColumnGroup(
+                        title=i18n_service.get_text("ranking"),
+                        frozen="left",
+                        style={"backgroundColor": "#f8f9fa"},
+                        columns=base_columns,
+                    ),
+                    total_group,
+                    stage_group,
+                ],
                 data=data,
                 title=f"{tournament} Leaderboard",
                 default_sort={"field": "total_score", "dir": "desc"},
+                row_metadata=row_metadata,
+                cell_metadata=cell_metadata,
                 config={
                     "stickyHeader": True,
                     "striped": True,
@@ -633,7 +715,26 @@ class TournamentService:
         columns.append(Column(title=i18n_service.get_text("average"), field="total_avg", width="110px", align="center", decimal_places=1))
 
         data = []
-        for _, row in pivot.iterrows():
+        row_metadata = []
+        cell_metadata: Dict[str, Dict[str, Any]] = {}
+        # Total table shading: multi-band cut lines (first 3 stage cuts, if available).
+        round_meta = (
+            work[[Columns.round_number]]
+            .dropna(subset=[Columns.round_number])
+            .drop_duplicates()
+            .sort_values(by=Columns.round_number)
+        )
+        cut_positions: List[int] = []
+        for _, rr in round_meta.iterrows():
+            rn = int(rr[Columns.round_number])
+            pos = _cut_position_for_round(df, rn)
+            if pos is not None and pos > 0 and pos not in cut_positions:
+                cut_positions.append(pos)
+            if len(cut_positions) >= 3:
+                break
+        cut_positions = sorted(cut_positions)
+
+        for row_idx, (_, row) in enumerate(pivot.iterrows()):
             entry = [int(row["rank"]), str(row.get(Columns.player_name, ""))]
             if include_club:
                 entry.append(str(row.get(Columns.club, "")))
@@ -643,11 +744,42 @@ class TournamentService:
             entry.append(float(row.get("total_avg", 0.0)))
             data.append(entry)
 
+            rank_val = int(row.get("rank", 0))
+            style: Dict[str, Any] = {}
+            if cut_positions and rank_val > 0:
+                # Band 1 strongest, then progressively lighter up to cut line 3.
+                if rank_val <= cut_positions[0]:
+                    style = {"backgroundColor": "#cfead6"}
+                elif len(cut_positions) >= 2 and rank_val <= cut_positions[1]:
+                    style = {"backgroundColor": "#e0f1e4"}
+                elif len(cut_positions) >= 3 and rank_val <= cut_positions[2]:
+                    style = {"backgroundColor": "#edf7ef"}
+                if rank_val == 1:
+                    style["fontWeight"] = "700"
+            row_metadata.append({"styling": {}})
+            if style:
+                cell_metadata[f"{row_idx}:0"] = style
+
+        lead_count = 2 + (1 if include_club else 0)
+        leading_cols = columns[:lead_count]
+        remaining_cols = columns[lead_count:]
+        grouped_columns = [
+            ColumnGroup(
+                title="",
+                frozen="left",
+                style={"backgroundColor": "#f8f9fa"},
+                columns=leading_cols,
+            ),
+            ColumnGroup(title="", columns=remaining_cols),
+        ]
+
         return TableData(
-            columns=columns,
+            columns=grouped_columns,
             data=data,
             title=f"{tournament} Leaderboard",
             default_sort={"field": "total_score", "dir": "desc"},
+            row_metadata=row_metadata,
+            cell_metadata=cell_metadata,
             config={
                 "stickyHeader": True,
                 "striped": True,
@@ -658,7 +790,12 @@ class TournamentService:
             },
         )
 
-    def get_round_results_table(self, season: str, tournament: str, round_number: Optional[int] = None) -> TableData:
+    def get_round_results_table(
+        self,
+        season: str,
+        tournament: str,
+        round_number: Optional[int] = None,
+    ) -> TableData:
         df = self._get_tournament_df(season=season, tournament=tournament)
         if df.empty:
             return TableData(columns=[], data=[], title=f"{tournament} Round Results")
@@ -767,7 +904,23 @@ class TournamentService:
             data.append(entry)
             previous_player_key = player_key
 
-        return TableData(columns=columns, data=data, title=f"{tournament} Round Results")
+        return TableData(
+            columns=columns,
+            data=data,
+            title=f"{tournament} Round Results",
+            metadata={
+                "heatmap_ranges": {
+                    "game_score": {
+                        # Backend-provided range policy; frontend applies all styling.
+                        "min": 130,
+                        "max": 270,
+                        "high_band_min": 271,
+                        "high_band_max": 299,
+                        "perfect_score": 300,
+                    }
+                }
+            },
+        )
 
     def get_player_round_table(self, season: str, tournament: str, player: str) -> TableData:
         df = self._get_tournament_df(season=season, tournament=tournament)
@@ -855,20 +1008,50 @@ class TournamentService:
             )
             rows.append(row)
 
-        columns = [Column(title="Stage", field="stage", width="140px", align="left")]
-        for g in game_cols:
-            columns.append(Column(title=f"G{g}", field=f"game_{g}", width="70px", align="center", decimal_places=0))
-        columns.extend(
-            [
-                Column(title="Round Total", field="round_total", width="105px", align="center", decimal_places=0),
-                Column(title="Round Avg", field="round_avg", width="90px", align="center", decimal_places=1),
-                Column(title="Round Rank", field="round_rank", width="95px", align="center", decimal_places=0),
-                Column(title="Cum Total", field="cum_total", width="95px", align="center", decimal_places=0),
-                Column(title="Cum Avg", field="cum_avg", width="90px", align="center", decimal_places=1),
-                Column(title="Cum Rank", field="cum_rank", width="90px", align="center", decimal_places=0),
-            ]
+        stage_info_cols = [
+            Column(title=i18n_service.get_text("ui.tournament.stage"), field="stage", width="140px", align="left"),
+        ]
+        game_score_cols = [
+            Column(title=f"{g + 1}", field=f"game_{g}", width="70px", align="center", decimal_places=0)
+            for g in game_cols
+        ]
+        stage_stat_cols = [
+            Column(title=i18n_service.get_text("score"), field="score_total", width="105px", align="center", decimal_places=0),
+            Column(title=i18n_service.get_text("average"), field="round_avg", width="90px", align="center", decimal_places=1),
+            Column(title=i18n_service.get_text("ui.tournament.rank"), field="round_rank", width="95px", align="center", decimal_places=0),
+        ]
+        total_stat_cols = [
+            Column(title=i18n_service.get_text("score"), field="cum_score", width="95px", align="center", decimal_places=0),
+            Column(title=i18n_service.get_text("average"), field="cum_avg", width="90px", align="center", decimal_places=1),
+            Column(title=i18n_service.get_text("ui.tournament.rank"), field="cum_rank", width="90px", align="center", decimal_places=0),
+        ]
+        columns = [
+            ColumnGroup(
+                title=i18n_service.get_text("ui.tournament.stage"),
+                frozen="left",
+                style={"backgroundColor": get_theme_color("background")},
+                columns=stage_info_cols,
+            ),
+            ColumnGroup(title=i18n_service.get_text("ui.tournament.games"), columns=game_score_cols),
+            ColumnGroup(title=i18n_service.get_text("ui.tournament.stage_results"), columns=stage_stat_cols),
+            ColumnGroup(title=i18n_service.get_text("ui.tournament.total_results"), columns=total_stat_cols),
+        ]
+        return TableData(
+            columns=columns,
+            data=rows,
+            title=f"{player} - Tournament Progress",
+            metadata={
+                "heatmap_ranges": {
+                    "game_score": {
+                        "min": 130,
+                        "max": 270,
+                        "high_band_min": 271,
+                        "high_band_max": 299,
+                        "perfect_score": 300,
+                    }
+                }
+            },
         )
-        return TableData(columns=columns, data=rows, title=f"{player} - Tournament Progress")
 
     def get_player_best_efforts(self, season: str, tournament: str, player: str) -> Dict[str, Any]:
         df = self._get_tournament_df(season=season, tournament=tournament)
@@ -1130,7 +1313,13 @@ class TournamentService:
             },
         }
 
-    def get_tournament_section(self, season: str, tournament: str, round_number: Optional[int] = None, top_n: int = 5) -> Dict[str, Any]:
+    def get_tournament_section(
+        self,
+        season: str,
+        tournament: str,
+        round_number: Optional[int] = None,
+        top_n: int = 5,
+    ) -> Dict[str, Any]:
         return {
             "cards": self.get_summary_cards(season, tournament, round_number=round_number, top_n=top_n).get("cards", []),
             "leaderboard": self.get_leaderboard_table(season, tournament, round_number).to_dict(),

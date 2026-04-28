@@ -46,6 +46,7 @@
     if (playerInput) {
       playerInput.placeholder = tt("ui.tournament.player_placeholder", "Type to filter players...");
     }
+    renderRoundResultsHeatmapControls();
   }
 
   function withDatabase(url) {
@@ -181,6 +182,115 @@
     headerEl.textContent = `${tt("ui.tournament.round_results", "Round Results")} - ${stageName}`;
   }
 
+  const DEFAULT_GAME_HEATMAP_RANGE = {
+    min: 130,
+    max: 270,
+    high_band_min: 271,
+    high_band_max: 299,
+    perfect_score: 300,
+  };
+
+  function renderRoundResultsHeatmapControls(containerId = "tournamentRoundResultsHeatmapControls") {
+    const wrap = document.getElementById(containerId);
+    if (!wrap) return;
+    const buttonId = `${containerId}Toggle`;
+    wrap.innerHTML = `
+      <div class="d-flex align-items-center">
+        <span class="me-2 fw-semibold">${tt("ui.tournament.heatmap", "Heatmap")}</span>
+        <button type="button" id="${buttonId}" class="btn btn-sm ${roundResultsHeatmapEnabled ? "btn-primary" : "btn-outline-primary"}">
+          ${roundResultsHeatmapEnabled ? tt("ui.common.on", "On") : tt("ui.common.off", "Off")}
+        </button>
+      </div>
+    `;
+    const btn = document.getElementById(buttonId);
+    if (!btn) return;
+    btn.addEventListener("click", () => {
+      roundResultsHeatmapEnabled = !roundResultsHeatmapEnabled;
+      renderRoundResultsHeatmapControls("tournamentRoundResultsHeatmapControls");
+      renderRoundResultsHeatmapControls("tournamentPlayerRoundResultsHeatmapControls");
+      applyRoundResultsHeatmapToTable("tournamentRoundResultsTable", currentRoundResultsHeatmapRange);
+      applyRoundResultsHeatmapToTable("tournamentPlayerRoundTable", currentPlayerRoundHeatmapRange);
+    });
+  }
+
+  function applyRoundResultsHeatmapToTable(containerId = "tournamentRoundResultsTable", rangeOverride = null) {
+    const table = document.getElementById(containerId);
+    if (!table) return false;
+    const gameCells = table.querySelectorAll(".tabulator-cell[tabulator-field^='game_']");
+    if (!gameCells.length) return false;
+    gameCells.forEach((cell) => {
+      cell.style.removeProperty("background-color");
+      cell.style.removeProperty("font-weight");
+      cell.style.removeProperty("color");
+      cell.style.removeProperty("box-shadow");
+
+      if (!roundResultsHeatmapEnabled) return;
+      const raw = String(cell.textContent || "").trim();
+      if (!raw) return;
+      const value = parseFloat(raw);
+      if (!Number.isFinite(value)) return;
+
+      const range = rangeOverride || DEFAULT_GAME_HEATMAP_RANGE;
+      const min = Number(range.min ?? DEFAULT_GAME_HEATMAP_RANGE.min);
+      const max = Number(range.max ?? DEFAULT_GAME_HEATMAP_RANGE.max);
+      const highBandMin = Number(range.high_band_min ?? DEFAULT_GAME_HEATMAP_RANGE.high_band_min);
+      const highBandMax = Number(range.high_band_max ?? DEFAULT_GAME_HEATMAP_RANGE.high_band_max);
+      const perfectScore = Number(range.perfect_score ?? DEFAULT_GAME_HEATMAP_RANGE.perfect_score);
+
+      if (value === perfectScore) {
+        const perfectColor = window.ColorUtils?.getThemeColor("heatMapPerfect") || "#ffc107";
+        const perfectBorder = window.ColorUtils?.getThemeColor("heatMapPerfectBorder") || "#b77900";
+        cell.style.setProperty("background-color", perfectColor, "important");
+        cell.style.setProperty("font-weight", "800", "important");
+        cell.style.setProperty("color", "#111827", "important");
+        cell.style.setProperty("box-shadow", `inset 0 0 0 2px ${perfectBorder}`, "important");
+        return;
+      }
+
+      if (value >= highBandMin && value <= highBandMax) {
+        const highBandColor = window.ColorUtils?.getThemeColor("heatMapHighBand") || "#ffe7a3";
+        cell.style.setProperty("background-color", highBandColor, "important");
+        cell.style.setProperty("font-weight", "600", "important");
+        cell.style.setProperty("color", "#1f2933", "important");
+        return;
+      }
+
+      if (typeof window.ColorUtils?.getHeatMapColor === "function") {
+        const color = window.ColorUtils.getHeatMapColor(value, min, max);
+        cell.style.setProperty("background-color", color, "important");
+        cell.style.setProperty("color", "#1f2933", "important");
+      }
+    });
+    return true;
+  }
+
+  function scheduleRoundResultsHeatmapApply(maxAttempts = 10, delayMs = 80) {
+    let attempts = 0;
+    const tick = () => {
+      attempts += 1;
+      const okOverview = applyRoundResultsHeatmapToTable("tournamentRoundResultsTable", currentRoundResultsHeatmapRange);
+      const okPlayer = applyRoundResultsHeatmapToTable("tournamentPlayerRoundTable", currentPlayerRoundHeatmapRange);
+      const ok = okOverview || okPlayer;
+      if (ok || attempts >= maxAttempts) return;
+      window.setTimeout(tick, delayMs);
+    };
+    tick();
+  }
+
+  function updateLeaderboardHeader(section) {
+    const headerEl = document.querySelector("#tournamentLeaderboardCard .card-header h5");
+    if (!headerEl) return;
+    const roundValue = String(currentFilters.round || "").trim();
+    if (!roundValue) {
+      headerEl.textContent = tt("ui.tournament.leaderboard", "Leaderboard");
+      return;
+    }
+    const rounds = Array.isArray(section?.rounds) ? section.rounds : [];
+    const selected = rounds.find((r) => String(r?.round_number ?? "") === roundValue);
+    const stageName = selected?.round_name ? String(selected.round_name).trim() : `${tt("ui.tournament.round", "Round")} ${roundValue}`;
+    headerEl.textContent = `${tt("ui.tournament.leaderboard", "Leaderboard")} - ${stageName}`;
+  }
+
   function setRoundResultsVisibility() {
     const card = document.getElementById("tournamentRoundResultsCard");
     if (!card) return;
@@ -274,6 +384,9 @@
 
   let tournamentPlayers = [];
   let playerCutLineMode = "dynamic"; // "dynamic" or "horizontal"
+  let roundResultsHeatmapEnabled = false;
+  let currentRoundResultsHeatmapRange = DEFAULT_GAME_HEATMAP_RANGE;
+  let currentPlayerRoundHeatmapRange = DEFAULT_GAME_HEATMAP_RANGE;
   const playerComboCache = new Map();
   const currentFilters = {
     season: "",
@@ -509,7 +622,15 @@
           <div class="d-flex justify-content-center mb-3">
             <div id="tournamentPlayerChartsLegend" class="d-flex flex-wrap justify-content-center gap-3"></div>
           </div>
-          <div id="tournamentPlayerRoundTable"></div>
+          <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <h6 class="mb-0">${tt("ui.tournament.results", "Results")}</h6>
+              <div id="tournamentPlayerRoundResultsHeatmapControls"></div>
+            </div>
+            <div class="card-body">
+              <div id="tournamentPlayerRoundTable"></div>
+            </div>
+          </div>
         </div>
       </div>
     `;
@@ -530,6 +651,12 @@
       }
     }
     renderTable("tournamentPlayerRoundTable", payload.round_table);
+    renderRoundResultsHeatmapControls("tournamentPlayerRoundResultsHeatmapControls");
+    currentPlayerRoundHeatmapRange =
+      payload?.round_table?.metadata?.heatmap_ranges?.game_score || DEFAULT_GAME_HEATMAP_RANGE;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => scheduleRoundResultsHeatmapApply());
+    });
     renderPlayerProgressCharts(payload.progress_series, payload.player, playerCutLineMode);
     document.getElementById("tournamentCutModeDynamic")?.addEventListener("click", () => {
       playerCutLineMode = "dynamic";
@@ -1047,11 +1174,18 @@
     );
     renderCards(section.cards || []);
     renderBestEfforts(section.best_efforts);
+    updateLeaderboardHeader(section);
     renderTable("tournamentLeaderboardTable", section.leaderboard);
     setRoundResultsVisibility();
+    renderRoundResultsHeatmapControls();
     if (String(currentFilters.round || "").trim()) {
       updateRoundResultsHeader(section);
       renderTable("tournamentRoundResultsTable", section.round_results);
+      currentRoundResultsHeatmapRange =
+        section?.round_results?.metadata?.heatmap_ranges?.game_score || DEFAULT_GAME_HEATMAP_RANGE;
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => scheduleRoundResultsHeatmapApply());
+      });
     }
     enablePlayerCellNavigation("tournamentLeaderboardTable");
     enablePlayerCellNavigation("tournamentRoundResultsTable");
@@ -1163,6 +1297,7 @@
 
   async function init() {
     refreshTournamentUiText();
+    renderRoundResultsHeatmapControls();
     const params = new URLSearchParams(window.location.search);
     const deepLinkedPlayer = (params.get("player") || "").trim();
     const seasons = await getAvailableSeasons();

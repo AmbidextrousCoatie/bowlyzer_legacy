@@ -595,6 +595,7 @@ def get_translations():
 
                     # Namespaced: actions and status
                     "action.refresh", "action.update", "action.dismiss",
+                    "ui.common.on", "ui.common.off",
                     "status.loading", "status.loading_data", "status.no_data",
                     "status.initialization_error.title", "status.initialization_error.message",
                     # Initialization placeholders on league page
@@ -670,8 +671,11 @@ def get_translations():
                     "ui.tournament.dynamic_cut_pace", "ui.tournament.horizontal_cut",
                     "ui.tournament.cum_pos_over_games", "ui.tournament.echarts_unavailable",
                     "ui.tournament.cut_line", "ui.tournament.reference", "ui.tournament.game",
-                    "ui.tournament.rank", "ui.tournament.cut_line_pace", "ui.tournament.tournament_leader",
+                    "ui.tournament.rank", "ui.tournament.stage", "ui.tournament.games", "ui.tournament.results",
+                    "ui.tournament.cut_line_pace", "ui.tournament.tournament_leader",
                     "ui.tournament.round_boundary", "ui.tournament.all_latest",
+                    "ui.tournament.heatmap",
+                    "ui.tournament.heatmap_enabled", "ui.tournament.heatmap_disabled",
                     "ui.tournament.total_results", "ui.tournament.stage_results",
                     "ui.tournament.card.tournament", "ui.tournament.card.current_round",
                     "ui.tournament.card.cut_line", "ui.tournament.card.tournament_leader",

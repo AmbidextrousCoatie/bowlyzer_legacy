@@ -52,6 +52,9 @@
         heatMapEnd: "#1b8da7",
         heatMapLow: "#d9596a",
         heatMapHigh: "#1b8da7",
+        heatMapHighBand: "#ffe7a3",    // 271-299 special band
+        heatMapPerfect: "#ffc107",     // 300 perfect game highlight
+        heatMapPerfectBorder: "#b77900", // Border for perfect game highlight
         // Status colors
         warning: "#86e1b3",            // Warning states
         info: "#a1e8c4",              // Info states
@@ -93,6 +96,9 @@
         heatMapEnd: "#1b8da7",
         heatMapLow: "#d9596a",
         heatMapHigh: "#1b8da7",
+        heatMapHighBand: "#ffe7a3",
+        heatMapPerfect: "#ffc107",
+        heatMapPerfectBorder: "#b77900",
         
         // Status colors (adjusted for dark mode)
         warning: "#86e1b3",
@@ -407,7 +413,7 @@
     
         return hslToRgbString(h, s, l);
     }
-    
+
     // === Hilfsfunktion: HUE korrekt zirkulär interpolieren ===
     function circularMix(h1, h2, t) {
         let diff = ((h2 - h1 + 540) % 360) - 180;
