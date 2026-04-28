@@ -13879,3 +13879,608 @@ Status: **completed**
 _**Agent (default)**_
 
 Updated — the Cut toggle button now always renders as active (`btn-primary`) regardless of mode, and still toggles text between `Dynamic` and `Static`.
+
+---
+
+_**User**_
+
+the deep links from the player stats page are gone:
+http://127.0.0.1:5000/player/stats?player_name=Alexander+Scholz&player_id=16352 
+i want to links to point to:
+- the league season team view
+- the individual players tournament page
+
+---
+
+_**Agent (default)**_
+
+I’ll restore those deep links from player stats by wiring the competition rows back to:
+- league season team view, and
+- individual player tournament page,
+based on row context. I’m checking `player/content.html` and the player service table payload now.
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "outputMode": "content",
+  "path": "C:/Users/cfell/repos/bowlyzer_legacy/app/templates/player/content.html",
+  "pattern": "createTableTabulator|season stats|player stats|competition|link|href|tournament/stats|league/stats"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "C:/Users/cfell/repos/bowlyzer_legacy/app/templates/player/content.html",
+  "pattern": "createTableTabulator|season stats|player stats|competition|link|href|tournament/stats|league/stats",
+  "topFiles": [
+    {
+      "matchCount": 20,
+      "uri": "app/templates/player/content.html"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 20
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:/Users/cfell/repos/bowlyzer_legacy/app/templates/player/content.html</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "outputMode": "content",
+  "path": "C:/Users/cfell/repos/bowlyzer_legacy/app/services/player_service.py",
+  "pattern": "get_player|season_stats|TableData|competition|league|tournament|link|url"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "C:/Users/cfell/repos/bowlyzer_legacy/app/services/player_service.py",
+  "pattern": "get_player|season_stats|TableData|competition|league|tournament|link|url",
+  "topFiles": [
+    {
+      "matchCount": 36,
+      "uri": "app/services/player_service.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 36
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:/Users/cfell/repos/bowlyzer_legacy/app/templates/player/content.html</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*league*|*stats*",
+  "outputMode": "content",
+  "path": "C:/Users/cfell/repos/bowlyzer_legacy/app/static/js",
+  "pattern": "new URLSearchParams\\(window.location.search\\)|params.get\\('team'\\)|league_long|week"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "C:/Users/cfell/repos/bowlyzer_legacy/app/static/js",
+  "pattern": "new URLSearchParams\\(window.location.search\\)|params.get\\('team'\\)|league_long|week",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "outputMode": "content",
+  "path": "C:/Users/cfell/repos/bowlyzer_legacy/app/static/js",
+  "pattern": "params.get\\('team'\\)|params.get\\('league'\\)|params.get\\('week'\\)|league_long"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "C:/Users/cfell/repos/bowlyzer_legacy/app/static/js",
+  "pattern": "params.get\\('team'\\)|params.get\\('league'\\)|params.get\\('week'\\)|league_long",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "app\\static\\js\\content-blocks\\league-aggregation-block.js"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app\\static\\js\\content-blocks\\matchday-block.js"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app\\static\\js\\content-blocks\\league-season-overview-block.js"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app\\static\\js\\content-blocks\\season-league-standings-block.js"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app\\static\\js\\league\\league-filter-utils.js"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app\\static\\js\\league-stats-app.js"
+    },
+    {
+      "matchCount": 8,
+      "uri": "app\\static\\js\\core\\url-state-manager.js"
+    },
+    {
+      "matchCount": 4,
+      "uri": "app\\static\\js\\core\\simple-filter-manager.js"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app\\static\\js\\core\\league-content-renderer.js"
+    },
+    {
+      "matchCount": 13,
+      "uri": "app\\static\\js\\core\\centralized-button-manager.js"
+    }
+  ],
+  "totalFiles": 10,
+  "totalMatches": 33
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "outputMode": "content",
+  "path": "C:/Users/cfell/repos/bowlyzer_legacy/app",
+  "pattern": "team=.*league/stats|/league/stats\\?"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "C:/Users/cfell/repos/bowlyzer_legacy/app",
+  "pattern": "team=.*league/stats|/league/stats\\?",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+I found the likely regression: link injection targeted only plain `<tbody><td>` cells, so Tabulator-rendered cells lost links. I’ll fix link rendering for Tabulator cells and update URLs to include team/player context as requested.
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: C:/Users/cfell/repos/bowlyzer_legacy/app/templates/player/content.html</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "C:/Users/cfell/repos/bowlyzer_legacy/app/templates/player/content.html"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "C:/Users/cfell/repos/bowlyzer_legacy/app/templates/player/content.html"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Fixed — deep links are restored and now route to the right targets.
+
+### What was broken
+Competition link injection only targeted plain table cells (`tbody td`), but the player season table is rendered with Tabulator, so links disappeared.
+
+### What I changed (`app/templates/player/content.html`)
+- Updated link builder to include team/player context:
+  - **League rows** now link to `/league/stats` with:
+    - `season`
+    - `league`
+    - `league_long`
+    - `team` (from row `club`, when available)
+  - **Tournament rows** link to `/tournament/stats` with:
+    - `season`
+    - `tournament`
+    - `player` (current selected player)
+- Updated post-render link injection to support both renderers:
+  - Tabulator cells: `.tabulator-cell[tabulator-field="competition"]`
+  - fallback plain table cells: `tbody tr td:nth-child(2)`
+- Delayed injection with double `requestAnimationFrame` so it runs after render completes.
+
+This restores the deep links from player stats and points them to:
+- league season team view
+- individual player tournament page
+
+
+
+---
+
+_**User**_
+
+the deep link 
+http://127.0.0.1:5000/league/stats?team=SG+DJK+Rimpar&season=25%2F26&league=BayL&league_long=Bayernliga&database=db_real_pipeline_gf 
+does not work. since the team number is dropped. include the team number in the stats page and also in the link
+
+---
+
+_**Agent (default)**_
+
+Understood — I’ll trace how league stats resolves team IDs and extend both the player-page deep link and league page URL parsing to carry a team number parameter. Then I’ll patch both ends together.
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "outputMode": "content",
+  "path": "C:/Users/cfell/repos/bowlyzer_legacy/app",
+  "pattern": "team_number|team_no|team id|team_id|teamnr|teamNr|team number"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "C:/Users/cfell/repos/bowlyzer_legacy/app",
+  "pattern": "team_number|team_no|team id|team_id|teamnr|teamNr|team number",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "app\\services\\player_service.py"
+    },
+    {
+      "matchCount": 5,
+      "uri": "app/services/league_service.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/services/statistics_service.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/static/js/utils/team-vs-team-utils.js"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/models/statistics_models.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/services/player_service.py"
+    }
+  ],
+  "totalFiles": 6,
+  "totalMatches": 10
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "outputMode": "content",
+  "path": "C:/Users/cfell/repos/bowlyzer_legacy/app/static/js",
+  "pattern": "params.get\\('team'\\)|get\\('team'\\)|team\\s*:\\s*params.get\\('team'\\)|url.*team"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "C:/Users/cfell/repos/bowlyzer_legacy/app/static/js",
+  "pattern": "params.get\\('team'\\)|get\\('team'\\)|team\\s*:\\s*params.get\\('team'\\)|url.*team",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "app/static/js/league/league-chart-utils.js"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/static/js/core/simple-filter-manager.js"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app/static/js/legacy/team-chart-utils.js"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/static/js/content-blocks/league-aggregation-block.js"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/static/js/team-stats-app.js"
+    },
+    {
+      "matchCount": 8,
+      "uri": "app/static/js/content-blocks/team-performance-block.js"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/static/js/utils/team-vs-team-utils.js"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/static/js/core/url-state-manager.js"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/static/js/utils/individual-averages-utils.js"
+    }
+  ],
+  "totalFiles": 9,
+  "totalMatches": 17
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "outputMode": "content",
+  "path": "C:/Users/cfell/repos/bowlyzer_legacy/app/services/player_service.py",
+  "pattern": "get_lifetime_stats|season_stats|club|team"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "C:/Users/cfell/repos/bowlyzer_legacy/app/services/player_service.py",
+  "pattern": "get_lifetime_stats|season_stats|club|team",
+  "topFiles": [
+    {
+      "matchCount": 43,
+      "uri": "app/services/player_service.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 43
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: </summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>

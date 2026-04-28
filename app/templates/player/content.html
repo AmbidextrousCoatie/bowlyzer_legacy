@@ -191,7 +191,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .replace(/'/g, '&#039;');
     }
 
-    function competitionCellHtml(season, competition, isTournament, rowType) {
+    function competitionCellHtml(season, competition, isTournament, rowType, club, teamName, teamNumber) {
         const label = competition || '-';
         if (rowType !== 'competition' || !competition) {
             return escapeHtml(label);
@@ -202,7 +202,16 @@ document.addEventListener('DOMContentLoaded', function() {
         qs.set('season', String(season || ''));
         const targetPath = isTournament ? '/tournament/stats' : '/league/stats';
         if (isTournament) qs.set('tournament', String(competition));
-        else qs.set('league', String(competition));
+        else {
+            qs.set('league', String(competition));
+            qs.set('league_long', String(competition));
+            const teamForLink = teamName || (
+                club
+                    ? `${String(club).trim()}${teamNumber ? ` ${teamNumber}` : ''}`.trim()
+                    : ''
+            );
+            if (teamForLink) qs.set('team', String(teamForLink));
+        }
         const selectedPlayerName = (playerInput && playerInput.value ? playerInput.value.trim() : '');
         if (isTournament && selectedPlayerName) {
             qs.set('player', selectedPlayerName);
@@ -430,7 +439,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const rows = seasons.map(season => ([
             season.season || '-',
             season.competition || '-',
-            season.row_type === 'season_total' ? '' : (season.club || '-'),
+            season.row_type === 'season_total'
+                ? ''
+                : ((season.club || '-') + (season.team_number ? ` ${season.team_number}` : '')),
             season.games || 0,
             (season.total_pins || 0).toLocaleString(),
             season.vs_last_season !== null && season.vs_last_season !== undefined
@@ -515,13 +526,42 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // Inject competition links after the table is rendered.
-        const competitionCells = tableContainer.querySelectorAll('tbody tr td:nth-child(2)');
-        seasons.forEach((season, index) => {
-            const cell = competitionCells[index];
-            if (!cell) return;
-            cell.innerHTML = competitionCellHtml(season.season, season.competition, season.is_tournament, season.row_type);
-        });
+        // Inject competition links after the table is rendered (supports both Tabulator and plain tables).
+        const injectCompetitionLinks = () => {
+            const tabulatorCells = tableContainer.querySelectorAll('.tabulator-cell[tabulator-field="competition"]');
+            if (tabulatorCells.length > 0) {
+                tabulatorCells.forEach((cell, index) => {
+                    const season = seasons[index];
+                    if (!season) return;
+                    cell.innerHTML = competitionCellHtml(
+                        season.season,
+                        season.competition,
+                        season.is_tournament,
+                        season.row_type,
+                        season.club,
+                        season.team_name,
+                        season.team_number
+                    );
+                });
+                return;
+            }
+
+            const competitionCells = tableContainer.querySelectorAll('tbody tr td:nth-child(2)');
+            seasons.forEach((season, index) => {
+                const cell = competitionCells[index];
+                if (!cell) return;
+                cell.innerHTML = competitionCellHtml(
+                    season.season,
+                    season.competition,
+                    season.is_tournament,
+                    season.row_type,
+                    season.club,
+                    season.team_name,
+                    season.team_number
+                );
+            });
+        };
+        requestAnimationFrame(() => requestAnimationFrame(injectCompetitionLinks));
     }
 
     function updateTrendChart(data) {

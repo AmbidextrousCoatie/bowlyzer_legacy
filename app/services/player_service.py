@@ -508,6 +508,12 @@ class PlayerService:
                         'season': season,
                         'competition': str(comp_name).strip() or competition_name(cdf),
                         'club': row_club(cdf),
+                        'team_name': row_team_name(cdf),
+                        'team_number': (
+                            int(m.group(1))
+                            if (m := re.search(r"\s+(\d+)\s*$", row_team_name(cdf)))
+                            else None
+                        ),
                         'games': int(comp_games),
                         'total_pins': int(comp_pins),
                         'average': float(round(comp_avg, 2)),
