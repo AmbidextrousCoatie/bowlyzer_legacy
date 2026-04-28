@@ -556,6 +556,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.location.href = href;
             };
 
+        const injectCompetitionLinks = () => {
+            const competitionCells = tableContainer.querySelectorAll('tbody tr td:nth-child(2)');
+            seasons.forEach((season, index) => {
+                const cell = competitionCells[index];
+                if (!cell) return;
+                cell.innerHTML = competitionCellHtml(
+                    season.season,
+                    season.competition,
+                    season.is_tournament,
+                    season.row_type,
+                    season.club,
+                    season.team_name,
+                    season.team_number
+                );
+            });
+        };
+        requestAnimationFrame(() => requestAnimationFrame(injectCompetitionLinks));
             tableContainer.addEventListener('touchend', (event) => navigateFromEvent(event, true), { passive: false });
             tableContainer.addEventListener('click', (event) => navigateFromEvent(event, false));
             tableContainer.dataset.deepLinkHandlersBound = 'true';

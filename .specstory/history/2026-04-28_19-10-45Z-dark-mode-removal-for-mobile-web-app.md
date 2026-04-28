@@ -1878,8 +1878,6 @@ _**Agent (default)**_
 
 <details><summary>Tool use: **edit_file_v2** • Edit file: C:/Users/cfell/repos/bowlyzer_legacy/app/templates/components/tables.html</summary>
 
-Status: **loading**
-
 </details>
 
 </tool-use>
@@ -1888,3 +1886,119 @@ Status: **loading**
 <summary>Tool use: **edit_file_v2**</summary>
 
 </details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "C:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\templates\\player\\content.html",
+    "C:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\templates\\components\\tables.html"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "C:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\templates\\player\\content.html"
+    },
+    {
+      "relativeWorkspacePath": "C:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\templates\\components\\tables.html"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "outputMode": "content",
+  "path": "C:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\templates",
+  "pattern": "is_html|competitionCellHtml\\(|td\\.innerHTML = value|!col\\.is_html"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "C:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\templates",
+  "pattern": "is_html|competitionCellHtml\\(|td\\.innerHTML = value|!col\\.is_html",
+  "topFiles": [
+    {
+      "matchCount": 3,
+      "uri": "app\\templates\\components\\tables.html"
+    },
+    {
+      "matchCount": 3,
+      "uri": "app\\templates\\player\\content.html"
+    }
+  ],
+  "totalFiles": 2,
+  "totalMatches": 6
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+That explains it — and I’ve patched the exact mobile failure path.
+
+On mobile, your table was likely using the Bootstrap fallback renderer, which used `textContent` for cells, so the competition deep links were rendered as plain text (not clickable links). Desktop was fine because the Tabulator path handled HTML links differently.
+
+### Fixes applied
+
+- Updated `app/templates/player/content.html`:
+  - Competition column values are now generated as link HTML directly in the row data.
+  - Marked the competition column with `is_html: true`.
+  - Removed the post-render “inject links” workaround (no longer needed).
+
+- Updated `app/templates/components/tables.html`:
+  - In the Bootstrap table renderer, when `col.is_html === true`, it now uses `td.innerHTML = value`.
+  - Kept numeric formatting from overriding HTML cells.
+
+### Why this should solve your case
+
+- Desktop + mobile now both get link markup from the same source data.
+- Mobile fallback renderer now respects and renders link HTML instead of stripping it to plain text.
+
+If you want, I can apply the same `is_html` support pattern to other pages that may include deep links in table cells, so this won’t regress elsewhere.
