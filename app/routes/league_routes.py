@@ -668,6 +668,7 @@ def get_translations():
                     "ui.tournament.average", "ui.tournament.cumulated", "ui.tournament.best_position",
                     "ui.tournament.highest_game", "ui.tournament.highest_pair", "ui.tournament.highest_block",
                     "ui.tournament.cum_avg_over_games", "ui.tournament.cut_line_mode",
+                    "ui.tournament.cut", "ui.tournament.dynamic", "ui.tournament.static",
                     "ui.tournament.dynamic_cut_pace", "ui.tournament.horizontal_cut",
                     "ui.tournament.cum_pos_over_games", "ui.tournament.echarts_unavailable",
                     "ui.tournament.cut_line", "ui.tournament.reference", "ui.tournament.game",

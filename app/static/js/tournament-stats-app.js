@@ -264,7 +264,7 @@
     return true;
   }
 
-  function scheduleRoundResultsHeatmapApply(maxAttempts = 10, delayMs = 80) {
+  function scheduleRoundResultsHeatmapApply(maxAttempts = 40, delayMs = 120) {
     let attempts = 0;
     const tick = () => {
       attempts += 1;
@@ -384,7 +384,7 @@
 
   let tournamentPlayers = [];
   let playerCutLineMode = "dynamic"; // "dynamic" or "horizontal"
-  let roundResultsHeatmapEnabled = false;
+  let roundResultsHeatmapEnabled = true;
   let currentRoundResultsHeatmapRange = DEFAULT_GAME_HEATMAP_RANGE;
   let currentPlayerRoundHeatmapRange = DEFAULT_GAME_HEATMAP_RANGE;
   const playerComboCache = new Map();
@@ -598,14 +598,16 @@
           <div class="row g-3 mb-3">
             <div class="col-md-6">
               <div class="card h-100">
-                <div class="card-header"><h6>${tt("ui.tournament.cum_avg_over_games", "Cumulated Average Over Games")}</h6></div>
-                <div class="card-body">
-                  <div class="d-flex justify-content-end mb-2">
-                    <div class="btn-group btn-group-sm" role="group" aria-label="${tt("ui.tournament.cut_line_mode", "Cut line mode")}">
-                      <button type="button" id="tournamentCutModeDynamic" class="btn ${playerCutLineMode === "dynamic" ? "btn-primary" : "btn-outline-primary"}">${tt("ui.tournament.dynamic_cut_pace", "Dynamic Cut Pace")}</button>
-                      <button type="button" id="tournamentCutModeHorizontal" class="btn ${playerCutLineMode === "horizontal" ? "btn-primary" : "btn-outline-primary"}">${tt("ui.tournament.horizontal_cut", "Horizontal Cut")}</button>
-                    </div>
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <h6 class="mb-0">${tt("ui.tournament.cum_avg_over_games", "Cumulated Average Over Games")}</h6>
+                  <div class="d-flex align-items-center">
+                    <span class="me-2 fw-semibold">${tt("ui.tournament.cut", "Cut")}</span>
+                    <button type="button" id="tournamentCutModeToggle" class="btn btn-sm btn-primary">
+                      ${playerCutLineMode === "dynamic" ? tt("ui.tournament.dynamic", "Dynamic") : tt("ui.tournament.static", "Static")}
+                    </button>
                   </div>
+                </div>
+                <div class="card-body">
                   <div id="tournamentPlayerAvgChart" style="width:100%; min-width:100%; height:280px;"></div>
                 </div>
               </div>
@@ -658,12 +660,8 @@
       requestAnimationFrame(() => scheduleRoundResultsHeatmapApply());
     });
     renderPlayerProgressCharts(payload.progress_series, payload.player, playerCutLineMode);
-    document.getElementById("tournamentCutModeDynamic")?.addEventListener("click", () => {
-      playerCutLineMode = "dynamic";
-      renderPlayerSection(payload);
-    });
-    document.getElementById("tournamentCutModeHorizontal")?.addEventListener("click", () => {
-      playerCutLineMode = "horizontal";
+    document.getElementById("tournamentCutModeToggle")?.addEventListener("click", () => {
+      playerCutLineMode = playerCutLineMode === "dynamic" ? "horizontal" : "dynamic";
       renderPlayerSection(payload);
     });
     document.getElementById("tournamentBackToOverviewBtn")?.addEventListener("click", async () => {
@@ -747,7 +745,7 @@
           yMax = Math.ceil((maxVal + padding) / 5) * 5;
           // Keep tournament average plots readable and comparable.
           yMin = Math.max(120, yMin);
-          yMax = Math.min(260, yMax);
+          yMax = Math.min(300, yMax);
           if (yMax <= yMin) yMax = yMin + 10;
         }
       }
@@ -946,7 +944,17 @@
               });
               if (!rows.length) return "";
               const axisRaw = Number(rows[0]?.axisValue);
-              const axisLabel = Number.isFinite(axisRaw) ? `${tt("ui.tournament.game", "Game")} #${Math.round(axisRaw)}` : "";
+              const gameNo = Number.isFinite(axisRaw) ? Math.round(axisRaw) : null;
+              const scoreAtGame =
+                gameNo && Array.isArray(series?.game_score_series)
+                  ? series.game_score_series[gameNo - 1]
+                  : null;
+              const scoreText =
+                scoreAtGame !== null && scoreAtGame !== undefined && scoreAtGame !== ""
+                  ? String(scoreAtGame)
+                  : "-";
+              const axisLabel =
+                gameNo !== null ? `${tt("ui.tournament.game", "Game")} ${gameNo}: ${scoreText}` : "";
               const lines = rows.map((r) => {
                 const marker = r.marker || "";
                 const name = r.seriesName || "";
@@ -1186,6 +1194,8 @@
       requestAnimationFrame(() => {
         requestAnimationFrame(() => scheduleRoundResultsHeatmapApply());
       });
+      // Extra pass for slower initial Tabulator mounts.
+      window.setTimeout(() => scheduleRoundResultsHeatmapApply(20, 150), 1200);
     }
     enablePlayerCellNavigation("tournamentLeaderboardTable");
     enablePlayerCellNavigation("tournamentRoundResultsTable");

@@ -853,6 +853,101 @@ class TournamentService:
         ).reset_index(drop=True)
 
         include_stage_column = round_number is None
+
+        # Single-stage mode: grouped columns with overall-standing rank and total avg.
+        if round_number is not None:
+            all_work = df.copy()
+            all_work[Columns.score] = pd.to_numeric(all_work[Columns.score], errors="coerce").fillna(0).astype(int)
+            all_work[Columns.round_number] = pd.to_numeric(all_work[Columns.round_number], errors="coerce").astype("Int64")
+
+            upto = all_work[all_work[Columns.round_number].le(float(round_number))].copy()
+            overall = (
+                upto.groupby([Columns.player_name, id_col], dropna=False)[Columns.score]
+                .sum()
+                .reset_index(name="overall_score")
+            )
+            overall_games = (
+                upto.groupby([Columns.player_name, id_col], dropna=False)[Columns.score]
+                .count()
+                .reset_index(name="overall_games")
+            )
+            overall = overall.merge(overall_games, on=[Columns.player_name, id_col], how="left")
+            overall["overall_games"] = pd.to_numeric(overall["overall_games"], errors="coerce").fillna(1)
+            overall["overall_avg"] = (overall["overall_score"] / overall["overall_games"]).round(1)
+            overall["overall_rank"] = overall["overall_score"].rank(method="min", ascending=False).astype(int)
+
+            pivot = pivot.merge(
+                overall[[Columns.player_name, id_col, "overall_score", "overall_avg", "overall_rank"]],
+                on=[Columns.player_name, id_col],
+                how="left",
+            )
+            pivot["overall_score"] = pd.to_numeric(pivot["overall_score"], errors="coerce").fillna(0).astype(int)
+            pivot["overall_avg"] = pd.to_numeric(pivot["overall_avg"], errors="coerce").fillna(0.0)
+            pivot["overall_rank"] = pd.to_numeric(pivot["overall_rank"], errors="coerce").fillna(0).astype(int)
+            pivot = pivot.sort_values(by=["overall_rank", "round_total", Columns.player_name], ascending=[True, False, True]).reset_index(drop=True)
+
+            rank_cols = [
+                Column(title="#", field="overall_rank", width="70px", align="center", decimal_places=0),
+                Column(title=i18n_service.get_text("player"), field="player", width="220px", align="left"),
+            ]
+            if include_club:
+                rank_cols.append(Column(title=i18n_service.get_text("ui.player.club"), field="club", width="220px", align="left"))
+            game_cols_schema = [
+                Column(title=f"{g + 1}", field=f"game_{g}", width="75px", align="center", decimal_places=0)
+                for g in game_numbers
+            ]
+            stage_result_cols = [
+                Column(title=i18n_service.get_text("score"), field="stage_score", width="110px", align="center", decimal_places=0),
+                Column(title=i18n_service.get_text("average"), field="stage_avg", width="100px", align="center", decimal_places=1),
+            ]
+            total_cols = [
+                Column(title=i18n_service.get_text("score"), field="total_score", width="110px", align="center", decimal_places=0),
+                Column(title=i18n_service.get_text("average"), field="total_avg", width="100px", align="center", decimal_places=1),
+            ]
+
+            columns = [
+                ColumnGroup(
+                    title=i18n_service.get_text("ranking"),
+                    frozen="left",
+                    style={"backgroundColor": get_theme_color("background")},
+                    columns=rank_cols,
+                ),
+                ColumnGroup(title=i18n_service.get_text("ui.tournament.games"), columns=game_cols_schema),
+                ColumnGroup(title=i18n_service.get_text("ui.tournament.stage_results"), columns=stage_result_cols),
+                ColumnGroup(title=i18n_service.get_text("ui.tournament.total_results"), columns=total_cols),
+            ]
+
+            data = []
+            for _, row in pivot.iterrows():
+                entry = [int(row.get("overall_rank", 0)), str(row.get(Columns.player_name, ""))]
+                if include_club:
+                    entry.append(str(row.get(Columns.club, "")))
+                for g in game_numbers:
+                    entry.append(int(row.get(g, 0)))
+                entry.append(int(row.get("round_total", 0)))
+                entry.append(float(row.get("avg_score", 0.0)))
+                entry.append(int(row.get("overall_score", 0)))
+                entry.append(float(row.get("overall_avg", 0.0)))
+                data.append(entry)
+
+            return TableData(
+                columns=columns,
+                data=data,
+                title=f"{tournament} Round Results",
+                default_sort={"field": "overall_rank", "dir": "asc"},
+                metadata={
+                    "heatmap_ranges": {
+                        "game_score": {
+                            "min": 130,
+                            "max": 270,
+                            "high_band_min": 271,
+                            "high_band_max": 299,
+                            "perfect_score": 300,
+                        }
+                    }
+                },
+            )
+
         columns = []
         if include_stage_column:
             columns.append(Column(title="Stage", field="round_name", width="150px", align="left"))
@@ -862,7 +957,7 @@ class TournamentService:
         for g in game_numbers:
             columns.append(
                 Column(
-                    title=f"G{g}",
+                    title=f"{g + 1}",
                     field=f"game_{g}",
                     width="75px",
                     align="center",
@@ -871,9 +966,9 @@ class TournamentService:
             )
         columns.extend(
             [
-                Column(title="Round Total", field="round_total", width="110px", align="center", decimal_places=0),
+                Column(title="Stage Score", field="round_total", width="110px", align="center", decimal_places=0),
                 Column(title="Average", field="avg_score", width="90px", align="center", decimal_places=1),
-                Column(title="Overall Total", field="overall_total", width="120px", align="center", decimal_places=0),
+                Column(title="Total Score", field="overall_total", width="120px", align="center", decimal_places=0),
             ]
         )
 
@@ -887,7 +982,6 @@ class TournamentService:
             )
             show_player = True
             if round_number is None and previous_player_key == player_key:
-                # Visual "merge": blank repeated cells for player/club across stages.
                 show_player = False
 
             entry = []
@@ -911,7 +1005,6 @@ class TournamentService:
             metadata={
                 "heatmap_ranges": {
                     "game_score": {
-                        # Backend-provided range policy; frontend applies all styling.
                         "min": 130,
                         "max": 270,
                         "high_band_min": 271,
@@ -1180,6 +1273,7 @@ class TournamentService:
 
         avg_series: List[float] = []
         position_series: List[int] = []
+        game_score_series: List[Optional[int]] = []
         tournament_leader_avg_series: List[Optional[float]] = []
         round_end_lines: List[int] = []
         cut_lines_avg: List[float] = []
@@ -1211,6 +1305,7 @@ class TournamentService:
             base_games = prev_all.groupby(Columns.player_name, dropna=False)[Columns.score].count().to_dict()
 
             for g in range(length):
+                game_score_series.append(int(player_game_scores[g]) if g in player_game_scores else None)
                 # player cumulative
                 if g in player_game_scores:
                     cum_player_score += player_game_scores[g]
@@ -1284,6 +1379,8 @@ class TournamentService:
             position_series.append(position_series[-1] if position_series else 999)
         while len(tournament_leader_avg_series) < total_games:
             tournament_leader_avg_series.append(None)
+        while len(game_score_series) < total_games:
+            game_score_series.append(None)
         for cut_rn in cut_rounds_sorted:
             while len(dynamic_cut_series[cut_rn]) < total_games:
                 dynamic_cut_series[cut_rn].append(None)
@@ -1303,6 +1400,7 @@ class TournamentService:
             "labels": labels,
             "avg_series": avg_series[:total_games],
             "position_series": position_series[:total_games],
+            "game_score_series": game_score_series[:total_games],
             "tournament_leader_avg_series": tournament_leader_avg_series[:total_games],
             "round_end_lines": round_end_lines,
             "cut_lines_avg": cut_lines_avg,
