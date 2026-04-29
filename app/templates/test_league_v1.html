@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-3">
+        <div class="col-12">
+            <h2 class="mb-1">League API v1 Test Page</h2>
+            <p class="text-muted mb-0">Vertical slice smoke test for options, standings, and team-points.</p>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <strong>Input</strong>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="database" class="form-label">Database (optional)</label>
+                        <input id="database" class="form-control" placeholder="db_real_pipeline_gf" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="league" class="form-label">League</label>
+                        <input id="league" class="form-control" placeholder="BAYL" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="season" class="form-label">Season</label>
+                        <input id="season" class="form-control" placeholder="24-25" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="week" class="form-label">Week (optional)</label>
+                        <input id="week" class="form-control" placeholder="3" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="team" class="form-label">Team (for team-week endpoints)</label>
+                        <input id="team" class="form-control" placeholder="ABC 1" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="viewMode" class="form-label">Head-to-head viewMode (optional)</label>
+                        <input id="viewMode" class="form-control" placeholder="own_team" />
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary" id="btnOptionsLeagues">GET options/leagues</button>
+                        <button class="btn btn-primary" id="btnOptionsSeasons">GET options/seasons</button>
+                        <button class="btn btn-primary" id="btnOptionsWeeks">GET options/weeks</button>
+                        <button class="btn btn-primary" id="btnOptionsTeams">GET options/teams</button>
+                        <hr>
+                        <button class="btn btn-secondary" id="btnStandings">GET season/standings</button>
+                        <button class="btn btn-secondary" id="btnTeamPoints">GET season/team-points</button>
+                        <button class="btn btn-secondary" id="btnTeamPositions">GET season/team-positions</button>
+                        <button class="btn btn-secondary" id="btnTeamAverages">GET season/team-averages</button>
+                        <hr>
+                        <button class="btn btn-outline-dark" id="btnMatchdayStandings">GET matchday/standings</button>
+                        <button class="btn btn-outline-dark" id="btnMatchdayHonorScores">GET matchday/honor-scores</button>
+                        <hr>
+                        <button class="btn btn-outline-primary" id="btnTeamWeekClassic">GET team-week/classic</button>
+                        <button class="btn btn-outline-primary" id="btnTeamWeekIndividualScores">GET team-week/individual-scores</button>
+                        <button class="btn btn-outline-primary" id="btnTeamWeekHeadToHead">GET team-week/head-to-head</button>
+                        <hr>
+                        <button class="btn btn-outline-success" id="btnAggAveragesHistory">GET aggregation/averages-history</button>
+                        <button class="btn btn-outline-success" id="btnAggPointsToWinHistory">GET aggregation/points-to-win-history</button>
+                        <button class="btn btn-outline-success" id="btnAggTopTeamPerformances">GET aggregation/top-team-performances</button>
+                        <button class="btn btn-outline-success" id="btnAggTopIndividualPerformances">GET aggregation/top-individual-performances</button>
+                        <button class="btn btn-outline-success" id="btnAggRecordGames">GET aggregation/record-games</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <strong>Response</strong>
+                    <small id="lastRequest" class="text-light"></small>
+                </div>
+                <div class="card-body">
+                    <pre id="responseBox" class="bg-light p-3 border rounded" style="min-height: 520px; white-space: pre-wrap;">Click any endpoint button to run a request.</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    (function () {
+        function value(id) {
+            return document.getElementById(id).value.trim();
+        }
+
+        function buildQuery(required) {
+            const params = new URLSearchParams();
+            const database = value("database");
+            const league = value("league");
+            const season = value("season");
+            const week = value("week");
+            const team = value("team");
+            const viewMode = value("viewMode");
+
+            if (database) params.set("database", database);
+            if (required.includes("league") && league) params.set("league", league);
+            if (required.includes("season") && season) params.set("season", season);
+            if (required.includes("week") && week) params.set("week", week);
+            if (required.includes("team") && team) params.set("team", team);
+            if (required.includes("viewMode") && viewMode) params.set("viewMode", viewMode);
+            return params.toString();
+        }
+
+        async function call(path, requiredParams) {
+            const query = buildQuery(requiredParams);
+            const url = query ? `${path}?${query}` : path;
+            document.getElementById("lastRequest").textContent = `GET ${url}`;
+
+            try {
+                const response = await fetch(url);
+                const body = await response.json();
+                const payload = {
+                    status: response.status,
+                    ok: response.ok,
+                    body
+                };
+                document.getElementById("responseBox").textContent = JSON.stringify(payload, null, 2);
+            } catch (error) {
+                document.getElementById("responseBox").textContent = JSON.stringify(
+                    { status: "network_error", message: String(error) },
+                    null,
+                    2
+                );
+            }
+        }
+
+        document.getElementById("btnOptionsLeagues").addEventListener("click", function () {
+            call("/api/v1/league/options/leagues", []);
+        });
+        document.getElementById("btnOptionsSeasons").addEventListener("click", function () {
+            call("/api/v1/league/options/seasons", ["league"]);
+        });
+        document.getElementById("btnOptionsWeeks").addEventListener("click", function () {
+            call("/api/v1/league/options/weeks", ["league", "season"]);
+        });
+        document.getElementById("btnOptionsTeams").addEventListener("click", function () {
+            call("/api/v1/league/options/teams", ["league", "season"]);
+        });
+        document.getElementById("btnStandings").addEventListener("click", function () {
+            call("/api/v1/league/season/standings", ["league", "season"]);
+        });
+        document.getElementById("btnTeamPoints").addEventListener("click", function () {
+            call("/api/v1/league/season/team-points", ["league", "season", "week"]);
+        });
+        document.getElementById("btnTeamPositions").addEventListener("click", function () {
+            call("/api/v1/league/season/team-positions", ["league", "season", "week"]);
+        });
+        document.getElementById("btnTeamAverages").addEventListener("click", function () {
+            call("/api/v1/league/season/team-averages", ["league", "season", "week"]);
+        });
+        document.getElementById("btnMatchdayStandings").addEventListener("click", function () {
+            call("/api/v1/league/matchday/standings", ["league", "season", "week"]);
+        });
+        document.getElementById("btnMatchdayHonorScores").addEventListener("click", function () {
+            call("/api/v1/league/matchday/honor-scores", ["league", "season", "week"]);
+        });
+        document.getElementById("btnTeamWeekClassic").addEventListener("click", function () {
+            call("/api/v1/league/team-week/classic", ["league", "season", "week", "team"]);
+        });
+        document.getElementById("btnTeamWeekIndividualScores").addEventListener("click", function () {
+            call("/api/v1/league/team-week/individual-scores", ["league", "season", "week", "team"]);
+        });
+        document.getElementById("btnTeamWeekHeadToHead").addEventListener("click", function () {
+            call("/api/v1/league/team-week/head-to-head", ["league", "season", "week", "team", "viewMode"]);
+        });
+        document.getElementById("btnAggAveragesHistory").addEventListener("click", function () {
+            call("/api/v1/league/aggregation/averages-history", ["league"]);
+        });
+        document.getElementById("btnAggPointsToWinHistory").addEventListener("click", function () {
+            call("/api/v1/league/aggregation/points-to-win-history", ["league"]);
+        });
+        document.getElementById("btnAggTopTeamPerformances").addEventListener("click", function () {
+            call("/api/v1/league/aggregation/top-team-performances", ["league"]);
+        });
+        document.getElementById("btnAggTopIndividualPerformances").addEventListener("click", function () {
+            call("/api/v1/league/aggregation/top-individual-performances", ["league"]);
+        });
+        document.getElementById("btnAggRecordGames").addEventListener("click", function () {
+            call("/api/v1/league/aggregation/record-games", ["league"]);
+        });
+    })();
+</script>
+{% endblock %}

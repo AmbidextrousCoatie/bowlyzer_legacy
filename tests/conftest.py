@@ -15,12 +15,24 @@ sys.path.insert(0, str(project_root))
 import pytest
 from uuid import uuid4
 from datetime import datetime
-from domain.value_objects import (
-    Score, Points, Season, Handicap, GameResult,
-    HandicapSettings, HandicapCalculationMethod
-)
-from domain.entities import Team, Player, League, Game
-from domain.domain_services import HandicapCalculator
+
+try:
+    from domain.value_objects import (
+        Score, Points, Season, Handicap, GameResult,
+        HandicapSettings, HandicapCalculationMethod
+    )
+    from domain.entities import Team, Player, League, Game
+    from domain.domain_services import HandicapCalculator
+    DOMAIN_IMPORTS_AVAILABLE = True
+except ModuleNotFoundError:
+    # Some test slices (for example Flask route contract tests) do not require
+    # the v2 domain package. Keep collection working for those slices.
+    DOMAIN_IMPORTS_AVAILABLE = False
+
+
+def _require_domain_imports():
+    if not DOMAIN_IMPORTS_AVAILABLE:
+        pytest.skip("domain package is unavailable in this environment")
 
 
 # ============================================================================
@@ -30,30 +42,35 @@ from domain.domain_services import HandicapCalculator
 @pytest.fixture
 def sample_score():
     """Fixture for a valid Score value object."""
+    _require_domain_imports()
     return Score(200.0)
 
 
 @pytest.fixture
 def sample_points():
     """Fixture for a valid Points value object."""
+    _require_domain_imports()
     return Points(2.5)
 
 
 @pytest.fixture
 def sample_season():
     """Fixture for a valid Season value object."""
+    _require_domain_imports()
     return Season("2024-25")
 
 
 @pytest.fixture
 def sample_handicap():
     """Fixture for a valid Handicap value object."""
+    _require_domain_imports()
     return Handicap(20.0)
 
 
 @pytest.fixture
 def sample_handicap_settings():
     """Fixture for HandicapSettings with cumulative average method."""
+    _require_domain_imports()
     return HandicapSettings(
         enabled=True,
         calculation_method=HandicapCalculationMethod.CUMULATIVE_AVERAGE,
@@ -67,6 +84,7 @@ def sample_handicap_settings():
 @pytest.fixture
 def sample_handicap_settings_moving_window():
     """Fixture for HandicapSettings with moving window method."""
+    _require_domain_imports()
     return HandicapSettings(
         enabled=True,
         calculation_method=HandicapCalculationMethod.MOVING_WINDOW,
@@ -81,6 +99,7 @@ def sample_handicap_settings_moving_window():
 @pytest.fixture
 def sample_game_result(sample_score, sample_points, sample_handicap):
     """Fixture for a valid GameResult value object."""
+    _require_domain_imports()
     return GameResult(
         player_id=uuid4(),
         position=1,
@@ -97,24 +116,28 @@ def sample_game_result(sample_score, sample_points, sample_handicap):
 @pytest.fixture
 def sample_team():
     """Fixture for a valid Team entity."""
+    _require_domain_imports()
     return Team(name="Team Alpha", league_id=uuid4())
 
 
 @pytest.fixture
 def sample_player():
     """Fixture for a valid Player entity."""
+    _require_domain_imports()
     return Player(name="John Doe")
 
 
 @pytest.fixture
 def sample_league(sample_season):
     """Fixture for a valid League entity."""
+    _require_domain_imports()
     return League(name="Test League", abbreviation="TEST", level=3)
 
 
 @pytest.fixture
 def sample_game(sample_league, sample_season):
     """Fixture for a valid Game entity."""
+    _require_domain_imports()
     team1_id = uuid4()
     team2_id = uuid4()
     return Game(

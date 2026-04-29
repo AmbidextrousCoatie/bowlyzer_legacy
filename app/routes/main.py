@@ -245,6 +245,11 @@ def test():
     """Test page for API routes"""
     return render_template('test_new.html')
 
+@bp.route('/test-league-v1')
+def test_league_v1():
+    """Test page for League API v1 vertical slice"""
+    return render_template('test_league_v1.html')
+
 @bp.route('/test-tabulator')
 def test_tabulator():
     """Test page for Tabulator highlighting"""
