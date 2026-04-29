@@ -71,6 +71,12 @@ button:disabled {
   cursor: not-allowed;
 }
 
+.actionsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -137,6 +143,11 @@ pre {
   margin-top: 8px;
   color: #64748b;
   font-size: 12px;
+}
+
+.axisHint.loading {
+  color: #1d4ed8;
+  font-weight: 600;
 }
 
 .toolbar {
