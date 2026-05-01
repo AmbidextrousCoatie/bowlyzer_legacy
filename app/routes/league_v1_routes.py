@@ -137,14 +137,21 @@ def _tabledata_to_v1(table_data: Dict[str, Any]) -> Dict[str, Any]:
     if table_data.get("default_sort") and "defaultSort" not in config:
         config["defaultSort"] = table_data["default_sort"]
 
-    return {
+    payload: Dict[str, Any] = {
         "title": table_data.get("title"),
         "description": table_data.get("description"),
         "columns": columns,
         "rows": rows,
         "config": config,
-        "metadata": table_data.get("metadata", {}),
+        "metadata": table_data.get("metadata", {}) or {},
     }
+    rm = table_data.get("row_metadata")
+    if rm is not None:
+        payload["row_metadata"] = rm
+    cm = table_data.get("cell_metadata")
+    if cm is not None:
+        payload["cell_metadata"] = cm
+    return payload
 
 
 def _slugify(value: str) -> str:

@@ -1,13 +1,24 @@
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, lazy, useEffect, useMemo, useState } from "react";
 import type { ColorMode, HeatmapGroupingMode, HeatmapNormMode } from "./types";
-import SimpleTable from "./components/SimpleTable";
-import HonorCards from "./components/HonorCards";
-import LineChartPanel from "./components/LineChartPanel";
 import FilterBar from "./components/FilterBar";
+import HoverTooltip from "./components/HoverTooltip";
 import { useCoreViews, useLeagueOptions, useMatchdayViews, useTeamWeekViews } from "./hooks/useLeagueData";
 import { useConditionalColoring } from "./hooks/useConditionalColoring";
 import { useHeatmapModel } from "./hooks/useHeatmapModel";
-import { useLineChartGeometry } from "./hooks/useLineChartGeometry";
+import { useHoverTooltip } from "./hooks/useHoverTooltip";
+import {
+  buildTeamColorMap,
+  lookupTeamColor,
+  orderedTeamNamesForPalette,
+  orderedTeamNamesFromPointsChartSeries,
+  type TeamPaletteName,
+} from "./lib/teamColors";
+import { THEME } from "./lib/theme";
+
+const TabulatorTable = lazy(() => import("./components/TabulatorTable"));
+const LegacyPortTable = lazy(() => import("./components/LegacyPortTable"));
+const HonorCards = lazy(() => import("./components/HonorCards"));
+const EChartPanel = lazy(() => import("./components/EChartPanel"));
 
 function App() {
   const initialParams = useMemo(() => new URLSearchParams(window.location.search), []);
@@ -16,6 +27,8 @@ function App() {
   const [season, setSeason] = useState(initialParams.get("season") ?? "");
   const [week, setWeek] = useState(initialParams.get("week") ?? "");
   const [team, setTeam] = useState(initialParams.get("team") ?? "");
+  const [teamPalette, setTeamPalette] = useState<TeamPaletteName>("rainbowPastel");
+  const [firstColTeamMarkup, setFirstColTeamMarkup] = useState(true);
 
   const { leagues, seasons, weeks, teams, error: optionsError } = useLeagueOptions({ database, league, season });
   const {
@@ -44,6 +57,7 @@ function App() {
   const [heatmapNormMode, setHeatmapNormMode] = useState<HeatmapNormMode>("global");
   const [heatmapGroupingMode, setHeatmapGroupingMode] = useState<HeatmapGroupingMode>("auto");
   const [colorMode, setColorMode] = useState<ColorMode>("sequential");
+  const { tooltip: heatTooltip, onEnter: onHeatEnter, onMove: onHeatMove, onLeave: onHeatLeave } = useHoverTooltip();
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -58,8 +72,22 @@ function App() {
   }, [database, league, season, week, team]);
 
   const { getConditionalCellStyle } = useConditionalColoring(standings);
-  const { chartGeometry, chartWidth, chartHeight } = useLineChartGeometry(pointsChart);
   const { heatmapModel, getHeatColor } = useHeatmapModel(teamVsTeam, heatmapGroupingMode, heatmapNormMode);
+
+  const teamOrder = useMemo(() => {
+    if (pointsChart?.series?.length) {
+      return orderedTeamNamesFromPointsChartSeries(pointsChart.series);
+    }
+    if (standings?.rows?.length) {
+      return orderedTeamNamesForPalette(standings.rows);
+    }
+    if (matchdayStandings?.rows?.length) {
+      return orderedTeamNamesForPalette(matchdayStandings.rows);
+    }
+    return [];
+  }, [pointsChart, standings, matchdayStandings]);
+
+  const teamColors = useMemo(() => buildTeamColorMap(teamOrder, teamPalette), [teamOrder, teamPalette]);
 
   return (
     <main className="app">
@@ -72,6 +100,8 @@ function App() {
         season={season}
         week={week}
         team={team}
+        teamPalette={teamPalette}
+        firstColTeamMarkup={firstColTeamMarkup}
         leagues={leagues}
         seasons={seasons}
         weeks={weeks}
@@ -84,6 +114,8 @@ function App() {
         onSeasonChange={setSeason}
         onWeekChange={setWeek}
         onTeamChange={setTeam}
+        onTeamPaletteChange={setTeamPalette}
+        onFirstColTeamMarkupChange={setFirstColTeamMarkup}
         onRefreshCore={() => void refreshCoreViews()}
         onRefreshMatchday={() => void refreshMatchdayViews()}
         onRefreshTeamWeek={() => void refreshTeamWeekView(teamWeekView)}
@@ -103,30 +135,39 @@ function App() {
             </select>
           </label>
         </div>
-        {loading ? <p className="axisHint loading">Refreshing core panels...</p> : null}
         {!standings ? (
           <p>Load season views to display standings.</p>
         ) : (
-          <SimpleTable
-            table={{ ...standings, rows: standings.rows.slice(0, 10) }}
-            cellStyle={(value, col) => getConditionalCellStyle(value, col, colorMode)}
-          />
+          <>
+            <Suspense fallback={<p className="axisHint loading">Loading table...</p>}>
+              <TabulatorTable
+                table={standings}
+                cellStyle={(value, col) => getConditionalCellStyle(value, col, colorMode)}
+                teamColors={teamColors}
+                useTeamColorFirstColumn={firstColTeamMarkup}
+                paginate={false}
+              />
+            </Suspense>
+            <h3 className="groupTitle">Legacy Port Renderer (comparison)</h3>
+            <Suspense fallback={<p className="axisHint loading">Loading legacy renderer...</p>}>
+              <LegacyPortTable table={standings} />
+            </Suspense>
+          </>
         )}
       </section>
 
       <section className="panel">
-        {!pointsChart || !chartGeometry ? (
+        {!pointsChart ? (
           <p>No chart payload loaded yet.</p>
         ) : (
-          <LineChartPanel
-            title="Team Points (v1 line chart)"
-            width={chartWidth}
-            height={chartHeight}
-            min={chartGeometry.min}
-            max={chartGeometry.max}
-            seriesPaths={chartGeometry.seriesPaths}
-            rawPayload={pointsChart}
-          />
+          <Suspense fallback={<p className="axisHint loading">Loading chart...</p>}>
+            <EChartPanel
+              title="Team Points (v1 line chart)"
+              chart={pointsChart}
+              teamColors={teamColors}
+              rawPayload={pointsChart}
+            />
+          </Suspense>
         )}
       </section>
 
@@ -170,13 +211,35 @@ function App() {
                         const rowValues = group.fields
                           .map((f) => row[f])
                           .filter((v): v is number => typeof v === "number");
+                        const rowLabel = String(row[heatmapModel.rowLabelField] ?? "");
                         return (
                           <tr key={`hm-r-${group.name}-${idx}`}>
-                            <td>{String(row[heatmapModel.rowLabelField] ?? "")}</td>
+                            <td>
+                              <span className="firstColWithTeamColor">
+                                <span
+                                  className="teamColorDot"
+                                  style={{
+                                    backgroundColor: lookupTeamColor(teamColors, rowLabel) ?? THEME.fallback.teamDot,
+                                  }}
+                                  aria-hidden="true"
+                                />
+                                <span>{rowLabel}</span>
+                              </span>
+                            </td>
                             {group.fields.map((f) => (
                               <td
                                 key={`hm-${group.name}-${idx}-${f}`}
+                                className={heatTooltip.cellKey === `${group.name}-${idx}-${f}` ? "heatCellActive" : undefined}
                                 style={getHeatColor(row[f], rowValues, group.min, group.max)}
+                                onMouseEnter={(e) => {
+                                  onHeatEnter(
+                                    e,
+                                    `${rowLabel} vs ${f}: ${String(row[f] ?? "n/a")} (range ${group.min.toFixed(2)} - ${group.max.toFixed(2)})`,
+                                    `${group.name}-${idx}-${f}`,
+                                  );
+                                }}
+                                onMouseMove={onHeatMove}
+                                onMouseLeave={onHeatLeave}
                               >
                                 {String(row[f] ?? "")}
                               </td>
@@ -186,6 +249,13 @@ function App() {
                       })}
                     </tbody>
                   </table>
+                </div>
+                <div className="heatLegend">
+                  <div className="heatLegendBar" aria-hidden="true" />
+                  <div className="heatLegendLabels">
+                    <span>{group.min.toFixed(2)}</span>
+                    <span>{group.max.toFixed(2)}</span>
+                  </div>
                 </div>
                 <p className="axisHint">
                   {group.name} range: {group.min.toFixed(2)} - {group.max.toFixed(2)}
@@ -205,9 +275,18 @@ function App() {
         ) : (
           <>
             <h3 className="groupTitle">Week Standings</h3>
-            <SimpleTable table={matchdayStandings} />
+            <Suspense fallback={<p className="axisHint loading">Loading table...</p>}>
+              <TabulatorTable
+                table={matchdayStandings}
+                teamColors={teamColors}
+                useTeamColorFirstColumn={firstColTeamMarkup}
+                paginate={false}
+              />
+            </Suspense>
             <h3 className="groupTitle">Honor Scores</h3>
-            <HonorCards cards={honorCards} />
+            <Suspense fallback={<p className="axisHint loading">Loading cards...</p>}>
+              <HonorCards cards={honorCards} />
+            </Suspense>
           </>
         )}
       </section>
@@ -240,8 +319,21 @@ function App() {
         {teamWeekLoading ? <p className="axisHint loading">Refreshing team-week details...</p> : null}
         <p className="axisHint">Active view: {teamWeekView}</p>
         {teamWeekError && <p className="error">{teamWeekError}</p>}
-        {!teamWeekTable ? <p>Select team + week and load a team-week view.</p> : <SimpleTable table={teamWeekTable} />}
+        {!teamWeekTable ? (
+          <p>Select team + week and load a team-week view.</p>
+        ) : (
+          <Suspense fallback={<p className="axisHint loading">Loading table...</p>}>
+            <TabulatorTable
+              table={teamWeekTable}
+              teamColors={teamColors}
+              useTeamColorFirstColumn={firstColTeamMarkup}
+              paginate={false}
+            />
+          </Suspense>
+        )}
       </section>
+
+      <HoverTooltip visible={heatTooltip.visible} x={heatTooltip.x} y={heatTooltip.y} content={heatTooltip.content} />
     </main>
   );
 }

@@ -1,0 +1,182 @@
+/* Tabulator visual skin (ported from legacy .custom-tabulator theme) */
+.tabulatorTableWrap {
+  width: 100%;
+  max-width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--theme-border-soft);
+  background: var(--theme-surface);
+}
+
+/* Let Tabulator's internal holder own horizontal scroll (required for frozen columns). */
+.tabulatorMount {
+  width: 100%;
+  min-width: 100%;
+  box-sizing: border-box;
+}
+
+.tabulatorTableWrap .tabulator.tabulator {
+  --table-surface: var(--theme-surface);
+  --table-surface-alt: var(--theme-surface-alt);
+  --table-border-soft: var(--theme-border-soft);
+  --table-header-bg: var(--theme-header-bg);
+  --table-header-text: var(--theme-header-text);
+  --table-body-text: var(--theme-table-body-text);
+  --table-muted-text: var(--theme-muted-text);
+  --table-hover-bg: var(--theme-hover-bg);
+  --table-selected-bg: var(--theme-selected-bg);
+  --table-shadow: var(--theme-shadow-table);
+  font-family: inherit;
+  font-size: 13px;
+  border: none;
+  background: transparent;
+  color: var(--table-body-text);
+}
+
+.tabulatorTableWrap .tabulator .tabulator-tableHolder {
+  border-radius: 16px;
+  background: var(--table-surface);
+  box-shadow: var(--table-shadow);
+  border: 1px solid var(--table-border-soft);
+  overflow: hidden;
+}
+
+.tabulatorTableWrap .tabulator .tabulator-header {
+  background: linear-gradient(120deg, var(--table-header-bg), transparent);
+  color: var(--table-header-text);
+  border: none;
+  border-bottom: none !important;
+  padding: 4px 0;
+}
+
+.tabulatorTableWrap .tabulator .tabulator-header .tabulator-col,
+.tabulatorTableWrap .tabulator .tabulator-header .tabulator-col-group {
+  border-bottom: 1px solid var(--theme-border-soft) !important;
+  border-bottom-color: var(--theme-border-soft) !important;
+  border-right: 1px solid var(--theme-border-soft) !important;
+  border-top: none;
+  border-left: none;
+  background: transparent;
+}
+
+.tabulatorTableWrap .tabulator .tabulator-col {
+  border: none;
+  background: transparent;
+}
+
+.tabulatorTableWrap .tabulator .tabulator-col-group {
+  background-color: var(--table-header-bg) !important;
+}
+
+.tabulatorTableWrap .tabulator .tabulator-col-group .tabulator-col-group-title {
+  color: var(--table-header-text) !important;
+  text-align: center;
+}
+
+.tabulatorTableWrap .tabulator .tabulator-header,
+.tabulatorTableWrap .tabulator .tabulator-header-contents,
+.tabulatorTableWrap .tabulator .tabulator-headers {
+  border-bottom: none !important;
+  box-shadow: none !important;
+}
+
+.tabulatorTableWrap .tabulator .tabulator-header .tabulator-col-group,
+.tabulatorTableWrap .tabulator .tabulator-header .tabulator-col {
+  box-shadow: none !important;
+  border-top: none;
+}
+
+.tabulatorTableWrap .tabulator .tabulator-col .tabulator-col-content {
+  padding: 0.7rem 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-align: center;
+}
+
+.tabulatorTableWrap .tabulator .tabulator-row {
+  background: var(--table-surface);
+  border: none;
+  color: var(--table-body-text);
+  transition: background 160ms ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.tabulatorTableWrap .tabulator .tabulator-cell {
+  border-top: none !important;
+  border-left: none !important;
+  border-right: 1px solid var(--theme-border-soft) !important;
+  border-bottom: 1px solid var(--theme-border-soft) !important;
+  padding: 0.66rem 0.62rem;
+  font-size: 0.9rem;
+}
+
+.tabulatorTableWrap .tabulator .tabulator-row:nth-child(even) {
+  background: var(--table-surface);
+}
+
+.tabulatorTableWrap .tabulator .tabulator-row.bowlyzer-row-stripe .tabulator-cell {
+  background-color: var(--table-surface-alt);
+}
+
+.tabulatorTableWrap .tabulator .tabulator-row:hover .tabulator-cell {
+  background-color: var(--table-hover-bg);
+}
+
+.tabulatorTableWrap .tabulator .tabulator-col:last-child,
+.tabulatorTableWrap .tabulator .tabulator-cell:last-child {
+  border-right: none !important;
+}
+
+.tabulatorTableWrap .tabulator .tabulator-footer {
+  background: var(--table-surface);
+  border: none;
+  color: var(--table-muted-text);
+  font-size: 12px;
+}
+
+.tabulatorTableWrap .tabulator .tabulator-page {
+  border-radius: 6px;
+}
+
+.tabulatorTableWrap .tabulator .tabulator-col.tab-group-highlighted .tabulator-col-content {
+  background: var(--highlight-header-bg, var(--theme-highlight-header-bg));
+}
+
+.tabulatorTableWrap .tabulator .tabulator-col-group.tab-group-highlighted .tabulator-col-title,
+.tabulatorTableWrap .tabulator .tabulator-col.tab-col-highlighted .tabulator-col-title {
+  font-weight: var(--highlight-header-weight, 900) !important;
+  color: inherit !important;
+}
+
+.tabulatorTableWrap .tabulator .tabulator-cell.tab-col-highlighted {
+  font-weight: var(--highlight-cell-weight, 700) !important;
+  background-color: inherit;
+  color: inherit !important;
+}
+
+.tabulatorTableWrap.vertical-stripe-enabled .tabulator .tabulator-cell.col-group-stripe,
+.tabulatorTableWrap.vertical-stripe-enabled .tabulator .tabulator-cell.col-stripe-odd {
+  background-color: var(--theme-stripe-cell-bg);
+}
+
+.tabulatorTableWrap.vertical-stripe-enabled .tabulator .tabulator-cell.col-group-stripe.bowlyzer-row-stripe {
+  background-color: var(--theme-stripe-cell-bg-strong);
+}
+
+/* First group (Rang) should stay neutral, not teal-striped */
+.tabulatorTableWrap .tabulator .tabulator-col-group.col-group-0,
+.tabulatorTableWrap .tabulator .tabulator-col.col-group-0 {
+  background-color: var(--table-header-bg) !important;
+}
+
+.tabulatorTableWrap .tabulator .tabulator-cell.col-group-0,
+.tabulatorTableWrap .tabulator .tabulator-cell.col-group-0.col-group-stripe,
+.tabulatorTableWrap .tabulator .tabulator-cell.col-group-0.bowlyzer-row-stripe {
+  background-color: inherit !important;
+}
+
+/* Remove strong default frozen divider from Tabulator core css */
+.tabulatorTableWrap .tabulator .tabulator-frozen {
+  box-shadow: none !important;
+}

@@ -24,7 +24,9 @@ export default function LineChartPanel({ title, width, height, min, max, seriesP
             strokeWidth="2.5"
             strokeLinecap="round"
             strokeLinejoin="round"
-          />
+          >
+            <title>{s.name}</title>
+          </polyline>
         ))}
       </svg>
       <div className="legend">

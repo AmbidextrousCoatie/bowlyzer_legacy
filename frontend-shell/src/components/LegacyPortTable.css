@@ -1,0 +1,150 @@
+.legacyPortWrap {
+  margin-top: 0.75rem;
+  border-top: 1px dashed var(--theme-border-soft);
+  padding-top: 0.75rem;
+}
+
+.legacyPortWrap .tabulator.custom-tabulator {
+  border: none;
+  background: transparent;
+  color: var(--table-body-text);
+  font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  width: 100% !important;
+}
+
+.legacyPortWrap .custom-tabulator .tabulator-tableHolder {
+  border-radius: 16px;
+  background: var(--table-surface);
+  box-shadow: var(--table-shadow);
+  border: 1px solid var(--table-border-soft);
+  overflow: hidden;
+  width: 100% !important;
+}
+
+.legacyPortWrap .custom-tabulator .tabulator-table {
+  width: 100% !important;
+}
+
+.legacyPortWrap .custom-tabulator .tabulator-header {
+  background: linear-gradient(120deg, var(--table-header-bg), transparent);
+  color: var(--table-header-text);
+  border: none;
+  border-bottom: none !important;
+  padding: 4px 0;
+}
+
+.legacyPortWrap .custom-tabulator .tabulator-col,
+.legacyPortWrap .custom-tabulator .tabulator-col-group {
+  border-bottom: 2px solid #000 !important;
+  border-bottom-color: #000 !important;
+  background-color: var(--theme-surface, #fff);
+}
+
+.legacyPortWrap .custom-tabulator .tabulator-col .tabulator-col-content {
+  padding: 0.85rem 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.legacyPortWrap .custom-tabulator .tabulator-row {
+  background: var(--table-surface);
+  border: none;
+}
+
+.legacyPortWrap .custom-tabulator .tabulator-row.bowlyzer-row-stripe {
+  background: var(--table-surface-alt);
+}
+
+.legacyPortWrap .custom-tabulator .tabulator-cell,
+.legacyPortWrap .custom-tabulator .tabulator-col {
+  border: none;
+  padding: 0.85rem 0.75rem;
+  font-size: 0.95rem;
+}
+
+.legacyPortWrap .custom-tabulator .tabulator-row:hover {
+  background: rgba(38, 70, 83, 0.1);
+}
+
+.legacyPortWrap .custom-tabulator .tabulator-col-group.tab-group-highlighted,
+.legacyPortWrap .custom-tabulator .tabulator-col.tab-col-highlighted,
+.legacyPortWrap .custom-tabulator .tabulator-cell.tab-col-highlighted {
+  font-weight: var(--highlight-header-weight, 900);
+}
+
+.legacyPortWrap .custom-tabulator .tabulator-cell.tab-col-highlighted {
+  font-weight: var(--highlight-cell-weight, 700);
+  background-color: inherit !important;
+  color: inherit !important;
+}
+
+.legacyPortWrap .custom-tabulator .tabulator-header .tabulator-col-group.tab-group-highlighted {
+  background-color: var(--highlight-header-bg, rgba(0, 0, 0, 0.05)) !important;
+}
+
+.legacyPortWrap .custom-tabulator .tabulator-header .tabulator-col-group.tab-group-highlighted .tabulator-col-title,
+.legacyPortWrap .custom-tabulator .tabulator-header .tabulator-col.tab-col-highlighted .tabulator-col-title {
+  font-weight: var(--highlight-header-weight, 900) !important;
+  color: inherit !important;
+}
+
+.legacyPortWrap .custom-tabulator .tabulator-col-group[data-group-index="0"],
+.legacyPortWrap .custom-tabulator .tabulator-col.col-group-0,
+.legacyPortWrap .custom-tabulator .tabulator-cell.col-group-0 {
+  background: var(--theme-surface, #fff) !important;
+}
+
+.legacyPortWrap .custom-tabulator .tabulator-frozen {
+  box-shadow: inset -1px 0 var(--table-border-soft);
+  z-index: 10;
+}
+
+.legacyPortWrap .custom-tabulator .tabulator-row .tabulator-cell.tabulator-frozen {
+  background-color: var(--table-surface) !important;
+}
+
+.legacyPortWrap .custom-tabulator .tabulator-row:nth-child(even) .tabulator-cell.tabulator-frozen,
+.legacyPortWrap .custom-tabulator .tabulator-row.bowlyzer-row-stripe .tabulator-cell.tabulator-frozen {
+  background-color: var(--table-surface-alt) !important;
+}
+
+.legacyPortWrap .custom-tabulator .tabulator-header .tabulator-col.tabulator-frozen,
+.legacyPortWrap .custom-tabulator .tabulator-header .tabulator-col-group.tabulator-frozen {
+  background-color: var(--table-header-bg) !important;
+}
+
+.legacyPortWrap .custom-tabulator .tabulator-header,
+.legacyPortWrap .custom-tabulator .tabulator-header-contents,
+.legacyPortWrap .custom-tabulator .tabulator-headers {
+  border-bottom: none !important;
+  width: 100% !important;
+}
+
+.legacyPortWrap .custom-tabulator .tabulator-placeholder {
+  background: var(--table-surface);
+  color: var(--table-muted-text);
+}
+
+.legacyPortWrap .custom-tabulator .tabulator-footer {
+  background: var(--table-surface);
+  border: none;
+  color: var(--table-muted-text);
+}
+
+.legacyPortWrap .custom-tabulator .tabulator-tableHolder::-webkit-scrollbar {
+  width: 8px;
+}
+
+.legacyPortWrap .custom-tabulator .tabulator-tableHolder::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.legacyPortWrap .custom-tabulator .tabulator-tableHolder::-webkit-scrollbar-thumb {
+  background: var(--theme-border, #264653);
+  border-radius: 4px;
+}
+
+.legacyPortWrap .custom-tabulator .tabulator-tableHolder::-webkit-scrollbar-thumb:hover {
+  background: rgba(38, 70, 83, 0.8);
+}
+

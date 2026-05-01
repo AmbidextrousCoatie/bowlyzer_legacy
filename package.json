@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "echarts": "^6.0.0",
+    "tabulator-tables": "^6.4.0"
+  },
+  "devDependencies": {
+    "@types/tabulator-tables": "^6.3.2"
+  }
+}

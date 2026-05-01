@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import type { CSSProperties } from "react";
 import type { HeatmapGroupingMode, HeatmapNormMode, TableData } from "../types";
+import { THEME, rgbaFromHex } from "../lib/theme";
 
 export function useHeatmapModel(teamVsTeam: TableData | null, groupingMode: HeatmapGroupingMode, normMode: HeatmapNormMode) {
   const heatmapModel = useMemo(() => {
@@ -68,7 +69,10 @@ export function useHeatmapModel(teamVsTeam: TableData | null, groupingMode: Heat
     const range = max - min || 1;
     const t = (value - min) / range;
     const alpha = 0.08 + t * 0.62;
-    return { backgroundColor: `rgba(14, 116, 144, ${alpha})`, color: t > 0.65 ? "#ffffff" : "#083344" };
+    return {
+      backgroundColor: rgbaFromHex(THEME.brand.teal700, alpha),
+      color: t > 0.65 ? THEME.neutral.white : THEME.brand.cyan800,
+    };
   }
 
   return { heatmapModel, getHeatColor };

@@ -1,9 +1,9 @@
 import { useMemo } from "react";
 import type { ChartData } from "../types";
+import { SERIES_COLORS } from "../lib/theme";
 
 export const CHART_WIDTH = 900;
 export const CHART_HEIGHT = 280;
-const COLORS = ["#2563eb", "#16a34a", "#dc2626", "#9333ea", "#ea580c", "#0891b2"];
 
 export function useLineChartGeometry(pointsChart: ChartData | null) {
   const chartGeometry = useMemo(() => {
@@ -27,7 +27,7 @@ export function useLineChartGeometry(pointsChart: ChartData | null) {
         .filter((p): p is string => p !== null);
       return {
         name: series.name,
-        color: COLORS[idx % COLORS.length],
+        color: SERIES_COLORS[idx % SERIES_COLORS.length],
         d: points.join(" "),
       };
     });

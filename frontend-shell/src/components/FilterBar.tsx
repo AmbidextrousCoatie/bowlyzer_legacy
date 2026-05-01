@@ -1,4 +1,5 @@
 import type { OptionItem } from "../types";
+import type { TeamPaletteName } from "../lib/teamColors";
 
 type Props = {
   database: string;
@@ -6,6 +7,8 @@ type Props = {
   season: string;
   week: string;
   team: string;
+  teamPalette: TeamPaletteName;
+  firstColTeamMarkup: boolean;
   leagues: OptionItem[];
   seasons: OptionItem[];
   weeks: OptionItem[];
@@ -18,6 +21,8 @@ type Props = {
   onSeasonChange: (v: string) => void;
   onWeekChange: (v: string) => void;
   onTeamChange: (v: string) => void;
+  onTeamPaletteChange: (v: TeamPaletteName) => void;
+  onFirstColTeamMarkupChange: (v: boolean) => void;
   onRefreshCore: () => void;
   onRefreshMatchday: () => void;
   onRefreshTeamWeek: () => void;
@@ -30,6 +35,8 @@ export default function FilterBar(props: Props) {
     season,
     week,
     team,
+    teamPalette,
+    firstColTeamMarkup,
     leagues,
     seasons,
     weeks,
@@ -42,6 +49,8 @@ export default function FilterBar(props: Props) {
     onSeasonChange,
     onWeekChange,
     onTeamChange,
+    onTeamPaletteChange,
+    onFirstColTeamMarkupChange,
     onRefreshCore,
     onRefreshMatchday,
     onRefreshTeamWeek,
@@ -97,6 +106,23 @@ export default function FilterBar(props: Props) {
                 {i.label}
               </option>
             ))}
+          </select>
+        </label>
+        <label>
+          Team palette
+          <select value={teamPalette} onChange={(e) => onTeamPaletteChange(e.target.value as TeamPaletteName)}>
+            <option value="rainbowPastel">Rainbow Pastel (legacy default)</option>
+            <option value="harmonic10">Harmonic 10 (legacy)</option>
+          </select>
+        </label>
+        <label>
+          First column team markup
+          <select
+            value={firstColTeamMarkup ? "on" : "off"}
+            onChange={(e) => onFirstColTeamMarkupChange(e.target.value === "on")}
+          >
+            <option value="on">On</option>
+            <option value="off">Off</option>
           </select>
         </label>
       </div>
