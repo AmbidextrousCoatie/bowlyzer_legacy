@@ -1,0 +1,145 @@
+import { useEffect } from "react";
+import { DataTable } from "../../../lib/datatable/DataTable";
+import { type HonorScores, useSeasonLeagueStandings } from "../../../hooks/useLeague";
+import { useTranslations } from "../../../hooks/useTranslations";
+import { clearTeamColor, getPaletteColor, setTeamColor } from "../../../lib/color-utils";
+import { HonorScoresPanel } from "./HonorScoresPanel";
+
+type Props = {
+  season: string;
+};
+
+/**
+ * Visible when a season is selected but no league is. Shows current standings
+ * for every league in that season, plus honor scores per league.
+ *
+ * Each league gets its own team-color cycle starting from palette index 0 so
+ * colors don't clash across leagues. The legacy block does this by mutating
+ * `teamColorMap` directly before rendering each table; we mirror that.
+ */
+export function SeasonLeagueStandings({ season }: Props) {
+  const { t } = useTranslations();
+  const { data, isPending, isError, error } = useSeasonLeagueStandings(season);
+
+  if (isPending) {
+    return <SectionSkeleton label={t("status.loading", "Lade Daten…")} />;
+  }
+  if (isError) {
+    return (
+      <SectionError
+        message={error instanceof Error ? error.message : t("error_generic", "Fehler beim Laden")}
+      />
+    );
+  }
+  if (!data || !data.leagues || data.leagues.length === 0) {
+    return (
+      <SectionEmpty message={t("no_data_available_for", `Keine Daten für Saison ${season}`)} />
+    );
+  }
+
+  return (
+    <>
+      {data.leagues.map((leagueData) => (
+        <LeagueSection
+          key={leagueData.league}
+          league={leagueData.league}
+          leagueLong={leagueData.league_long}
+          week={leagueData.week}
+          standings={leagueData.standings}
+          honorScores={leagueData.honor_scores}
+          t={t}
+        />
+      ))}
+    </>
+  );
+}
+
+function LeagueSection({
+  league,
+  leagueLong,
+  week,
+  standings,
+  honorScores,
+  t,
+}: {
+  league: string;
+  leagueLong?: string;
+  week: number | string;
+  standings: import("../../../lib/datatable/types").TableData;
+  honorScores?: HonorScores;
+  t: (key: string, fallback?: string) => string;
+}) {
+  // Reset and re-assign team colors for *this* league's teams so each league
+  // gets its own color cycle starting at palette index 0.
+  useEffect(() => {
+    if (!standings?.data) return;
+    const teams = new Set<string>();
+    standings.data.forEach((row) => {
+      if (Array.isArray(row) && typeof row[1] === "string" && row[1].trim()) {
+        teams.add(row[1].trim());
+      }
+    });
+    const teamList = [...teams];
+    teamList.forEach((team) => clearTeamColor(team));
+    teamList.forEach((team, idx) => setTeamColor(team, getPaletteColor(idx)));
+  }, [standings]);
+
+  return (
+    <section>
+      <div className="mb-4">
+        <p className="text-label uppercase text-muted mb-1.5">{t("league", "Liga")}</p>
+        <div className="flex items-baseline justify-between gap-4">
+          <h2 className="text-h2">{leagueLong ?? league}</h2>
+          <p className="text-small font-mono text-muted">
+            {t("match_day_label", "Spieltag")}{" "}
+            <span className="font-semibold text-foreground">{week}</span>
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
+        <div>
+          <DataTable
+            data={standings}
+            options={{
+              disablePositionCircle: false,
+              enableSpecialRowStyling: true,
+              tooltips: true,
+              disableTeamColorUpdate: true,
+            }}
+          />
+        </div>
+        <HonorScoresPanel honorScores={honorScores} t={t} />
+      </div>
+    </section>
+  );
+}
+
+function SectionSkeleton({ label }: { label: string }) {
+  return (
+    <section>
+      <div className="mb-4">
+        <div className="h-3 w-24 rounded-xs bg-surface-subtle" />
+        <div className="mt-2 h-6 w-64 rounded-xs bg-surface-subtle" />
+      </div>
+      <div className="h-64 rounded-sm border border-border bg-surface-subtle" />
+      <span className="sr-only">{label}</span>
+    </section>
+  );
+}
+
+function SectionEmpty({ message }: { message: string }) {
+  return (
+    <section className="rounded-sm border border-dashed border-border p-6 text-small text-muted">
+      {message}
+    </section>
+  );
+}
+
+function SectionError({ message }: { message: string }) {
+  return (
+    <section className="rounded-sm border border-danger-fg/40 bg-surface p-6 text-small text-danger-fg">
+      {message}
+    </section>
+  );
+}

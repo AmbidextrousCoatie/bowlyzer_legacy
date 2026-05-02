@@ -1,0 +1,201 @@
+/* DS-aligned Tabulator theme. Replaces the legacy .custom-tabulator look
+ * (rounded card with shadow, gradient header, Bootstrap chrome) with hairline
+ * borders, no card chrome, DS color tokens, Inter + JetBrains Mono. */
+
+.ds-tabulator {
+  background: transparent;
+  font-family: var(--font-sans);
+  color: var(--color-foreground);
+  border: none;
+  font-size: 13px;
+  font-feature-settings: "tnum";
+}
+
+.ds-tabulator .tabulator-tableholder {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow: auto;
+}
+
+.ds-tabulator .tabulator-header {
+  background: var(--color-surface-subtle);
+  color: var(--color-foreground);
+  border: none;
+  border-bottom: 1px solid var(--color-border-strong) !important;
+  padding: 0;
+}
+
+.ds-tabulator .tabulator-header .tabulator-col,
+.ds-tabulator .tabulator-header .tabulator-col-group {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--color-border) !important;
+}
+
+.ds-tabulator .tabulator-col .tabulator-col-content {
+  padding: 8px 10px;
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.ds-tabulator .tabulator-col-group .tabulator-col-group-title {
+  padding: 6px 10px;
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.ds-tabulator .tabulator-row {
+  background: var(--color-surface);
+  border: none;
+  color: var(--color-foreground);
+  position: relative;
+  transition: background-color 120ms ease;
+  min-height: 36px;
+}
+
+.ds-tabulator .tabulator-row + .tabulator-row {
+  border-top: 1px solid var(--color-border);
+}
+
+.ds-tabulator .tabulator-row:hover {
+  background: var(--color-surface-subtle);
+}
+
+.ds-tabulator .tabulator-row .tabulator-cell {
+  border: none;
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
+/* Numeric cells use mono + tabular numerals */
+.ds-tabulator .tabulator-row .tabulator-cell.text-end,
+.ds-tabulator .tabulator-row .tabulator-cell.text-center {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Per-row team accent bar (4px colored stripe at left edge) */
+.ds-tabulator .tabulator-row.tab-row-accent::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--row-accent-color, transparent);
+  opacity: 0.9;
+}
+
+.ds-tabulator .tabulator-row.tab-row-accent {
+  padding-left: 6px;
+  background-image: linear-gradient(90deg, var(--row-accent-overlay, transparent), transparent 60%);
+}
+
+.ds-tabulator .tabulator-row.tabulator-selected {
+  background: var(--color-accent-tint);
+}
+
+/* Position circle (rank badge with team color) */
+.tab-position-circle {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 600;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  margin: 0 auto;
+}
+
+/* Frozen columns: solid surface background so scroll content doesn't bleed through */
+.ds-tabulator .tabulator-row .tabulator-cell.tabulator-frozen {
+  background-color: var(--color-surface) !important;
+}
+
+.ds-tabulator .tabulator-header .tabulator-col.tabulator-frozen,
+.ds-tabulator .tabulator-header .tabulator-col-group.tabulator-frozen {
+  background-color: var(--color-surface-subtle) !important;
+}
+
+.ds-tabulator .tabulator-frozen {
+  box-shadow: inset -1px 0 var(--color-border);
+  z-index: 10;
+}
+
+.ds-tabulator .tabulator-placeholder {
+  background: var(--color-surface);
+  color: var(--color-muted);
+  font-size: 13px;
+  padding: 24px;
+}
+
+.ds-tabulator .tabulator-footer {
+  background: var(--color-surface-subtle);
+  border: none;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-muted);
+}
+
+/* Highlighted column groups (data-driven via column.highlighted) */
+.ds-tabulator .tabulator-col-group.tab-group-highlighted,
+.ds-tabulator .tabulator-col-group.tab-group-highlighted .tabulator-col-group-title {
+  background-color: var(--highlight-header-bg, rgba(0, 0, 0, 0.05)) !important;
+  font-weight: var(--highlight-header-weight, 700) !important;
+}
+
+.ds-tabulator .tabulator-col.tab-col-highlighted .tabulator-col-title {
+  font-weight: var(--highlight-header-weight, 700) !important;
+}
+
+.ds-tabulator .tabulator-cell.tab-col-highlighted {
+  background-color: var(--highlight-cell-bg, rgba(0, 0, 0, 0.03)) !important;
+  font-weight: var(--highlight-cell-weight, 600) !important;
+}
+
+/* Sort indicator color */
+.ds-tabulator .tabulator-col .tabulator-col-content .tabulator-arrow {
+  border-bottom-color: var(--color-muted);
+  border-top-color: var(--color-muted);
+}
+
+.ds-tabulator .tabulator-col[aria-sort="ascending"] .tabulator-arrow,
+.ds-tabulator .tabulator-col[aria-sort="descending"] .tabulator-arrow {
+  border-bottom-color: var(--color-accent);
+  border-top-color: var(--color-accent);
+}
+
+/* Empty state placeholder for invalid table data */
+.ds-table-empty {
+  padding: 24px;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-muted);
+  font-size: 13px;
+}
+
+/* Scrollbar (subtle) */
+.ds-tabulator .tabulator-tableholder::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.ds-tabulator .tabulator-tableholder::-webkit-scrollbar-track {
+  background: transparent;
+}
+.ds-tabulator .tabulator-tableholder::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: 4px;
+}
+.ds-tabulator .tabulator-tableholder::-webkit-scrollbar-thumb:hover {
+  background: var(--color-muted);
+}
