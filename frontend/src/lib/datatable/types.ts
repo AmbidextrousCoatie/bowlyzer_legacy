@@ -51,6 +51,8 @@ export type TableData = {
   config?: TableConfig;
   default_sort?: DefaultSort;
   title?: string;
+  /** Free-form payload sent alongside the table (e.g. heatmap ranges). */
+  metadata?: Record<string, unknown>;
 };
 
 export type DataTableOptions = {

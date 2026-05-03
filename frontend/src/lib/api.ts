@@ -39,6 +39,10 @@ export function buildUrl(
       search.set(k, String(v));
     }
   });
+  if (!search.has("database") && typeof window !== "undefined") {
+    const current = new URLSearchParams(window.location.search).get("database");
+    if (current) search.set("database", current);
+  }
   const qs = search.toString();
   return qs ? `${path}?${qs}` : path;
 }

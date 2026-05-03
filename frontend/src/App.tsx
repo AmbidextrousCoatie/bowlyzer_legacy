@@ -2,6 +2,8 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Sidebar } from "./components/Sidebar";
 import { LeagueStats } from "./pages/league/LeagueStats";
+import { PlayerStats } from "./pages/player/PlayerStats";
+import { TournamentStats } from "./pages/tournament/TournamentStats";
 import { queryClient } from "./lib/queryClient";
 
 function App() {
@@ -14,9 +16,9 @@ function App() {
             <Routes>
               <Route path="/" element={<Navigate to="/liga" replace />} />
               <Route path="/liga" element={<LeagueStats />} />
-              <Route path="/turnier" element={<Placeholder title="Turnier" />} />
+              <Route path="/turnier" element={<TournamentStats />} />
               <Route path="/mannschaft" element={<Placeholder title="Mannschaft" />} />
-              <Route path="/spieler" element={<Placeholder title="Spieler" />} />
+              <Route path="/spieler" element={<PlayerStats />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>

@@ -229,15 +229,23 @@ Series colors come from `ColorUtils.getCurrentPalette()` unchanged.
   options (e.g. Game/Spiel selector).
 - **Combobox**: replaces button groups for high-cardinality filters (teams,
   seasons with many entries). Built on Radix Popover + listbox.
-- **Card**: 1 px border, no shadow, 16 px / 24 px padding depending on
-  context. Optional 2 px top-border accent in `accent` for KPI cards.
+- **Section** (layout primitive): the major content unit per page. Eyebrow
+  label + H2 + content body, separated from neighbours by `space-y-12`. No
+  card border, no background — sections live directly on `background`. This
+  is what every block on Liga / Spieler / Turnier renders into.
+- **Card** (KPI tile only): 1 px border, no shadow, 16 px padding. Used for
+  small KPI tiles inside a section (e.g. tournament summary cards, lifetime
+  averages, player section tiles), never as a wrapper around a whole block.
+  Variants: default (`border-border bg-surface`), winner-accent
+  (`border-accent bg-accent-tint`).
 - **Stat card**: small uppercase label, large mono number, optional delta in
-  status color.
+  status color. Implemented as a Card with `text-stat-md` numeral.
 - **Table** (Tabulator-themed): 13 px body, 11 px caps header, 4 px vertical
   cell padding, hairline row separators, hover row tint = `surface-subtle`.
-- **Page header**: H1 + optional eyebrow label, 32 px bottom margin to first
-  content card.
-- **Filter rail**: card-on-top by default, sticky on mobile.
+- **Page header**: H1 + optional eyebrow label, 32 px bottom margin to the
+  filter rail.
+- **Filter rail**: sticky to the top of the scroll container with backdrop
+  blur and a hairline bottom border. Inline label above each control.
 
 ## Tooling notes
 
