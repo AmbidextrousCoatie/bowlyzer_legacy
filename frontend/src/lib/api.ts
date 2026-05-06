@@ -1,6 +1,6 @@
 /**
  * Thin fetch wrapper. The Vite dev server proxies /league, /player, /team,
- * /tournament to the Flask backend (see vite.config.ts), so these calls work
+ * /tournament to Flask (default http://127.0.0.1:5000; see vite.config.ts), so these calls work
  * unchanged in dev. Production wiring depends on how the SPA is served and
  * isn't relevant yet.
  */

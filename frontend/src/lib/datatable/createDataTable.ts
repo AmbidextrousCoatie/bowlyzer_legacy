@@ -45,8 +45,25 @@ export type DataTableHandle = {
 
 type RowObject = Record<string, unknown> & {
   __rowIndex: number;
-  __rowMeta?: { styling?: Record<string, string | number> } | null;
+  __rowMeta?: {
+    styling?: Record<string, string | number>;
+    separator_before?: boolean;
+    kind?: string;
+  } | null;
 };
+
+function hasSemanticSeparator(rowMeta: RowObject["__rowMeta"]): boolean {
+  if (!rowMeta) return false;
+  if (rowMeta.separator_before === true) return true;
+  const rowTypeRaw =
+    typeof rowMeta.kind === "string"
+      ? rowMeta.kind
+      : typeof (rowMeta as Record<string, unknown>).rowType === "string"
+        ? ((rowMeta as Record<string, unknown>).rowType as string)
+        : "";
+  const rowType = rowTypeRaw.toLowerCase();
+  return rowType === "summary" || rowType === "team" || rowType === "total";
+}
 
 /**
  * Build a Tabulator instance against the given container using the backend
@@ -286,8 +303,9 @@ export function createDataTable(
         const num = toFiniteNumber(value);
         if (num !== null) formatted = num.toFixed(decimalPlaces);
       }
-      const displayValue =
-        formatted ?? (value === null || value === undefined ? "" : String(value));
+      const displayValue = String(
+        formatted ?? (value === null || value === undefined ? "" : value),
+      );
 
       // player_initials column → colored circle with player initial
       if (field === "player_initials") {
@@ -436,14 +454,23 @@ export function createDataTable(
     ...(initialSort ? { initialSort } : {}),
     rowFormatter: (row: RowComponent) => {
       const rowData = row.getData() as RowObject;
+      const rowElement = row.getElement();
+      const separatorBefore = hasSemanticSeparator(rowData.__rowMeta);
       const styling = rowData.__rowMeta?.styling;
-      if (styling) applyElementStyles(row.getElement(), styling);
+      if (styling) {
+        const effectiveStyling = { ...styling };
+        if (separatorBefore) {
+          delete effectiveStyling.borderTop;
+        }
+        applyElementStyles(rowElement, effectiveStyling);
+      }
+
+      rowElement.classList.toggle("tab-row-separator-before", separatorBefore);
 
       if (!settings.enableSpecialRowStyling) {
-        const el = row.getElement();
-        el.classList.remove("tab-row-accent");
-        el.style.removeProperty("--row-accent-color");
-        el.style.removeProperty("--row-accent-overlay");
+        rowElement.classList.remove("tab-row-accent");
+        rowElement.style.removeProperty("--row-accent-color");
+        rowElement.style.removeProperty("--row-accent-overlay");
         return;
       }
 
@@ -451,17 +478,15 @@ export function createDataTable(
       if (typeof teamValue === "string" && teamValue.length > 0) {
         const accentColor = getTeamColor(teamValue);
         if (accentColor) {
-          const el = row.getElement();
-          el.classList.add("tab-row-accent");
-          el.style.setProperty("--row-accent-color", accentColor);
+          rowElement.classList.add("tab-row-accent");
+          rowElement.style.setProperty("--row-accent-color", accentColor);
           const overlay = toRgba(accentColor, 0.12);
-          el.style.setProperty("--row-accent-overlay", overlay);
+          rowElement.style.setProperty("--row-accent-overlay", overlay);
         }
       } else {
-        const el = row.getElement();
-        el.classList.remove("tab-row-accent");
-        el.style.removeProperty("--row-accent-color");
-        el.style.removeProperty("--row-accent-overlay");
+        rowElement.classList.remove("tab-row-accent");
+        rowElement.style.removeProperty("--row-accent-color");
+        rowElement.style.removeProperty("--row-accent-overlay");
       }
     },
   };
@@ -649,7 +674,6 @@ function buildColumnDefinition(
     def.widthGrow = isTeamColumn ? 3 : isTextColumn ? 2 : 1;
   }
 
-  // Suppress group context on unused param
   void groupIndex;
   return def;
 }

@@ -32,6 +32,12 @@ export type CellMetadata = Record<string, CellMetaStyles>;
 
 export type RowMetaEntry = {
   styling?: Record<string, string | number>;
+  /** Emitted by the Flask table payloads; aligns semantic separators with legacy/Jinja tables. */
+  separator_before?: boolean;
+  /** Server field for row role (e.g. summary / team / total). */
+  rowType?: string;
+  /** Optional client-side semantic alias when mapping row_metadata. */
+  kind?: string;
 } | null;
 
 export type TableConfig = {

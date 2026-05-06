@@ -1052,9 +1052,9 @@ class LeagueService:
                 # Add metadata for styling
                 row_metadata.append({
                     'rowType': 'team',
+                    'separator_before': True,
                     'styling': {
-                        'fontWeight': 'bold',
-                        'borderTop': '2px solid #000000'
+                        'fontWeight': 'bold'
                     }
                 })
                 
@@ -1123,9 +1123,9 @@ class LeagueService:
             # Add metadata for styling
             row_metadata.append({
                 'rowType': 'total',
+                'separator_before': True,
                 'styling': {
                     'fontWeight': 'bold',
-                    'borderTop': '2px solid #000000',
                     'borderBottom': '2px solid #000000'
                 }
             })
@@ -2211,7 +2211,7 @@ class LeagueService:
         summary_row[2] = team_score_total
         summary_row[3] = team_points_total
         data.append(summary_row)
-        row_metadata.append({'rowType': 'summary', 'styling': {'fontWeight': 'bold', 'borderTop': '2px solid #000000'}})
+        row_metadata.append({'rowType': 'summary', 'separator_before': True, 'styling': {'fontWeight': 'bold'}})
             
         return TableData(
                 columns=columns,

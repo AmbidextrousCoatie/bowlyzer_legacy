@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Start backend (Flask API on :5050) and frontend (Vite on :5173) together.
+# Start backend (Flask API on :5000, same default as `python wsgi.py`) and frontend (Vite on :5173) together.
 # Stops cleanly on SIGINT (Ctrl+C) or SIGTERM by signalling each child's
 # process group (so descendants like the actual flask/node processes die too).
 
@@ -7,7 +7,7 @@ set -euo pipefail
 set -m  # job control: each backgrounded job becomes a process-group leader
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BACKEND_PORT=5050
+BACKEND_PORT=5000
 FRONTEND_PORT=5173
 
 stopping=0

@@ -38,7 +38,12 @@ class TableData:
     description: Optional[str] = None
     config: Optional[Dict[str, Any]] = field(default_factory=dict)  # Table-wide configuration
     metadata: Optional[Dict[str, Any]] = field(default_factory=dict)  # Additional metadata for i18n and UI
-    row_metadata: Optional[List[Dict[str, Any]]] = field(default_factory=list)  # Row-level metadata for styling
+    # Row-level metadata for styling/semantics.
+    # Supported keys include:
+    # - styling: inline style overrides (fontWeight, borderBottom, etc.)
+    # - separator_before: semantic row break marker consumed by both legacy and React tables
+    # - rowType/kind: optional semantic role (e.g. "summary", "team", "total")
+    row_metadata: Optional[List[Dict[str, Any]]] = field(default_factory=list)
     cell_metadata: Optional[Dict[str, Dict[str, Any]]] = field(default_factory=dict)  # Cell-level metadata for styling (format: "row:col")
     default_sort: Optional[Dict[str, str]] = None  # Default sort: {"field": "average", "dir": "desc"}
     

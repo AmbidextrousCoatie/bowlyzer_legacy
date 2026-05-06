@@ -159,6 +159,24 @@ function parseColumnWidth(width) {
     return Number.isNaN(parsed) ? undefined : parsed;
 }
 
+function shouldRenderSemanticSeparator(rowMetadata) {
+    if (!rowMetadata || typeof rowMetadata !== 'object') return false;
+    if (rowMetadata.separator_before === true) return true;
+    const rowType = typeof rowMetadata.rowType === 'string' ? rowMetadata.rowType.toLowerCase() : '';
+    return rowType === 'summary' || rowType === 'team' || rowType === 'total';
+}
+
+function getEffectiveRowStyling(rowMetadata) {
+    if (!rowMetadata || typeof rowMetadata !== 'object') return {};
+    const styling = rowMetadata.styling || {};
+    if (!shouldRenderSemanticSeparator(rowMetadata)) {
+        return styling;
+    }
+    const effectiveStyling = {...styling};
+    delete effectiveStyling.borderTop;
+    return effectiveStyling;
+}
+
 function createTableTabulator(tableId, data, options = {}) {
     
     const settings = {
@@ -1178,35 +1196,35 @@ function createTableTabulator(tableId, data, options = {}) {
             }
         },
         rowFormatter: function(row) {
+            const rowElement = row.getElement();
             if (!settings.enableSpecialRowStyling) {
-                const element = row.getElement();
-                element.classList.remove('tab-row-accent');
-                element.style.removeProperty('--row-accent-color');
-                element.style.removeProperty('--row-accent-overlay');
+                rowElement.classList.remove('tab-row-accent');
+                rowElement.style.removeProperty('--row-accent-color');
+                rowElement.style.removeProperty('--row-accent-overlay');
             }
 
             const rowData = row.getData();
-            const styling = rowData?.__rowMeta?.styling;
+            const rowMeta = rowData?.__rowMeta || {};
+            rowElement.classList.toggle('tab-row-separator-before', shouldRenderSemanticSeparator(rowMeta));
+            const styling = getEffectiveRowStyling(rowMeta);
             if (styling) {
-                applyElementStyles(row.getElement(), styling);
+                applyElementStyles(rowElement, styling);
             }
 
             if (teamField && rowData[teamField]) {
                 const accentColor = getTeamColor(rowData[teamField]);
                 if (accentColor) {
-                    const element = row.getElement();
-                    element.classList.add('tab-row-accent');
-                    element.style.setProperty('--row-accent-color', accentColor);
+                    rowElement.classList.add('tab-row-accent');
+                    rowElement.style.setProperty('--row-accent-color', accentColor);
                     const overlay = ColorUtils.toRgba(accentColor, 0.12);
                     if (overlay) {
-                        element.style.setProperty('--row-accent-overlay', overlay);
+                        rowElement.style.setProperty('--row-accent-overlay', overlay);
                     }
                 }
             } else {
-                const element = row.getElement();
-                element.classList.remove('tab-row-accent');
-                element.style.removeProperty('--row-accent-color');
-                element.style.removeProperty('--row-accent-overlay');
+                rowElement.classList.remove('tab-row-accent');
+                rowElement.style.removeProperty('--row-accent-color');
+                rowElement.style.removeProperty('--row-accent-overlay');
             }
         }
     };
@@ -1705,6 +1723,10 @@ function createTableBootstrap3(tableId, data, options = {}) {
                 const [row1, row2] = rows;
                 const tr1 = document.createElement('tr');
                 const tr2 = document.createElement('tr');
+                const rowMeta1 = (data.row_metadata && data.row_metadata[row1.rowIndex]) || {};
+                const rowMeta2 = (data.row_metadata && data.row_metadata[row2.rowIndex]) || {};
+                tr1.classList.toggle('tab-row-separator-before', shouldRenderSemanticSeparator(rowMeta1));
+                tr2.classList.toggle('tab-row-separator-before', shouldRenderSemanticSeparator(rowMeta2));
                 
                 let colIndex = 0;
                 
@@ -1960,13 +1982,14 @@ function createTableBootstrap3(tableId, data, options = {}) {
     function updateTableBodyRegular(tableData, enableSpecialRowStyling) {
         tableData.forEach((rowData, rowIndex) => {
             const tr = document.createElement('tr');
+            const rowMetadata = (data.row_metadata && data.row_metadata[rowIndex]) || {};
+            tr.classList.toggle('tab-row-separator-before', shouldRenderSemanticSeparator(rowMetadata));
             
             let colIndex = 0;  // Track the flat column index
             
             // Apply styling based on metadata if available and special styling is enabled
             if (enableSpecialRowStyling && data.row_metadata && data.row_metadata[rowIndex]) {
-                const rowMetadata = data.row_metadata[rowIndex];
-                const styling = rowMetadata.styling || {};
+                const styling = getEffectiveRowStyling(rowMetadata);
                 
                 // Apply row-level styles
                 Object.entries(styling).forEach(([key, value]) => {
@@ -2294,6 +2317,10 @@ function getTeamColor(teamName) {
     font-size: 0.95rem;
 }
 
+.custom-tabulator .tabulator-row.tab-row-separator-before {
+    border-top: 1px solid var(--table-border-strong);
+}
+
 .custom-tabulator .tabulator-row:hover {
     background: var(--table-hover-bg);
 }
@@ -2415,6 +2442,10 @@ function getTeamColor(teamName) {
 
 .border-right {
     border-right: 1px solid var(--theme-border, #264653); /* Bootstrap's default border color */
+}
+
+.table tbody tr.tab-row-separator-before > td {
+    border-top: 1px solid var(--table-border-strong);
 }
 
 .table-responsive {
