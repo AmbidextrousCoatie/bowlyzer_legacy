@@ -22,29 +22,36 @@ class CentralizedButtonManager {
                 containerId: 'buttonsSeason',
                 name: 'season'
             },
-            league: {
+            division: {
                 order: 2,
-                dependencies: [], // allow league selection without season
+                dependencies: [],
+                endpoint: '/league/get_available_divisions',
+                containerId: 'buttonsDivision',
+                name: 'division'
+            },
+            league: {
+                order: 3,
+                dependencies: ['division'],
                 endpoint: '/league/get_available_leagues',
                 containerId: 'buttonsLeague',
                 name: 'league'
             },
             week: {
-                order: 3,
+                order: 4,
                 dependencies: ['season', 'league'],
                 endpoint: '/league/get_available_weeks',
                 containerId: 'buttonsWeek',
                 name: 'week'
             },
             round: {
-                order: 4,
+                order: 5,
                 dependencies: ['season', 'league', 'week'],
                 endpoint: '/league/get_available_rounds',
                 containerId: 'buttonsRound',
                 name: 'round'
             },
             team: {
-                order: 5,
+                order: 6,
                 dependencies: ['season', 'league'],
                 endpoint: '/league/get_available_teams',
                 containerId: 'buttonsTeam',
@@ -228,11 +235,6 @@ class CentralizedButtonManager {
             // Check if prerequisites are met
             if (!this.arePrerequisitesMet(group)) {
                 console.log(`⚠️ CentralizedButtonManager: Prerequisites not met for ${group.name}`);
-                // Do NOT clear league selection when season is deselected
-                if (group.name === 'league') {
-                    console.log('ℹ️ Keeping existing league selection despite missing prerequisites');
-                    return;
-                }
                 console.log(`⚠️ CentralizedButtonManager: Clearing buttons for ${group.name}`);
                 this.clearButtonGroup(group);
                 return;
@@ -417,6 +419,23 @@ class CentralizedButtonManager {
                 `;
             }
             
+            if (group.name === 'division') {
+                const value = String(this.getCandidateValue(candidate, group.name));
+                const label = candidate.label || value;
+                const isChecked = value === selectedValue;
+                const safeId = this.createSafeId(value, group.name);
+                const escapedValue = this.escapeAttribute(value);
+                const escapedLabel = this.escapeHtml(label);
+                
+                return `
+                    <input type="radio" class="btn-check" name="${group.name}" id="${group.name}_${safeId}" 
+                           value="${escapedValue}" ${isChecked ? 'checked' : ''}>
+                    <label class="btn btn-outline-primary" for="${group.name}_${safeId}">
+                        ${escapedLabel}
+                    </label>
+                `;
+            }
+            
             const candidateStr = String(candidate);
             const isChecked = candidateStr === selectedValue;
             const safeId = this.createSafeId(candidateStr, group.name);
@@ -466,8 +485,8 @@ class CentralizedButtonManager {
         const depNames = group.dependencies.map(dep => this.buttonGroups[dep].name).join(', ');
         
         // Special message for league group when no league is selected
-        if (group.name === 'league' && this.constraints.season && !this.constraints.league) {
-            return 'Wählen Sie eine Liga aus oder lassen Sie leer für Saison-Übersicht';
+        if (group.name === 'league' && !this.constraints.division) {
+            return 'Wählen Sie zuerst eine Division aus';
         }
         
         return `Wählen Sie ${depNames} aus`;
@@ -492,7 +511,7 @@ class CentralizedButtonManager {
      */
     setupButtonEventListeners() {
         // Use event delegation for all filter buttons
-        document.addEventListener('change', (event) => {
+        document.addEventListener('change', async (event) => {
             const target = event.target;
             
             if (target.type === 'radio' && this.buttonGroups[target.name]) {
@@ -512,11 +531,14 @@ class CentralizedButtonManager {
                     stateUpdate.league_long = longName;
                     this.selectedValues.league_long = longName;
                 }
-                
+
+                // Keep the full combination if valid; otherwise drop lowest-priority
+                // filters one by one until a valid combination is found.
+                const sanitizedUpdate = await this.sanitizeStateUpdateForChangedGroup(groupName, stateUpdate);
                 console.log(`🎯 CentralizedButtonManager: Updated constraints:`, this.constraints);
                 
                 // Update URL state (this will trigger handleStateChange)
-                this.urlStateManager.setState(stateUpdate);
+                this.urlStateManager.setState(sanitizedUpdate);
             }
         });
         
@@ -548,15 +570,163 @@ class CentralizedButtonManager {
                     
                     // Clear selection and update state
                     this.selectedValues[groupName] = '';
-                    if (groupName === 'league') {
+                    
+                    const cleared = {};
+                    if (groupName === 'season') {
+                        cleared.season = '';
+                        cleared.division = '';
+                        cleared.league = '';
+                        cleared.league_long = '';
+                        cleared.week = '';
+                        cleared.round = '';
+                        cleared.team = '';
+                    } else if (groupName === 'division') {
+                        cleared.division = '';
+                        cleared.league = '';
+                        cleared.league_long = '';
+                        cleared.week = '';
+                        cleared.round = '';
+                        cleared.team = '';
+                    } else if (groupName === 'league') {
                         this.selectedValues.league_long = '';
-                        this.urlStateManager.setState({ league: '', league_long: '' });
-                    } else {
-                        this.urlStateManager.setState({ [groupName]: '' });
+                        cleared.league = '';
+                        cleared.league_long = '';
+                        cleared.week = '';
+                        cleared.round = '';
+                        cleared.team = '';
+                    } else if (groupName === 'week') {
+                        cleared.week = '';
+                        cleared.round = '';
+                        cleared.team = '';
+                    } else if (groupName === 'round') {
+                        cleared.round = '';
+                        cleared.team = '';
+                    } else if (groupName === 'team') {
+                        cleared.team = '';
                     }
+                    
+                    this.urlStateManager.setState(cleared);
                 }
             }
         });
+    }
+
+    getFilterPriorityOrder() {
+        return ['season', 'division', 'league', 'week', 'round', 'team'];
+    }
+
+    buildConstraintsFromState(state, groupName) {
+        const params = {};
+        const order = this.getFilterPriorityOrder();
+        const groupIdx = order.indexOf(groupName);
+        if (groupIdx < 0) return params;
+
+        for (let i = 0; i < groupIdx; i++) {
+            const key = order[i];
+            const val = state[key];
+            if (val) {
+                params[key] = val;
+            }
+        }
+        return params;
+    }
+
+    async fetchCandidatesForState(groupName, state) {
+        const group = this.buttonGroups[groupName];
+        if (!group) return [];
+
+        // If dependencies are not met, this group cannot be validated as selected.
+        const depsMet = group.dependencies.every(dep => state[dep]);
+        if (!depsMet) return [];
+
+        const params = new URLSearchParams();
+        const constraints = this.buildConstraintsFromState(state, groupName);
+        Object.entries(constraints).forEach(([key, value]) => {
+            if (value) params.append(key, value);
+        });
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const database = urlParams.get('database') || 'db_real_pipeline_gf';
+        params.append('database', database);
+
+        const response = await fetch(`${group.endpoint}?${params.toString()}`);
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        const raw = await response.json();
+        return this.normalizeCandidates(group, raw);
+    }
+
+    async isSelectionValidForGroup(groupName, state) {
+        const selected = state[groupName];
+        if (!selected) return true;
+
+        const candidates = await this.fetchCandidatesForState(groupName, state);
+        return candidates.some(candidate => String(this.getCandidateValue(candidate, groupName)) === String(selected));
+    }
+
+    async isCombinationValid(state) {
+        const order = this.getFilterPriorityOrder();
+        for (const groupName of order) {
+            const selected = state[groupName];
+            if (!selected) continue;
+            const isValid = await this.isSelectionValidForGroup(groupName, state);
+            if (!isValid) return false;
+        }
+        return true;
+    }
+
+    async sanitizeStateUpdateForChangedGroup(changedGroup, stateUpdate) {
+        const currentUrlState = this.urlStateManager.getState();
+        const candidateState = { ...currentUrlState, ...stateUpdate };
+        const order = this.getFilterPriorityOrder();
+        const changedIdx = order.indexOf(changedGroup);
+        const topLevelGroups = new Set(['season', 'division']);
+
+        // First try: keep everything.
+        if (await this.isCombinationValid(candidateState)) {
+            return stateUpdate;
+        }
+
+        // Drop lowest-priority selected filters one-by-one, keeping the changed group fixed.
+        for (let idx = order.length - 1; idx > changedIdx; idx--) {
+            const key = order[idx];
+            if (topLevelGroups.has(changedGroup) && topLevelGroups.has(key)) {
+                // Treat season/division as same priority: don't clear one when the other changes.
+                continue;
+            }
+            if (!candidateState[key]) continue;
+            candidateState[key] = '';
+            if (key === 'league') {
+                candidateState.league_long = '';
+            }
+            if (await this.isCombinationValid(candidateState)) {
+                const merged = { ...stateUpdate };
+                for (const k of order) {
+                    if ((k in candidateState) && candidateState[k] !== currentUrlState[k] && !(k in merged)) {
+                        merged[k] = candidateState[k];
+                    }
+                }
+                if (candidateState.league_long !== currentUrlState.league_long && !('league_long' in merged)) {
+                    merged.league_long = candidateState.league_long || '';
+                }
+                return merged;
+            }
+        }
+
+        // Fallback: if still invalid, clear all lower-priority filters.
+        const fallback = { ...stateUpdate };
+        for (let idx = changedIdx + 1; idx < order.length; idx++) {
+            const key = order[idx];
+            if (topLevelGroups.has(changedGroup) && topLevelGroups.has(key)) {
+                continue;
+            }
+            fallback[key] = '';
+        }
+        if (changedGroup !== 'league') {
+            fallback.league_long = fallback.league ? (candidateState.league_long || '') : '';
+        }
+        return fallback;
     }
     
     normalizeCandidates(group, candidates) {
@@ -566,6 +736,9 @@ class CentralizedButtonManager {
         
         if (group.name === 'league') {
             return this.normalizeLeagueCandidates(candidates);
+        }
+        if (group.name === 'division') {
+            return this.normalizeDivisionCandidates(candidates);
         }
         
         return candidates;
@@ -594,8 +767,28 @@ class CentralizedButtonManager {
         }).filter(candidate => candidate.value);
     }
     
+    normalizeDivisionCandidates(candidates) {
+        return candidates.map(candidate => {
+            if (candidate && typeof candidate === 'object') {
+                const value = candidate.value || candidate.code || candidate.id || candidate.name || '';
+                const label = candidate.label || candidate.name || value;
+                
+                return {
+                    value: value != null ? String(value) : '',
+                    label: label != null ? String(label) : ''
+                };
+            }
+            
+            const strValue = candidate != null ? String(candidate) : '';
+            return {
+                value: strValue,
+                label: strValue
+            };
+        }).filter(candidate => candidate.value);
+    }
+    
     getCandidateValue(candidate, groupName) {
-        if (groupName === 'league' && candidate && typeof candidate === 'object') {
+        if ((groupName === 'league' || groupName === 'division') && candidate && typeof candidate === 'object') {
             return candidate.value;
         }
         return candidate;

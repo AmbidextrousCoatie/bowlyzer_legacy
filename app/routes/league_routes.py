@@ -247,12 +247,13 @@ def get_season_league_standings():
         debug_config.log_route('league.get_season_league_standings', params)
         
         season = request.args.get('season')
+        division = request.args.get('division')
         
         if not season:
             return jsonify({"error": i18n_service.get_text("season_required")}), 400
 
         league_service = get_league_service()
-        standings_data = league_service.get_season_league_standings(season=season)
+        standings_data = league_service.get_season_league_standings(season=season, division=division)
         
         if not standings_data:
             return jsonify({"message": "No data found for this season"}), 404
@@ -355,18 +356,60 @@ def get_available_seasons():
         debug_config.log_route('league.get_available_seasons', dict(request.args), f"ERROR: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
-@bp.route('/league/get_available_leagues')
-def get_available_leagues():
+@bp.route('/league/get_available_divisions')
+def get_available_divisions():
+    """
+    Return available divisions for a given season, based on leagues that actually have data.
+    """
     try:
         season = request.args.get("season")
 
         league_service = get_league_service()
         leagues = league_service.get_leagues(season=season)
+
+        # Map leagues to division codes via relational mapping
+        from app.utils.league_utils import get_league_division_map
+
+        division_map = get_league_division_map()
+        codes = {
+            division_map.get(league)
+            for league in leagues
+            if division_map.get(league)
+        }
+
+        label_by_code = {
+            "state": "Bayern",
+            "south": "Süden",
+            "north": "Norden",
+        }
+
+        divisions = [
+            {
+                "code": code,
+                "label": label_by_code.get(code, code),
+                "value": code,
+            }
+            for code in sorted(codes)
+        ]
+        return jsonify(divisions)
+    except Exception as e:
+        print(f"Error in get_available_divisions: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+
+@bp.route('/league/get_available_leagues')
+def get_available_leagues():
+    try:
+        season = request.args.get("season")
+        division = request.args.get("division")
+
+        league_service = get_league_service()
+        leagues = league_service.get_leagues(season=season, division=division)
         enriched_leagues = [
             {
                 "short_name": league,
                 "long_name": resolve_league_long_name(league),
-                "value": league
+                "value": league,
             }
             for league in leagues
         ]

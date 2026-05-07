@@ -17,6 +17,7 @@ from app.utils.color_constants import get_theme_color, get_heat_map_color
 from app.utils.league_utils import (
     format_float_one_decimal,
     get_league_level,
+    get_league_division_map,
     convert_to_simple_types,
     apply_heat_map_to_columns,
     resolve_league_long_name,
@@ -77,9 +78,16 @@ class LeagueService:
         # print(f"####################### Getting seasons for league_name: {league_name} and team_name: {team_name}")
         return self.adapter.get_seasons(league_name=league_name, team_name=team_name)
 
-    def get_leagues(self, season: Optional[str] = None) -> List[str]:
-        """Get all available leagues, optionally restricted to a season."""
-        return self.adapter.get_leagues(season=season)
+    def get_leagues(self, season: Optional[str] = None, division: Optional[str] = None) -> List[str]:
+        """Get all available leagues, optionally restricted to a season and/or division."""
+        leagues = self.adapter.get_leagues(season=season)
+        if not division:
+            return leagues
+
+        from app.utils.league_utils import get_league_division_map
+
+        division_map = get_league_division_map()
+        return [lg for lg in leagues if division_map.get(lg) == division]
     
     def get_available_rounds(self, season: str, league: str, week: int) -> List[int]:
         """Get available rounds (games) for a season, league, and week"""
@@ -3712,7 +3720,7 @@ class LeagueService:
                 config={"striped": True, "hover": True, "compact": True, "stickyHeader": True}
             )
 
-    def get_season_league_standings(self, season: str) -> Dict[str, Any]:
+    def get_season_league_standings(self, season: str, division: Optional[str] = None) -> Dict[str, Any]:
         """
         Get latest week standings for all leagues in a season.
         
@@ -3748,6 +3756,11 @@ class LeagueService:
                 }
             )
             
+            # Optional division filter (state/south/north) from league mapping
+            if division:
+                division_map = get_league_division_map()
+                leagues = [lg for lg in leagues if division_map.get(lg) == division]
+
             # Get standings for each league's latest week
             league_standings = []
             

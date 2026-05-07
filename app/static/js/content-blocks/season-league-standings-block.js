@@ -65,11 +65,15 @@ class SeasonLeagueStandingsBlock extends BaseContentBlock {
     }
 
     async loadSeasonLeagueStandings(state) {
-        const { season } = state;
+        const { season, division } = state;
         
         try {
             
-            const response = await fetchWithDatabase(`/league/get_season_league_standings?season=${season}`);
+            const query = new URLSearchParams({ season: String(season) });
+            if (division) {
+                query.set('division', String(division));
+            }
+            const response = await fetchWithDatabase(`/league/get_season_league_standings?${query.toString()}`);
             
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);

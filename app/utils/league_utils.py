@@ -38,6 +38,26 @@ def get_league_long_name_map() -> Dict[str, str]:
     return _load_csv_id_long_pairs(path)
 
 
+@lru_cache(maxsize=1)
+def get_league_division_map() -> Dict[str, str]:
+    """
+    id -> division (``state``, ``south``, ``north``) from ``league_mapping.csv``.
+    """
+    path = Path(__file__).resolve().parent.parent.parent / "database" / "relational_csv" / "league_mapping.csv"
+    out: Dict[str, str] = {}
+    if not path.is_file():
+        return out
+
+    with path.open(newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            lid = (row.get("id") or "").strip()
+            division = (row.get("division") or "").strip()
+            if lid and division:
+                out[lid] = division
+    return out
+
+
 def resolve_league_long_name(short_id: str) -> str:
     """Return display long name for a league short id, or the id if unmapped."""
     if short_id is None or short_id == "":
