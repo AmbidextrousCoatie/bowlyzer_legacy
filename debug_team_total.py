@@ -6,7 +6,7 @@ ROOT = Path(__file__).resolve().parents[0]
 game_results = pd.read_csv(ROOT / "database" / "relational_csv" / "new" / "game_result_new.csv", dtype=str)
 events = pd.read_csv(ROOT / "database" / "relational_csv" / "event.csv", dtype=str)
 league_seasons = pd.read_csv(ROOT / "database" / "relational_csv" / "league_season.csv", dtype=str)
-leagues = pd.read_csv(ROOT / "database" / "relational_csv" / "league.csv", dtype=str)
+leagues = pd.read_csv(ROOT / "database" / "relational_csv" / "league_mapping.csv", dtype=str)
 team_seasons = pd.read_csv(ROOT / "database" / "relational_csv" / "team_season.csv", dtype=str)
 clubs = pd.read_csv(ROOT / "database" / "relational_csv" / "club.csv", dtype=str)
 players = pd.read_csv(ROOT / "database" / "relational_csv" / "player.csv", dtype=str)

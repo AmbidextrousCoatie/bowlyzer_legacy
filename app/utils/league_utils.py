@@ -12,17 +12,11 @@ from typing import Union, List, Dict, Any
 from app.utils.color_constants import get_heat_map_color
 
 
-@lru_cache(maxsize=1)
-def get_league_long_name_map() -> Dict[str, str]:
-    """
-    Load id -> long_name from database/relational_csv/league.csv
-    (generated from league_mapping.csv in the relational build pipeline).
-    """
-    path = Path(__file__).resolve().parent.parent.parent / "database" / "relational_csv" / "league.csv"
-    if not path.is_file():
-        return {}
+def _load_csv_id_long_pairs(csv_path: Path) -> Dict[str, str]:
     out: Dict[str, str] = {}
-    with path.open(newline="", encoding="utf-8") as f:
+    if not csv_path.is_file():
+        return out
+    with csv_path.open(newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
             lid = (row.get("id") or "").strip()
@@ -30,6 +24,18 @@ def get_league_long_name_map() -> Dict[str, str]:
             if lid and long_name:
                 out[lid] = long_name
     return out
+
+
+@lru_cache(maxsize=1)
+def get_league_long_name_map() -> Dict[str, str]:
+    """
+    id -> long_name for UI labels.
+
+    Canonical source is ``database/relational_csv/league_mapping.csv``
+    (same file as ingestion / Excel tooling); keep ids in sync there.
+    """
+    path = Path(__file__).resolve().parent.parent.parent / "database" / "relational_csv" / "league_mapping.csv"
+    return _load_csv_id_long_pairs(path)
 
 
 def resolve_league_long_name(short_id: str) -> str:

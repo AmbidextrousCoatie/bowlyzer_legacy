@@ -21,6 +21,7 @@ GF_SBM_CANONICAL_CSV = GF_TOURNAMENT_EXPORT_DIR / "gf_table_124__sbm_suedbayeris
 GF_NBM_CANONICAL_CSV = GF_TOURNAMENT_EXPORT_DIR / "gf_table_125__nbm_nordbayerische_meisterschaft_2026__canonical_clean.csv"
 GF_REGIONAL_COMBINED_POSTPROCESSED_CSV = GF_TOURNAMENT_EXPORT_DIR / "gf_tournaments_2026__combined_postprocessed.csv"
 GF_PLAYER_COMBINED_CSV = GF_TOURNAMENT_EXPORT_DIR / "gf_player_stats__league_plus_tournaments.csv"
+HISTORICAL_LEAGUE_RESULTS_CSV = LEGACY_V1_DIR / "database" / "data" / "historical_league_results.csv"
 
 
 def _ensure_pipeline_gf_legacy_csv_stub() -> None:
@@ -72,6 +73,21 @@ def _ensure_tournament_postprocessed_csv_stub(path: Path) -> None:
         writer.writeheader()
 
 
+def _ensure_historical_league_csv_stub(path: Path) -> None:
+    """
+    Keep historical league source visible in UI before first ingest run by
+    creating a header-only legacy CSV if missing.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if path.is_file():
+        return
+    from database.conversion.bowlingbayern_legacy_core import OUTPUT_HEADERS
+
+    with path.open("w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=OUTPUT_HEADERS, delimiter=";")
+        writer.writeheader()
+
+
 @dataclass
 class DataSourceConfig:
     """Configuration for a data source"""
@@ -106,6 +122,14 @@ class DatabaseConfig:
                 is_default=True,
                 is_enabled=True,
                 file_path=str(PIPELINE_GF_LEGACY_CSV),
+            ),
+            'db_real_historical_league': DataSourceConfig(
+                filename='historical_league_results.csv',
+                display_name='Real Data (Historical League)',
+                description='Continuous historical league results aggregated from legacy Excel imports',
+                is_default=False,
+                is_enabled=True,
+                file_path=str(HISTORICAL_LEAGUE_RESULTS_CSV),
             ),
             'db_tournament_geek_2026': DataSourceConfig(
                 filename='tournament_combined_2024_2026_postprocessed.csv',
@@ -161,6 +185,7 @@ class DatabaseConfig:
             _ensure_tournament_postprocessed_csv_stub(GF_NBM_CANONICAL_CSV)
             _ensure_tournament_postprocessed_csv_stub(GF_REGIONAL_COMBINED_POSTPROCESSED_CSV)
             _ensure_tournament_postprocessed_csv_stub(GF_PLAYER_COMBINED_CSV)
+            _ensure_historical_league_csv_stub(HISTORICAL_LEAGUE_RESULTS_CSV)
         except (ImportError, OSError) as exc:
             print(
                 "Warning: could not create pipeline GF legacy stub "

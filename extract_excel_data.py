@@ -8,9 +8,244 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 import re
+import argparse
+from pathlib import Path
+import warnings
+import shutil
+import subprocess
+import io
+from contextlib import redirect_stdout
 
 
 dict_of_match_numbers = {}
+
+_LEAGUE_MAPPING_PATH = Path(__file__).resolve().parent / "database" / "relational_csv" / "league_mapping.csv"
+_LEAGUE_MAPPING_CACHE = None
+
+
+def _is_female_league_id(league_id: str) -> bool:
+    lid = league_id.strip()
+    return lid.endswith("(D)") or lid.endswith("(d)")
+
+
+def _load_league_mapping():
+    """Load (id, long_name) tuples from relational league_mapping.csv."""
+    global _LEAGUE_MAPPING_CACHE
+    if _LEAGUE_MAPPING_CACHE is not None:
+        return _LEAGUE_MAPPING_CACHE
+    rows = []
+    if not _LEAGUE_MAPPING_PATH.is_file():
+        _LEAGUE_MAPPING_CACHE = ([], [], set())
+        return _LEAGUE_MAPPING_CACHE
+
+    mapping_df = pd.read_csv(_LEAGUE_MAPPING_PATH, encoding="utf-8")
+    seen_ids = set()
+    for rec in mapping_df.itertuples(index=False):
+        lid = normalize_optional_text(getattr(rec, "id", None))
+        lng = normalize_optional_text(getattr(rec, "long_name", None))
+        if lid and lng:
+            rows.append((lid, lng))
+            seen_ids.add(lid.lower())
+    male = [(lid, lng) for lid, lng in rows if not _is_female_league_id(lid)]
+    female = [(lid, lng) for lid, lng in rows if _is_female_league_id(lid)]
+    _LEAGUE_MAPPING_CACHE = (male, female, seen_ids)
+    return _LEAGUE_MAPPING_CACHE
+
+
+def _squish_league_text(value: str) -> str:
+    """Lowercase, collapse whitespace."""
+    text = normalize_optional_text(value)
+    if not text:
+        return ""
+    text = text.lower().strip()
+    text = re.sub(r"\s+", " ", text)
+    return text
+
+
+def _detect_league_gender_bias(raw: str):
+    """Return 'female', 'male', or 'neutral' from explicit gender wording."""
+    lc = raw.lower()
+    has_frauen_or_damen = bool(re.search(r"\b(frauen|damen)\b", lc, re.IGNORECASE))
+    has_herren_or_maenner = bool(re.search(r"\b(herren|männer|maenner)\b", lc, re.IGNORECASE))
+    if has_frauen_or_damen and not has_herren_or_maenner:
+        return "female"
+    if has_herren_or_maenner and not has_frauen_or_damen:
+        return "male"
+    if has_frauen_or_damen and has_herren_or_maenner:
+        return "neutral"
+    return "neutral"
+
+
+def expand_league_region_shorthand(league_display: str) -> str:
+    """
+    Sheets often shorten ``… N1 …`` to ``Nord 1``. CSV long_names spell out Nord/Süd.
+
+    Examples: ``Bezirksliga N1`` → ``Bezirksliga Nord 1``,
+    ``Bezirksoberliga S2`` → ``Bezirksoberliga Süd 2``.
+    """
+    text = normalize_optional_text(league_display)
+    if not text:
+        return league_display or ""
+
+    def repl(match):
+        level = match.group(1)
+        compass = match.group(2).upper()
+        num = match.group(3)
+        region_name = "Nord" if compass == "N" else "Süd"
+        return f"{level} {region_name} {num}"
+
+    pattern = re.compile(
+        r"(?i)\b(Landesliga|Bezirksliga|Bezirksoberliga|Kreisliga)\s+([NS])(\d+)\b"
+    )
+    return pattern.sub(repl, text)
+
+
+def _match_candidate_to_mapping_pool(candidate: str, pool):
+    """Longest-long_name-first match against candidate substring rules."""
+    if not candidate or not pool:
+        return None
+    cand = _squish_league_text(candidate)
+    best_match = None
+    best_long_len = -1
+    for league_id, long_name in sorted(pool, key=lambda item: len(item[1]), reverse=True):
+        ln = _squish_league_text(long_name)
+        if not ln:
+            continue
+        if cand == ln or ln in cand or cand in ln:
+            if len(ln) > best_long_len:
+                best_long_len = len(ln)
+                best_match = league_id
+    return best_match
+
+
+def normalize_league_display_to_canonical(raw_league_display):
+    """Map verbose league titles to canonical IDs from relational_csv/league_mapping.csv."""
+    text = normalize_optional_text(raw_league_display)
+    if not text:
+        return None
+
+    cleaned = clean_league_name(text)
+    if not cleaned:
+        return None
+
+    cleaned = expand_league_region_shorthand(cleaned)
+
+    male_rows, female_rows, known_ids = _load_league_mapping()
+    if not male_rows:
+        return cleaned
+
+    clean_lower = cleaned.strip().lower()
+    if clean_lower in known_ids:
+        for lid, _ in male_rows + female_rows:
+            if lid.lower() == clean_lower:
+                return lid
+        return cleaned
+
+    gender = _detect_league_gender_bias(cleaned)
+    lc_full = _squish_league_text(cleaned)
+    lc_unify_female = re.sub(r"\bfrauen\b", "damen", lc_full, flags=re.IGNORECASE)
+    lc_no_male = re.sub(r"\b(herren|männer|maenner)\b", " ", lc_unify_female, flags=re.IGNORECASE)
+    lc_no_male = re.sub(r"\s+", " ", lc_no_male).strip()
+    lc_no_gender_words = re.sub(r"\b(herren|männer|maenner|frauen|damen)\b", " ", lc_full, flags=re.IGNORECASE)
+    lc_no_gender_words = re.sub(r"\s+", " ", lc_no_gender_words).strip()
+
+    if gender == "female":
+        hit = _match_candidate_to_mapping_pool(lc_unify_female, female_rows)
+        if hit:
+            return hit
+        hit = _match_candidate_to_mapping_pool(lc_no_male, female_rows)
+        if hit:
+            return hit
+
+    if gender == "male":
+        hit = _match_candidate_to_mapping_pool(lc_no_male, male_rows)
+        if hit:
+            return hit
+
+    if gender == "neutral":
+        hit = _match_candidate_to_mapping_pool(lc_no_gender_words, male_rows)
+        if hit:
+            return hit
+
+    if gender != "female":
+        hit = _match_candidate_to_mapping_pool(lc_unify_female, female_rows)
+        if hit:
+            return hit
+
+    return cleaned
+
+
+def read_excel_safely(excel_file, sheet_name, header=None):
+    """Read worksheet with format-aware engine fallbacks and clean warnings."""
+    excel_path = Path(excel_file)
+    suffix = excel_path.suffix.lower()
+    engine_candidates = {
+        ".xls": [None, "xlrd", "calamine"],
+        ".xlsx": [None, "openpyxl", "calamine"],
+        ".xlsm": [None, "openpyxl", "calamine"],
+        ".xlsb": [None, "pyxlsb", "calamine"],
+    }.get(suffix, [None, "openpyxl", "calamine", "xlrd"])
+
+    errors = []
+    for engine in engine_candidates:
+        try:
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    "ignore",
+                    message=r"Print area cannot be set to Defined name: .*",
+                    category=UserWarning,
+                    module=r"openpyxl\.reader\.workbook",
+                )
+                kwargs = {"sheet_name": sheet_name, "header": header}
+                if engine is not None:
+                    kwargs["engine"] = engine
+                return pd.read_excel(excel_file, **kwargs)
+        except Exception as exc:
+            engine_label = engine or "default"
+            errors.append(f"{engine_label}: {exc}")
+
+    detail = " | ".join(errors)
+    if suffix == ".xls":
+        raise RuntimeError(
+            "Legacy .xls workbook could not be read with available engines. "
+            "Install/use an .xls-capable engine (xlrd or calamine). "
+            f"Details: {detail}"
+        )
+    raise RuntimeError(f"Workbook could not be read. Details: {detail}")
+
+
+def get_sheet_names_safely(excel_file):
+    """Get worksheet names with format-aware engine fallbacks."""
+    excel_path = Path(excel_file)
+    suffix = excel_path.suffix.lower()
+    engine_candidates = {
+        ".xls": [None, "xlrd", "calamine"],
+        ".xlsx": [None, "openpyxl", "calamine"],
+        ".xlsm": [None, "openpyxl", "calamine"],
+        ".xlsb": [None, "pyxlsb", "calamine"],
+    }.get(suffix, [None, "openpyxl", "calamine", "xlrd"])
+
+    errors = []
+    for engine in engine_candidates:
+        try:
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    "ignore",
+                    message=r"Print area cannot be set to Defined name: .*",
+                    category=UserWarning,
+                    module=r"openpyxl\.reader\.workbook",
+                )
+                kwargs = {}
+                if engine is not None:
+                    kwargs["engine"] = engine
+                with pd.ExcelFile(excel_file, **kwargs) as workbook:
+                    return list(workbook.sheet_names)
+        except Exception as exc:
+            engine_label = engine or "default"
+            errors.append(f"{engine_label}: {exc}")
+    raise RuntimeError(f"Could not read workbook sheet names. Details: {' | '.join(errors)}")
+
+
 def get_match_number(round_idx, team_name, team_name_opponent):
     """Get the match number for a given round, team name, and opponent."""
     
@@ -30,7 +265,7 @@ def extract_season_info(excel_file, sheet_name):
     """Extract season information from specified sheet."""
     try:
         # Read the specified sheet
-        df = pd.read_excel(excel_file, sheet_name=sheet_name, header=None)
+        df = read_excel_safely(excel_file, sheet_name=sheet_name, header=None)
         
         # Look for season information in the first row
         first_row = df.iloc[0]
@@ -82,6 +317,112 @@ def extract_date_info(df):
         return {'day': 'n/a', 'month': 'n/a'}  # Default fallback
 
 
+def infer_season_from_path(excel_file):
+    """
+    Parse segments like ``Liga 2023-24`` → ``season_short`` ``23/24`` with full calendar years.
+
+    Expects ``YYYY-YY`` (second part is last two digits of end year); requires ``year2 == year1 + 1``.
+    """
+    path_ref = Path(excel_file).resolve()
+    path_blob = str(path_ref).replace(" ", "")
+    pattern = re.compile(r"\b(19\d{2}|20\d{2})-(\d{2})\b")
+
+    def candidate_from_match(match):
+        y1_full = int(match.group(1))
+        yy_end = int(match.group(2))
+        century_base = (y1_full // 100) * 100
+        y2_full = century_base + yy_end
+        if y2_full <= y1_full:
+            y2_full += 100
+        if y2_full != y1_full + 1:
+            return None
+        y1_str, y2_str = str(y1_full), str(y2_full)
+        return {
+            "season_short": f"{y1_str[-2:]}/{y2_str[-2:]}",
+            "year1": y1_str,
+            "year2": y2_str,
+        }
+
+    segments = []
+    current = path_ref
+    while current != current.parent:
+        segments.append(current.name.replace(" ", ""))
+        current = current.parent
+
+    for seg in segments:
+        match = pattern.search(seg)
+        if match:
+            info = candidate_from_match(match)
+            if info:
+                return info
+
+    for match in pattern.finditer(path_blob):
+        info = candidate_from_match(match)
+        if info:
+            return info
+
+    return None
+
+
+def normalize_season_cell_to_short(season_text):
+    """Map ``YYYY/YYYY`` from Spielorte to ``YY/YY`` when consecutive years."""
+    text = normalize_optional_text(season_text)
+    if not text:
+        return None
+    match = re.match(r"^(\d{4})\s*/\s*(\d{4})$", text)
+    if not match:
+        return text
+    y1_full, y2_full = match.group(1), match.group(2)
+    if int(y2_full) != int(y1_full) + 1:
+        return text
+    return f"{y1_full[-2:]}/{y2_full[-2:]}"
+
+
+def season_label_to_season_info(season_text):
+    """Build ``season_info`` fragment from ``YY/YY`` or ``YYYY/YYYY`` labels."""
+    text = normalize_optional_text(season_text)
+    if not text:
+        return None
+    match = re.match(r"^(\d{4})\s*/\s*(\d{4})$", text)
+    if match:
+        y1s, y2s = match.group(1), match.group(2)
+        if int(y2s) != int(y1s) + 1:
+            return None
+        return {
+            "season_short": f"{y1s[-2:]}/{y2s[-2:]}",
+            "year1": y1s,
+            "year2": y2s,
+        }
+    match = re.match(r"^(\d{2})\s*/\s*(\d{2})$", text)
+    if not match:
+        return None
+    y1s, y2s = match.group(1), match.group(2)
+    if int(y2s) != int(y1s) + 1:
+        return None
+    y1_full = 2000 + int(y1s)
+    y2_full = 2000 + int(y2s)
+    return {
+        "season_short": f"{y1s}/{y2s}",
+        "year1": str(y1_full),
+        "year2": str(y2_full),
+    }
+
+
+def _season_from_content_is_uncertain(season_text):
+    """Returns True when season from spreadsheet metadata should be supplemented by path fallback."""
+    if season_text is None:
+        return True
+    s = normalize_optional_text(season_text)
+    if not s:
+        return True
+    lowered = s.lower()
+    if "?" in lowered:
+        return True
+    if "unknown" in lowered:
+        return True
+    return False
+
+
 def combine_season_and_date(season_info, date_info):
     """Combine season and date information to create full date."""
     try:
@@ -105,20 +446,35 @@ def combine_season_and_date(season_info, date_info):
         return "could not extract date"  # Default fallback
 
 
+def detect_team_anchor_start_col(raw_df, default_start_col=25):
+    """Detect team block anchor column by locating 'Team-Nr.' in sheet."""
+    anchor_cols = []
+    for _, row in raw_df.iterrows():
+        for col_idx, value in row.items():
+            if pd.notna(value) and "Team-Nr." in str(value):
+                anchor_cols.append(col_idx)
+    if anchor_cols:
+        detected = int(min(anchor_cols))
+        print(f"Detected team anchor column from 'Team-Nr.': {detected}")
+        return detected
+    print(f"Could not detect 'Team-Nr.' anchor column, using fallback: {default_start_col}")
+    return default_start_col
+
+
 def extract_excel_data(excel_file='2025_BYL_M-1.xlsx', team_sheet='Erfassung1', season_sheet='Schiedsrichterinfos'):
     """Extract data from Excel file and map to CSV format."""
     
     print(f"Reading Excel file - {team_sheet} sheet...")
     try:
         # Read the specific sheet without header
-        df = pd.read_excel(excel_file, sheet_name=team_sheet, header=None)
+        df = read_excel_safely(excel_file, sheet_name=team_sheet, header=None)
         print(f"Excel file shape: {df.shape}")
         
-        # Slice from column Z onwards (index 25)
-        start_col_idx = 25
+        # Slice from detected team anchor column onwards.
+        start_col_idx = detect_team_anchor_start_col(df, default_start_col=25)
         end_col_idx = min(start_col_idx + 24, len(df.columns))
         df = df.iloc[:, start_col_idx:end_col_idx]
-        print(f"After slicing - shape: {df.shape}")
+        print(f"After slicing from col {start_col_idx} - shape: {df.shape}")
         
     except Exception as e:
         print(f"Error reading Excel file: {e}")
@@ -139,12 +495,19 @@ def extract_excel_data(excel_file='2025_BYL_M-1.xlsx', team_sheet='Erfassung1', 
     return df, season_info, full_date
 
 
-def parse_teams(excel_df, season_info, full_date):
+def parse_teams(
+    excel_df,
+    season_info,
+    full_date,
+    league_override=None,
+    week_override=None,
+    max_games_per_week=None,
+):
     """Parse all teams in the Excel file."""
     
     csv_data = []
     season = season_info['season_short']
-    league = "BayL"
+    league = league_override if league_override else "BayL"
     players_per_team = 4
     date = full_date
     
@@ -167,12 +530,22 @@ def parse_teams(excel_df, season_info, full_date):
         
         # Extract team information
         team_info = extract_team_info(team_data)
+        if week_override is not None:
+            team_info["week"] = str(week_override)
         print(f"Team: {team_info['team_name']}")
         print(f"Location: {team_info['location']}")
         print(f"Week: {team_info['week']}")
         
         # Extract player data for this team
-        team_players = extract_team_players(team_data, team_info, season, league, players_per_team, date)
+        team_players = extract_team_players(
+            team_data,
+            team_info,
+            season,
+            league,
+            players_per_team,
+            date,
+            max_games_per_week=max_games_per_week,
+        )
         
         # Add to CSV data
         csv_data.extend(team_players)
@@ -241,7 +614,45 @@ def extract_team_info(team_data):
         
         return team_info
 
-def extract_team_players(team_data, team_info, season, league, players_per_team, date):
+def detect_game_count_from_anchor(team_data):
+    """
+    Detect game count from anchor layout:
+    - Team anchor row is row 0 in team_data.
+    - Game labels are expected at row +4 and col + 2*n (starting at +2).
+    - Stop when value contains 'Gesamt' or is empty/non-game.
+    """
+    if team_data.shape[0] <= 4:
+        return None
+    header_row = team_data.iloc[4]
+    count = 0
+    game_number = 1
+    while True:
+        col_idx = 2 * game_number
+        if col_idx >= team_data.shape[1]:
+            break
+        cell_value = header_row.iloc[col_idx]
+        if pd.isna(cell_value):
+            break
+        value = str(cell_value).strip().lower()
+        if "gesamt" in value:
+            break
+        if f"spiel {game_number}" in value:
+            count += 1
+            game_number += 1
+            continue
+        break
+    return count if count > 0 else None
+
+
+def extract_team_players(
+    team_data,
+    team_info,
+    season,
+    league,
+    players_per_team,
+    date,
+    max_games_per_week=None,
+):
     """Extract all player data for a team."""
     
     players = []
@@ -273,11 +684,28 @@ def extract_team_players(team_data, team_info, season, league, players_per_team,
             elif "pkt" in value_str and "gesamt" not in value_str:
                 points_cols.append(col_idx)
     
-    # Limit to 9 rounds
+    # Limit rounds conservatively.
     if len(score_cols) > 9:
         score_cols = score_cols[:9]
     if len(points_cols) > 9:
         points_cols = points_cols[:9]
+
+    anchor_game_count = detect_game_count_from_anchor(team_data)
+    candidate_limits = [len(score_cols)]
+    if max_games_per_week is not None:
+        try:
+            mgpw = int(max_games_per_week)
+            if mgpw > 0:
+                candidate_limits.append(mgpw)
+        except (TypeError, ValueError):
+            pass
+    if anchor_game_count is not None:
+        candidate_limits.append(anchor_game_count)
+    effective_round_limit = min(candidate_limits) if candidate_limits else len(score_cols)
+    if effective_round_limit < len(score_cols):
+        score_cols = score_cols[:effective_round_limit]
+    if effective_round_limit < len(points_cols):
+        points_cols = points_cols[:effective_round_limit]
     
     # Find opponent columns (same as score columns)
     opponent_row = team_data.iloc[22]
@@ -293,9 +721,12 @@ def extract_team_players(team_data, team_info, season, league, players_per_team,
             round_idx = score_cols.index(col_idx)
             try:
                 team_total_scores[round_idx] = int(value)
-                points_col = points_cols[round_idx]
-                if pd.notna(team_total_row[points_col]):
-                    team_total_points[round_idx] = float(team_total_row[points_col])
+                if round_idx < len(points_cols):
+                    points_col = points_cols[round_idx]
+                    if pd.notna(team_total_row[points_col]):
+                        team_total_points[round_idx] = float(team_total_row[points_col])
+                    else:
+                        team_total_points[round_idx] = 0.0
                 else:
                     team_total_points[round_idx] = 0.0
             except (ValueError, TypeError):
@@ -322,12 +753,12 @@ def extract_team_players(team_data, team_info, season, league, players_per_team,
         pos_rows = team_data.iloc[start_row:end_row+1]
         
         for player_row_idx, row in pos_rows.iterrows():
-            if name_col and pd.notna(row[name_col]):
+            if name_col is not None and pd.notna(row[name_col]):
                 player_name = str(row[name_col]).strip()
                 
                 # Get player ID
                 player_id = 0
-                if id_col and pd.notna(row[id_col]):
+                if id_col is not None and pd.notna(row[id_col]):
                     try:
                         player_id = int(row[id_col])
                     except (ValueError, TypeError):
@@ -418,63 +849,881 @@ def extract_team_players(team_data, team_info, season, league, players_per_team,
     return players
 
 
+def parse_args():
+    """Parse CLI args for analyze/process workflows."""
+    parser = argparse.ArgumentParser(
+        description="Analyze or process historic league Excel files."
+    )
+    parser.add_argument(
+        "--mode",
+        choices=["analyze", "process", "convert_legacy_xls"],
+        required=True,
+        help="Run in analyze or process mode.",
+    )
+    parser.add_argument(
+        "--file",
+        dest="excel_file",
+        help="Single Excel file to analyze/process.",
+    )
+    parser.add_argument(
+        "--folder",
+        help="Folder to scan for Excel files.",
+    )
+    parser.add_argument(
+        "-r",
+        "--recursive",
+        action="store_true",
+        help="Recursively search for Excel files in --folder.",
+    )
+    parser.add_argument(
+        "--team-sheet-prefix",
+        default="Erfassung",
+        help="Team sheet prefix used in process mode (default: Erfassung).",
+    )
+    parser.add_argument(
+        "--season-sheet",
+        default="Schiedsrichterinfos",
+        help="Season sheet name (default: Schiedsrichterinfos).",
+    )
+    parser.add_argument(
+        "--output-file",
+        default="database/data/bowling_ergebnisse_real_2025_new.csv",
+        help="Output CSV path for process mode.",
+    )
+    parser.add_argument(
+        "--weeks",
+        help="Comma-separated week numbers for process mode (e.g. 1,2,3).",
+    )
+    parser.add_argument(
+        "--analysis-output",
+        help="Optional CSV path for analyze mode results.",
+    )
+    parser.add_argument(
+        "--skip_xls",
+        action="store_true",
+        help="Skip legacy .xls files during analyze/process.",
+    )
+    parser.add_argument(
+        "--old-format-sheet-threshold",
+        type=int,
+        default=15,
+        help="If sheet count is below this and Spielorte is missing, mark as old 1-week format.",
+    )
+    return parser.parse_args()
+
+
+def validate_args(args):
+    """Validate mutually dependent CLI args."""
+    if not args.excel_file and not args.folder:
+        raise ValueError("Provide either --file or --folder.")
+    if args.excel_file and args.folder:
+        raise ValueError("Use either --file or --folder, not both.")
+    if args.recursive and not args.folder:
+        raise ValueError("--recursive requires --folder.")
+
+    if args.excel_file and not Path(args.excel_file).is_file():
+        raise ValueError(f"File not found: {args.excel_file}")
+    if args.folder and not Path(args.folder).is_dir():
+        raise ValueError(f"Folder not found: {args.folder}")
+
+
+def parse_weeks(weeks_arg):
+    """Parse week list from CLI argument."""
+    if not weeks_arg:
+        return [1]
+    weeks = []
+    for token in weeks_arg.split(","):
+        token = token.strip()
+        if not token:
+            continue
+        try:
+            weeks.append(int(token))
+        except ValueError as exc:
+            raise ValueError(f"Invalid week value '{token}' in --weeks.") from exc
+    if not weeks:
+        raise ValueError("No valid week values supplied in --weeks.")
+    return weeks
+
+
+def discover_excel_files(args):
+    """Return deterministic list of .xls/.xlsx files and skipped-by-keyword files."""
+    if args.excel_file:
+        file_path = Path(args.excel_file)
+        excluded_keywords = ["fehlerhaft", "logdatei"]
+        if any(keyword in str(file_path).lower() for keyword in excluded_keywords):
+            return [], [file_path]
+        return [file_path], []
+
+    folder = Path(args.folder)
+    patterns = ["*.xlsx", "*.xls"]
+    files = []
+    for pattern in patterns:
+        if args.recursive:
+            files.extend(folder.rglob(pattern))
+        else:
+            files.extend(folder.glob(pattern))
+    files = [path for path in files if path.is_file()]
+    excluded_keywords = ["fehlerhaft", "logdatei"]
+    skipped_files = [
+        path
+        for path in files
+        if any(keyword in str(path).lower() for keyword in excluded_keywords)
+    ]
+    files = [
+        path
+        for path in files
+        if not any(keyword in str(path).lower() for keyword in excluded_keywords)
+    ]
+    files = sorted(set(files))
+    skipped_files = sorted(set(skipped_files))
+    return files, skipped_files
+
+
+def filter_xls_for_mode(excel_files, mode, skip_xls):
+    """Optionally filter .xls files for analyze/process modes."""
+    if not skip_xls or mode == "convert_legacy_xls":
+        return excel_files
+    return [file_path for file_path in excel_files if file_path.suffix.lower() != ".xls"]
+
+
+def print_progress_bar(current, total, prefix, bar_width=30):
+    """Print a simple in-place console progress bar."""
+    if total <= 0:
+        return
+    ratio = min(max(current / total, 0), 1)
+    filled = int(bar_width * ratio)
+    bar = "#" * filled + "-" * (bar_width - filled)
+    percent = ratio * 100
+    print(f"\r{prefix} [{bar}] {current}/{total} ({percent:5.1f}%)", end="", flush=True)
+    if current >= total:
+        print()
+
+
+def parse_metadata_int(value):
+    """Convert metadata cell to integer if possible."""
+    if pd.isna(value):
+        return None
+    if isinstance(value, (int, np.integer)):
+        return int(value)
+    if isinstance(value, float):
+        if np.isnan(value):
+            return None
+        return int(value)
+    text = str(value).strip()
+    if not text:
+        return None
+    if text.isdigit():
+        return int(text)
+    try:
+        return int(float(text))
+    except ValueError:
+        return None
+
+
+def normalize_optional_text(value):
+    """Normalize metadata text value."""
+    if pd.isna(value):
+        return None
+    text = str(value).strip()
+    return text if text else None
+
+
+def clean_league_name(value):
+    """Normalize league label and strip season fragments like 25/26 or 2025/2026."""
+    text = normalize_optional_text(value)
+    if not text:
+        return None
+    cleaned = re.sub(r"\b\d{2}/\d{2}(?:\+1)?\b", "", text)
+    cleaned = re.sub(r"\b\d{4}/\d{4}\b", "", cleaned)
+    cleaned = re.sub(r"\s{2,}", " ", cleaned)
+    cleaned = cleaned.strip(" -_/;:,")
+    return cleaned or None
+
+
+def get_cell_value(df, row_idx, col_idx):
+    """Safely return dataframe cell value or NaN."""
+    if df.shape[0] > row_idx and df.shape[1] > col_idx:
+        return df.iloc[row_idx, col_idx]
+    return np.nan
+
+
+def resolve_with_fallbacks(resolvers):
+    """Return first non-empty resolver value with source tag."""
+    for source, resolver in resolvers:
+        try:
+            value = resolver()
+        except Exception:
+            value = None
+        if value is not None:
+            return value, source
+    return None, None
+
+
+def detect_league_from_filename(excel_file):
+    """Detect league code from input filename."""
+    stem = Path(excel_file).stem
+    match = re.match(r"([A-Za-z]{2,})", stem)
+    if match:
+        return match.group(1).upper()
+    return "UNKNOWN"
+
+
+def extract_league_from_schluessel(excel_file):
+    """Read league name from default location: Schlüssel!C1."""
+    schluessel_df = read_excel_safely(excel_file, sheet_name="Schlüssel", header=None)
+    raw = get_cell_value(schluessel_df, 0, 2)
+    mapped = normalize_league_display_to_canonical(raw)
+    return mapped if mapped else clean_league_name(raw)
+
+
+def is_valid_data_value(value):
+    """Return whether a worksheet cell counts as actual data."""
+    if pd.isna(value):
+        return False
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"", "n/a", "na", "nan", "-", "--", "none"}:
+            return False
+    return True
+
+
+def week_sheet_has_valid_data(excel_file, week_number):
+    """Check if Schnitt{week_number} has at least 10 data rows in columns A..G."""
+    possible_sheet_names = [f"Schnitt#{week_number}", f"Schnitt{week_number}"]
+    week_df = None
+    for sheet_name in possible_sheet_names:
+        try:
+            week_df = read_excel_safely(excel_file, sheet_name=sheet_name, header=None)
+            break
+        except Exception:
+            continue
+    if week_df is None:
+        return False
+    cols_a_to_g = week_df.iloc[:, :7] if week_df.shape[1] >= 7 else week_df
+    valid_rows = cols_a_to_g.apply(
+        lambda row: any(is_valid_data_value(cell) for cell in row),
+        axis=1,
+    ).sum()
+    return int(valid_rows) >= 10
+
+
+def parse_week_from_text(value):
+    """Extract week number from free text."""
+    text = normalize_optional_text(value)
+    if not text:
+        return None
+    match = re.search(r"\d+", text)
+    if not match:
+        return None
+    try:
+        week = int(match.group(0))
+        return week if week > 0 else None
+    except ValueError:
+        return None
+
+
+def parse_old_format_date(value):
+    """Parse old format date strings like '28./29.9.19' or '8./9.2.20'."""
+    text = normalize_optional_text(value)
+    if not text:
+        return None
+    # Find all date-like tokens and use the last one (usually main match day).
+    matches = re.findall(r"(\d{1,2})\.(\d{1,2})\.(\d{2,4})", text)
+    if not matches:
+        return None
+    day_str, month_str, year_str = matches[-1]
+    day = int(day_str)
+    month = int(month_str)
+    if len(year_str) == 2:
+        year_full = 2000 + int(year_str)
+    else:
+        year_full = int(year_str)
+    return {
+        "day": day,
+        "month": month,
+        "year_full": year_full,
+        "raw": text,
+    }
+
+
+def derive_season_from_old_date(date_info):
+    """Derive sports season YY/YY from parsed old-format date."""
+    if not date_info:
+        return None
+    month = date_info["month"]
+    year_full = date_info["year_full"]
+    if month <= 9:
+        start_year = year_full - 1
+        end_year = year_full
+    else:
+        start_year = year_full
+        end_year = year_full + 1
+    return f"{str(start_year)[-2:]}/{str(end_year)[-2:]}"
+
+
+def old_format_results_are_valid(excel_file):
+    """Validate old-format result presence in Tagesschnittliste."""
+    try:
+        df = read_excel_safely(excel_file, sheet_name="Tagesschnittliste", header=None)
+    except Exception:
+        return False
+    valid_rows = df.apply(
+        lambda row: any(is_valid_data_value(cell) for cell in row),
+        axis=1,
+    ).sum()
+    return int(valid_rows) >= 10
+
+
+def analyze_excel_file(excel_file, old_format_sheet_threshold=15):
+    """Analyze one Excel file for metadata and processing eligibility."""
+    result = {
+        "file": str(excel_file),
+        "data_format": "data_format_post_2022",
+        "league": None,
+        "season": None,
+        "location": None,
+        "number_of_teams": None,
+        "number_of_weeks": None,
+        "games_per_week": None,
+        "players_per_team": 4,
+        "sheet_count": None,
+        "available_weeks": "",
+        "league_source": "",
+        "season_source": "",
+        "teams_source": "",
+        "weeks_source": "",
+        "games_per_week_source": "",
+        "degradation_trace": "",
+        "debug_league_raw": "",
+        "debug_week_raw": "",
+        "debug_date_raw": "",
+        "debug_location_raw": "",
+        "debug_teams_raw": "",
+        "eligible_for_processing": False,
+        "issues": "",
+    }
+    issues = []
+
+    sheet_names = []
+    try:
+        sheet_names = get_sheet_names_safely(excel_file)
+        result["sheet_count"] = len(sheet_names)
+    except Exception as exc:
+        issues.append(str(exc))
+
+    if (
+        result["sheet_count"] is not None
+        and result["sheet_count"] < old_format_sheet_threshold
+        and "Spielorte" not in sheet_names
+    ):
+        result["data_format"] = "data_format_pre_2022"
+        old_issues = []
+        ligabericht_df = None
+        tabelle_df = None
+
+        try:
+            ligabericht_df = read_excel_safely(excel_file, sheet_name="Ligabericht", header=None)
+        except Exception:
+            old_issues.append("Missing or unreadable 'Ligabericht' sheet")
+
+        try:
+            tabelle_df = read_excel_safely(excel_file, sheet_name="Tabelle", header=None)
+        except Exception:
+            old_issues.append("Missing or unreadable 'Tabelle' sheet")
+
+        if ligabericht_df is not None:
+            league_raw = get_cell_value(ligabericht_df, 7, 15)  # P8:T8
+            location_raw = get_cell_value(ligabericht_df, 7, 4)  # E8:J8
+            week_raw = get_cell_value(ligabericht_df, 5, 4)  # E6:F6
+            date_raw = get_cell_value(ligabericht_df, 5, 16)  # Q6:T6
+
+            result["debug_league_raw"] = "" if pd.isna(league_raw) else str(league_raw)
+            result["debug_location_raw"] = "" if pd.isna(location_raw) else str(location_raw)
+            result["debug_week_raw"] = "" if pd.isna(week_raw) else str(week_raw)
+            result["debug_date_raw"] = "" if pd.isna(date_raw) else str(date_raw)
+
+            result["league"] = normalize_league_display_to_canonical(league_raw) or normalize_optional_text(league_raw)
+            result["location"] = normalize_optional_text(location_raw)
+            week_value = parse_week_from_text(week_raw)
+            if week_value is not None:
+                result["available_weeks"] = str(week_value)
+            date_info = parse_old_format_date(date_raw)
+            result["season"] = derive_season_from_old_date(date_info)
+            if not result["season"] or _season_from_content_is_uncertain(result["season"]):
+                path_si = infer_season_from_path(excel_file)
+                if path_si:
+                    result["season"] = path_si["season_short"]
+            result["games_per_week"] = None
+            result["degradation_trace"] = (
+                f"old_format league_raw='{result['debug_league_raw'] or 'missing'}', "
+                f"week_raw='{result['debug_week_raw'] or 'missing'}', "
+                f"date_raw='{result['debug_date_raw'] or 'missing'}', "
+                f"location_raw='{result['debug_location_raw'] or 'missing'}'"
+            )
+
+            if not result["league"]:
+                old_issues.append("Missing league in Ligabericht P8:T8")
+            if week_value is None:
+                old_issues.append("Missing week in Ligabericht E6:F6")
+            if date_info is None:
+                old_issues.append("Missing/invalid date in Ligabericht Q6:T6")
+            if not result["season"]:
+                old_issues.append("Could not derive season from Ligabericht date or folder path")
+            if not result["location"]:
+                old_issues.append("Missing location in Ligabericht E8:J8")
+
+        if tabelle_df is not None:
+            teams_raw = get_cell_value(tabelle_df, 2, 13)  # N3:Q3
+            result["debug_teams_raw"] = "" if pd.isna(teams_raw) else str(teams_raw)
+            result["number_of_teams"] = parse_metadata_int(teams_raw)
+            if result["number_of_teams"] is None:
+                old_issues.append("Missing number of teams in Tabelle N3:Q3")
+
+        if not old_format_results_are_valid(excel_file):
+            old_issues.append("Tagesschnittliste has fewer than 10 valid data rows")
+
+        result["number_of_weeks"] = None  # Computed later across files via max(week)
+        if not old_issues:
+            result["issues"] = "History file format: 1 week per file"
+            result["eligible_for_processing"] = True
+        else:
+            result["issues"] = "History file format: 1 week per file | " + " | ".join(old_issues)
+            result["eligible_for_processing"] = False
+        return result
+
+    try:
+        spielorte_df = read_excel_safely(excel_file, sheet_name="Spielorte", header=None)
+    except Exception as exc:
+        if issues:
+            issues.append(f"Missing or unreadable 'Spielorte' sheet: {exc}")
+            result["issues"] = " | ".join(issues)
+        else:
+            result["issues"] = f"Missing or unreadable 'Spielorte' sheet: {exc}"
+        return result
+
+    league = None
+    league_source = "schluessel_c1"
+    try:
+        league = extract_league_from_schluessel(excel_file)
+    except Exception:
+        league = None
+        league_source = ""
+    season, season_source = resolve_with_fallbacks(
+        [("spielorte_c18", lambda: normalize_optional_text(get_cell_value(spielorte_df, 17, 2)))]
+    )
+    if season:
+        season = normalize_season_cell_to_short(season)
+    teams, teams_source = resolve_with_fallbacks(
+        [("spielorte_a21", lambda: parse_metadata_int(get_cell_value(spielorte_df, 20, 0)))]
+    )
+    weeks, weeks_source = resolve_with_fallbacks(
+        [("spielorte_a22", lambda: parse_metadata_int(get_cell_value(spielorte_df, 21, 0)))]
+    )
+    games_per_week, games_per_week_source = resolve_with_fallbacks(
+        [("spielorte_a23", lambda: parse_metadata_int(get_cell_value(spielorte_df, 22, 0)))]
+    )
+
+    if _season_from_content_is_uncertain(season):
+        path_si = infer_season_from_path(excel_file)
+        if path_si:
+            season = path_si["season_short"]
+            season_source = "path_yyyy_yy"
+
+    result["league"] = league
+    result["season"] = season
+    result["number_of_teams"] = teams
+    result["number_of_weeks"] = weeks
+    result["games_per_week"] = games_per_week
+    result["league_source"] = league_source or ""
+    result["season_source"] = season_source or ""
+    result["teams_source"] = teams_source or ""
+    result["weeks_source"] = weeks_source or ""
+    result["games_per_week_source"] = games_per_week_source or ""
+    result["degradation_trace"] = (
+        f"league={league_source or 'missing'}; "
+        f"season={season_source or 'missing'}; "
+        f"teams={teams_source or 'missing'}; "
+        f"weeks={weeks_source or 'missing'}; "
+        f"games_per_week={games_per_week_source or 'missing'}"
+    )
+
+    if not league:
+        issues.append("Missing league name in Schlüssel C1")
+    if not season:
+        issues.append("Missing season in Spielorte C18 and folder path")
+    if teams is None:
+        issues.append("Missing number of teams in Spielorte A21")
+    if weeks is None:
+        issues.append("Missing number of weeks in Spielorte A22")
+    if games_per_week is None:
+        issues.append("Missing games per week in Spielorte A23")
+
+    available_weeks = []
+    if weeks is not None and weeks > 0:
+        for week in range(1, weeks + 1):
+            if week_sheet_has_valid_data(excel_file, week):
+                available_weeks.append(week)
+    elif weeks is not None:
+        issues.append("Number of weeks must be > 0")
+
+    if not available_weeks:
+        issues.append("No available week sheets with valid data")
+
+    result["available_weeks"] = ",".join(str(week) for week in available_weeks)
+    result["eligible_for_processing"] = len(issues) == 0
+    result["issues"] = " | ".join(issues)
+    return result
+
+
+def run_analyze_mode(
+    excel_files,
+    analysis_output=None,
+    old_format_sheet_threshold=15,
+    skipped_files=None,
+):
+    """Run analyze mode for all discovered files."""
+    skipped_files = skipped_files or []
+    analysis_rows = []
+    total_files = len(excel_files)
+    for index, file_path in enumerate(excel_files, start=1):
+        analysis_rows.append(
+            analyze_excel_file(file_path, old_format_sheet_threshold=old_format_sheet_threshold)
+        )
+        print_progress_bar(index, total_files, "Analyzing files")
+    analysis_df = pd.DataFrame(analysis_rows)
+    if analysis_df.empty:
+        analysis_df = pd.DataFrame(
+            columns=[
+                "file",
+                "data_format",
+                "league",
+                "season",
+                "location",
+                "sheet_count",
+                "number_of_teams",
+                "number_of_weeks",
+                "games_per_week",
+                "available_weeks",
+                "eligible_for_processing",
+                "issues",
+                "league_source",
+                "season_source",
+                "teams_source",
+                "weeks_source",
+                "games_per_week_source",
+                "debug_league_raw",
+                "debug_week_raw",
+                "debug_date_raw",
+                "debug_location_raw",
+                "debug_teams_raw",
+            ]
+        )
+    display_df = analysis_df.copy()
+    if "file" in display_df.columns:
+        display_df["file"] = display_df["file"].apply(lambda value: str(value)[-20:])
+
+    print("\nAnalyze Results:")
+    display_columns = [
+        "file",
+        "data_format",
+        "league",
+        "season",
+        "location",
+        "sheet_count",
+        "number_of_teams",
+        "number_of_weeks",
+        "games_per_week",
+        "available_weeks",
+        "eligible_for_processing",
+        "issues",
+    ]
+    print(display_df[display_columns].to_string(index=False))
+
+    if analysis_output:
+        output_path = Path(analysis_output)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        analysis_df.to_csv(output_path, sep=";", index=False)
+        print(f"\nAnalyze CSV written to: {output_path}")
+
+    eligibility_mask = analysis_df["eligible_for_processing"].fillna(False).astype(bool)
+    eligible_files = analysis_df.loc[eligibility_mask, "file"].astype(str).tolist()
+    not_eligible_files = analysis_df.loc[~eligibility_mask, "file"].astype(str).tolist()
+    eligible_count = len(eligible_files)
+    analyzed_count = len(analysis_df)
+    not_eligible_count = len(not_eligible_files)
+    skipped_count = len(skipped_files)
+    total_discovered_count = analyzed_count + skipped_count
+
+    issue_to_files = {}
+    for _, row in analysis_df.iterrows():
+        issue_text = str(row["issues"]).strip() if pd.notna(row["issues"]) else ""
+        if not issue_text:
+            issue_text = "No issues"
+        issue_to_files.setdefault(issue_text, []).append(str(row["file"]))
+    if skipped_files:
+        issue_to_files["Skipped (path contains 'Fehlerhaft' or 'Logdatei')"] = [
+            str(path) for path in skipped_files
+        ]
+
+    print("\nIssues Grouped by Files:")
+    for issue_text, files in sorted(issue_to_files.items(), key=lambda item: (item[0] == "No issues", item[0])):
+        print(f'\nissue: "{issue_text}"')
+        for file_path in files:
+            print(f"  - {file_path}")
+
+    print("\nFiles by Category:")
+    print("\ncategory: eligible")
+    for file_path in eligible_files:
+        print(f"  - {file_path}")
+    print("\ncategory: not eligible")
+    for file_path in not_eligible_files:
+        print(f"  - {file_path}")
+    print("\ncategory: skipped")
+    for file_path in [str(path) for path in skipped_files]:
+        print(f"  - {file_path}")
+
+    print("\nFinal Metrics:")
+    print(f"  total discovered files: {total_discovered_count}")
+    print(f"  analyzed: {analyzed_count}")
+    print(f"  skipped: {skipped_count}")
+    print(f"  eligible: {eligible_count}")
+    print(f"  not eligible: {not_eligible_count}")
+    if analyzed_count > 0:
+        eligible_pct = (eligible_count / analyzed_count) * 100
+        not_eligible_pct = (not_eligible_count / analyzed_count) * 100
+        print(f"  eligible %: {eligible_pct:.1f}")
+        print(f"  not eligible %: {not_eligible_pct:.1f}")
+
+
+def run_convert_legacy_xls_mode(excel_files):
+    """Convert legacy .xls files to .xlsx in place via LibreOffice headless."""
+    soffice_binary = shutil.which("soffice")
+    if not soffice_binary:
+        fallback = Path("C:/Program Files/LibreOffice/program/soffice.exe")
+        if fallback.exists():
+            soffice_binary = str(fallback)
+
+    if not soffice_binary:
+        raise RuntimeError(
+            "LibreOffice 'soffice' binary not found. Install LibreOffice or add soffice to PATH."
+        )
+
+    xls_files = [file_path for file_path in excel_files if file_path.suffix.lower() == ".xls"]
+    if not xls_files:
+        print("No .xls files found to convert.")
+        return
+
+    converted = 0
+    failed = 0
+    print(f"Converting {len(xls_files)} legacy .xls file(s)...")
+    for source_file in xls_files:
+        target_file = source_file.with_suffix(".xlsx")
+        command = [
+            soffice_binary,
+            "--headless",
+            "--convert-to",
+            "xlsx",
+            "--outdir",
+            str(source_file.parent),
+            str(source_file),
+        ]
+        try:
+            result = subprocess.run(
+                command,
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            if result.returncode == 0 and target_file.exists():
+                converted += 1
+                print(f"  converted: {source_file} -> {target_file.name}")
+            else:
+                failed += 1
+                stderr = result.stderr.strip() or result.stdout.strip() or "unknown error"
+                print(f"  failed: {source_file} ({stderr})")
+        except Exception as exc:
+            failed += 1
+            print(f"  failed: {source_file} ({exc})")
+
+    print("\nConversion Summary:")
+    print(f"  total xls files: {len(xls_files)}")
+    print(f"  converted: {converted}")
+    print(f"  failed: {failed}")
+
+
+def parse_available_weeks(available_weeks_value):
+    """Parse comma-separated week list from analysis result."""
+    if not available_weeks_value:
+        return []
+    weeks = []
+    for token in str(available_weeks_value).split(","):
+        token = token.strip()
+        if not token:
+            continue
+        try:
+            weeks.append(int(token))
+        except ValueError:
+            continue
+    return sorted(set(weeks))
+
+
+def sanitize_filename_component(value):
+    """Make a string safe for filename usage."""
+    sanitized = re.sub(r'[<>:"/\\|?*]+', "_", str(value).strip())
+    sanitized = re.sub(r"\s+", " ", sanitized).strip()
+    return sanitized or "unknown"
+
+
+def run_process_mode_with_analysis(excel_files, args):
+    """Analyze first, then process only eligible post-2022 files."""
+    analysis_rows = []
+    total_analysis_files = len(excel_files)
+    for index, file_path in enumerate(excel_files, start=1):
+        analysis_rows.append(
+            analyze_excel_file(file_path, old_format_sheet_threshold=args.old_format_sheet_threshold)
+        )
+        print_progress_bar(index, total_analysis_files, "Analyzing files")
+    analysis_df = pd.DataFrame(analysis_rows)
+    if analysis_df.empty:
+        print("No files available for processing.")
+        return
+
+    eligible_df = analysis_df[
+        (analysis_df["eligible_for_processing"] == True)
+        & (analysis_df["data_format"] == "data_format_post_2022")
+    ].copy()
+
+    print(f"Eligible post_2022 files for processing: {len(eligible_df)}/{len(analysis_df)}")
+    if eligible_df.empty:
+        print("No eligible post_2022 files to process.")
+        return
+
+    output_df = pd.DataFrame()
+    total_files = len(eligible_df)
+    for file_index, row in enumerate(eligible_df.itertuples(index=False), start=1):
+        input_file = Path(row.file)
+        available_weeks = parse_available_weeks(row.available_weeks)
+        if not available_weeks:
+            print_progress_bar(file_index, total_files, "Processing files")
+            continue
+
+        for week in available_weeks:
+            global dict_of_match_numbers
+            dict_of_match_numbers = {}
+            with redirect_stdout(io.StringIO()):
+                result = extract_excel_data(
+                    str(input_file),
+                    args.team_sheet_prefix + str(week),
+                    args.season_sheet,
+                )
+            if result is None:
+                continue
+            df, season_info, full_date = result
+            placeholder_season = season_info.get("season_short") in (None, "??/??") or season_info.get(
+                "year1"
+            ) in (None, "????")
+
+            merged_season = None
+            if getattr(row, "season", None) and not _season_from_content_is_uncertain(row.season):
+                merged_season = season_label_to_season_info(row.season)
+            if merged_season is None and placeholder_season:
+                merged_season = infer_season_from_path(input_file)
+            if merged_season is not None:
+                season_info = dict(merged_season)
+                with redirect_stdout(io.StringIO()):
+                    recomputed_date_info = extract_date_info(df)
+                full_date = combine_season_and_date(season_info, recomputed_date_info)
+
+            with redirect_stdout(io.StringIO()):
+                csv_data = parse_teams(
+                    df,
+                    season_info,
+                    full_date,
+                    league_override=row.league,
+                    week_override=week,
+                max_games_per_week=row.games_per_week,
+                )
+            if csv_data:
+                temp_df = pd.DataFrame(csv_data)
+                output_df = pd.concat([output_df, temp_df], ignore_index=True)
+
+        print_progress_bar(file_index, total_files, "Processing files")
+
+    if output_df.empty:
+        print("No data extracted from eligible post_2022 files.")
+        return
+
+    output_df = output_df.sort_values(
+        by=["Season", "League", "Week", "Round Number", "Match Number", "Team", "Position"]
+    )
+
+    output_dir = Path("C:/tmp/csvs")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    created_files = []
+    for (season_value, league_value), group_df in output_df.groupby(["Season", "League"], dropna=False):
+        season_part = sanitize_filename_component(season_value if pd.notna(season_value) else "unknown_season")
+        league_part = sanitize_filename_component(league_value if pd.notna(league_value) else "unknown_league")
+        output_file = output_dir / f"{season_part} {league_part}.csv"
+        group_df.to_csv(output_file, sep=";", index=False)
+        created_files.append((output_file, len(group_df)))
+
+    # Continuous cross-season/cross-league output for backend source registration.
+    continuous_output_file = Path("database/data/historical_league_results.csv")
+    continuous_output_file.parent.mkdir(parents=True, exist_ok=True)
+    output_df.to_csv(continuous_output_file, sep=";", index=False)
+
+    print("\nCreated CSV files:")
+    for output_file, row_count in created_files:
+        print(f"  - {output_file} ({row_count} rows)")
+    print(f"  - {continuous_output_file} ({len(output_df)} rows, continuous)")
+
+    summary_df = (
+        output_df.groupby(["League", "Season"], dropna=False)["Week"]
+        .apply(lambda weeks: ",".join(str(w) for w in sorted({str(w) for w in weeks if pd.notna(w)})))
+        .reset_index(name="extracted_weeks")
+    )
+    print("\nExtraction Summary:")
+    for row in summary_df.itertuples(index=False):
+        print(
+            f"  league={row.League if pd.notna(row.League) else 'unknown'}, "
+            f"season={row.Season if pd.notna(row.Season) else 'unknown'}, "
+            f"extracted_weeks={row.extracted_weeks or 'none'}"
+        )
+
+
 if __name__ == "__main__":
     print("Starting Excel data extraction...")
-    
-    # Configuration - can be easily changed
-   
-    team_sheet = 'Erfassung'
-    season_sheet = 'Schiedsrichterinfos'
-    
-    setup = {'BYL_Maenner-5-6.xlsx': [1, 2, 3, 4, 5, 6],
-             '2025_BYL_M-1.xlsx': [1]}
-   
-   
-    output_df = pd.DataFrame()
-    for input_file in setup.keys():
-        for week in setup[input_file]:
-            dict_of_match_numbers = {} # reset the dict of match numbers for each week
-            result = extract_excel_data(input_file, team_sheet+str(week), season_sheet)
-    
-            if result is not None:
-                df, season_info, full_date = result
-                
-                # Parse teams with extracted season and date info
-                csv_data = parse_teams(df, season_info, full_date)
-                
-                if csv_data:
-                    temp_df = pd.DataFrame(csv_data)
-                    output_df = pd.concat([output_df, temp_df], ignore_index=True)
 
+    try:
+        args = parse_args()
+        validate_args(args)
+    except ValueError as error:
+        print(f"Argument error: {error}")
+        raise SystemExit(2) from error
 
-    # Save to CSV
-    if output_df.empty:
-        print("No data extracted")
-    else:
-        output_df = output_df.sort_values(by=['Season', 'League', 'Week', 'Round Number', 'Match Number', 'Team', 'Position'])
-        output_file = 'database/data/bowling_ergebnisse_real_2025_new.csv'
-        output_df.to_csv(output_file, sep=';', index=False)
-        print(f"Extracted {len(csv_data)} rows to {output_file}")
-        
-        # Show sample data
-        print(f"\nSample extracted data:")
-        print(output_df[['Season', 'Week', 'Date', 'League', 'Team', 'Player', 'Score', 'Points']].head(10))
-        
-        # Show summary
-        print(f"\nSummary:")
-        print(f"Teams found: {len(output_df['Team'].unique())}")
-        print(f"Players found: {len(output_df[output_df['Player'] != 'Team Total']['Player'].unique())}")
-        print(f"Total matches: {len(csv_data)}")
-        print(f"Score range: {output_df['Score'].min()} - {output_df['Score'].max()}")
-        
-        # Show rounds per position
-        print(f"\nRounds per position:")
-        print(output_df['Round Number'].value_counts().sort_index())
-    
-    print("Extraction complete!") 
-    # pretty print the dict_of_match_numbers
-    for round_idx, match_numbers in dict_of_match_numbers.items():
-        print(f"Round {round_idx}:")
-        for team_tuple, match_number in match_numbers.items():
-            print(f"  {team_tuple}: {match_number}")
+    excel_files, skipped_discovery_files = discover_excel_files(args)
+    excel_files = filter_xls_for_mode(excel_files, args.mode, args.skip_xls)
+    if not excel_files and not (args.mode == "analyze" and skipped_discovery_files):
+        print("No Excel files found for given input.")
+        raise SystemExit(1)
+
+    print(f"Mode: {args.mode}")
+    print(f"Excel files discovered: {len(excel_files)}")
+    for file_path in excel_files:
+        print(f"  - {file_path}")
+
+    if args.mode == "convert_legacy_xls":
+        run_convert_legacy_xls_mode(excel_files)
+        raise SystemExit(0)
+
+    if args.mode == "analyze":
+        run_analyze_mode(
+            excel_files,
+            args.analysis_output,
+            old_format_sheet_threshold=args.old_format_sheet_threshold,
+            skipped_files=skipped_discovery_files,
+        )
+        raise SystemExit(0)
+
+    run_process_mode_with_analysis(excel_files, args)
     
