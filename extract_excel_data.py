@@ -16,6 +16,7 @@ import warnings
 import shutil
 import subprocess
 import io
+from typing import Dict
 from contextlib import redirect_stdout
 
 
@@ -24,11 +25,20 @@ dict_of_match_numbers = {}
 _LEAGUE_MAPPING_PATH = Path(__file__).resolve().parent / "database" / "relational_csv" / "league_mapping.csv"
 _LEAGUE_MAPPING_CACHE = None
 _ANALYSIS_LOG_PATH = Path(__file__).resolve().parent / "database" / "data" / "extract_excel_analysis_log.json"
+_OVERRIDES_PATH = Path(__file__).resolve().parent / "database" / "config" / "extract_excel_overrides.csv"
+_TEAM_NAME_NORMALIZATION_PATH = Path(__file__).resolve().parent / "database" / "config" / "team_name_normalization.json"
+_TEAM_NUMBER_OVERRIDES_PATH = Path(__file__).resolve().parent / "database" / "config" / "team_number_overrides.csv"
+_TEAM_NAME_NORMALIZATION_CACHE = None
+_TEAM_NAME_PREFIX_NORMALIZATION_CACHE = None
+_TEAM_NAME_PREFIX_OPTIONS_CACHE = None
+_TEAM_NAME_SUFFIX_NORMALIZATION_CACHE = None
+_TEAM_NORMALIZATION_STATS = None
+_LEAGUE_GENDER_SCOPE_CACHE = None
 
 # Bump these when analysis/extraction logic changes in a way that should invalidate prior cache entries.
-ANALYZER_VERSION = "analyzer-v1.0.0"
-EXTRACTOR_VERSION = "extractor-v1.0.0"
-PROCESSOR_VERSION = "processor-v1.0.0"
+ANALYZER_VERSION = "analyzer-v1.1.0"
+EXTRACTOR_VERSION = "extractor-v1.1.0"
+PROCESSOR_VERSION = "processor-v1.1.0"
 
 
 def compute_file_sha256(path: Path, chunk_size: int = 1024 * 1024) -> str:
@@ -68,38 +78,172 @@ def save_analysis_log(payload, log_path: Path = _ANALYSIS_LOG_PATH):
     log_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
+def _parse_bool(value) -> bool:
+    text = str(value or "").strip().lower()
+    return text in {"1", "true", "yes", "y"}
+
+
+def load_extract_overrides(path: Path = _OVERRIDES_PATH) -> pd.DataFrame:
+    """Load optional extraction overrides manifest."""
+    if not path.is_file():
+        return pd.DataFrame()
+    try:
+        df = pd.read_csv(path, dtype=str).fillna("")
+        for required_col in ["match_type", "match_value"]:
+            if required_col not in df.columns:
+                raise ValueError(f"Missing required override column: {required_col}")
+        return df
+    except Exception as exc:
+        print(f"Warning: could not load overrides from {path}: {exc}")
+        return pd.DataFrame()
+
+
+def compute_overrides_manifest_fingerprint(overrides_df: pd.DataFrame) -> str:
+    """Compute deterministic fingerprint for the full overrides manifest."""
+    if overrides_df is None or overrides_df.empty:
+        return ""
+    normalized = overrides_df.fillna("").astype(str).copy()
+    normalized = normalized.reindex(sorted(normalized.columns), axis=1)
+    records = normalized.to_dict(orient="records")
+    records = sorted(records, key=lambda rec: json.dumps(rec, ensure_ascii=False, sort_keys=True))
+    payload = json.dumps(records, ensure_ascii=False, sort_keys=True)
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def find_matching_override(overrides_df: pd.DataFrame, file_path: Path, file_hash: str):
+    """
+    Return first matching override row dict and deterministic fingerprint.
+    Match precedence: file_hash -> exact_path -> path_regex.
+    """
+    if overrides_df is None or overrides_df.empty:
+        return None, ""
+
+    file_str = str(file_path.resolve())
+
+    def _iter_matches(match_type: str):
+        subset = overrides_df[overrides_df["match_type"].astype(str).str.strip().str.lower() == match_type]
+        for _, row in subset.iterrows():
+            match_value = str(row.get("match_value", "")).strip()
+            if not match_value:
+                continue
+            if match_type == "file_hash" and file_hash == match_value:
+                yield row
+            elif match_type == "exact_path" and file_str == str(Path(match_value).resolve()):
+                yield row
+            elif match_type == "path_regex":
+                try:
+                    if re.search(match_value, file_str):
+                        yield row
+                except re.error:
+                    continue
+
+    for match_type in ["file_hash", "exact_path", "path_regex"]:
+        for row in _iter_matches(match_type):
+            row_dict = {str(k): str(v) for k, v in row.to_dict().items()}
+            fingerprint = hashlib.sha256(
+                json.dumps(row_dict, ensure_ascii=False, sort_keys=True).encode("utf-8")
+            ).hexdigest()
+            return row_dict, fingerprint
+
+    return None, ""
+
+
+def apply_override_to_analysis_result(result: dict, override_row: dict):
+    """Mutate analysis result by override rule; attach audit metadata."""
+    if not override_row:
+        result["override_applied"] = False
+        result["override_reason"] = ""
+        return result
+
+    reason = (override_row.get("reason") or "").strip()
+    exclude_file = _parse_bool(override_row.get("exclude_file"))
+    force_season = (override_row.get("force_season") or "").strip()
+    force_league = (override_row.get("force_league") or "").strip()
+    force_available_weeks = (override_row.get("force_available_weeks") or "").strip()
+
+    if force_season:
+        result["season"] = force_season
+        result["season_source"] = "override_manifest"
+    if force_league:
+        result["league"] = force_league
+        result["league_source"] = "override_manifest"
+    if force_available_weeks:
+        result["available_weeks"] = force_available_weeks
+        result["weeks_source"] = "override_manifest"
+
+    if exclude_file:
+        result["eligible_for_processing"] = False
+        issue_text = str(result.get("issues") or "").strip()
+        exclude_msg = "Excluded by override manifest"
+        result["issues"] = f"{issue_text} | {exclude_msg}".strip(" |")
+
+    result["override_applied"] = True
+    result["override_reason"] = reason
+    result["override_match_type"] = (override_row.get("match_type") or "").strip()
+    result["override_match_value"] = (override_row.get("match_value") or "").strip()
+    return result
+
+
 def _analyze_with_cache(
     excel_file: Path,
     analysis_log,
     old_format_sheet_threshold=15,
     force_reanalyze=False,
+    overrides_df=None,
 ):
     """Analyze file with persistent cache short-circuiting."""
     file_path = Path(excel_file).resolve()
     file_key = str(file_path)
     file_hash = compute_file_sha256(file_path)
+    override_row, override_fingerprint = find_matching_override(overrides_df, file_path, file_hash)
     files_map = analysis_log.setdefault("files", {})
     cached = files_map.get(file_key, {})
     cached_result = cached.get("analysis_result")
-
-    can_reuse = (
-        isinstance(cached_result, dict)
-        and cached.get("file_hash") == file_hash
-        and cached.get("analyzer_version") == ANALYZER_VERSION
-        and cached.get("old_format_sheet_threshold") == old_format_sheet_threshold
+    cached_file_hash = str(cached.get("file_hash") or (cached_result or {}).get("file_hash") or "")
+    cached_analyzer_version = str(
+        cached.get("analyzer_version") or (cached_result or {}).get("analyzer_version") or ""
     )
+    cached_override_fingerprint = str(cached.get("override_fingerprint") or "")
+    if not cached_override_fingerprint:
+        cached_override_fingerprint = str((cached_result or {}).get("override_fingerprint") or "")
+    cached_threshold_raw = cached.get("old_format_sheet_threshold")
+    try:
+        cached_threshold = int(cached_threshold_raw) if cached_threshold_raw is not None else None
+    except (TypeError, ValueError):
+        cached_threshold = None
+
+    criteria = {
+        "has_cached_result": isinstance(cached_result, dict),
+        "file_hash_match": cached_file_hash == file_hash,
+        "analyzer_version_match": cached_analyzer_version == ANALYZER_VERSION,
+        "threshold_match": cached_threshold == old_format_sheet_threshold,
+        "override_fingerprint_match": cached_override_fingerprint == override_fingerprint,
+    }
+    can_reuse = all(criteria.values())
 
     if can_reuse and not force_reanalyze:
         result = dict(cached_result)
         result["from_cache"] = True
-        result["analysis_skip_reason"] = "Skipped due to unchanged file hash + analyzer version + threshold"
+        result["analysis_skip_reason"] = (
+            "Skipped due to unchanged file hash + analyzer version + threshold + override fingerprint"
+        )
+        result["analysis_reexecute_reason"] = ""
     else:
         result = analyze_excel_file(file_path, old_format_sheet_threshold=old_format_sheet_threshold)
         result["from_cache"] = False
         result["analysis_skip_reason"] = ""
+        failed_criteria = [name for name, ok in criteria.items() if not ok]
+        if force_reanalyze:
+            result["analysis_reexecute_reason"] = "forced via --force_reanalyze"
+        elif failed_criteria:
+            result["analysis_reexecute_reason"] = "cache miss: " + ", ".join(failed_criteria)
+        else:
+            result["analysis_reexecute_reason"] = "cache miss: unknown"
+    result = apply_override_to_analysis_result(result, override_row)
 
     result["file"] = str(file_path)
     result["file_hash"] = file_hash
+    result["override_fingerprint"] = override_fingerprint
     result["analyzer_version"] = ANALYZER_VERSION
     result["extractor_version"] = EXTRACTOR_VERSION
 
@@ -108,13 +252,17 @@ def _analyze_with_cache(
         "analyzer_version": ANALYZER_VERSION,
         "extractor_version": EXTRACTOR_VERSION,
         "old_format_sheet_threshold": old_format_sheet_threshold,
+        "override_fingerprint": override_fingerprint,
         "last_analyzed_at": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
         "analysis_result": result,
     }
     return result
 
 
-def _build_processing_input_signature(eligible_df: pd.DataFrame) -> str:
+def _build_processing_input_signature(
+    eligible_df: pd.DataFrame,
+    overrides_manifest_fingerprint: str = "",
+) -> str:
     """Build deterministic signature for current process-mode eligible inputs."""
     if eligible_df.empty:
         return ""
@@ -135,7 +283,35 @@ def _build_processing_input_signature(eligible_df: pd.DataFrame) -> str:
         {
             "analyzer_version": ANALYZER_VERSION,
             "processor_version": PROCESSOR_VERSION,
+            "overrides_manifest_fingerprint": overrides_manifest_fingerprint,
             "eligible_inputs": records,
+        },
+        ensure_ascii=False,
+        sort_keys=True,
+    )
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def _build_combo_processing_signature(
+    combo_df: pd.DataFrame,
+    season_value: str,
+    league_value: str,
+) -> str:
+    """Build deterministic signature for one season+league processing output."""
+    payload = json.dumps(
+        {
+            "season": str(season_value),
+            "league": str(league_value),
+            "processor_version": PROCESSOR_VERSION,
+            "analyzer_version": ANALYZER_VERSION,
+            "input_signature": _build_processing_input_signature(combo_df),
+            # Per-file override fingerprints keep cache invalidation local to affected files.
+            "override_fingerprints": sorted(
+                {
+                    str(getattr(row, "override_fingerprint", "") or "")
+                    for row in combo_df.itertuples(index=False)
+                }
+            ),
         },
         ensure_ascii=False,
         sort_keys=True,
@@ -180,6 +356,345 @@ def _squish_league_text(value: str) -> str:
     text = text.lower().strip()
     text = re.sub(r"\s+", " ", text)
     return text
+
+
+def _normalize_team_key(value: str) -> str:
+    text = normalize_optional_text(value)
+    if not text:
+        return ""
+    text = text.lower().strip()
+    text = re.sub(r"\.+$", "", text)  # trailing punctuation variants, e.g. "Unterf."
+    text = re.sub(r"\s+", " ", text)
+    return text
+
+
+def _load_team_name_regex_map() -> Dict[str, str]:
+    global _TEAM_NAME_NORMALIZATION_CACHE
+    if _TEAM_NAME_NORMALIZATION_CACHE is not None:
+        return _TEAM_NAME_NORMALIZATION_CACHE
+
+    if not _TEAM_NAME_NORMALIZATION_PATH.is_file():
+        _TEAM_NAME_NORMALIZATION_CACHE = {}
+        return _TEAM_NAME_NORMALIZATION_CACHE
+
+    try:
+        payload = json.loads(_TEAM_NAME_NORMALIZATION_PATH.read_text(encoding="utf-8"))
+        mapping_raw = payload.get("team_name_regex_map", {}) if isinstance(payload, dict) else {}
+        normalized = {}
+        for source, target in mapping_raw.items():
+            src_key = normalize_optional_text(source)
+            tgt_val = normalize_optional_text(target)
+            if src_key and tgt_val:
+                normalized[src_key] = tgt_val
+        _TEAM_NAME_NORMALIZATION_CACHE = normalized
+    except Exception as exc:
+        print(f"Warning: failed to load team name regex map: {exc}")
+        _TEAM_NAME_NORMALIZATION_CACHE = {}
+
+    return _TEAM_NAME_NORMALIZATION_CACHE
+
+
+def _load_team_name_prefix_normalization_map() -> Dict[str, str]:
+    global _TEAM_NAME_PREFIX_NORMALIZATION_CACHE
+    if _TEAM_NAME_PREFIX_NORMALIZATION_CACHE is not None:
+        return _TEAM_NAME_PREFIX_NORMALIZATION_CACHE
+
+    if not _TEAM_NAME_NORMALIZATION_PATH.is_file():
+        _TEAM_NAME_PREFIX_NORMALIZATION_CACHE = {}
+        return _TEAM_NAME_PREFIX_NORMALIZATION_CACHE
+
+    try:
+        payload = json.loads(_TEAM_NAME_NORMALIZATION_PATH.read_text(encoding="utf-8"))
+        prefix_raw = payload.get("team_name_prefix_map", {}) if isinstance(payload, dict) else {}
+        normalized = {}
+        for source, target in prefix_raw.items():
+            src_val = normalize_optional_text(source)
+            tgt_val = normalize_optional_text(target)
+            if src_val and tgt_val:
+                normalized[src_val] = tgt_val
+        _TEAM_NAME_PREFIX_NORMALIZATION_CACHE = normalized
+    except Exception as exc:
+        print(f"Warning: failed to load team name prefix normalization map: {exc}")
+        _TEAM_NAME_PREFIX_NORMALIZATION_CACHE = {}
+
+    return _TEAM_NAME_PREFIX_NORMALIZATION_CACHE
+
+
+def _load_team_name_prefix_options_map() -> Dict[str, Dict[str, object]]:
+    global _TEAM_NAME_PREFIX_OPTIONS_CACHE
+    if _TEAM_NAME_PREFIX_OPTIONS_CACHE is not None:
+        return _TEAM_NAME_PREFIX_OPTIONS_CACHE
+
+    if not _TEAM_NAME_NORMALIZATION_PATH.is_file():
+        _TEAM_NAME_PREFIX_OPTIONS_CACHE = {}
+        return _TEAM_NAME_PREFIX_OPTIONS_CACHE
+
+    try:
+        payload = json.loads(_TEAM_NAME_NORMALIZATION_PATH.read_text(encoding="utf-8"))
+        options_raw = payload.get("team_name_prefix_options", {}) if isinstance(payload, dict) else {}
+        normalized = {}
+        for source, options in options_raw.items():
+            src_val = normalize_optional_text(source)
+            if not src_val:
+                continue
+            normalized[src_val] = options if isinstance(options, dict) else {}
+        _TEAM_NAME_PREFIX_OPTIONS_CACHE = normalized
+    except Exception as exc:
+        print(f"Warning: failed to load team name prefix options map: {exc}")
+        _TEAM_NAME_PREFIX_OPTIONS_CACHE = {}
+
+    return _TEAM_NAME_PREFIX_OPTIONS_CACHE
+
+
+def _load_team_name_suffix_normalization_map() -> Dict[str, str]:
+    global _TEAM_NAME_SUFFIX_NORMALIZATION_CACHE
+    if _TEAM_NAME_SUFFIX_NORMALIZATION_CACHE is not None:
+        return _TEAM_NAME_SUFFIX_NORMALIZATION_CACHE
+
+    if not _TEAM_NAME_NORMALIZATION_PATH.is_file():
+        _TEAM_NAME_SUFFIX_NORMALIZATION_CACHE = {}
+        return _TEAM_NAME_SUFFIX_NORMALIZATION_CACHE
+
+    try:
+        payload = json.loads(_TEAM_NAME_NORMALIZATION_PATH.read_text(encoding="utf-8"))
+        suffix_raw = payload.get("team_name_suffix_map", {}) if isinstance(payload, dict) else {}
+        normalized = {}
+        for source, target in suffix_raw.items():
+            src_val = normalize_optional_text(source)
+            tgt_val = normalize_optional_text(target)
+            if src_val and tgt_val:
+                normalized[src_val] = tgt_val
+        _TEAM_NAME_SUFFIX_NORMALIZATION_CACHE = normalized
+    except Exception as exc:
+        print(f"Warning: failed to load team name suffix normalization map: {exc}")
+        _TEAM_NAME_SUFFIX_NORMALIZATION_CACHE = {}
+
+    return _TEAM_NAME_SUFFIX_NORMALIZATION_CACHE
+
+
+def reset_team_normalization_stats():
+    global _TEAM_NORMALIZATION_STATS
+    _TEAM_NORMALIZATION_STATS = {
+        "regex_total": 0,
+        "regex_by_source": {},
+    }
+
+
+def _bump_team_normalization_stat(kind: str, source_key: str):
+    global _TEAM_NORMALIZATION_STATS
+    if _TEAM_NORMALIZATION_STATS is None:
+        reset_team_normalization_stats()
+    if kind == "regex":
+        total_key, map_key = "regex_total", "regex_by_source"
+    else:
+        return
+    _TEAM_NORMALIZATION_STATS[total_key] += 1
+    _TEAM_NORMALIZATION_STATS[map_key][source_key] = _TEAM_NORMALIZATION_STATS[map_key].get(source_key, 0) + 1
+
+
+def print_team_normalization_summary():
+    stats = _TEAM_NORMALIZATION_STATS or {}
+    regex_total = int(stats.get("regex_total", 0))
+    total = regex_total
+    print("\nTeam Name Normalization Summary:")
+    print(f"  replacements total: {total}")
+    print(f"  regex replacements: {regex_total}")
+    if regex_total:
+        print("  regex replacement hits:")
+        for source, count in sorted((stats.get("regex_by_source") or {}).items(), key=lambda item: (-item[1], item[0])):
+            print(f"    - {source}: {count}")
+
+
+def normalize_team_name(value):
+    text = normalize_optional_text(value)
+    if not text:
+        return value
+    regex_map = _load_team_name_regex_map()
+    for pattern, replacement in regex_map.items():
+        try:
+            updated = re.sub(pattern, replacement, text, count=1)
+        except re.error:
+            continue
+        if updated != text:
+            updated = re.sub(r"\s+", " ", updated).strip()
+            _bump_team_normalization_stat("regex", pattern)
+            return updated
+
+    return text
+
+
+def normalize_extracted_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Separate normalization stage:
+    extracted rows -> normalized rows.
+    """
+    if df is None or df.empty:
+        return df
+    normalized = df.copy()
+    for col in ["Team", "Opponent"]:
+        if col in normalized.columns:
+            normalized[col] = normalized[col].apply(normalize_team_name)
+    return normalized
+
+
+def _split_team_base_and_number(value: str):
+    text = normalize_optional_text(value)
+    if not text:
+        return "", ""
+    match = re.match(r"^(.*?)(?:\s+(\d+))?$", text)
+    if not match:
+        return text, ""
+    return str(match.group(1) or "").strip(), str(match.group(2) or "").strip()
+
+
+def load_team_number_overrides(path: Path = _TEAM_NUMBER_OVERRIDES_PATH) -> pd.DataFrame:
+    """Load optional team-number override manifest."""
+    if not path.is_file():
+        return pd.DataFrame()
+    try:
+        df = pd.read_csv(path, dtype=str).fillna("")
+        required = ["club", "season", "from_team_number", "to_team_number"]
+        for col in required:
+            if col not in df.columns:
+                raise ValueError(f"Missing required team number override column: {col}")
+        if "league" not in df.columns:
+            df["league"] = ""
+        if "reason" not in df.columns:
+            df["reason"] = ""
+        return df
+    except Exception as exc:
+        print(f"Warning: could not load team number overrides from {path}: {exc}")
+        return pd.DataFrame()
+
+
+def load_league_gender_scope_map(path: Path = _LEAGUE_MAPPING_PATH) -> Dict[str, str]:
+    """Load league -> gender_scope map from relational league mapping."""
+    global _LEAGUE_GENDER_SCOPE_CACHE
+    if _LEAGUE_GENDER_SCOPE_CACHE is not None:
+        return _LEAGUE_GENDER_SCOPE_CACHE
+
+    if not path.is_file():
+        _LEAGUE_GENDER_SCOPE_CACHE = {}
+        return _LEAGUE_GENDER_SCOPE_CACHE
+
+    try:
+        mapping_df = pd.read_csv(path, dtype=str).fillna("")
+        out = {}
+        for row in mapping_df.itertuples(index=False):
+            league_id = normalize_optional_text(getattr(row, "id", ""))
+            gender_scope = str(getattr(row, "gender_scope", "") or "").strip().lower()
+            if league_id and gender_scope:
+                out[league_id] = gender_scope
+        _LEAGUE_GENDER_SCOPE_CACHE = out
+    except Exception as exc:
+        print(f"Warning: could not load league gender scope map: {exc}")
+        _LEAGUE_GENDER_SCOPE_CACHE = {}
+
+    return _LEAGUE_GENDER_SCOPE_CACHE
+
+
+def normalize_team_numbering_dataframe(df: pd.DataFrame, overrides_df: pd.DataFrame = None) -> pd.DataFrame:
+    """
+    Post-normalization stage:
+    - default unnumbered teams to team 1.
+    - apply explicit overrides (e.g. base -> team 2 for exceptional seasons).
+    """
+    if df is None or df.empty:
+        return df
+    required_cols = {"Season", "League"}
+    if not required_cols.issubset(set(df.columns)):
+        return df
+
+    normalized = df.copy()
+    applicable_cols = [col for col in ["Team", "Opponent"] if col in normalized.columns]
+    if not applicable_cols:
+        return normalized
+
+    overrides_df = overrides_df if isinstance(overrides_df, pd.DataFrame) else pd.DataFrame()
+    override_map = {}
+    if not overrides_df.empty:
+        for row in overrides_df.itertuples(index=False):
+            club = normalize_optional_text(getattr(row, "club", ""))
+            season = normalize_optional_text(getattr(row, "season", ""))
+            from_num = normalize_optional_text(getattr(row, "from_team_number", ""))
+            to_num = normalize_optional_text(getattr(row, "to_team_number", ""))
+            league = normalize_optional_text(getattr(row, "league", ""))
+            if not club or not season or to_num is None:
+                continue
+            from_norm = from_num or ""
+            override_map[(club, season, league or "", from_norm)] = str(to_num)
+
+    def _normalize_team_cell(row, col_name: str):
+        team_raw = normalize_optional_text(row.get(col_name))
+        if not team_raw:
+            return row.get(col_name)
+        season = normalize_optional_text(row.get("Season"))
+        league = normalize_optional_text(row.get("League"))
+        if not season or not league:
+            return team_raw
+
+        base, num = _split_team_base_and_number(team_raw)
+        if not base:
+            return team_raw
+
+        current_num = num or ""
+        override_target = (
+            override_map.get((base, season, league, current_num))
+            or override_map.get((base, season, "", current_num))
+        )
+        if override_target is not None:
+            target_num = str(override_target).strip()
+            return f"{base} {target_num}".strip() if target_num else base
+
+        if current_num:
+            return team_raw
+
+        return f"{base} 1"
+
+    for col in applicable_cols:
+        normalized[col] = normalized.apply(lambda row: _normalize_team_cell(row, col), axis=1)
+
+    return normalized
+
+
+def export_unique_team_names_after_merge(
+    merged_df: pd.DataFrame,
+    output_path: Path = Path("database/data/unique_team_names_after_merge.csv"),
+):
+    """Export unique normalized team names from merged output."""
+    if merged_df is None or merged_df.empty:
+        print("Unique team names export skipped: merged dataframe is empty.")
+        return
+
+    candidate_columns = [col for col in ["Team", "Opponent"] if col in merged_df.columns]
+    if not candidate_columns:
+        print("Unique team names export skipped: Team/Opponent columns missing.")
+        return
+
+    names = set()
+    for col in candidate_columns:
+        for value in merged_df[col].dropna().astype(str):
+            text = re.sub(r"\s+", " ", value).strip()
+            if text:
+                names.add(text)
+
+    sorted_names = sorted(names, key=lambda item: item.lower())
+    export_df = pd.DataFrame({"team_name": sorted_names})
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    export_df.to_csv(output_path, sep=";", index=False, encoding="utf-8")
+    print(f"Unique team names exported: {output_path} ({len(sorted_names)} names)")
+
+
+def compute_team_name_normalization_fingerprint() -> str:
+    """Fingerprint team name normalization config for cache invalidation."""
+    if not _TEAM_NAME_NORMALIZATION_PATH.is_file():
+        return ""
+    try:
+        payload = json.loads(_TEAM_NAME_NORMALIZATION_PATH.read_text(encoding="utf-8"))
+        canonical = json.dumps(payload, ensure_ascii=False, sort_keys=True)
+        return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+    except Exception:
+        return ""
 
 
 def _detect_league_gender_bias(raw: str):
@@ -976,9 +1491,14 @@ def parse_args():
     )
     parser.add_argument(
         "--mode",
-        choices=["analyze", "process", "convert_legacy_xls"],
-        required=True,
-        help="Run in analyze or process mode.",
+        choices=["analyze", "process", "normalize_data", "convert_legacy_xls"],
+        required=False,
+        help="Run in analyze, process, normalize_data, or convert_legacy_xls mode.",
+    )
+    parser.add_argument(
+        "--normalize_data",
+        action="store_true",
+        help="Alias for --mode normalize_data. Rebuild normalized merged output only.",
     )
     parser.add_argument(
         "--file",
@@ -1039,6 +1559,17 @@ def parse_args():
 
 def validate_args(args):
     """Validate mutually dependent CLI args."""
+    if args.normalize_data:
+        args.mode = "normalize_data"
+
+    if not args.mode:
+        raise ValueError("Provide --mode (or use --normalize_data alias).")
+
+    if args.mode == "normalize_data":
+        if args.excel_file or args.folder:
+            raise ValueError("normalize_data mode does not accept --file/--folder.")
+        return
+
     if not args.excel_file and not args.folder:
         raise ValueError("Provide either --file or --folder.")
     if args.excel_file and args.folder:
@@ -1510,6 +2041,7 @@ def run_analyze_mode(
     """Run analyze mode for all discovered files."""
     skipped_files = skipped_files or []
     analysis_log = load_analysis_log()
+    overrides_df = load_extract_overrides()
     analysis_rows = []
     cache_hits = 0
     total_files = len(excel_files)
@@ -1519,9 +2051,13 @@ def run_analyze_mode(
             analysis_log,
             old_format_sheet_threshold=old_format_sheet_threshold,
             force_reanalyze=force_reanalyze,
+            overrides_df=overrides_df,
         )
         if row.get("from_cache"):
             cache_hits += 1
+        else:
+            reason = str(row.get("analysis_reexecute_reason") or "cache miss: unknown")
+            print(f"  re-analyze: {file_path} -> {reason}")
         analysis_rows.append(row)
         print_progress_bar(index, total_files, "Analyzing files")
     save_analysis_log(analysis_log)
@@ -1556,6 +2092,11 @@ def run_analyze_mode(
                 "extractor_version",
                 "from_cache",
                 "analysis_skip_reason",
+                "analysis_reexecute_reason",
+                "override_applied",
+                "override_reason",
+                "override_match_type",
+                "override_match_value",
             ]
         )
     display_df = analysis_df.copy()
@@ -1727,7 +2268,10 @@ def sanitize_filename_component(value):
 
 def run_process_mode_with_analysis(excel_files, args):
     """Analyze first, then process only eligible post-2022 files."""
+    reset_team_normalization_stats()
     analysis_log = load_analysis_log()
+    overrides_df = load_extract_overrides()
+    overrides_manifest_fingerprint = compute_overrides_manifest_fingerprint(overrides_df)
     analysis_rows = []
     cache_hits = 0
     total_analysis_files = len(excel_files)
@@ -1737,9 +2281,13 @@ def run_process_mode_with_analysis(excel_files, args):
             analysis_log,
             old_format_sheet_threshold=args.old_format_sheet_threshold,
             force_reanalyze=args.force_reanalyze,
+            overrides_df=overrides_df,
         )
         if row.get("from_cache"):
             cache_hits += 1
+        else:
+            reason = str(row.get("analysis_reexecute_reason") or "cache miss: unknown")
+            print(f"  re-analyze (process mode): {file_path} -> {reason}")
         analysis_rows.append(row)
         print_progress_bar(index, total_analysis_files, "Analyzing files")
     save_analysis_log(analysis_log)
@@ -1747,6 +2295,12 @@ def run_process_mode_with_analysis(excel_files, args):
     if analysis_df.empty:
         print("No files available for processing.")
         return
+
+    if args.analysis_output:
+        output_path = Path(args.analysis_output)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        analysis_df.to_csv(output_path, sep=";", index=False)
+        print(f"Process-mode analysis CSV written to: {output_path}")
 
     eligible_df = analysis_df[
         (analysis_df["eligible_for_processing"] == True)
@@ -1761,140 +2315,321 @@ def run_process_mode_with_analysis(excel_files, args):
         print("No eligible post_2022 files to process.")
         return
 
-    # Processing cache short-circuit:
-    # if eligible input signature + analyzer version + processor version are unchanged
-    # and output hash matches current output, skip full processing.
     continuous_output_file = Path("database/data/historical_league_results.csv")
     process_cache = analysis_log.setdefault("processing_cache", {})
-    cache_key = "historical_league_results"
-    current_input_signature = _build_processing_input_signature(eligible_df)
-    cached_process = process_cache.get(cache_key, {})
-    if (
-        isinstance(cached_process, dict)
-        and cached_process.get("input_signature") == current_input_signature
-        and cached_process.get("analyzer_version") == ANALYZER_VERSION
-        and cached_process.get("processor_version") == PROCESSOR_VERSION
-        and continuous_output_file.is_file()
-    ):
-        current_output_hash = compute_file_sha256(continuous_output_file)
-        if current_output_hash == cached_process.get("output_hash"):
-            process_skip_reason = (
-                "Skipped due to unchanged analysis input signature + analyzer/processor versions + output hash"
-            )
-            print(
-                f"Processing skipped: {process_skip_reason}."
-            )
-            process_cache[cache_key] = {
-                **cached_process,
-                "last_skip_reason": process_skip_reason,
-                "last_skipped_at": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
-            }
-            save_analysis_log(analysis_log)
-            return
-
-    output_df = pd.DataFrame()
-    total_files = len(eligible_df)
-    for file_index, row in enumerate(eligible_df.itertuples(index=False), start=1):
-        input_file = Path(row.file)
-        available_weeks = parse_available_weeks(row.available_weeks)
-        if not available_weeks:
-            print_progress_bar(file_index, total_files, "Processing files")
-            continue
-
-        for week in available_weeks:
-            global dict_of_match_numbers
-            dict_of_match_numbers = {}
-            with redirect_stdout(io.StringIO()):
-                result = extract_excel_data(
-                    str(input_file),
-                    args.team_sheet_prefix + str(week),
-                    args.season_sheet,
-                )
-            if result is None:
-                continue
-            df, season_info, full_date = result
-            placeholder_season = season_info.get("season_short") in (None, "??/??") or season_info.get(
-                "year1"
-            ) in (None, "????")
-
-            merged_season = None
-            if getattr(row, "season", None) and not _season_from_content_is_uncertain(row.season):
-                merged_season = season_label_to_season_info(row.season)
-            if merged_season is None and placeholder_season:
-                merged_season = infer_season_from_path(input_file)
-            if merged_season is not None:
-                season_info = dict(merged_season)
-                with redirect_stdout(io.StringIO()):
-                    recomputed_date_info = extract_date_info(df)
-                full_date = combine_season_and_date(season_info, recomputed_date_info)
-
-            with redirect_stdout(io.StringIO()):
-                csv_data = parse_teams(
-                    df,
-                    season_info,
-                    full_date,
-                    league_override=row.league,
-                    week_override=week,
-                max_games_per_week=row.games_per_week,
-                )
-            if csv_data:
-                temp_df = pd.DataFrame(csv_data)
-                output_df = pd.concat([output_df, temp_df], ignore_index=True)
-
-        print_progress_bar(file_index, total_files, "Processing files")
-
-    if output_df.empty:
-        print("No data extracted from eligible post_2022 files.")
-        return
-
-    output_df = output_df.sort_values(
-        by=["Season", "League", "Week", "Round Number", "Match Number", "Team", "Position"]
-    )
+    combo_cache = process_cache.setdefault("league_season_outputs", {})
 
     output_dir = Path("C:/tmp/csvs")
     output_dir.mkdir(parents=True, exist_ok=True)
     created_files = []
-    for (season_value, league_value), group_df in output_df.groupby(["Season", "League"], dropna=False):
+    skipped_combo_count = 0
+
+    combo_keys = (
+        eligible_df[["Season", "League"]]
+        if "Season" in eligible_df.columns and "League" in eligible_df.columns
+        else eligible_df[["season", "league"]].rename(columns={"season": "Season", "league": "League"})
+    )
+    combo_count = len(combo_keys.drop_duplicates())
+    processed_combos = 0
+
+    for (season_value, league_value), combo_df in eligible_df.groupby(["season", "league"], dropna=False):
+        processed_combos += 1
         season_part = sanitize_filename_component(season_value if pd.notna(season_value) else "unknown_season")
         league_part = sanitize_filename_component(league_value if pd.notna(league_value) else "unknown_league")
-        output_file = output_dir / f"{season_part} {league_part}.csv"
-        group_df.to_csv(output_file, sep=";", index=False)
-        created_files.append((output_file, len(group_df)))
+        combo_output_file = output_dir / f"{season_part} {league_part}.csv"
+        combo_cache_key = f"{season_part}::{league_part}"
+        combo_signature = _build_combo_processing_signature(
+            combo_df,
+            season_value=season_value,
+            league_value=league_value,
+        )
+
+        cached_combo = combo_cache.get(combo_cache_key, {})
+        combo_cache_hit = (
+            not args.force_reanalyze
+            and isinstance(cached_combo, dict)
+            and cached_combo.get("combo_signature") == combo_signature
+            and cached_combo.get("analyzer_version") == ANALYZER_VERSION
+            and cached_combo.get("processor_version") == PROCESSOR_VERSION
+            and combo_output_file.is_file()
+        )
+
+        if combo_cache_hit:
+            current_combo_hash = compute_file_sha256(combo_output_file)
+            if current_combo_hash == cached_combo.get("output_hash"):
+                skipped_combo_count += 1
+                combo_cache[combo_cache_key] = {
+                    **cached_combo,
+                    "last_skip_reason": "Skipped due to unchanged combo signature + versions + output hash",
+                    "last_skipped_at": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
+                }
+                print_progress_bar(processed_combos, combo_count, "Processing combos")
+                continue
+
+        combo_criteria = {
+            "force_reanalyze_disabled": not args.force_reanalyze,
+            "has_cached_combo": isinstance(cached_combo, dict),
+            "combo_signature_match": cached_combo.get("combo_signature") == combo_signature,
+            "analyzer_version_match": cached_combo.get("analyzer_version") == ANALYZER_VERSION,
+            "processor_version_match": cached_combo.get("processor_version") == PROCESSOR_VERSION,
+            "output_file_exists": combo_output_file.is_file(),
+        }
+        if args.force_reanalyze:
+            combo_reexecute_reason = "forced via --force_reanalyze"
+        else:
+            failed_combo_criteria = [name for name, ok in combo_criteria.items() if not ok]
+            combo_reexecute_reason = (
+                "cache miss: " + ", ".join(failed_combo_criteria) if failed_combo_criteria else "output_hash_mismatch"
+            )
+        print(f"  reprocess combo [{season_part} | {league_part}] -> {combo_reexecute_reason}")
+
+        combo_output_df = pd.DataFrame()
+        total_files_in_combo = len(combo_df)
+        for file_index, row in enumerate(combo_df.itertuples(index=False), start=1):
+            input_file = Path(row.file)
+            available_weeks = parse_available_weeks(row.available_weeks)
+            if not available_weeks:
+                continue
+
+            for week in available_weeks:
+                global dict_of_match_numbers
+                dict_of_match_numbers = {}
+                with redirect_stdout(io.StringIO()):
+                    result = extract_excel_data(
+                        str(input_file),
+                        args.team_sheet_prefix + str(week),
+                        args.season_sheet,
+                    )
+                if result is None:
+                    continue
+                df, season_info, full_date = result
+                placeholder_season = season_info.get("season_short") in (None, "??/??") or season_info.get(
+                    "year1"
+                ) in (None, "????")
+
+                merged_season = None
+                if getattr(row, "season", None) and not _season_from_content_is_uncertain(row.season):
+                    merged_season = season_label_to_season_info(row.season)
+                if merged_season is None and placeholder_season:
+                    merged_season = infer_season_from_path(input_file)
+                if merged_season is not None:
+                    season_info = dict(merged_season)
+                    with redirect_stdout(io.StringIO()):
+                        recomputed_date_info = extract_date_info(df)
+                    full_date = combine_season_and_date(season_info, recomputed_date_info)
+
+                with redirect_stdout(io.StringIO()):
+                    csv_data = parse_teams(
+                        df,
+                        season_info,
+                        full_date,
+                        league_override=row.league,
+                        week_override=week,
+                        max_games_per_week=row.games_per_week,
+                    )
+                if csv_data:
+                    temp_df = pd.DataFrame(csv_data)
+                    combo_output_df = pd.concat([combo_output_df, temp_df], ignore_index=True)
+
+        if not combo_output_df.empty:
+            # Stage 3: normalize extracted data before writing/merging.
+            combo_output_df = normalize_extracted_dataframe(combo_output_df)
+            combo_output_df = combo_output_df.sort_values(
+                by=["Season", "League", "Week", "Round Number", "Match Number", "Team", "Position"]
+            )
+            combo_output_df.to_csv(combo_output_file, sep=";", index=False)
+            combo_hash = compute_file_sha256(combo_output_file)
+            created_files.append((combo_output_file, len(combo_output_df)))
+            combo_cache[combo_cache_key] = {
+                "combo_signature": combo_signature,
+                "analyzer_version": ANALYZER_VERSION,
+                "processor_version": PROCESSOR_VERSION,
+                "output_file": str(combo_output_file.resolve()),
+                "output_hash": combo_hash,
+                "season": str(season_value),
+                "league": str(league_value),
+                "last_processed_at": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
+                "eligible_file_count": int(total_files_in_combo),
+                "last_skip_reason": "",
+                "last_reexecute_reason": combo_reexecute_reason,
+            }
+
+        print_progress_bar(processed_combos, combo_count, "Processing combos")
+
+    # Build merge targets from the current eligible process scope (not all CSVs in output dir).
+    target_output_files = []
+    for row in eligible_df.itertuples(index=False):
+        season_value = getattr(row, "season", None)
+        league_value = getattr(row, "league", None)
+        if pd.isna(season_value) or pd.isna(league_value):
+            continue
+        season_part = sanitize_filename_component(season_value)
+        league_part = sanitize_filename_component(league_value)
+        target_output_files.append(output_dir / f"{season_part} {league_part}.csv")
+    target_output_files = sorted(set(target_output_files))
+
+    merged_frames = []
+    missing_target_outputs = []
+    for csv_file in target_output_files:
+        if csv_file.is_file():
+            try:
+                merged_frames.append(pd.read_csv(csv_file, sep=";", dtype=str))
+            except Exception as exc:
+                print(f"Warning: failed to read target CSV during merge: {csv_file} ({exc})")
+        else:
+            missing_target_outputs.append(csv_file)
+
+    if not merged_frames:
+        print("No data extracted and no existing target CSVs found for eligible process scope.")
+        if missing_target_outputs:
+            print("Missing target CSVs:")
+            for missing_file in missing_target_outputs:
+                print(f"  - {missing_file}")
+        return
+
+    merged_df = pd.concat(merged_frames, ignore_index=True)
+    # Apply normalization at merge stage even when all combo outputs were cache hits.
+    merged_df = normalize_extracted_dataframe(merged_df)
+    merged_df = normalize_team_numbering_dataframe(merged_df, overrides_df=load_team_number_overrides())
+    merged_df = merged_df.sort_values(
+        by=["Season", "League", "Week", "Round Number", "Match Number", "Team", "Position"],
+        key=lambda col: col.astype(str),
+    )
 
     # Continuous cross-season/cross-league output for backend source registration.
     continuous_output_file.parent.mkdir(parents=True, exist_ok=True)
-    output_df.to_csv(continuous_output_file, sep=";", index=False)
+    merged_df.to_csv(continuous_output_file, sep=";", index=False)
     output_hash = compute_file_sha256(continuous_output_file)
+    export_unique_team_names_after_merge(merged_df)
 
-    process_cache[cache_key] = {
-        "input_signature": current_input_signature,
-        "analyzer_version": ANALYZER_VERSION,
-        "processor_version": PROCESSOR_VERSION,
+    process_cache["historical_league_results"] = {
+        "scope_signature": hashlib.sha256(
+            "|".join(str(p.resolve()) for p in target_output_files).encode("utf-8")
+        ).hexdigest()
+        if target_output_files
+        else "",
         "output_file": str(continuous_output_file.resolve()),
         "output_hash": output_hash,
         "last_processed_at": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
         "eligible_count": int(len(eligible_df)),
-        "last_skip_reason": "",
+        "combo_cache_entries": int(len(combo_cache)),
+        "skipped_combo_count": int(skipped_combo_count),
     }
     save_analysis_log(analysis_log)
 
     print("\nCreated CSV files:")
     for output_file, row_count in created_files:
         print(f"  - {output_file} ({row_count} rows)")
-    print(f"  - {continuous_output_file} ({len(output_df)} rows, continuous, hash={output_hash[:12]}...)")
+    if missing_target_outputs:
+        print("\nProcess scope CSVs missing (skipped from merge):")
+        for missing_file in missing_target_outputs:
+            print(f"  - {missing_file}")
+    print(f"  - {continuous_output_file} ({len(merged_df)} rows, continuous, hash={output_hash[:12]}...)")
 
     summary_df = (
-        output_df.groupby(["League", "Season"], dropna=False)["Week"]
+        merged_df.groupby(["League", "Season"], dropna=False)["Week"]
         .apply(lambda weeks: ",".join(str(w) for w in sorted({str(w) for w in weeks if pd.notna(w)})))
         .reset_index(name="extracted_weeks")
     )
+    summary_df = summary_df.sort_values(
+        by=["League", "Season"],
+        key=lambda col: col.astype(str),
+    ).reset_index(drop=True)
     print("\nExtraction Summary:")
     for row in summary_df.itertuples(index=False):
+        league_label = row.League if pd.notna(row.League) else "unknown"
+        season_label = row.Season if pd.notna(row.Season) else "unknown"
         print(
-            f"  league={row.League if pd.notna(row.League) else 'unknown'}, "
-            f"season={row.Season if pd.notna(row.Season) else 'unknown'}, "
+            f"  league={str(league_label).ljust(8)}, "
+            f"season={season_label}, "
             f"extracted_weeks={row.extracted_weeks or 'none'}"
         )
+    print_team_normalization_summary()
+
+
+def run_normalize_data_mode(args):
+    """Rebuild normalized continuous output from existing combo CSVs only."""
+    reset_team_normalization_stats()
+    analysis_log = load_analysis_log()
+    process_cache = analysis_log.setdefault("processing_cache", {})
+    combo_cache = process_cache.setdefault("league_season_outputs", {})
+
+    target_output_files = []
+    for combo_key, cached_combo in combo_cache.items():
+        if not isinstance(cached_combo, dict):
+            continue
+        output_file = str(cached_combo.get("output_file") or "").strip()
+        if output_file:
+            target_output_files.append(Path(output_file))
+            continue
+        season_part, _, league_part = str(combo_key).partition("::")
+        if season_part and league_part:
+            target_output_files.append(Path("C:/tmp/csvs") / f"{season_part} {league_part}.csv")
+    target_output_files = sorted(set(target_output_files))
+
+    if not target_output_files:
+        print("normalize_data: no combo outputs registered in processing cache.")
+        return
+
+    merged_frames = []
+    missing_target_outputs = []
+    for csv_file in target_output_files:
+        if csv_file.is_file():
+            try:
+                merged_frames.append(pd.read_csv(csv_file, sep=";", dtype=str))
+            except Exception as exc:
+                print(f"Warning: failed to read target CSV during normalize_data merge: {csv_file} ({exc})")
+        else:
+            missing_target_outputs.append(csv_file)
+
+    if not merged_frames:
+        print("normalize_data: no existing combo CSVs found to merge.")
+        if missing_target_outputs:
+            print("Missing target CSVs:")
+            for missing_file in missing_target_outputs:
+                print(f"  - {missing_file}")
+        return
+
+    merged_df = pd.concat(merged_frames, ignore_index=True)
+    merged_df = normalize_extracted_dataframe(merged_df)
+    merged_df = normalize_team_numbering_dataframe(merged_df, overrides_df=load_team_number_overrides())
+    merged_df = merged_df.sort_values(
+        by=["Season", "League", "Week", "Round Number", "Match Number", "Team", "Position"],
+        key=lambda col: col.astype(str),
+    )
+
+    continuous_output_file = Path("database/data/historical_league_results.csv")
+    continuous_output_file.parent.mkdir(parents=True, exist_ok=True)
+    merged_df.to_csv(continuous_output_file, sep=";", index=False)
+    output_hash = compute_file_sha256(continuous_output_file)
+    export_unique_team_names_after_merge(merged_df)
+
+    process_cache["historical_league_results"] = {
+        "scope_signature": hashlib.sha256(
+            "|".join(str(p.resolve()) for p in target_output_files).encode("utf-8")
+        ).hexdigest()
+        if target_output_files
+        else "",
+        "output_file": str(continuous_output_file.resolve()),
+        "output_hash": output_hash,
+        "last_processed_at": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
+        "eligible_count": int(len(target_output_files)),
+        "combo_cache_entries": int(len(combo_cache)),
+        "skipped_combo_count": 0,
+        "mode": "normalize_data",
+    }
+    save_analysis_log(analysis_log)
+
+    if missing_target_outputs:
+        print("\nnormalize_data: missing combo CSVs (excluded from merge):")
+        for missing_file in missing_target_outputs:
+            print(f"  - {missing_file}")
+
+    print(
+        f"\nnormalize_data: rebuilt {continuous_output_file} "
+        f"({len(merged_df)} rows, hash={output_hash[:12]}...)"
+    )
+    print_team_normalization_summary()
 
 
 if __name__ == "__main__":
@@ -1907,13 +2642,17 @@ if __name__ == "__main__":
         print(f"Argument error: {error}")
         raise SystemExit(2) from error
 
+    print(f"Mode: {args.mode}")
+    if args.mode == "normalize_data":
+        run_normalize_data_mode(args)
+        raise SystemExit(0)
+
     excel_files, skipped_discovery_files = discover_excel_files(args)
     excel_files = filter_xls_for_mode(excel_files, args.mode, args.skip_xls)
     if not excel_files and not (args.mode == "analyze" and skipped_discovery_files):
         print("No Excel files found for given input.")
         raise SystemExit(1)
 
-    print(f"Mode: {args.mode}")
     print(f"Excel files discovered: {len(excel_files)}")
     for file_path in excel_files:
         print(f"  - {file_path}")

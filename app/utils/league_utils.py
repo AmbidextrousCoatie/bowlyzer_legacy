@@ -58,6 +58,26 @@ def get_league_division_map() -> Dict[str, str]:
     return out
 
 
+@lru_cache(maxsize=1)
+def get_league_gender_scope_map() -> Dict[str, str]:
+    """
+    id -> gender scope (``male``, ``female``, ``mixed``) from ``league_mapping.csv``.
+    """
+    path = Path(__file__).resolve().parent.parent.parent / "database" / "relational_csv" / "league_mapping.csv"
+    out: Dict[str, str] = {}
+    if not path.is_file():
+        return out
+
+    with path.open(newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            lid = (row.get("id") or "").strip()
+            scope = (row.get("gender_scope") or "").strip().lower()
+            if lid and scope:
+                out[lid] = scope
+    return out
+
+
 def resolve_league_long_name(short_id: str) -> str:
     """Return display long name for a league short id, or the id if unmapped."""
     if short_id is None or short_id == "":
@@ -82,17 +102,38 @@ def format_float_one_decimal(value: Union[int, float]) -> str:
 
 def get_league_level(league: str) -> int:
     """
-    Get the level of a league.
+    Get the level of a league from ``league_mapping.csv``.
     
     Args:
         league: The league name
         
     Returns:
-        League level (currently returns 1 as placeholder)
+        League level (integer). Unmapped leagues default to 99.
     """
-    # This is a placeholder implementation
-    # You should implement the actual logic based on your requirements
-    return 1
+    if league is None:
+        return 99
+    key = str(league).strip()
+    if not key:
+        return 99
+
+    path = Path(__file__).resolve().parent.parent.parent / "database" / "relational_csv" / "league_mapping.csv"
+    if not path.is_file():
+        return 99
+
+    try:
+        with path.open(newline="", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                lid = (row.get("id") or "").strip()
+                if lid == key:
+                    try:
+                        return int(str(row.get("level") or "").strip())
+                    except (TypeError, ValueError):
+                        return 99
+    except Exception:
+        return 99
+
+    return 99
 
 
 def convert_to_simple_types(data):

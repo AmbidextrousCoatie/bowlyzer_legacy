@@ -195,6 +195,33 @@ class LeagueStatsApp {
     async resolveLatestSelections(state) {
         const resolved = { ...state };
         try {
+            // Division-only deep links should land in league-centric view (no season default).
+            // If division is present but league is missing, pick first available league in that division.
+            if (resolved.division && !resolved.league) {
+                const query = new URLSearchParams();
+                query.set('division', String(resolved.division));
+                if (resolved.season) {
+                    query.set('season', String(resolved.season));
+                }
+                const resp = await fetchWithDatabase(`/league/get_available_leagues?${query.toString()}`);
+                const leagues = await resp.json();
+                if (Array.isArray(leagues) && leagues.length > 0) {
+                    const firstLeague = leagues[0];
+                    const shortName =
+                        (firstLeague && typeof firstLeague === 'object')
+                            ? (firstLeague.short_name || firstLeague.value || '')
+                            : String(firstLeague || '');
+                    const longName =
+                        (firstLeague && typeof firstLeague === 'object')
+                            ? (firstLeague.long_name || '')
+                            : '';
+                    if (shortName) {
+                        resolved.league = shortName;
+                        resolved.league_long = longName || resolved.league_long || '';
+                    }
+                }
+            }
+
             // Resolve latest season
             if (resolved.season === 'latest') {
                 const resp = await fetchWithDatabase('/league/get_available_seasons');

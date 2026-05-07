@@ -99,8 +99,8 @@ class TeamHistoryBlock extends BaseContentBlock {
                             autoSkip: false,
                             stepSize: 1,
                             callback: function(value) {
-                                const midPoints = [5, 15, 25, 35, 45, 55, 65];
-                                if (midPoints.includes(value)) {
+                                if (value % 10 === 5) {
+                                    const leagueLevel = Math.floor((value - 1) / 10) + 1;
                                     const leagueNames = {
                                         1: "1. Bundesliga",
                                         2: "2. Bundesliga",
@@ -110,8 +110,7 @@ class TeamHistoryBlock extends BaseContentBlock {
                                         6: "Bezirksliga",
                                         7: "Kreisliga"
                                     };
-                                    const leagueLevel = Math.floor((value - 1) / 10) + 1;
-                                    return leagueNames[leagueLevel];
+                                    return leagueNames[leagueLevel] || "";
                                 }
                                 return '';
                             },

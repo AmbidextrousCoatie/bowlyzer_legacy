@@ -36,3 +36,9 @@ analysis_report.csv
 xlsx_analysis_report.csv
 report.csv
 database/data/extract_excel_analysis_log.json
+database/data/league_weeks_combined_matrix.csv
+database/data/available_weeks_matrix.csv
+database/data/available_weeks_by_league_season.csv
+database/data/missing_weeks_by_league_season.csv
+database/data/missing_weeks_matrix.csv
+database/data/unique_team_names_after_merge.csv

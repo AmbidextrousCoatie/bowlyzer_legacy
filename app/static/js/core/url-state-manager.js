@@ -27,6 +27,7 @@ class URLStateManager {
         return {
             team: params.get('team') || '',
             season: params.get('season') || '',
+            division: params.get('division') || '',
             week: params.get('week') || '',
             round: params.get('round') || '',
             league: params.get('league') || '',
@@ -117,6 +118,7 @@ class URLStateManager {
         if (this.state.database && this.state.database !== 'main') depth++;
         if (this.state.team) depth++;
         if (this.state.season) depth++;
+        if (this.state.division) depth++;
         if (this.state.week) depth++;
         if (this.state.round) depth++;
         if (this.state.league) depth++;
@@ -140,6 +142,7 @@ class URLStateManager {
         const dependencies = {
             team: ['season', 'week', 'round'],
             season: ['week', 'round'],
+            division: ['league', 'week', 'round'],
             league: ['season', 'week', 'round'],
             week: ['round']
         };

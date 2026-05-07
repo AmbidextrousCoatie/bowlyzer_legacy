@@ -1,6 +1,7 @@
 from typing import List, Dict, Any, Optional, Union
 import datetime
 import pandas as pd
+import re
   
 
 from data_access.adapters.data_adapter_factory import DataAdapterFactory, DataAdapterSelector
@@ -88,6 +89,110 @@ class LeagueService:
 
         division_map = get_league_division_map()
         return [lg for lg in leagues if division_map.get(lg) == division]
+
+    def _split_club_and_team_number(self, team_name: str):
+        """Split trailing team number from team name if present."""
+        text = str(team_name or "").strip()
+        if not text:
+            return "", ""
+        match = re.match(r"^(.*?)(?:\s+(\d+))?$", text)
+        if not match:
+            return text, ""
+        club_name = str(match.group(1) or "").strip()
+        team_number = str(match.group(2) or "").strip()
+        return club_name, team_number
+
+    def _get_club_source_dataframe(self) -> pd.DataFrame:
+        """Return base dataframe used for club matrix computations."""
+        filters = {
+            Columns.computed_data: {'value': True, 'operator': 'eq'},
+        }
+        df = self.adapter.get_filtered_data(filters=filters)
+        if df is None or df.empty:
+            return pd.DataFrame(columns=[Columns.season, Columns.league_name, Columns.team_name, Columns.team_name_opponent])
+        return df
+
+    def get_available_clubs(self, only_with_unnumbered_team: bool = False) -> List[str]:
+        """Get distinct club base names from Team/Opponent columns."""
+        df = self._get_club_source_dataframe()
+        clubs = set()
+        clubs_with_unnumbered = set()
+        clubs_with_numbered = set()
+        for col in [Columns.team_name, Columns.team_name_opponent]:
+            if col not in df.columns:
+                continue
+            for value in df[col].dropna().astype(str):
+                club_name, _team_number = self._split_club_and_team_number(value)
+                if club_name:
+                    clubs.add(club_name)
+                    if not _team_number:
+                        clubs_with_unnumbered.add(club_name)
+                    else:
+                        clubs_with_numbered.add(club_name)
+        if only_with_unnumbered_team:
+            return sorted(clubs_with_unnumbered.intersection(clubs_with_numbered))
+        return sorted(clubs)
+
+    def get_club_team_season_matrix(self, club: str) -> Dict[str, Any]:
+        """Build team-vs-season matrix for one club with league values in cells."""
+        club = str(club or "").strip()
+        if not club:
+            return {"club": "", "seasons": [], "rows": []}
+
+        df = self._get_club_source_dataframe()
+        if df.empty:
+            return {"club": club, "seasons": [], "rows": []}
+
+        long_rows = []
+        for col in [Columns.team_name, Columns.team_name_opponent]:
+            if col not in df.columns:
+                continue
+            subset = df[[Columns.season, Columns.league_name, col]].copy()
+            subset = subset.rename(columns={col: "TeamRaw"})
+            long_rows.append(subset)
+        if not long_rows:
+            return {"club": club, "seasons": [], "rows": []}
+
+        long_df = pd.concat(long_rows, ignore_index=True)
+        long_df = long_df.dropna(subset=["TeamRaw", Columns.season, Columns.league_name])
+        if long_df.empty:
+            return {"club": club, "seasons": [], "rows": []}
+
+        long_df["TeamRaw"] = long_df["TeamRaw"].astype(str).str.replace(r"\s+", " ", regex=True).str.strip()
+        split_values = long_df["TeamRaw"].apply(self._split_club_and_team_number)
+        long_df["club_name"] = split_values.apply(lambda item: item[0])
+        long_df["team_number"] = split_values.apply(lambda item: item[1] if item[1] else "base")
+
+        club_df = long_df[long_df["club_name"] == club].copy()
+        if club_df.empty:
+            return {"club": club, "seasons": [], "rows": []}
+
+        seasons = sorted(club_df[Columns.season].astype(str).unique())
+        grouped = (
+            club_df.groupby(["team_number", Columns.season])[Columns.league_name]
+            .apply(lambda s: ", ".join(sorted({str(v).strip() for v in s if str(v).strip()})))
+            .reset_index(name="leagues")
+        )
+
+        def _team_sort_key(team_label: str):
+            return (0, int(team_label)) if str(team_label).isdigit() else (1, str(team_label))
+
+        team_rows = []
+        for team_number in sorted(grouped["team_number"].unique(), key=_team_sort_key):
+            season_cells = {season: "" for season in seasons}
+            sub = grouped[grouped["team_number"] == team_number]
+            for row in sub.itertuples(index=False):
+                season_cells[str(getattr(row, Columns.season))] = getattr(row, "leagues")
+            team_rows.append({
+                "team_number": team_number,
+                "seasons": season_cells,
+            })
+
+        return {
+            "club": club,
+            "seasons": seasons,
+            "rows": team_rows,
+        }
     
     def get_available_rounds(self, season: str, league: str, week: int) -> List[int]:
         """Get available rounds (games) for a season, league, and week"""

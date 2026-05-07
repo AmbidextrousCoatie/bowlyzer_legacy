@@ -42,6 +42,29 @@ def stats():
         debug_config.log_route('league.stats', params, f"ERROR: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
+@bp.route('/league/club_matrix')
+def club_matrix():
+    """Minimal legacy page: club -> team vs season matrix (cell = league)."""
+    try:
+        league_service = get_league_service()
+        selected_club = (request.args.get("club") or "").strip()
+        only_unnumbered = str(request.args.get("only_unnumbered", "")).strip().lower() in {"1", "true", "on", "yes"}
+        clubs = league_service.get_available_clubs(only_with_unnumbered_team=only_unnumbered)
+        if selected_club and selected_club not in clubs:
+            selected_club = ""
+        matrix = {"club": selected_club, "seasons": [], "rows": []}
+        if selected_club:
+            matrix = league_service.get_club_team_season_matrix(selected_club)
+        return render_template(
+            "league/club_matrix.html",
+            clubs=clubs,
+            selected_club=selected_club,
+            only_unnumbered=only_unnumbered,
+            matrix=matrix,
+        )
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @bp.route('/league/get_available_weeks')
 def get_available_weeks():
     try:

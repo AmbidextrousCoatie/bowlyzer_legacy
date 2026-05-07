@@ -7,9 +7,9 @@ import pandas as pd
 from typing import List, Dict, Any, Optional
 from business_logic.server import Server
 from flask import jsonify, Response
-from business_logic.league import levels
 from app.services.statistics_service import StatisticsService
 from app.models.statistics_models import TeamStatistics
+from app.utils.league_utils import get_league_level
 
 class TeamService:
     # fetches dataframes from server
@@ -111,7 +111,7 @@ class TeamService:
             history[season] = {
                 "league_name": league_name,
                 "final_position": final_position,
-                "league_level": levels.get(league_name, 99),  # Default to 99 if league not found
+                "league_level": get_league_level(league_name),
                 "statistics": {
                     "total_score": float(team_stats.season_summary.total_score),
                     "total_points": float(team_stats.season_summary.total_points),
