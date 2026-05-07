@@ -6,9 +6,11 @@ Based on correct understanding: 9 teams, 30 rows each, 4 positions, up to 3 play
 
 import pandas as pd
 import numpy as np
-from datetime import datetime
+from datetime import datetime, UTC
 import re
 import argparse
+import hashlib
+import json
 from pathlib import Path
 import warnings
 import shutil
@@ -21,6 +23,124 @@ dict_of_match_numbers = {}
 
 _LEAGUE_MAPPING_PATH = Path(__file__).resolve().parent / "database" / "relational_csv" / "league_mapping.csv"
 _LEAGUE_MAPPING_CACHE = None
+_ANALYSIS_LOG_PATH = Path(__file__).resolve().parent / "database" / "data" / "extract_excel_analysis_log.json"
+
+# Bump these when analysis/extraction logic changes in a way that should invalidate prior cache entries.
+ANALYZER_VERSION = "analyzer-v1.0.0"
+EXTRACTOR_VERSION = "extractor-v1.0.0"
+PROCESSOR_VERSION = "processor-v1.0.0"
+
+
+def compute_file_sha256(path: Path, chunk_size: int = 1024 * 1024) -> str:
+    """Compute SHA256 hash for a file."""
+    hasher = hashlib.sha256()
+    with path.open("rb") as handle:
+        while True:
+            chunk = handle.read(chunk_size)
+            if not chunk:
+                break
+            hasher.update(chunk)
+    return hasher.hexdigest()
+
+
+def load_analysis_log(log_path: Path = _ANALYSIS_LOG_PATH):
+    """Load persistent analysis log JSON; return default structure on missing/corrupt file."""
+    if not log_path.is_file():
+        return {"schema_version": 1, "files": {}}
+    try:
+        payload = json.loads(log_path.read_text(encoding="utf-8"))
+        if not isinstance(payload, dict):
+            return {"schema_version": 1, "files": {}}
+        files = payload.get("files")
+        if not isinstance(files, dict):
+            payload["files"] = {}
+        return payload
+    except Exception:
+        return {"schema_version": 1, "files": {}}
+
+
+def save_analysis_log(payload, log_path: Path = _ANALYSIS_LOG_PATH):
+    """Persist analysis log JSON."""
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    payload["updated_at"] = datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z")
+    payload["analyzer_version"] = ANALYZER_VERSION
+    payload["extractor_version"] = EXTRACTOR_VERSION
+    log_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _analyze_with_cache(
+    excel_file: Path,
+    analysis_log,
+    old_format_sheet_threshold=15,
+    force_reanalyze=False,
+):
+    """Analyze file with persistent cache short-circuiting."""
+    file_path = Path(excel_file).resolve()
+    file_key = str(file_path)
+    file_hash = compute_file_sha256(file_path)
+    files_map = analysis_log.setdefault("files", {})
+    cached = files_map.get(file_key, {})
+    cached_result = cached.get("analysis_result")
+
+    can_reuse = (
+        isinstance(cached_result, dict)
+        and cached.get("file_hash") == file_hash
+        and cached.get("analyzer_version") == ANALYZER_VERSION
+        and cached.get("old_format_sheet_threshold") == old_format_sheet_threshold
+    )
+
+    if can_reuse and not force_reanalyze:
+        result = dict(cached_result)
+        result["from_cache"] = True
+        result["analysis_skip_reason"] = "Skipped due to unchanged file hash + analyzer version + threshold"
+    else:
+        result = analyze_excel_file(file_path, old_format_sheet_threshold=old_format_sheet_threshold)
+        result["from_cache"] = False
+        result["analysis_skip_reason"] = ""
+
+    result["file"] = str(file_path)
+    result["file_hash"] = file_hash
+    result["analyzer_version"] = ANALYZER_VERSION
+    result["extractor_version"] = EXTRACTOR_VERSION
+
+    files_map[file_key] = {
+        "file_hash": file_hash,
+        "analyzer_version": ANALYZER_VERSION,
+        "extractor_version": EXTRACTOR_VERSION,
+        "old_format_sheet_threshold": old_format_sheet_threshold,
+        "last_analyzed_at": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
+        "analysis_result": result,
+    }
+    return result
+
+
+def _build_processing_input_signature(eligible_df: pd.DataFrame) -> str:
+    """Build deterministic signature for current process-mode eligible inputs."""
+    if eligible_df.empty:
+        return ""
+    records = []
+    for row in eligible_df.itertuples(index=False):
+        records.append(
+            {
+                "file": str(getattr(row, "file", "")),
+                "file_hash": str(getattr(row, "file_hash", "")),
+                "available_weeks": str(getattr(row, "available_weeks", "")),
+                "league": str(getattr(row, "league", "")),
+                "season": str(getattr(row, "season", "")),
+                "games_per_week": str(getattr(row, "games_per_week", "")),
+            }
+        )
+    records = sorted(records, key=lambda rec: rec["file"])
+    payload = json.dumps(
+        {
+            "analyzer_version": ANALYZER_VERSION,
+            "processor_version": PROCESSOR_VERSION,
+            "eligible_inputs": records,
+        },
+        ensure_ascii=False,
+        sort_keys=True,
+    )
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 def _is_female_league_id(league_id: str) -> bool:
@@ -909,6 +1029,11 @@ def parse_args():
         default=15,
         help="If sheet count is below this and Spielorte is missing, mark as old 1-week format.",
     )
+    parser.add_argument(
+        "--force_reanalyze",
+        action="store_true",
+        help="Ignore analysis cache and re-analyze all files for this run.",
+    )
     return parser.parse_args()
 
 
@@ -1380,16 +1505,26 @@ def run_analyze_mode(
     analysis_output=None,
     old_format_sheet_threshold=15,
     skipped_files=None,
+    force_reanalyze=False,
 ):
     """Run analyze mode for all discovered files."""
     skipped_files = skipped_files or []
+    analysis_log = load_analysis_log()
     analysis_rows = []
+    cache_hits = 0
     total_files = len(excel_files)
     for index, file_path in enumerate(excel_files, start=1):
-        analysis_rows.append(
-            analyze_excel_file(file_path, old_format_sheet_threshold=old_format_sheet_threshold)
+        row = _analyze_with_cache(
+            file_path,
+            analysis_log,
+            old_format_sheet_threshold=old_format_sheet_threshold,
+            force_reanalyze=force_reanalyze,
         )
+        if row.get("from_cache"):
+            cache_hits += 1
+        analysis_rows.append(row)
         print_progress_bar(index, total_files, "Analyzing files")
+    save_analysis_log(analysis_log)
     analysis_df = pd.DataFrame(analysis_rows)
     if analysis_df.empty:
         analysis_df = pd.DataFrame(
@@ -1416,6 +1551,11 @@ def run_analyze_mode(
                 "debug_date_raw",
                 "debug_location_raw",
                 "debug_teams_raw",
+                "file_hash",
+                "analyzer_version",
+                "extractor_version",
+                "from_cache",
+                "analysis_skip_reason",
             ]
         )
     display_df = analysis_df.copy()
@@ -1485,6 +1625,7 @@ def run_analyze_mode(
     print("\nFinal Metrics:")
     print(f"  total discovered files: {total_discovered_count}")
     print(f"  analyzed: {analyzed_count}")
+    print(f"  cache hits: {cache_hits}")
     print(f"  skipped: {skipped_count}")
     print(f"  eligible: {eligible_count}")
     print(f"  not eligible: {not_eligible_count}")
@@ -1493,6 +1634,16 @@ def run_analyze_mode(
         not_eligible_pct = (not_eligible_count / analyzed_count) * 100
         print(f"  eligible %: {eligible_pct:.1f}")
         print(f"  not eligible %: {not_eligible_pct:.1f}")
+
+    if not analysis_df.empty and "from_cache" in analysis_df.columns:
+        cache_skipped_df = analysis_df[analysis_df["from_cache"] == True]
+    else:
+        cache_skipped_df = pd.DataFrame()
+    if not cache_skipped_df.empty:
+        print("\nAnalysis Skips:")
+        for row in cache_skipped_df.itertuples(index=False):
+            reason = getattr(row, "analysis_skip_reason", "") or "Skipped due to cache reuse"
+            print(f"  - {row.file}: {reason}")
 
 
 def run_convert_legacy_xls_mode(excel_files):
@@ -1576,13 +1727,22 @@ def sanitize_filename_component(value):
 
 def run_process_mode_with_analysis(excel_files, args):
     """Analyze first, then process only eligible post-2022 files."""
+    analysis_log = load_analysis_log()
     analysis_rows = []
+    cache_hits = 0
     total_analysis_files = len(excel_files)
     for index, file_path in enumerate(excel_files, start=1):
-        analysis_rows.append(
-            analyze_excel_file(file_path, old_format_sheet_threshold=args.old_format_sheet_threshold)
+        row = _analyze_with_cache(
+            file_path,
+            analysis_log,
+            old_format_sheet_threshold=args.old_format_sheet_threshold,
+            force_reanalyze=args.force_reanalyze,
         )
+        if row.get("from_cache"):
+            cache_hits += 1
+        analysis_rows.append(row)
         print_progress_bar(index, total_analysis_files, "Analyzing files")
+    save_analysis_log(analysis_log)
     analysis_df = pd.DataFrame(analysis_rows)
     if analysis_df.empty:
         print("No files available for processing.")
@@ -1593,10 +1753,44 @@ def run_process_mode_with_analysis(excel_files, args):
         & (analysis_df["data_format"] == "data_format_post_2022")
     ].copy()
 
-    print(f"Eligible post_2022 files for processing: {len(eligible_df)}/{len(analysis_df)}")
+    print(
+        f"Eligible post_2022 files for processing: {len(eligible_df)}/{len(analysis_df)} "
+        f"(cache hits: {cache_hits})"
+    )
     if eligible_df.empty:
         print("No eligible post_2022 files to process.")
         return
+
+    # Processing cache short-circuit:
+    # if eligible input signature + analyzer version + processor version are unchanged
+    # and output hash matches current output, skip full processing.
+    continuous_output_file = Path("database/data/historical_league_results.csv")
+    process_cache = analysis_log.setdefault("processing_cache", {})
+    cache_key = "historical_league_results"
+    current_input_signature = _build_processing_input_signature(eligible_df)
+    cached_process = process_cache.get(cache_key, {})
+    if (
+        isinstance(cached_process, dict)
+        and cached_process.get("input_signature") == current_input_signature
+        and cached_process.get("analyzer_version") == ANALYZER_VERSION
+        and cached_process.get("processor_version") == PROCESSOR_VERSION
+        and continuous_output_file.is_file()
+    ):
+        current_output_hash = compute_file_sha256(continuous_output_file)
+        if current_output_hash == cached_process.get("output_hash"):
+            process_skip_reason = (
+                "Skipped due to unchanged analysis input signature + analyzer/processor versions + output hash"
+            )
+            print(
+                f"Processing skipped: {process_skip_reason}."
+            )
+            process_cache[cache_key] = {
+                **cached_process,
+                "last_skip_reason": process_skip_reason,
+                "last_skipped_at": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
+            }
+            save_analysis_log(analysis_log)
+            return
 
     output_df = pd.DataFrame()
     total_files = len(eligible_df)
@@ -1668,14 +1862,26 @@ def run_process_mode_with_analysis(excel_files, args):
         created_files.append((output_file, len(group_df)))
 
     # Continuous cross-season/cross-league output for backend source registration.
-    continuous_output_file = Path("database/data/historical_league_results.csv")
     continuous_output_file.parent.mkdir(parents=True, exist_ok=True)
     output_df.to_csv(continuous_output_file, sep=";", index=False)
+    output_hash = compute_file_sha256(continuous_output_file)
+
+    process_cache[cache_key] = {
+        "input_signature": current_input_signature,
+        "analyzer_version": ANALYZER_VERSION,
+        "processor_version": PROCESSOR_VERSION,
+        "output_file": str(continuous_output_file.resolve()),
+        "output_hash": output_hash,
+        "last_processed_at": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
+        "eligible_count": int(len(eligible_df)),
+        "last_skip_reason": "",
+    }
+    save_analysis_log(analysis_log)
 
     print("\nCreated CSV files:")
     for output_file, row_count in created_files:
         print(f"  - {output_file} ({row_count} rows)")
-    print(f"  - {continuous_output_file} ({len(output_df)} rows, continuous)")
+    print(f"  - {continuous_output_file} ({len(output_df)} rows, continuous, hash={output_hash[:12]}...)")
 
     summary_df = (
         output_df.groupby(["League", "Season"], dropna=False)["Week"]
@@ -1722,6 +1928,7 @@ if __name__ == "__main__":
             args.analysis_output,
             old_format_sheet_threshold=args.old_format_sheet_threshold,
             skipped_files=skipped_discovery_files,
+            force_reanalyze=args.force_reanalyze,
         )
         raise SystemExit(0)
 

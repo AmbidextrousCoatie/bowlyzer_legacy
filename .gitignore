@@ -34,3 +34,5 @@ __pycache__/__init__.cpython-312.pyc
 database/input/__pycache__/generate_geek_tournament_data.cpython-312.pyc
 analysis_report.csv
 xlsx_analysis_report.csv
+report.csv
+database/data/extract_excel_analysis_log.json
