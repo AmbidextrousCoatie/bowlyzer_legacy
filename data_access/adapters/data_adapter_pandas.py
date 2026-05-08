@@ -26,6 +26,9 @@ OPERATORS = {
     "endswith": lambda x, y: x.endswith(y) if isinstance(x, str) else False,  # String ends with
 }
 
+BOOL_TRUE_TOKENS = {"true", "1", "yes", "y", "on"}
+BOOL_FALSE_TOKENS = {"false", "0", "no", "n", "off", ""}
+
 
 def _unique_clean_str_labels(series: pd.Series) -> List[str]:
     """Sorted unique non-empty labels; never returns float NaN (safe for ``jsonify``)."""
@@ -92,8 +95,13 @@ class DataAdapterPandas(DataAdapter):
     def _load_data(self):
         """Load data from CSV file"""
 
-        self.df = pd.read_csv(self.data_path, sep=";")
+        self.df = pd.read_csv(self.data_path, sep=";", dtype=str, low_memory=False)
         self._normalize_week_column()
+
+    @staticmethod
+    def _bool_mask(series: pd.Series, value: bool) -> pd.Series:
+        normalized = series.fillna("").astype(str).str.strip().str.lower()
+        return normalized.isin(BOOL_TRUE_TOKENS if value else BOOL_FALSE_TOKENS)
 
     def set_dataframe(self, df):
         """Set the dataframe directly (for testing or in-memory operations)"""
@@ -153,9 +161,37 @@ class DataAdapterPandas(DataAdapter):
                             elif operator_name == "endswith":
                                 result = result[result[column].str.endswith(value, na=False)]
                         else:
-                            # Comparison operators
-                            mask = result[column].apply(lambda x: op_func(x, value))
-                            result = result[mask]
+                            # Type-aware comparisons for string-loaded CSVs.
+                            col_series = result[column]
+                            if operator_name in ["eq", "ne"]:
+                                if isinstance(value, bool):
+                                    mask = self._bool_mask(col_series, value)
+                                    result = result[mask] if operator_name == "eq" else result[~mask]
+                                elif isinstance(value, (int, float)) and not isinstance(value, bool):
+                                    numeric = pd.to_numeric(col_series, errors="coerce")
+                                    target = float(value)
+                                    mask = numeric.eq(target)
+                                    result = result[mask] if operator_name == "eq" else result[~mask]
+                                else:
+                                    left = col_series.fillna("").astype(str).str.strip()
+                                    right = str(value).strip()
+                                    mask = left.eq(right)
+                                    result = result[mask] if operator_name == "eq" else result[~mask]
+                            elif operator_name in ["lt", "le", "gt", "ge"] and isinstance(value, (int, float)):
+                                numeric = pd.to_numeric(col_series, errors="coerce")
+                                target = float(value)
+                                if operator_name == "lt":
+                                    result = result[numeric.lt(target)]
+                                elif operator_name == "le":
+                                    result = result[numeric.le(target)]
+                                elif operator_name == "gt":
+                                    result = result[numeric.gt(target)]
+                                elif operator_name == "ge":
+                                    result = result[numeric.ge(target)]
+                            else:
+                                # Fallback generic comparator
+                                mask = col_series.apply(lambda x: op_func(x, value))
+                                result = result[mask]
         
         # Select columns
         if columns:

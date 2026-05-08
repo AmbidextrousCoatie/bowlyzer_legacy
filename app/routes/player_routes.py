@@ -9,13 +9,18 @@ def get_player_service():
     """Helper function to get PlayerService with database parameter"""
     requested = request.args.get('database')
     has_combined = database_config.validate_source('db_player_combined_gf')
+    has_merged_hybrid = database_config.validate_source('db_player_merged_hybrid')
+    league_like_sources = {'db_real_pipeline_gf', 'db_real_historical_league', 'db_real_merged'}
     if requested:
-        # Player stats should include league+tournament by default.
-        # If caller passes the league-only default source, transparently upgrade.
-        if requested == 'db_real_pipeline_gf' and has_combined:
+        # Player stats use a hybrid source (league+tournament) for league-like datasets.
+        if requested == 'db_real_merged' and has_merged_hybrid:
+            database = 'db_player_merged_hybrid'
+        elif requested in league_like_sources and has_combined:
             database = 'db_player_combined_gf'
         else:
             database = requested
+    elif has_merged_hybrid:
+        database = 'db_player_merged_hybrid'
     elif has_combined:
         database = 'db_player_combined_gf'
     else:

@@ -7,9 +7,14 @@ from typing import Optional
 from pathlib import Path
 from app.config.database_config import database_config, DATABASE_DATA_DIR
 
+# Read legacy semicolon CSVs as strings to avoid mixed-type chunk inference warnings.
+_LEGACY_CSV_READ_KWARGS = {"sep": ";", "dtype": str, "low_memory": False}
+
 class DataManager:
     _server_instances = []
     _session_key = 'selected_database'
+    # Process-local cache: source_id -> {"file_path": str, "mtime": float, "df": DataFrame}
+    _dataframe_cache = {}
 
     def __init__(self, source=None):
         # Always load data from session, don't rely on singleton
@@ -34,8 +39,7 @@ class DataManager:
         try:
             config = database_config.get_source_config(self._current_source)
             file_path = config.file_path if config else str(DATABASE_DATA_DIR / database_config.get_filename_for_source(self._current_source))
-            
-            self._df = pd.read_csv(file_path, sep=';')
+            self._df = self._get_cached_or_load_df(file_path)
 
         except Exception as e:
             print(f"Error loading data from {self._current_source}: {e}")
@@ -46,7 +50,7 @@ class DataManager:
                 self._save_session_source(self._current_source)
                 config = database_config.get_source_config(self._current_source)
                 file_path = config.file_path if config else str(DATABASE_DATA_DIR / database_config.get_filename_for_source(self._current_source))
-                self._df = pd.read_csv(file_path, sep=';')
+                self._df = self._get_cached_or_load_df(file_path)
                 print(f"Fallback to default data source: {self._current_source}")
             else:
                 return False
@@ -72,7 +76,7 @@ class DataManager:
             # Load the new data
             config = database_config.get_source_config(self._current_source)
             file_path = config.file_path if config else str(DATABASE_DATA_DIR / database_config.get_filename_for_source(self._current_source))
-            self._df = pd.read_csv(file_path, sep=';')
+            self._df = self._get_cached_or_load_df(file_path)
             
             # Data source switched successfully
             
@@ -90,7 +94,7 @@ class DataManager:
             try:
                 config = database_config.get_source_config(self._current_source)
                 file_path = config.file_path if config else str(DATABASE_DATA_DIR / database_config.get_filename_for_source(self._current_source))
-                self._df = pd.read_csv(file_path, sep=';')
+                self._df = self._get_cached_or_load_df(file_path)
                 print(f"✅ Rolled back to: {self._current_source}")
             except Exception as rollback_error:
                 print(f"❌ Critical error: Could not rollback to {self._current_source}: {rollback_error}")
@@ -99,7 +103,7 @@ class DataManager:
                 self._save_session_source(self._current_source)
                 config = database_config.get_source_config(self._current_source)
                 file_path = config.file_path if config else str(DATABASE_DATA_DIR / database_config.get_filename_for_source(self._current_source))
-                self._df = pd.read_csv(file_path, sep=';')
+                self._df = self._get_cached_or_load_df(file_path)
             
             return False
 
@@ -130,10 +134,8 @@ class DataManager:
 
     def force_reload_from_session(self):
         """Force reload data from session - useful for production with multiple workers"""
-        # Clear any cached data
-        self._df = None
-        self._current_source = None
-        # Reload from session
+        # Reload from session, but leverage file-mtime cache to avoid heavy
+        # CSV re-parsing on every request when data is unchanged.
         self._load_data()
     
     def reset_to_default(self):
@@ -214,9 +216,21 @@ class DataManager:
         try:
             config = database_config.get_source_config(source)
             file_path = config.file_path if config else str(DATABASE_DATA_DIR / database_config.get_filename_for_source(source))
-            self._df = pd.read_csv(file_path, sep=';')
+            self._df = self._get_cached_or_load_df(file_path)
             print(f"✅ Successfully switched to: {source}")
             return True
         except Exception as e:
             print(f"❌ Error forcing source {source}: {e}")
             return False 
+
+    @classmethod
+    def _get_cached_or_load_df(cls, file_path: str) -> pd.DataFrame:
+        abs_path = str(Path(file_path).resolve())
+        mtime = os.path.getmtime(abs_path)
+        cache_entry = cls._dataframe_cache.get(abs_path)
+        if cache_entry and cache_entry.get("mtime") == mtime:
+            return cache_entry["df"]
+
+        df = pd.read_csv(abs_path, **_LEGACY_CSV_READ_KWARGS)
+        cls._dataframe_cache[abs_path] = {"mtime": mtime, "df": df}
+        return df

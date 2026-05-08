@@ -20,7 +20,7 @@ def _resolve_default_tournament_source() -> str:
     except Exception:
         pass
 
-    for source_id in database_config.get_available_sources():
+    for source_id in [s for s in database_config.get_available_sources() if s.startswith("db_tournament_")]:
         try:
             svc = TournamentService(database=source_id)
             if svc.get_tournaments():

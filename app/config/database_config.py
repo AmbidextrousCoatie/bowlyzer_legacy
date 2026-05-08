@@ -22,6 +22,8 @@ GF_NBM_CANONICAL_CSV = GF_TOURNAMENT_EXPORT_DIR / "gf_table_125__nbm_nordbayeris
 GF_REGIONAL_COMBINED_POSTPROCESSED_CSV = GF_TOURNAMENT_EXPORT_DIR / "gf_tournaments_2026__combined_postprocessed.csv"
 GF_PLAYER_COMBINED_CSV = GF_TOURNAMENT_EXPORT_DIR / "gf_player_stats__league_plus_tournaments.csv"
 HISTORICAL_LEAGUE_RESULTS_CSV = LEGACY_V1_DIR / "database" / "data" / "historical_league_results.csv"
+MERGED_LEAGUE_RESULTS_CSV = LEGACY_V1_DIR / "database" / "data" / "league_results_merged.csv"
+MERGED_PLAYER_HYBRID_CSV = LEGACY_V1_DIR / "database" / "data" / "player_stats_merged_plus_tournaments.csv"
 
 
 def _ensure_pipeline_gf_legacy_csv_stub() -> None:
@@ -88,6 +90,68 @@ def _ensure_historical_league_csv_stub(path: Path) -> None:
         writer.writeheader()
 
 
+def _ensure_merged_league_csv_stub(path: Path) -> None:
+    """
+    Keep merged league source selectable before first merge run by creating
+    a header-only legacy CSV.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if path.is_file():
+        return
+    from database.conversion.bowlingbayern_legacy_core import OUTPUT_HEADERS
+
+    with path.open("w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=OUTPUT_HEADERS, delimiter=";")
+        writer.writeheader()
+
+
+def _build_player_merged_hybrid_csv() -> None:
+    """
+    Build a player hybrid source from merged league rows + tournament postprocessed rows.
+    This keeps player routes aligned with the selected merged league scope while still
+    exposing tournament history in lifetime views.
+    """
+    league_rows: List[Dict[str, str]] = []
+    if MERGED_LEAGUE_RESULTS_CSV.is_file():
+        with MERGED_LEAGUE_RESULTS_CSV.open("r", encoding="utf-8-sig", newline="") as f:
+            reader = csv.DictReader(f, delimiter=";")
+            league_rows = [{str(k): str(v or "") for k, v in row.items()} for row in reader]
+
+    tournament_rows: List[Dict[str, str]] = []
+    if GF_REGIONAL_COMBINED_POSTPROCESSED_CSV.is_file():
+        with GF_REGIONAL_COMBINED_POSTPROCESSED_CSV.open("r", encoding="utf-8-sig", newline="") as f:
+            reader = csv.DictReader(f, delimiter=";")
+            tournament_rows = [{str(k): str(v or "") for k, v in row.items()} for row in reader]
+
+    headers = sorted({k for r in (league_rows + tournament_rows) for k in r.keys()})
+    if not headers:
+        from database.conversion.bowlingbayern_legacy_core import OUTPUT_HEADERS
+        headers = list(OUTPUT_HEADERS)
+
+    out_rows: List[Dict[str, str]] = []
+    for row in league_rows:
+        merged = {h: str(row.get(h, "")) for h in headers}
+        if not str(merged.get("Event Type", "")).strip():
+            merged["Event Type"] = "league"
+        if not str(merged.get("Event Name", "")).strip():
+            merged["Event Name"] = str(merged.get("League", "")).strip()
+        if not str(merged.get("Club", "")).strip():
+            merged["Club"] = str(merged.get("Team", "")).strip()
+        out_rows.append(merged)
+
+    for row in tournament_rows:
+        merged = {h: str(row.get(h, "")) for h in headers}
+        merged["Input Data"] = "True"
+        merged["Computed Data"] = "False"
+        out_rows.append(merged)
+
+    MERGED_PLAYER_HYBRID_CSV.parent.mkdir(parents=True, exist_ok=True)
+    with MERGED_PLAYER_HYBRID_CSV.open("w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=headers, delimiter=";", extrasaction="ignore")
+        writer.writeheader()
+        writer.writerows(out_rows)
+
+
 @dataclass
 class DataSourceConfig:
     """Configuration for a data source"""
@@ -130,6 +194,14 @@ class DatabaseConfig:
                 is_default=False,
                 is_enabled=True,
                 file_path=str(HISTORICAL_LEAGUE_RESULTS_CSV),
+            ),
+            'db_real_merged': DataSourceConfig(
+                filename='league_results_merged.csv',
+                display_name='Real Data (Merged League)',
+                description='Merged league source (historical + pipeline GF), with duplicate conflicts resolved by source priority',
+                is_default=False,
+                is_enabled=True,
+                file_path=str(MERGED_LEAGUE_RESULTS_CSV),
             ),
             'db_tournament_geek_2026': DataSourceConfig(
                 filename='tournament_combined_2024_2026_postprocessed.csv',
@@ -177,6 +249,14 @@ class DatabaseConfig:
                 is_enabled=True,
                 file_path=str(GF_PLAYER_COMBINED_CSV),
             ),
+            'db_player_merged_hybrid': DataSourceConfig(
+                filename='player_stats_merged_plus_tournaments.csv',
+                display_name='Player Data (Merged+Tournament)',
+                description='Player hybrid source built from merged league data plus tournament postprocessed rows',
+                is_default=False,
+                is_enabled=True,
+                file_path=str(MERGED_PLAYER_HYBRID_CSV),
+            ),
         }
 
         try:
@@ -186,6 +266,8 @@ class DatabaseConfig:
             _ensure_tournament_postprocessed_csv_stub(GF_REGIONAL_COMBINED_POSTPROCESSED_CSV)
             _ensure_tournament_postprocessed_csv_stub(GF_PLAYER_COMBINED_CSV)
             _ensure_historical_league_csv_stub(HISTORICAL_LEAGUE_RESULTS_CSV)
+            _ensure_merged_league_csv_stub(MERGED_LEAGUE_RESULTS_CSV)
+            _build_player_merged_hybrid_csv()
         except (ImportError, OSError) as exc:
             print(
                 "Warning: could not create pipeline GF legacy stub "

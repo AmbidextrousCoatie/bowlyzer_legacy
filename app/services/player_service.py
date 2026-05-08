@@ -1,7 +1,9 @@
 import pandas as pd
 import re
+import os
 from data_access.schema import Columns
 from app.services.data_manager import DataManager
+from app.config.database_config import database_config
 from business_logic.statistics import calculate_score_average_player, calculate_games_count_player
 from business_logic.server import Server
 from app.services.statistics_service import StatisticsService
@@ -20,6 +22,8 @@ def _csv_bool_is_false(s: pd.Series) -> pd.Series:
 
 
 class PlayerService:
+    _player_catalog_cache: Dict[Tuple[str, str, float], List[Dict[str, str]]] = {}
+
     def __init__(self, database: str = None):
         self.database = database
         self.data_manager = DataManager(source=database) if database else DataManager()
@@ -77,6 +81,14 @@ class PlayerService:
         df = self.data_manager.df
         if df is None or df.empty or Columns.player_name not in df.columns:
             return []
+        source_id = str(self.data_manager.current_source or self.database or "")
+        source_cfg = database_config.get_source_config(source_id) if source_id else None
+        source_path = str(source_cfg.file_path) if source_cfg and source_cfg.file_path else ""
+        source_mtime = os.path.getmtime(source_path) if source_path and os.path.exists(source_path) else 0.0
+        cache_key = (source_id, source_path, float(source_mtime))
+        cached = self._player_catalog_cache.get(cache_key)
+        if cached is not None:
+            return cached
 
         sub = df
         if Columns.input_data in df.columns and Columns.computed_data in df.columns:
@@ -102,7 +114,9 @@ class PlayerService:
             canonical = self._canonical_name_for_player_id(pid, names)
             if canonical:
                 out.append({"id": pid, "name": canonical})
-        return sorted(out, key=lambda x: x["name"].lower())
+        sorted_out = sorted(out, key=lambda x: x["name"].lower())
+        self._player_catalog_cache[cache_key] = sorted_out
+        return sorted_out
 
     def get_all_players(self):
         """Get list of all players for selection"""
@@ -247,6 +261,14 @@ class PlayerService:
         if games_df.empty:
             return None
  
+        # CSVs are loaded as strings; convert score once for all aggregates below.
+        if Columns.score in games_df.columns:
+            games_df = games_df.copy()
+            games_df[Columns.score] = pd.to_numeric(games_df[Columns.score], errors="coerce")
+            games_df = games_df.dropna(subset=[Columns.score])
+        if games_df.empty:
+            return None
+
         overall_average = games_df[Columns.score].mean()
 
         def normalize_club(value: Any) -> str:
@@ -324,6 +346,11 @@ class PlayerService:
                 base = base[base[Columns.league_name].astype(str).str.strip().eq(str(league_value).strip())]
             base = _safe_player_rows(base)
             if base.empty or Columns.player_name not in base.columns or Columns.score not in base.columns:
+                return None, 0
+            base = base.copy()
+            base[Columns.score] = pd.to_numeric(base[Columns.score], errors="coerce")
+            base = base.dropna(subset=[Columns.score])
+            if base.empty:
                 return None, 0
             pid_norm = self._normalize_player_id(player_id_value)
             if pid_norm and Columns.player_id in base.columns:

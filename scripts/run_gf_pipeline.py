@@ -75,6 +75,7 @@ def main() -> int:
         entries_sort=args.entries_sort,
     )
     result = run_ingest(config=cfg, mode=args.mode, field_ids=args.field_ids, skip_legacy=args.skip_legacy)
+
     print(json.dumps(result, indent=2, ensure_ascii=False))
     totals = result.get("benchmark_totals") or {}
     if totals:

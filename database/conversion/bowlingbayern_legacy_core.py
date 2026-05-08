@@ -70,7 +70,7 @@ def parse_timestamp(raw: str) -> Optional[datetime]:
 
 
 def parse_game_id(game_id: str) -> ParsedIds:
-    token = (game_id or "").strip()
+    token = (game_id or "").strip().upper()
     m = re.match(r"^([A-Z]+(?:-[A-Z0-9]+)*)[_-](\d{3})(?:_.+)?$", token)
     if m:
         league_code, triple = m.group(1), m.group(2)
