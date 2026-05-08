@@ -193,6 +193,85 @@ class LeagueService:
             "seasons": seasons,
             "rows": team_rows,
         }
+
+    def get_league_week_matrix(self, expected_weeks: int = 6) -> Dict[str, Any]:
+        """
+        Build a league-vs-season matrix with missing week information.
+
+        Cell semantics:
+        - all expected weeks available -> checkmark
+        - missing weeks -> comma-separated week numbers
+        """
+        expected_weeks = max(1, int(expected_weeks or 6))
+        expected_set = set(range(1, expected_weeks + 1))
+
+        filters = {
+            Columns.computed_data: {"value": True, "operator": "eq"},
+        }
+        df = self.adapter.get_filtered_data(filters=filters)
+        if df is None or df.empty:
+            return {"seasons": [], "rows": [], "expected_weeks": expected_weeks}
+
+        required = [Columns.season, Columns.league_name, Columns.week]
+        for col in required:
+            if col not in df.columns:
+                return {"seasons": [], "rows": [], "expected_weeks": expected_weeks}
+
+        matrix_df = df[required].copy()
+        matrix_df[Columns.season] = matrix_df[Columns.season].astype(str).str.strip()
+        matrix_df[Columns.league_name] = matrix_df[Columns.league_name].astype(str).str.strip()
+        matrix_df[Columns.week] = pd.to_numeric(matrix_df[Columns.week], errors="coerce")
+        matrix_df = matrix_df.dropna(subset=[Columns.week])
+        matrix_df[Columns.week] = matrix_df[Columns.week].astype(int)
+        matrix_df = matrix_df[matrix_df[Columns.week] > 0]
+
+        if matrix_df.empty:
+            return {"seasons": [], "rows": [], "expected_weeks": expected_weeks}
+
+        seasons = sorted(matrix_df[Columns.season].unique())
+        leagues = sorted(matrix_df[Columns.league_name].unique())
+
+        grouped = (
+            matrix_df.groupby([Columns.league_name, Columns.season])[Columns.week]
+            .apply(lambda s: sorted({int(v) for v in s if int(v) > 0}))
+            .to_dict()
+        )
+
+        rows: List[Dict[str, Any]] = []
+        for league in leagues:
+            season_cells: Dict[str, Dict[str, Any]] = {}
+            for season in seasons:
+                available_weeks = grouped.get((league, season), [])
+                available_set = set(available_weeks)
+                missing_weeks = sorted(expected_set - available_set)
+                coverage_ratio = len(available_set.intersection(expected_set)) / expected_weeks
+
+                if not missing_weeks:
+                    label = "✓"
+                    status = "ok"
+                else:
+                    label = ", ".join(str(w) for w in missing_weeks)
+                    if coverage_ratio >= 0.67:
+                        status = "warn"
+                    elif coverage_ratio >= 0.34:
+                        status = "bad"
+                    else:
+                        status = "critical"
+
+                season_cells[season] = {
+                    "label": label,
+                    "status": status,
+                    "missing_weeks": missing_weeks,
+                    "available_weeks": available_weeks,
+                }
+
+            rows.append({"league": league, "seasons": season_cells})
+
+        return {
+            "seasons": seasons,
+            "rows": rows,
+            "expected_weeks": expected_weeks,
+        }
     
     def get_available_rounds(self, season: str, league: str, week: int) -> List[int]:
         """Get available rounds (games) for a season, league, and week"""
@@ -1448,13 +1527,23 @@ class LeagueService:
         # Process team averages
         team_averages_list = []
         if Columns.team_name in league_data_team.columns and Columns.score in league_data_team.columns:
+            league_data_team = league_data_team.copy()
+            league_data_team[Columns.score] = pd.to_numeric(league_data_team[Columns.score], errors="coerce")
+            if Columns.players_per_team in league_data_team.columns:
+                league_data_team[Columns.players_per_team] = pd.to_numeric(
+                    league_data_team[Columns.players_per_team], errors="coerce"
+                )
             team_averages = league_data_team.groupby([Columns.team_name, Columns.players_per_team])[Columns.score].mean().reset_index()
             team_averages = team_averages.sort_values(Columns.score, ascending=False).head(number_of_team_averages)
             
             for _, row in team_averages.iterrows():
+                players_per_team = row.get(Columns.players_per_team)
+                avg = None
+                if pd.notna(players_per_team) and float(players_per_team) != 0:
+                    avg = float(row[Columns.score]) / float(players_per_team)
                 team_averages_list.append({
                     "team": row[Columns.team_name],
-                    "average": round(row[Columns.score]/row[Columns.players_per_team], 2)
+                    "average": round(avg, 2) if avg is not None else 0.0
                 })
 
         return {

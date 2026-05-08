@@ -228,7 +228,8 @@ document.addEventListener('DOMContentLoaded', function() {
         ).join('');
         const typed = (playerInput.value || '').trim();
         if (typed && !players.some(p => p.name === typed)) {
-            playerInput.value = '';
+            // Preserve user-typed query text; only clear stale resolved selection id.
+            selectedPlayerId = '';
             document.getElementById('playerStats').innerHTML = `
                 <div class="alert alert-info">
                     <strong>${i18nText('ui.player.selection_cleared', 'Selection cleared')}</strong> - ${i18nText('ui.player.name_not_in_source', 'that name is not in this data source. Pick a name from the list.')}

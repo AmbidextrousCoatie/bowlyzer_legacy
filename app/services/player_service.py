@@ -40,7 +40,28 @@ class PlayerService:
         except ValueError:
             return raw
 
-    def _canonical_name_for_player_id(self, player_id: str, names: List[str]) -> str:
+    @staticmethod
+    def _build_name_token_stats(df: pd.DataFrame) -> Tuple[Dict[str, int], Dict[str, int]]:
+        first_counts: Dict[str, int] = {}
+        last_counts: Dict[str, int] = {}
+        if df is None or df.empty or Columns.player_name not in df.columns:
+            return first_counts, last_counts
+
+        for raw in df[Columns.player_name].dropna().astype(str).tolist():
+            parts = raw.strip().split()
+            if len(parts) < 2:
+                continue
+            first, last = parts[0], parts[-1]
+            first_counts[first] = first_counts.get(first, 0) + 1
+            last_counts[last] = last_counts.get(last, 0) + 1
+        return first_counts, last_counts
+
+    def _canonical_name_for_player_id(
+        self,
+        player_id: str,
+        names: List[str],
+        token_stats: Optional[Tuple[Dict[str, int], Dict[str, int]]] = None,
+    ) -> str:
         """
         Pick one stable display name per player id.
         Heuristic for two-token reversals (A B vs B A):
@@ -52,18 +73,10 @@ class PlayerService:
         if len(set(cleaned)) == 1:
             return cleaned[0]
 
-        df = self.data_manager.df
-        token_rows = []
-        if df is not None and not df.empty and Columns.player_name in df.columns:
-            for raw in df[Columns.player_name].dropna().astype(str).tolist():
-                parts = raw.strip().split()
-                if len(parts) >= 2:
-                    token_rows.append((parts[0], parts[-1]))
-        first_counts: Dict[str, int] = {}
-        last_counts: Dict[str, int] = {}
-        for first, last in token_rows:
-            first_counts[first] = first_counts.get(first, 0) + 1
-            last_counts[last] = last_counts.get(last, 0) + 1
+        if token_stats is None:
+            first_counts, last_counts = self._build_name_token_stats(self.data_manager.df)
+        else:
+            first_counts, last_counts = token_stats
 
         def score(name: str) -> int:
             parts = name.split()
@@ -110,8 +123,9 @@ class PlayerService:
                 grouped[key].append(name)
 
         out = []
+        token_stats = self._build_name_token_stats(sub)
         for pid, names in grouped.items():
-            canonical = self._canonical_name_for_player_id(pid, names)
+            canonical = self._canonical_name_for_player_id(pid, names, token_stats=token_stats)
             if canonical:
                 out.append({"id": pid, "name": canonical})
         sorted_out = sorted(out, key=lambda x: x["name"].lower())

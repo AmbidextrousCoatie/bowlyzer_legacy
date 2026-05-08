@@ -183,7 +183,7 @@ class DatabaseConfig:
                 filename='latest.csv',
                 display_name='Real Data (Pipeline GF)',
                 description='Legacy CSV produced by the Gravity Forms pipeline (merged GF results)',
-                is_default=True,
+                is_default=False,
                 is_enabled=True,
                 file_path=str(PIPELINE_GF_LEGACY_CSV),
             ),
@@ -199,7 +199,7 @@ class DatabaseConfig:
                 filename='league_results_merged.csv',
                 display_name='Real Data (Merged League)',
                 description='Merged league source (historical + pipeline GF), with duplicate conflicts resolved by source priority',
-                is_default=False,
+                is_default=True,
                 is_enabled=True,
                 file_path=str(MERGED_LEAGUE_RESULTS_CSV),
             ),
@@ -349,6 +349,7 @@ class DatabaseConfig:
     
     def get_sources_info(self) -> Dict:
         """Get information about all available sources"""
+        selector_visible_sources = {"db_real_merged"}
         return {
             source_id: {
                 'filename': config.filename,
@@ -359,7 +360,7 @@ class DatabaseConfig:
                 'file_path': config.file_path
             }
             for source_id, config in self._sources.items()
-            if config.is_enabled
+            if config.is_enabled and source_id in selector_visible_sources
         }
 
 # Global instance

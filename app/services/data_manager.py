@@ -6,6 +6,7 @@ import json
 from typing import Optional
 from pathlib import Path
 from app.config.database_config import database_config, DATABASE_DATA_DIR
+from data_access.dtype_normalization import normalize_legacy_dataframe_types
 
 # Read legacy semicolon CSVs as strings to avoid mixed-type chunk inference warnings.
 _LEGACY_CSV_READ_KWARGS = {"sep": ";", "dtype": str, "low_memory": False}
@@ -232,5 +233,6 @@ class DataManager:
             return cache_entry["df"]
 
         df = pd.read_csv(abs_path, **_LEGACY_CSV_READ_KWARGS)
+        df = normalize_legacy_dataframe_types(df)
         cls._dataframe_cache[abs_path] = {"mtime": mtime, "df": df}
         return df

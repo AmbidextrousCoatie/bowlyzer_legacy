@@ -12,8 +12,14 @@
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('league.stats') }}?database={{ default_database }}&season=latest" id="leagueStatsLink">League Stats</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('league.club_matrix') }}?database={{ default_database }}" id="clubMatrixLink">Club Matrix</a>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="diagnosisDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Diagnosis
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="diagnosisDropdown">
+                        <li><a class="dropdown-item" href="{{ url_for('league.club_matrix') }}?database={{ default_database }}" id="clubMatrixLink">Club Matrix</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('league.week_matrix') }}?database={{ default_database }}" id="leagueWeekMatrixLink">League Week Matrix</a></li>
+                    </ul>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('tournament.tournament_stats') }}?season=2026" id="tournamentStatsLink">Tournament Stats</a>
@@ -69,6 +75,7 @@
                                 'playerStatsLink',
                                 'leagueStatsLink', 
                                 'clubMatrixLink',
+                                'leagueWeekMatrixLink',
                                 'teamStatsLink',
                                 /* 'apiTestLink',
                                 'sampleDataLink', */

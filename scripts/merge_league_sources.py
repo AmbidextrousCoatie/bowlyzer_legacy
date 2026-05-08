@@ -4,9 +4,22 @@ import argparse
 import json
 import csv
 from pathlib import Path
+import sys
 from typing import Dict, Iterable, List
 
 import pandas as pd
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from extract_excel_data import (
+    load_team_number_overrides,
+    normalize_extracted_dataframe,
+    normalize_team_numbering_dataframe,
+    print_team_normalization_summary,
+    reset_team_normalization_stats,
+)
 
 
 DEFAULT_OUT = Path("database/data/league_results_merged.csv")
@@ -144,14 +157,22 @@ def merge_sources(
     sep: str = CSV_SEP,
     duplicates_out_path: Path | None = None,
     non_exact_duplicates_out_path: Path | None = None,
+    normalize_team_names: bool = True,
 ) -> Dict:
     if len(input_paths) < 2:
         raise ValueError("Provide at least two input CSV files.")
 
+    if normalize_team_names:
+        reset_team_normalization_stats()
+
     frames: List[pd.DataFrame] = []
     input_dims: List[Dict] = []
+    overrides_df = load_team_number_overrides() if normalize_team_names else pd.DataFrame()
     for idx, path in enumerate(input_paths):
         df = pd.read_csv(path, sep=sep, dtype=str, keep_default_na=False)
+        if normalize_team_names and not df.empty:
+            df = normalize_extracted_dataframe(df)
+            df = normalize_team_numbering_dataframe(df, overrides_df)
         df["__source_idx"] = str(idx)
         frames.append(df)
         input_dims.append(
@@ -206,6 +227,9 @@ def merge_sources(
             }
         )
 
+    if normalize_team_names:
+        print_team_normalization_summary()
+
     return {
         "dedupe_keys": key_names,
         "input_dims": input_dims,
@@ -229,6 +253,9 @@ def merge_sources(
             "output": str(out_path),
             "duplicates_report": str(duplicates_out_path),
             "duplicates_non_exact_report": str(non_exact_duplicates_out_path),
+        },
+        "normalization": {
+            "team_name_normalization_applied": bool(normalize_team_names),
         },
     }
 
@@ -270,6 +297,14 @@ def main() -> int:
         help="Comma-separated dedupe keys. Defaults: league,season,week,game,position",
     )
     parser.add_argument("--sep", default=CSV_SEP, help="CSV delimiter (default ';').")
+    parser.add_argument(
+        "--no-normalize-team-names",
+        action="store_true",
+        help=(
+            "Disable team-name normalization. By default, the same normalization rules "
+            "used by extract_excel_data are applied to every input before merge."
+        ),
+    )
     args = parser.parse_args()
 
     input_paths = [Path(p).resolve() for p in args.inputs]
@@ -294,6 +329,7 @@ def main() -> int:
         sep=args.sep,
         duplicates_out_path=duplicates_out_path,
         non_exact_duplicates_out_path=non_exact_duplicates_out_path,
+        normalize_team_names=not args.no_normalize_team_names,
     )
     print(json.dumps(stats, indent=2, ensure_ascii=False))
     return 0

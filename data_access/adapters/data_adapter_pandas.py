@@ -8,6 +8,7 @@ from typing import List, Dict, Any, Optional, Tuple, Callable, Union
 from data_access.models.league_models import LeagueQuery
 from data_access.models.league_models import TeamSeasonPerformance, TeamWeeklyPerformance
 from data_access.models.raw_data_models import RawPlayerData, RawTeamData, RawLeagueData
+from data_access.dtype_normalization import normalize_legacy_dataframe_types
 
 
 
@@ -96,6 +97,7 @@ class DataAdapterPandas(DataAdapter):
         """Load data from CSV file"""
 
         self.df = pd.read_csv(self.data_path, sep=";", dtype=str, low_memory=False)
+        self.df = normalize_legacy_dataframe_types(self.df)
         self._normalize_week_column()
 
     @staticmethod

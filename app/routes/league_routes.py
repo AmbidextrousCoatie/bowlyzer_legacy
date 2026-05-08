@@ -11,7 +11,7 @@ import inspect
 from app.services.data_dict import DataDict
 from app.config.debug_config import debug_config
 from app.models.table_data import TableData, ColumnGroup, Column
-from app.utils.league_utils import resolve_league_long_name
+from app.utils.league_utils import resolve_league_long_name, get_league_division_map
 from app.config.database_config import database_config
 
 bp = Blueprint('league', __name__)
@@ -61,6 +61,23 @@ def club_matrix():
             selected_club=selected_club,
             only_unnumbered=only_unnumbered,
             matrix=matrix,
+            league_divisions=get_league_division_map(),
+            resolve_league_long_name=resolve_league_long_name,
+        )
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@bp.route('/league/week_matrix')
+def week_matrix():
+    """Diagnosis page: league x season matrix of missing match weeks."""
+    try:
+        league_service = get_league_service()
+        expected_weeks = request.args.get("expected_weeks", default=6, type=int)
+        matrix = league_service.get_league_week_matrix(expected_weeks=expected_weeks)
+        return render_template(
+            "league/week_matrix.html",
+            matrix=matrix,
+            expected_weeks=expected_weeks,
         )
     except Exception as e:
         return jsonify({"error": str(e)}), 500
