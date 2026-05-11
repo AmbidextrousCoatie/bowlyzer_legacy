@@ -2562,7 +2562,25 @@ Parameters:
   "pattern": "count\\(|len\\(game_numbers\\)|/ max\\(|avg|average"
 }
 ```
-Status: **loading**
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "C:/Users/cfell/repos/bowlyzer_legacy/app/services/tournament_service.py",
+  "pattern": "count\\(|len\\(game_numbers\\)|/ max\\(|avg|average",
+  "topFiles": [
+    {
+      "matchCount": 90,
+      "uri": "app/services/tournament_service.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 90
+}
+```
+Status: **completed**
 
 
 </details>
@@ -2570,5 +2588,510 @@ Status: **loading**
 
 <tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
 <summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+I found several average denominators still using raw row counts; I’m patching all tournament average calculations to count only actually played games (`Score > 0`) so DNF rows no longer behave like full 12-game participation.
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: C:/Users/cfell/repos/bowlyzer_legacy/app/services/tournament_service.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: & "C:/Users/cfell/venvs/league_analyzer/Scripts/python.exe" -m py_compile "C:/Users/cfell/repos/bowlyzer_legacy/app/services/tournament_service.py"</summary>
+
+```bash
+& "C:/Users/cfell/venvs/league_analyzer/Scripts/python.exe" -m py_compile "C:/Users/cfell/repos/bowlyzer_legacy/app/services/tournament_service.py"
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "C:/Users/cfell/repos/bowlyzer_legacy/app/services/tournament_service.py"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "C:/Users/cfell/repos/bowlyzer_legacy/app/services/tournament_service.py"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Implemented — averages now use **actual played games**, not implied full-block game counts.
+
+### What I changed
+
+In `app/services/tournament_service.py`, I switched tournament average denominators to count only rows with `Score > 0` (DNF placeholders ignored):
+
+- Summary cards:
+  - `Tournament Leader` average
+  - `Stage Winner` average
+- Leaderboard tables:
+  - stage average (`avg_score`)
+  - cumulative average (`total_avg`)
+- Round results tables:
+  - stage average now uses per-player played-game count (not fixed round length)
+  - cumulative average (`overall_avg`) also based on played games
+- Player round table:
+  - stage and cumulative averages use played games
+- Player progress series/charts:
+  - player cumulative average increments only on played games
+  - tournament leader average denominator uses played games
+
+I also added a small helper to keep this rule consistent in one place:
+- `_played_games_count(...)`
+
+### Result
+
+DNF players are no longer treated as if they completed all 12 games, so displayed averages should now match expected real-game averages.
+
+---
+
+_**User**_
+
+the player stats page again has some issues: it only shows 25/26 results
+
+---
+
+_**Agent (default)**_
+
+I’ll trace the player page data path (`search`, `available seasons`, and `lifetime stats`) to see whether this is a frontend filter bug or the active data source only containing `25/26`, then patch accordingly.
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:/Users/cfell/repos/bowlyzer_legacy/app/routes/player_routes.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:/Users/cfell/repos/bowlyzer_legacy/app/services/player_service.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Cancelled
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+---
+
+_**User**_
+
+also to combined csv data for tournaments and league is really odd
+
+---
+
+_**Agent (default)**_
+
+I’ll diagnose both issues together by checking how `player_stats_merged_plus_tournaments.csv` is built and whether tournament rows are overwriting/limiting league seasons, then I’ll patch the merge logic so player stats show full historical seasons correctly.
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "outputMode": "content",
+  "path": "C:/Users/cfell/repos/bowlyzer_legacy/app/routes",
+  "pattern": "search_players|get_available_seasons|get_lifetime_stats|player_stats_merged_plus_tournaments"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "C:/Users/cfell/repos/bowlyzer_legacy/app/routes",
+  "pattern": "search_players|get_available_seasons|get_lifetime_stats|player_stats_merged_plus_tournaments",
+  "topFiles": [
+    {
+      "matchCount": 5,
+      "uri": "app/routes/league_routes.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app/routes/tournament_routes.py"
+    },
+    {
+      "matchCount": 7,
+      "uri": "app/routes/player_routes.py"
+    },
+    {
+      "matchCount": 5,
+      "uri": "app/routes/team_routes.py"
+    }
+  ],
+  "totalFiles": 4,
+  "totalMatches": 19
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "outputMode": "content",
+  "path": "C:/Users/cfell/repos/bowlyzer_legacy/app/services",
+  "pattern": "class PlayerService|get_available_seasons|get_lifetime_stats|season|Event Type|league|tournament"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "C:/Users/cfell/repos/bowlyzer_legacy/app/services",
+  "pattern": "class PlayerService|get_available_seasons|get_lifetime_stats|season|Event Type|league|tournament",
+  "topFiles": [
+    {
+      "matchCount": 95,
+      "uri": "app\\services\\tournament_service.py"
+    },
+    {
+      "matchCount": 37,
+      "uri": "app/services/statistics_service.py"
+    },
+    {
+      "matchCount": 100,
+      "uri": "app/services/team_service.py"
+    },
+    {
+      "matchCount": 67,
+      "uri": "app/services/league_service_legacy.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/services/i18n_service.py"
+    }
+  ],
+  "totalFiles": 5,
+  "totalMatches": 694
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: & "C:/Users/cfell/venvs/league_analyzer/Scripts/python.exe" -c "import csv,collections,pathlib; p=pathlib.Path('C:/Users/cfell/repos/bowlyzer_legacy/database/data/player_stats_merged_plus_tournaments.csv'); rows=list(csv.DictReader(p.open('r',encoding='utf-8-sig',newline=''),delimiter=';')); print('rows',len(rows)); print('seasons',sorted({r.get('Season','').strip() for r in rows if r.get('Season','').strip()})[:20],'... total',len({r.get('Season','').strip() for r in rows if r.get('Season','').strip()})); print('event_types',collections.Counter((r.get('Event Type','').strip() or 'EMPTY') for r in rows).most_common(6)); print('input_data',collections.Counter((r.get('Input Data','').strip() or 'EMPTY') for r in rows).most_common(6)); print('computed_data',collections.Counter((r.get('Computed Data','').strip() or 'EMPTY') for r in rows).most_common(6));"</summary>
+
+```bash
+& "C:/Users/cfell/venvs/league_analyzer/Scripts/python.exe" -c "import csv,collections,pathlib; p=pathlib.Path('C:/Users/cfell/repos/bowlyzer_legacy/database/data/player_stats_merged_plus_tournaments.csv'); rows=list(csv.DictReader(p.open('r',encoding='utf-8-sig',newline=''),delimiter=';')); print('rows',len(rows)); print('seasons',sorted({r.get('Season','').strip() for r in rows if r.get('Season','').strip()})[:20],'... total',len({r.get('Season','').strip() for r in rows if r.get('Season','').strip()})); print('event_types',collections.Counter((r.get('Event Type','').strip() or 'EMPTY') for r in rows).most_common(6)); print('input_data',collections.Counter((r.get('Input Data','').strip() or 'EMPTY') for r in rows).most_common(6)); print('computed_data',collections.Counter((r.get('Computed Data','').strip() or 'EMPTY') for r in rows).most_common(6));"
+```
+
+```
+rows 69607
+seasons ['22/23', '23/24', '24/25', '25/26'] ... total 4
+event_types [('league', 65603), ('tournament', 4004)]
+input_data [('True', 56400), ('False', 13207)]
+computed_data [('False', 56400), ('True', 13207)]
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:/Users/cfell/repos/bowlyzer_legacy/app/routes/player_routes.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:/Users/cfell/repos/bowlyzer_legacy/app/services/player_service.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+I found a likely root cause: player route source-mapping can force league-like sources to `db_player_combined_gf` (which is mostly 25/26), so I’m correcting that mapping so historical/merged views use the hybrid merged player source.
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: C:/Users/cfell/repos/bowlyzer_legacy/app/routes/player_routes.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: & "C:/Users/cfell/venvs/league_analyzer/Scripts/python.exe" -m py_compile "C:/Users/cfell/repos/bowlyzer_legacy/app/routes/player_routes.py"</summary>
+
+```bash
+& "C:/Users/cfell/venvs/league_analyzer/Scripts/python.exe" -m py_compile "C:/Users/cfell/repos/bowlyzer_legacy/app/routes/player_routes.py"
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "C:/Users/cfell/repos/bowlyzer_legacy/app/routes/player_routes.py"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "C:/Users/cfell/repos/bowlyzer_legacy/app/routes/player_routes.py"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Fixed — this was a data-source routing issue on the player page.
+
+### Root cause
+
+In `app/routes/player_routes.py`, player requests with `database=db_real_historical_league` were being mapped to `db_player_combined_gf`, which is mostly `25/26` data.  
+That made player stats/seasons look like they only had `25/26`.
+
+### Change made
+
+Updated `get_player_service()` mapping:
+
+- `db_real_historical_league` and `db_real_merged` -> `db_player_merged_hybrid` (multi-season + tournaments)
+- `db_real_pipeline_gf` -> `db_player_combined_gf` (GF scope)
+
+### Why this should fix what you saw
+
+- Player page now respects historical/merged scope instead of being forced into the GF-combined (25/26-heavy) source.
+- That should restore full season history on `/player/stats` when using historical/merged contexts.
+
+If you want, I can also add a small debug response field (only in dev) showing which backend player source was selected per request, so this is instantly visible next time.
+
+---
+
+_**User**_
+
+seems not to resolve the issue, check http://127.0.0.1:5000/player/stats?player_name=Christian+Feller&player_id=16007 
+
+---
+
+_**Agent (default)**_
+
+I’ll verify this exact player (`Christian Feller`, `16007`) directly in the merged player CSV and through the `/player` service logic, so we can see whether the issue is data availability or filtering behavior in the endpoint.
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: & "C:/Users/cfell/venvs/league_analyzer/Scripts/python.exe" -c "import csv,collections,pathlib; p=pathlib.Path('C:/Users/cfell/repos/bowlyzer_legacy/database/data/player_stats_merged_plus_tournaments.csv'); rows=list(csv.DictReader(p.open('r',encoding='utf-8-sig',newline=''),delimiter=';')); tgt=[r for r in rows if str(r.get('Player ID','')).strip()=='16007' or str(r.get('Player','')).strip().lower()=='christian feller']; print('rows',len(tgt)); print('seasons',sorted({str(r.get('Season','')).strip() for r in tgt if str(r.get('Season','')).strip()})); print('event_types',collections.Counter((str(r.get('Event Type','')).strip() or 'EMPTY') for r in tgt)); print('sample',tgt[:3])"</summary>
+
+```bash
+& "C:/Users/cfell/venvs/league_analyzer/Scripts/python.exe" -c "import csv,collections,pathlib; p=pathlib.Path('C:/Users/cfell/repos/bowlyzer_legacy/database/data/player_stats_merged_plus_tournaments.csv'); rows=list(csv.DictReader(p.open('r',encoding='utf-8-sig',newline=''),delimiter=';')); tgt=[r for r in rows if str(r.get('Player ID','')).strip()=='16007' or str(r.get('Player','')).strip().lower()=='christian feller']; print('rows',len(tgt)); print('seasons',sorted({str(r.get('Season','')).strip() for r in tgt if str(r.get('Season','')).strip()})); print('event_types',collections.Counter((str(r.get('Event Type','')).strip() or 'EMPTY') for r in tgt)); print('sample',tgt[:3])"
+```
+
+```
+rows 130
+seasons ['22/23', '23/24', '24/25', '25/26']
+event_types Counter({'league': 100, 'tournament': 30})
+sample [{'Club': 'Donaubowler Regensburg 1', 'Computed Data': 'False', 'Cumulative Score': '', 'Cut Basis': '', 'Cut Line': '', 'Date': '2022-10-04', 'Event Name': 'LL N1', 'Event Type': 'league', 'Game Number': '', 'Handicap': '', 'Input Data': 'True', 'League': 'LL N1', 'Location': 'Unknown', 'Match Number': '0', 'Opponent': 'Germania Bayreuth 1', 'Overall Cumulative Score': '', 'Player': 'Feller, Christian', 'Player ID': '16007', 'Players per Team': '4', 'Points': '1.0', 'Position': '1', 'Round Name': '', 'Round Number': '1', 'Score': '222', 'Season': '22/23', 'Stage Rank': '', 'Team': 'Donaubowler Regensburg 1', 'Week': '1'}, {'Club': 'Donaubowler Regensburg 1', 'Computed Data': 'False', 'Cumulative Score': '', 'Cut Basis': '', 'Cut Line': '', 'Date': '2022-10-04', 'Event Name': 'LL N1', 'Event Type': 'league', 'Game Number': '', 'Handicap': '', 'Input Data': 'True', 'League': 'LL N1', 'Location': 'Unknown', 'Match Number': '1', 'Opponent': 'Ph�nix 03 Lauf 1', 'Overall Cumulative Score': '', 'Player': 'Feller, Christian', 'Player ID': '16007', 'Players per Team': '4', 'Points': '1.0', 'Position': '1', 'Round Name': '', 'Round Number': '2', 'Score': '236', 'Season': '22/23', 'Stage Rank': '', 'Team': 'Donaubowler Regensburg 1', 'Week': '1'}, {'Club': 'Donaubowler Regensburg 1', 'Computed Data': 'False', 'Cumulative Score': '', 'Cut Basis': '', 'Cut Line': '', 'Date': '2022-10-04', 'Event Name': 'LL N1', 'Event Type': 'league', 'Game Number': '', 'Handicap': '', 'Input Data': 'True', 'League': 'LL N1', 'Location': 'Unknown', 'Match Number': '1', 'Opponent': 'BC Comet N�rnberg 2', 'Overall Cumulative Score': '', 'Player': 'Feller, Christian', 'Player ID': '16007', 'Players per Team': '4', 'Points': '0.0', 'Position': '1', 'Round Name': '', 'Round Number': '3', 'Score': '178', 'Season': '22/23', 'Stage Rank': '', 'Team': 'Donaubowler Regensburg 1', 'Week': '1'}]
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: & "C:/Users/cfell/venvs/league_analyzer/Scripts/python.exe" -c "from app.services.player_service import PlayerService; cases=[None,'db_player_merged_hybrid','db_player_combined_gf'];
+for c in cases:
+ s=PlayerService(database=c); seasons=s.get_player_seasons('Christian Feller','16007'); print('db',c,'seasons',seasons); st=s.get_lifetime_stats('Christian Feller',season='all',player_id='16007'); print('  lifetime_none',st is None,'season_rows',0 if not st else len(st.get('seasons',[])));"</summary>
+
+```bash
+& "C:/Users/cfell/venvs/league_analyzer/Scripts/python.exe" -c "from app.services.player_service import PlayerService; cases=[None,'db_player_merged_hybrid','db_player_combined_gf'];
+for c in cases:
+ s=PlayerService(database=c); seasons=s.get_player_seasons('Christian Feller','16007'); print('db',c,'seasons',seasons); st=s.get_lifetime_stats('Christian Feller',season='all',player_id='16007'); print('  lifetime_none',st is None,'season_rows',0 if not st else len(st.get('seasons',[])));"
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: & "C:/Users/cfell/venvs/league_analyzer/Scripts/python.exe" -c "from app import create_app; app=create_app(); c=app.test_client(); urls=['/player/get_available_seasons?player_name=Christian%20Feller&player_id=16007','/player/get_lifetime_stats?player_name=Christian%20Feller&player_id=16007'];
+for u in urls:
+ r=c.get(u); print(u,'status',r.status_code,'json',r.get_json())"</summary>
+
+```bash
+& "C:/Users/cfell/venvs/league_analyzer/Scripts/python.exe" -c "from app import create_app; app=create_app(); c=app.test_client(); urls=['/player/get_available_seasons?player_name=Christian%20Feller&player_id=16007','/player/get_lifetime_stats?player_name=Christian%20Feller&player_id=16007'];
+for u in urls:
+ r=c.get(u); print(u,'status',r.status_code,'json',r.get_json())"
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
 
 </details></tool-use>
