@@ -384,7 +384,7 @@
 
   let tournamentPlayers = [];
   let playerCutLineMode = "dynamic"; // "dynamic" or "horizontal"
-  let roundResultsHeatmapEnabled = true;
+  let roundResultsHeatmapEnabled = false;
   let currentRoundResultsHeatmapRange = DEFAULT_GAME_HEATMAP_RANGE;
   let currentPlayerRoundHeatmapRange = DEFAULT_GAME_HEATMAP_RANGE;
   const playerComboCache = new Map();
@@ -743,11 +743,25 @@
           const padding = Math.max(3, (maxVal - minVal) * 0.05);
           yMin = Math.floor((minVal - padding) / 5) * 5;
           yMax = Math.ceil((maxVal + padding) / 5) * 5;
-          // Keep tournament average plots readable and comparable.
-          yMin = Math.max(120, yMin);
+          // Keep tournament average plots readable without hard-floor clipping.
+          yMin = Math.max(0, yMin);
           yMax = Math.min(300, yMax);
           if (yMax <= yMin) yMax = yMin + 10;
         }
+      }
+      // Auto-scale rank chart to real participant count (1..n), not a fixed cap.
+      if (yName === tt("ui.tournament.rank", "Rank")) {
+        const nums = [
+          ...collectNumericValues(dataSeries),
+          ...collectNumericValues(cutLines),
+        ];
+        const participantCount = Number(series?.participant_count);
+        const maxObservedRank = nums.length > 0 ? Math.max(...nums) : 1;
+        const rankCap = Number.isFinite(participantCount) && participantCount > 0
+          ? Math.max(participantCount, maxObservedRank)
+          : maxObservedRank;
+        yMin = 1;
+        yMax = Math.max(1, Math.ceil(rankCap));
       }
 
       const buildPointSeries = (arr, startX = 0, endX = maxX, extendStart = false, extendEnd = false) => {
@@ -1044,6 +1058,14 @@
             (typeof getSemanticColor === "function" && getSemanticColor("secondary")) || "#6f42c1",
           width: 2,
         },
+        {
+          name: tt("ui.tournament.lowest_average", "Lowest Average"),
+          data: series.tournament_lowest_avg_series || [],
+          dashed: true,
+          color:
+            (typeof getSemanticColor === "function" && getSemanticColor("negative")) || "#D62728",
+          width: 2,
+        },
       ]
     );
     renderLine(
@@ -1070,6 +1092,8 @@
         (typeof getSemanticColor === "function" && getSemanticColor("highlight")) || "#ffb000";
       const colorLeader =
         (typeof getSemanticColor === "function" && getSemanticColor("secondary")) || "#6f42c1";
+      const colorLowestAvg =
+        (typeof getSemanticColor === "function" && getSemanticColor("negative")) || "#D62728";
 
       const item = (label, color, dashed = false) => `
         <div class="d-flex align-items-center">
@@ -1083,6 +1107,7 @@
       legendContainer.innerHTML = [
         item(playerName, colorPlayer, false),
         item(tt("ui.tournament.tournament_leader", "Tournament Leader"), colorLeader, true),
+        item(tt("ui.tournament.lowest_average", "Lowest Average"), colorLowestAvg, true),
         item(tt("ui.tournament.round_boundary", "Round Boundary"), colorRoundBoundary, false),
         ...dynamicCutLegend,
       ].join("");

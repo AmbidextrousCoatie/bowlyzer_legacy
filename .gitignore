@@ -42,3 +42,7 @@ database/data/available_weeks_by_league_season.csv
 database/data/missing_weeks_by_league_season.csv
 database/data/missing_weeks_matrix.csv
 database/data/unique_team_names_after_merge.csv
+database/data/league_results_merged_duplicates.csv
+database/data/league_results_merged_duplicates_non_exact.csv
+database/data/historical_league_results.csv
+database/data/historical_league_results.csv

@@ -105,6 +105,11 @@ class TournamentService:
         vals = df[Columns.club].fillna("").astype(str).str.strip()
         return vals.ne("").any()
 
+    @staticmethod
+    def _played_games_count(series: pd.Series) -> int:
+        scores = pd.to_numeric(series, errors="coerce").fillna(0)
+        return int(scores.gt(0).sum())
+
     def _top_n_games(self, scope_df: pd.DataFrame, n: int) -> List[Dict[str, Any]]:
         if scope_df.empty:
             return []
@@ -291,7 +296,9 @@ class TournamentService:
                     tournament_leader = tournament_totals.iloc[0]
                     leader_name = str(tournament_leader[Columns.player_name])
                     leader_games = int(
-                        cumulative_df[cumulative_df[Columns.player_name].astype(str).eq(leader_name)][Columns.score].count()
+                        self._played_games_count(
+                            cumulative_df[cumulative_df[Columns.player_name].astype(str).eq(leader_name)][Columns.score]
+                        )
                     )
                     if leader_games > 0:
                         tournament_leader_avg = round(float(tournament_leader["total_score"]) / leader_games, 1)
@@ -306,6 +313,11 @@ class TournamentService:
             stage_winner_name = str(stage_winner["player"])
             stage_total = float(stage_winner["total_score"])
             stage_games = int(stage_df[stage_df[Columns.player_name].astype(str).eq(stage_winner_name)][Columns.score].count())
+            stage_games = int(
+                self._played_games_count(
+                    stage_df[stage_df[Columns.player_name].astype(str).eq(stage_winner_name)][Columns.score]
+                )
+            )
             if stage_games > 0:
                 stage_winner_avg = round(stage_total / stage_games, 1)
         elif stage_round_number is not None:
@@ -323,7 +335,9 @@ class TournamentService:
                     winner_name = str(grouped.iloc[0][Columns.player_name])
                     winner_total = float(grouped.iloc[0]["total_score"])
                     stage_games = int(
-                        stage_df[stage_df[Columns.player_name].astype(str).eq(winner_name)][Columns.score].count()
+                        self._played_games_count(
+                            stage_df[stage_df[Columns.player_name].astype(str).eq(winner_name)][Columns.score]
+                        )
                     )
                     stage_winner = {"player": winner_name, "total_score": winner_total}
                     if stage_games > 0:
@@ -406,6 +420,11 @@ class TournamentService:
                 stage_winner_name = str(stage_winner["player"])
                 stage_total = float(stage_winner["total_score"])
                 stage_games = int(stage_df[stage_df[Columns.player_name].astype(str).eq(stage_winner_name)][Columns.score].count())
+                stage_games = int(
+                    self._played_games_count(
+                        stage_df[stage_df[Columns.player_name].astype(str).eq(stage_winner_name)][Columns.score]
+                    )
+                )
                 if stage_games > 0:
                     stage_winner_avg = round(stage_total / stage_games, 1)
                 stage_subtitle = f"{stage_subtitle} (\u2300{stage_winner_avg:.1f})"
@@ -562,13 +581,18 @@ class TournamentService:
 
             leaderboard = round_scores.merge(total_scores, on=group_keys, how="left")
             leaderboard["rank"] = leaderboard["total_score"].rank(method="min", ascending=False).astype(int)
-            games_per_player = scoped.groupby([Columns.player_name], dropna=False).size().to_dict()
+            games_per_player = (
+                scoped[scoped[Columns.score].gt(0)]
+                .groupby([Columns.player_name], dropna=False)
+                .size()
+                .to_dict()
+            )
             leaderboard["avg_score"] = leaderboard.apply(
                 lambda r: round(float(r["round_score"]) / max(int(games_per_player.get(r[Columns.player_name], 1)), 1), 1),
                 axis=1,
             )
             games_upto_player = (
-                upto.groupby([Columns.player_name], dropna=False).size().to_dict()
+                upto[upto[Columns.score].gt(0)].groupby([Columns.player_name], dropna=False).size().to_dict()
                 if not upto.empty and Columns.player_name in upto.columns
                 else {}
             )
@@ -695,7 +719,12 @@ class TournamentService:
                 pivot[rn] = 0
 
         pivot["total_score"] = pivot[round_numbers].sum(axis=1) if round_numbers else 0
-        games_per_player_all = work.groupby([Columns.player_name, id_col], dropna=False).size().reset_index(name="games_played")
+        games_per_player_all = (
+            work[work[Columns.score].gt(0)]
+            .groupby([Columns.player_name, id_col], dropna=False)
+            .size()
+            .reset_index(name="games_played")
+        )
         pivot = pivot.merge(games_per_player_all, on=[Columns.player_name, id_col], how="left")
         pivot["games_played"] = pd.to_numeric(pivot["games_played"], errors="coerce").fillna(1)
         pivot["total_avg"] = (pivot["total_score"] / pivot["games_played"]).round(1)
@@ -838,11 +867,12 @@ class TournamentService:
                 pivot[g] = 0
 
         pivot["round_total"] = pivot[game_numbers].sum(axis=1) if game_numbers else 0
-        pivot["avg_score"] = (
-            (pivot["round_total"] / max(len(game_numbers), 1)).round(1)
-            if len(game_numbers) > 0
-            else 0.0
-        )
+        game_cols = [g for g in game_numbers if g in pivot.columns]
+        if game_cols:
+            played_games = pivot[game_cols].apply(pd.to_numeric, errors="coerce").fillna(0).gt(0).sum(axis=1)
+            pivot["avg_score"] = (pivot["round_total"] / played_games.replace(0, 1)).round(1)
+        else:
+            pivot["avg_score"] = 0.0
         pivot = pivot.sort_values(by=[Columns.player_name, Columns.round_number]).reset_index(drop=True)
         pivot["overall_total"] = pivot.groupby([Columns.player_name, id_col], dropna=False)["round_total"].cumsum()
 
@@ -867,7 +897,8 @@ class TournamentService:
                 .reset_index(name="overall_score")
             )
             overall_games = (
-                upto.groupby([Columns.player_name, id_col], dropna=False)[Columns.score]
+                upto[upto[Columns.score].gt(0)]
+                .groupby([Columns.player_name, id_col], dropna=False)[Columns.score]
                 .count()
                 .reset_index(name="overall_games")
             )
@@ -1062,7 +1093,7 @@ class TournamentService:
                 if pd.notna(r[Columns.game_number])
             }
             round_total = int(round_player[Columns.score].sum())
-            round_games = int(round_player[Columns.score].count())
+            round_games = int(self._played_games_count(round_player[Columns.score]))
             round_avg = round(round_total / max(round_games, 1), 1)
 
             # Rank within round by total pins.
@@ -1194,12 +1225,25 @@ class TournamentService:
     def get_player_progress_series(self, season: str, tournament: str, player: str) -> Dict[str, Any]:
         df = self._get_tournament_df(season=season, tournament=tournament)
         if df.empty:
-            return {"labels": [], "avg_series": [], "position_series": [], "round_end_lines": [], "cut_lines_avg": [], "cut_lines_position": []}
+            return {
+                "labels": [],
+                "avg_series": [],
+                "position_series": [],
+                "round_end_lines": [],
+                "cut_lines_avg": [],
+                "cut_lines_position": [],
+                "participant_count": 0,
+            }
 
         all_df = df.copy()
         all_df[Columns.score] = pd.to_numeric(all_df[Columns.score], errors="coerce").fillna(0)
         all_df[Columns.round_number] = pd.to_numeric(all_df[Columns.round_number], errors="coerce").astype("Int64")
         all_df[Columns.game_number] = pd.to_numeric(all_df[Columns.game_number], errors="coerce").astype("Int64")
+        participant_count = (
+            int(all_df[Columns.player_name].astype(str).str.strip().replace("", pd.NA).dropna().nunique())
+            if Columns.player_name in all_df.columns
+            else 0
+        )
 
         round_meta = (
             all_df[[Columns.round_number, Columns.round_name, Columns.game_number]]
@@ -1269,12 +1313,21 @@ class TournamentService:
 
         player_df = all_df[all_df[Columns.player_name].astype(str).str.strip().eq(str(player).strip())].copy()
         if player_df.empty:
-            return {"labels": labels, "avg_series": [], "position_series": [], "round_end_lines": [], "cut_lines_avg": [], "cut_lines_position": []}
+            return {
+                "labels": labels,
+                "avg_series": [],
+                "position_series": [],
+                "round_end_lines": [],
+                "cut_lines_avg": [],
+                "cut_lines_position": [],
+                "participant_count": participant_count,
+            }
 
         avg_series: List[float] = []
         position_series: List[int] = []
         game_score_series: List[Optional[int]] = []
         tournament_leader_avg_series: List[Optional[float]] = []
+        tournament_lowest_avg_series: List[Optional[float]] = []
         round_end_lines: List[int] = []
         cut_lines_avg: List[float] = []
         cut_lines_position: List[int] = []
@@ -1303,12 +1356,16 @@ class TournamentService:
             prev_all = all_df[all_df[Columns.round_number].lt(float(rn))].copy()
             base_totals = prev_all.groupby(Columns.player_name, dropna=False)[Columns.score].sum().to_dict()
             base_games = prev_all.groupby(Columns.player_name, dropna=False)[Columns.score].count().to_dict()
+            # For "lowest average" we ignore placeholder/non-played zero rows.
+            prev_all_valid = prev_all[prev_all[Columns.score].gt(0)].copy()
+            base_totals_valid = prev_all_valid.groupby(Columns.player_name, dropna=False)[Columns.score].sum().to_dict()
+            base_games_valid = prev_all_valid.groupby(Columns.player_name, dropna=False)[Columns.score].count().to_dict()
 
             for g in range(length):
                 game_score_series.append(int(player_game_scores[g]) if g in player_game_scores else None)
                 # player cumulative
-                if g in player_game_scores:
-                    cum_player_score += player_game_scores[g]
+                if g in player_game_scores and int(player_game_scores[g]) > 0:
+                    cum_player_score += int(player_game_scores[g])
                     cum_player_games += 1
                 if cum_player_games > 0:
                     avg_series.append(round(cum_player_score / cum_player_games, 2))
@@ -1326,7 +1383,12 @@ class TournamentService:
                 position_series.append(int(rank_map.get(player, position_series[-1] if position_series else len(ranked) + 1)))
 
                 # Tournament leader pace: cumulative average of the current leader at this game.
-                add_games = upto_round.groupby(Columns.player_name, dropna=False)[Columns.score].count().to_dict()
+                add_games = (
+                    upto_round[upto_round[Columns.score].gt(0)]
+                    .groupby(Columns.player_name, dropna=False)[Columns.score]
+                    .count()
+                    .to_dict()
+                )
                 games_played = {}
                 for p_name in set(list(base_games.keys()) + list(add_games.keys())):
                     games_played[p_name] = int(base_games.get(p_name, 0)) + int(add_games.get(p_name, 0))
@@ -1335,8 +1397,19 @@ class TournamentService:
                     leader_total = float(scores.get(leader_name, 0.0))
                     leader_games = max(int(games_played.get(leader_name, 0)), 1)
                     tournament_leader_avg_series.append(round(leader_total / leader_games, 2))
+                    add_valid = upto_round[upto_round[Columns.score].gt(0)].copy()
+                    add_totals_valid = add_valid.groupby(Columns.player_name, dropna=False)[Columns.score].sum().to_dict()
+                    add_games_valid = add_valid.groupby(Columns.player_name, dropna=False)[Columns.score].count().to_dict()
+                    avg_values = [
+                        (float(base_totals_valid.get(p_name, 0.0)) + float(add_totals_valid.get(p_name, 0.0)))
+                        / max(int(base_games_valid.get(p_name, 0)) + int(add_games_valid.get(p_name, 0)), 1)
+                        for p_name in scores.keys()
+                        if (int(base_games_valid.get(p_name, 0)) + int(add_games_valid.get(p_name, 0))) > 0
+                    ]
+                    tournament_lowest_avg_series.append(round(min(avg_values), 2) if avg_values else None)
                 else:
                     tournament_leader_avg_series.append(None)
+                    tournament_lowest_avg_series.append(None)
 
                 # Dynamic cut-line averages follow configured cut basis.
                 games_in_stage_so_far = g + 1
@@ -1379,6 +1452,8 @@ class TournamentService:
             position_series.append(position_series[-1] if position_series else 999)
         while len(tournament_leader_avg_series) < total_games:
             tournament_leader_avg_series.append(None)
+        while len(tournament_lowest_avg_series) < total_games:
+            tournament_lowest_avg_series.append(None)
         while len(game_score_series) < total_games:
             game_score_series.append(None)
         for cut_rn in cut_rounds_sorted:
@@ -1402,9 +1477,11 @@ class TournamentService:
             "position_series": position_series[:total_games],
             "game_score_series": game_score_series[:total_games],
             "tournament_leader_avg_series": tournament_leader_avg_series[:total_games],
+            "tournament_lowest_avg_series": tournament_lowest_avg_series[:total_games],
             "round_end_lines": round_end_lines,
             "cut_lines_avg": cut_lines_avg,
             "cut_lines_position": cut_lines_position,
+            "participant_count": participant_count,
             "cut_line_series": cut_line_series,
             "cut_lines_avg_dynamic": {
                 f"round_{rn}": dynamic_cut_series[rn][:total_games] for rn in cut_rounds_sorted

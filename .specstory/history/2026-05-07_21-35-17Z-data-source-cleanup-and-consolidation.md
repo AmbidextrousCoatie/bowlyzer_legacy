@@ -15013,3 +15013,381 @@ Status: **completed**
 <summary>Tool use: **ripgrep_raw_search**</summary>
 
 </details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\services\league_service.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\services\league_service.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+I’ve added the backend matrix builder; next I’m wiring a new route + template and then the navbar `Diagnosis` dropdown (with Club Matrix first).
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\routes\league_routes.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\templates\league\week_matrix.html</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\templates\components\navbar.html</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\services\\league_service.py",
+    "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\routes\\league_routes.py",
+    "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\templates\\league\\week_matrix.html",
+    "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\templates\\components\\navbar.html"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\services\\league_service.py"
+    },
+    {
+      "relativeWorkspacePath": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\routes\\league_routes.py"
+    },
+    {
+      "relativeWorkspacePath": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\templates\\league\\week_matrix.html"
+    },
+    {
+      "relativeWorkspacePath": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\templates\\components\\navbar.html"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Implemented all requested changes.
+
+### Navbar updates
+- Added a new `Diagnosis` dropdown in `app/templates/components/navbar.html`.
+- Moved `Club Matrix` into that dropdown as the **first entry**.
+- Added second entry: `League Week Matrix`.
+- Updated database-param propagation script to include the new link id (`leagueWeekMatrixLink`).
+
+### New League Week Matrix page
+- New route in `app/routes/league_routes.py`:
+  - `GET /league/week_matrix`
+- New template:
+  - `app/templates/league/week_matrix.html`
+
+### Matrix logic (backend)
+- Added `LeagueService.get_league_week_matrix(expected_weeks=6)` in `app/services/league_service.py`.
+- Behavior:
+  - Rows: `league`
+  - Columns: `season`
+  - Cell content:
+    - `✓` if all expected weeks `1..6` exist
+    - otherwise comma-separated list of missing weeks
+  - Cell color:
+    - green = complete
+    - yellow/orange/red shades = increasing missing-week percentage
+
+### Notes
+- Expected weeks default to 6 (as requested).
+- Route supports `expected_weeks` query param if you ever want a different threshold temporarily.
+
+If you want, I can add a tiny legend block on the page (`green=complete`, `yellow=minor gaps`, etc.) to make the color scale explicit for users.
+
+---
+
+_**User**_
+
+fair enough. i tried to push but no luck 
+@git-error-1778249631812 (1-3) 
+
+---
+
+_**Agent (default)**_
+
+That error is network/TLS trust related, not your code changes.
+
+`SSL peer certificate or SSH remote key was not OK` usually means one of:
+
+- corporate proxy/SSL interception
+- outdated/missing CA certs on your machine
+- Git using wrong SSL backend/cert store
+- security software filtering HTTPS
+
+Quick checks/fixes (Windows):
+
+1. Verify remote URL
+- `git remote -v`
+- If it’s HTTPS (`https://github.com/...`), continue below.
+
+2. Test direct GitHub reachability
+- Open [https://github.com](https://github.com) in browser on the same machine/network.
+- If browser also has cert warnings, it’s a system/network trust issue.
+
+3. Refresh Git for Windows (recommended)
+- Update/reinstall latest Git for Windows (includes current CA bundle).
+- Restart terminal and retry push.
+
+4. If you’re behind corporate proxy
+- Import your company root cert into Windows Trusted Root store.
+- Then ensure Git uses Windows cert store (Schannel).
+- I can give you the exact one-liner commands if you want to apply this route.
+
+5. Try SSH instead of HTTPS (often easiest workaround)
+- Switch remote to SSH:
+  - `git remote set-url origin git@github.com:AmbidextrousCoatie/bowlyzer_legacy.git`
+- Make sure your SSH key is added to GitHub account.
+- Then push again.
+
+Important: don’t disable SSL verification globally (`http.sslVerify=false`) except as a temporary diagnostic.
+
+If you want, I can walk you through either the **Schannel/cert** fix or **SSH migration** step-by-step.
+
+---
+
+_**User**_
+
+which CSVs do i need for flawless operation in the current sceanrio? i somehow miss some data on the remote host
+
+---
+
+_**Agent (default)**_
+
+I’ll map this to the current “merged-only” setup and list exactly which CSVs are required vs optional per page, so you can compare remote host files quickly.
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\config\\database_config.py",
+  "pattern": "MERGED_LEAGUE_RESULTS_CSV|MERGED_PLAYER_HYBRID_CSV|GF_REGIONAL_COMBINED_POSTPROCESSED_CSV|db_real_merged|db_player_merged_hybrid|get_sources_info|_build_player_merged_hybrid_csv"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\config\\database_config.py",
+  "pattern": "MERGED_LEAGUE_RESULTS_CSV|MERGED_PLAYER_HYBRID_CSV|GF_REGIONAL_COMBINED_POSTPROCESSED_CSV|db_real_merged|db_player_merged_hybrid|get_sources_info|_build_player_merged_hybrid_csv",
+  "topFiles": [
+    {
+      "matchCount": 20,
+      "uri": "app\\config\\database_config.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 20
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\routes\player_routes.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\routes\tournament_routes.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+For the **current merged-only scenario**, these are the important CSVs on the host.
+
+## Must-Have (runtime)
+- `database/data/league_results_merged.csv`
+  - Core source for league/team/diagnosis pages.
+  - If missing/empty, almost everything league-like breaks or looks empty.
+
+## Must-Have for full player + tournament coverage
+- `database/input/gf_tables_export/gf_tournaments_2026__combined_postprocessed.csv`
+  - Tournament source.
+  - Also used to build the player hybrid.
+
+- `database/data/player_stats_merged_plus_tournaments.csv`
+  - Player page source in your current setup (`db_player_merged_hybrid`).
+  - Built from merged league + tournament CSV.
+
+## Supporting config/data that affects correctness
+- `database/relational_csv/league_mapping.csv`
+  - Needed for division inference / long names (important for your new deep links + matrix views).
+- `database/config/team_name_normalization.json`
+  - Needed when you run merge normalization (not strictly for reading already-merged data, but required for consistent rebuilds).
+
+---
+
+### Why remote may look incomplete
+If `gf_tournaments_2026__combined_postprocessed.csv` is missing (or empty), then:
+- tournament pages show little/no data
+- `player_stats_merged_plus_tournaments.csv` is built without tournament rows
+- player lifetime views look truncated
+
+Also, the app may auto-create **stub CSVs** (headers only), which exist but contain no useful rows — this can look like “file exists but data missing”.
+
+---
+
+### Quick remote sanity check
+On remote, verify these files are non-trivial in size / row count:
+- `league_results_merged.csv`
+- `gf_tournaments_2026__combined_postprocessed.csv`
+- `player_stats_merged_plus_tournaments.csv`
+
+If you want, I can give you a compact PowerShell one-liner to print file sizes + first data row presence for exactly these paths.
+
+---
+
+_**User**_
+
+is any of those files in gitignore?
+
+---
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\.gitignore</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Yes — one of the key ones is ignored right now.
+
+From your current list:
+
+- `database/data/league_results_merged.csv` → **not ignored**
+- `database/data/player_stats_merged_plus_tournaments.csv` → **ignored** (`.gitignore` includes it)
+- `database/input/gf_tables_export/gf_tournaments_2026__combined_postprocessed.csv` → **not ignored** (no matching rule)
+- `database/relational_csv/league_mapping.csv` → **not ignored**
+- `database/config/team_name_normalization.json` → **not ignored**
+
+Also ignored (from your recent files):
+- `database/data/league_results_merged_duplicates.csv`
+- `database/data/league_results_merged_duplicates_non_exact.csv`
+
+If you want that player hybrid CSV deployed via git, remove this line from `.gitignore`:
+- `database/data/player_stats_merged_plus_tournaments.csv`

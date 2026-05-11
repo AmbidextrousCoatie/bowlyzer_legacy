@@ -19,7 +19,7 @@ import { SummaryCards } from "./blocks/SummaryCards";
 export function TournamentStats() {
   const { t } = useTranslations();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [heatmapEnabled, setHeatmapEnabled] = useState(true);
+  const [heatmapEnabled, setHeatmapEnabled] = useState(false);
 
   const season = searchParams.get("season") ?? "";
   const tournament = searchParams.get("tournament") ?? "";
