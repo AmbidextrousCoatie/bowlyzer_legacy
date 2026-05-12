@@ -1,0 +1,7 @@
+{
+  "25/26||Bayerische Meisterschaft - Männer Einzel": {
+    "replace_sf_bye": {
+      "SF1": { "name": "Christian Rechenberg", "id": "7865" }
+    }
+  }
+}

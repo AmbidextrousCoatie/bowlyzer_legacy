@@ -1,4 +1,9 @@
 (function () {
+  let currentTournamentGender = null;
+  /** Synced in renderSection; used when leaving player mode so conditional overview cards keep correct display. */
+  let lastOverviewHasPostQual = false;
+  let lastOverviewHasKoRr = false;
+
   function tt(key, fallback) {
     if (typeof t === "function") return t(key, fallback);
     return fallback || key;
@@ -6,13 +11,27 @@
 
   function localizeTournamentCardTitle(rawTitle) {
     const title = String(rawTitle || "").trim();
+    const fem = currentTournamentGender === "f";
     const map = {
       Tournament: () => tt("ui.tournament.card.tournament", "Tournament"),
       "Current Round": () => tt("ui.tournament.card.current_round", "Current Round"),
       "Cut Line": () => tt("ui.tournament.card.cut_line", "Cut Line"),
-      "Tournament Leader": () => tt("ui.tournament.card.tournament_leader", "Tournament Leader"),
-      Participants: () => tt("ui.tournament.card.participants", "Participants"),
-      "Stage Winner": () => tt("ui.tournament.card.stage_winner", "Stage Winner"),
+      "Tournament Leader": () =>
+        fem
+          ? tt("ui.tournament.card.tournament_leader_f", "Tournament Leader")
+          : tt("ui.tournament.card.tournament_leader", "Tournament Leader"),
+      Participants: () =>
+        fem
+          ? tt("ui.tournament.card.participants_f", "Participants")
+          : tt("ui.tournament.card.participants", "Participants"),
+      "Stage Winner": () =>
+        fem
+          ? tt("ui.tournament.card.stage_winner_f", "Stage Winner")
+          : tt("ui.tournament.card.stage_winner", "Stage Winner"),
+      "Tournament Winner": () =>
+        fem
+          ? tt("ui.tournament.card.tournament_winner_f", "Tournament Winner")
+          : tt("ui.tournament.card.tournament_winner", "Tournament Winner"),
     };
     return map[title] ? map[title]() : title;
   }
@@ -62,6 +81,474 @@
       throw new Error(`HTTP ${res.status}`);
     }
     return await res.json();
+  }
+
+  function escapeHtml(s) {
+    return String(s ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function koBracketNormName(n) {
+    return String(n || "")
+      .trim()
+      .toLowerCase();
+  }
+
+  function koBracketStripNoShow(name) {
+    const s = String(name || "").trim();
+    const low = s.toLowerCase();
+    if (low.endsWith("(no show)")) {
+      const cut = s.slice(0, s.lastIndexOf("(")).trim();
+      return cut || s;
+    }
+    return s;
+  }
+
+  function koBracketSideKey(name) {
+    return koBracketNormName(koBracketStripNoShow(name));
+  }
+
+  function koMatchWinnerName(m) {
+    if (!m || !m.winner) return "";
+    if (m.winner === "a") return String(m.side_a?.name || "");
+    if (m.winner === "b") return String(m.side_b?.name || "");
+    return "";
+  }
+
+  /** True if this SF match includes the given QF winner (e.g. to align QF columns with the correct semi). */
+  function koSfContainsWinner(sfM, winnerName) {
+    if (!sfM || !winnerName) return false;
+    const wk = koBracketSideKey(winnerName);
+    if (!wk) return false;
+    return (
+      koBracketSideKey(sfM.side_a?.name || "") === wk ||
+      koBracketSideKey(sfM.side_b?.name || "") === wk
+    );
+  }
+
+  function koBracketIsByeDisplayName(name) {
+    const low = String(name || "").trim().toLowerCase();
+    if (!low) return true;
+    if (low.includes("nicht angetreten")) return true;
+    return low === "bye" || low === "freilos" || low === "tbd";
+  }
+
+  /** Fixed 6-player KO seeds: QF1 = 3 vs 6, QF2 = 4 vs 5; SF byes = 1 & 2. */
+  function buildKoBracketSeedByNameKey(byKey) {
+    const map = Object.create(null);
+    const set = (nm, seed) => {
+      const k = koBracketSideKey(nm);
+      if (k && seed != null) map[k] = seed;
+    };
+    const get = (nm) => map[koBracketSideKey(nm)];
+
+    const qf1 = byKey.QF1;
+    const qf2 = byKey.QF2;
+    const sf1 = byKey.SF1;
+    const sf2 = byKey.SF2;
+    const fin = byKey.F;
+
+    if (qf1) {
+      set(qf1.side_a?.name, 3);
+      set(qf1.side_b?.name, 6);
+    }
+    if (qf2) {
+      set(qf2.side_a?.name, 4);
+      set(qf2.side_b?.name, 5);
+    }
+
+    const tagSf = (sfM, byeSeed) => {
+      if (!sfM) return;
+      [sfM.side_a, sfM.side_b].forEach((side) => {
+        const nm = side?.name;
+        if (!nm || koBracketIsByeDisplayName(nm)) return;
+        if (get(nm) != null) return;
+        if (byeSeed != null) set(nm, byeSeed);
+      });
+    };
+
+    if (sf1) tagSf(sf1, 1);
+    if (sf2) tagSf(sf2, 2);
+
+    if (fin) {
+      ["side_a", "side_b"].forEach((sk) => {
+        const nm = fin[sk]?.name;
+        if (!nm || koBracketIsByeDisplayName(nm)) return;
+        if (get(nm) != null) return;
+        for (const sf of [sf1, sf2]) {
+          if (!sf) continue;
+          for (const side of [sf.side_a, sf.side_b]) {
+            if (!side?.name) continue;
+            if (koBracketSideKey(side.name) !== koBracketSideKey(nm)) continue;
+            const s = get(side.name);
+            if (s != null) {
+              set(nm, s);
+              return;
+            }
+          }
+        }
+      });
+    }
+
+    return map;
+  }
+
+  function getRainbowPaletteColor(index, fallback) {
+    if (window.ColorUtils && typeof window.ColorUtils.getPaletteColor === "function") {
+      try {
+        return window.ColorUtils.getPaletteColor(Number(index));
+      } catch (_e) {
+        /* ignore */
+      }
+    }
+    return fallback;
+  }
+
+  function renderKoBracketInner(bracket) {
+    const matches = bracket && Array.isArray(bracket.matches) ? bracket.matches : [];
+    if (!matches.length) return "";
+    const byKey = Object.fromEntries(matches.map((m) => [m.key, m]));
+    const woLabel = tt("ui.tournament.walkover", "Walkover");
+    const inferredNote = tt(
+      "ui.tournament.ko_sf2_inferred_note",
+      "Semifinal 2 was not present in the export; it is shown here as a walkover so the bracket matches the live draw."
+    );
+    const phaseLabel = (ph) => {
+      if (ph === "qf") return tt("ui.tournament.phase_qf", "Quarterfinal");
+      if (ph === "sf") return tt("ui.tournament.phase_sf", "Semifinal");
+      if (ph === "final") return tt("ui.tournament.phase_final", "Final");
+      return tt("ui.tournament.phase_ko", "Knockout");
+    };
+
+    const fa = bracket.finalist_a || "";
+    const fb = bracket.finalist_b || "";
+    const nfa = koBracketNormName(fa);
+    const nfb = koBracketNormName(fb);
+    const pathA = new Set(bracket.path_keys_a || []);
+    const pathB = new Set(bracket.path_keys_b || []);
+    const idxA = bracket.palette_index_a != null ? bracket.palette_index_a : 2;
+    const idxB = bracket.palette_index_b != null ? bracket.palette_index_b : 8;
+    const colA = getRainbowPaletteColor(idxA, "#8CBF8A");
+    const colB = getRainbowPaletteColor(idxB, "#A04CBF");
+    const focusPlayerRaw =
+      bracket.focus_player != null && String(bracket.focus_player).trim() !== ""
+        ? String(bracket.focus_player).trim()
+        : "";
+    const focusKey = focusPlayerRaw ? koBracketSideKey(focusPlayerRaw) : "";
+    const focusPaletteRaw =
+      bracket.focus_palette_index != null ? Number(bracket.focus_palette_index) : Number.NaN;
+    const focusPaletteIdx = Number.isFinite(focusPaletteRaw) ? focusPaletteRaw : idxA;
+    const colFocus = getRainbowPaletteColor(focusPaletteIdx, "#8CBF8A");
+    const matchHasFocus = (m) => {
+      if (!focusKey || !m) return false;
+      return (
+        koBracketSideKey(m.side_a?.name) === focusKey || koBracketSideKey(m.side_b?.name) === focusKey
+      );
+    };
+    const focusWonMatch = (m) => {
+      if (!focusKey || !m || !m.winner) return false;
+      if (m.winner === "a") return koBracketSideKey(m.side_a?.name) === focusKey;
+      if (m.winner === "b") return koBracketSideKey(m.side_b?.name) === focusKey;
+      return false;
+    };
+    const seedByKey = buildKoBracketSeedByNameKey(byKey);
+    const seedFor = (name) => seedByKey[koBracketSideKey(name)];
+
+    const qf1 = byKey.QF1;
+    const qf2 = byKey.QF2;
+    const sf1 = byKey.SF1;
+    const sf2 = byKey.SF2;
+    const fin = byKey.F;
+
+    const winnerLaneColor = (m) => {
+      if (!m) return null;
+      if (m.winner === "a") return colA;
+      if (m.winner === "b") return colB;
+      return null;
+    };
+
+    const matchPathStyle = (m) => {
+      if (focusKey) {
+        if (!matchHasFocus(m)) {
+          return "border: 1px solid rgba(0,0,0,0.12); box-shadow: none;";
+        }
+        if (focusWonMatch(m)) {
+          return `border-color: ${colFocus}; border-width: 2px; box-shadow: none;`;
+        }
+        return "border: 1px solid rgba(0,0,0,0.14); box-shadow: none;";
+      }
+      const pk = m.key;
+      const onA = pathA.has(pk);
+      const onB = pathB.has(pk);
+      const isFinal = pk === "F";
+      if (isFinal && onA && onB) {
+        const winCol = winnerLaneColor(m);
+        if (winCol) {
+          // Outline only in the winner's lane color; name rows keep per-finalist lane colors via rowLaneClass.
+          return `border-color: ${winCol}; border-width: 2px; box-shadow: none;`;
+        }
+        return `box-shadow: inset 5px 0 0 ${colA}, inset -5px 0 0 ${colB}; border-color: rgba(0,0,0,0.12);`;
+      }
+      if (onA && !onB) return `border-color: ${colA}; border-width: 2px;`;
+      if (onB && !onA) return `border-color: ${colB}; border-width: 2px;`;
+      if (onA && onB && !isFinal) {
+        return `border-top: 3px solid ${colA}; border-bottom: 3px solid ${colB};`;
+      }
+      return "";
+    };
+
+    const rowLaneClass = (name) => {
+      if (focusKey) {
+        if (koBracketSideKey(name) === focusKey) return " ko-bracket-row--lane-a";
+        return "";
+      }
+      const n = koBracketNormName(name);
+      if (nfa && n === nfa) return " ko-bracket-row--lane-a";
+      if (nfb && n === nfb) return " ko-bracket-row--lane-b";
+      return "";
+    };
+
+    const qf1w = koMatchWinnerName(qf1);
+    const qf2w = koMatchWinnerName(qf2);
+
+    /** When the export labels SF1/SF2 in reverse vs QF feed (e.g. form order), place each QF under the semi that contains its winner. */
+    let sfUnderQf1 = sf1;
+    let sfUnderQf2 = sf2;
+    if (sf1 && sf2 && qf1w && qf2w) {
+      if (koSfContainsWinner(sf2, qf1w) && !koSfContainsWinner(sf1, qf1w)) {
+        sfUnderQf1 = sf2;
+        sfUnderQf2 = sf1;
+      }
+    }
+
+    const sfOriginSuffix = (sideName) => {
+      const raw = String(sideName || "").trim();
+      if (!raw) return "";
+      const sk = koBracketSideKey(raw);
+      if (!sk) return "";
+      if (qf1w && sk === koBracketSideKey(qf1w)) {
+        return ` <span class="ko-bracket-origin text-muted">(${escapeHtml(tt("ui.tournament.tag_qf1", "QF1"))})</span>`;
+      }
+      if (qf2w && sk === koBracketSideKey(qf2w)) {
+        return ` <span class="ko-bracket-origin text-muted">(${escapeHtml(tt("ui.tournament.tag_qf2", "QF2"))})</span>`;
+      }
+      return "";
+    };
+
+    const bracketSeedSuffix = (side) => {
+      const sn = seedFor(side.name);
+      if (sn == null) return "";
+      const title = escapeHtml(tt("ui.tournament.bracket_seed_title", "Draw seed"));
+      return ` <span class="ko-bracket-seed text-muted" title="${title}">(#${escapeHtml(String(sn))})</span>`;
+    };
+
+    const scratchSeriesSummaryHtml = (m) => {
+      if (!m || m.walkover || !(m.scratch_series || m.scratch_final)) return null;
+      const ta = Number(m.scratch_total_a ?? 0);
+      const tb = Number(m.scratch_total_b ?? 0);
+      const taStr = escapeHtml(String(Math.round(ta)));
+      const tbStr = escapeHtml(String(Math.round(tb)));
+      let inner;
+      if (m.winner === "a") {
+        inner = `<strong>${taStr}</strong>\u2013${tbStr}`;
+      } else if (m.winner === "b") {
+        inner = `${taStr}\u2013<strong>${tbStr}</strong>`;
+      } else if (ta > tb) {
+        inner = `<strong>${taStr}</strong>\u2013${tbStr}`;
+      } else if (tb > ta) {
+        inner = `${taStr}\u2013<strong>${tbStr}</strong>`;
+      } else {
+        inner = `${taStr}\u2013${tbStr}`;
+      }
+      const isFinal = m.phase === "final";
+      const title = escapeHtml(
+        isFinal
+          ? tt("ui.tournament.scratch_total_title", "Scratch total (2 games)")
+          : tt("ui.tournament.scratch_total_match", "Scratch total")
+      );
+      return `<span class="ko-bracket-scratch-total" title="${title}">${inner}</span>`;
+    };
+
+    const seriesGamesWonHtml = (m, a, b) => {
+      const wa = Number(a.games_won ?? 0);
+      const wb = Number(b.games_won ?? 0);
+      const wsa = escapeHtml(String(wa));
+      const wsb = escapeHtml(String(wb));
+      if (m.winner === "a") return `<strong>${wsa}</strong>\u2013${wsb}`;
+      if (m.winner === "b") return `${wsa}\u2013<strong>${wsb}</strong>`;
+      return `${wsa}\u2013${wsb}`;
+    };
+
+    const renderMatchCard = (m, decor) => {
+      if (!m) return "";
+      decor = decor || {};
+      const a = m.side_a || {};
+      const b = m.side_b || {};
+      const aHi = a.highlight ? " ko-bracket-row--hi" : "";
+      const bHi = b.highlight ? " ko-bracket-row--hi" : "";
+      const aWin = m.winner === "a";
+      const bWin = m.winner === "b";
+      const pinTxt = (m.pin_games || [])
+        .map((g, i) => `G${i + 1}: ${g[0]}\u2013${g[1]}`)
+        .join(" \u00b7 ");
+      const pinGamesLine =
+        pinTxt && !m.walkover
+          ? `<div class="ko-bracket-per-game small text-muted mt-1">${escapeHtml(pinTxt)}</div>`
+          : "";
+      const woLine = m.walkover
+        ? `<div class="ko-bracket-wo mt-1"><span class="badge bg-secondary text-white">${escapeHtml(woLabel)}</span></div>`
+        : "";
+      const scratchSeries = scratchSeriesSummaryHtml(m);
+      const summaryLineHtml = scratchSeries ? scratchSeries : seriesGamesWonHtml(m, a, b);
+      const inferred = m.inferred
+        ? ` <span class="badge rounded-pill bg-light text-dark border ko-bracket-inferred-pill">${escapeHtml(tt("ui.tournament.inferred", "Inferred"))}</span>`
+        : "";
+      const pathStyle = matchPathStyle(m);
+      const styleAttr = pathStyle ? ` style="${pathStyle.replace(/"/g, "&quot;")}"` : "";
+
+      const nameInner = (side, sideKey) => {
+        const win = (sideKey === "a" && aWin) || (sideKey === "b" && bWin);
+        const tick = win ? "<strong>\u2713 </strong>" : "";
+        const nm = escapeHtml(side.name || "");
+        const body = win ? `${tick}<strong>${nm}</strong>` : `${tick}${nm}`;
+        const origin = m.phase === "sf" && decor.sfOrigin ? sfOriginSuffix(side.name) : "";
+        const seed = bracketSeedSuffix(side);
+        return `<span>${body}</span>${seed}${origin}`;
+      };
+
+      return `
+        <div class="ko-bracket-match"${styleAttr} data-phase="${escapeHtml(m.phase || "")}" data-ko-key="${escapeHtml(m.key || "")}">
+          <div class="ko-bracket-phase-label">${escapeHtml(phaseLabel(m.phase))} \u00b7 ${escapeHtml(m.label || m.key || "")}${inferred}</div>
+          <div class="ko-bracket-row${aHi}${rowLaneClass(a.name)}">
+            ${nameInner(a, "a")}
+          </div>
+          <div class="ko-bracket-row${bHi}${rowLaneClass(b.name)}">
+            ${nameInner(b, "b")}
+          </div>
+          ${pinGamesLine}
+          <div class="ko-bracket-series small text-muted text-end mt-1">${summaryLineHtml}</div>
+          ${woLine}
+        </div>`;
+    };
+
+    const wireFeedVert = `<svg class="ko-bracket-wires ko-bracket-wires--feed" viewBox="0 0 10 18" preserveAspectRatio="xMidYMin meet" aria-hidden="true">
+      <path fill="none" stroke="currentColor" stroke-width="1.15" vector-effect="non-scaling-stroke" d="M 5 0 V 18" />
+    </svg>`;
+    const wireQfSfMerge = `<svg class="ko-bracket-wires ko-bracket-merge-qf-sf" viewBox="0 0 100 22" preserveAspectRatio="none" aria-hidden="true">
+      <path fill="none" stroke="currentColor" stroke-width="1.1" vector-effect="non-scaling-stroke"
+        d="M 25 1 V 9 H 50 M 75 1 V 9 H 50 M 50 9 V 20" />
+    </svg>`;
+    const wireSfF = `<svg class="ko-bracket-wires" viewBox="0 0 100 22" preserveAspectRatio="none" aria-hidden="true">
+      <path fill="none" stroke="currentColor" stroke-width="1.1" vector-effect="non-scaling-stroke"
+        d="M 35 1 V 9 H 50 M 65 1 V 9 H 50 M 50 9 V 20" />
+    </svg>`;
+
+    const hasInferred = matches.some((m) => m.inferred);
+    const note = hasInferred ? `<p class="text-muted small mt-2 mb-0">${escapeHtml(inferredNote)}</p>` : "";
+
+    const hasQfPair = qf1 && qf2;
+    const hasTwoSfs = !!(sf1 && sf2);
+
+    const fHtml = renderMatchCard(fin, {});
+    const fBlock =
+      fHtml.trim() === ""
+        ? ""
+        : `<div class="ko-bracket-tier ko-bracket-tier--final">
+          <div class="ko-bracket-tier-label text-muted small text-uppercase">${escapeHtml(tt("ui.tournament.tier_final", "Final"))}</div>
+          <div class="ko-bracket-tier-matches ko-bracket-tier-matches--center">${fHtml}</div>
+        </div>`;
+
+    let bodyInner = "";
+
+    if (hasQfPair && hasTwoSfs) {
+      const qf1Html = renderMatchCard(qf1, {});
+      const qf2Html = renderMatchCard(qf2, {});
+      const sfLeftHtml = renderMatchCard(sfUnderQf1, { sfOrigin: true });
+      const sfRightHtml = renderMatchCard(sfUnderQf2, { sfOrigin: true });
+      bodyInner = `
+        <div class="ko-bracket-tier ko-bracket-tier--qf">
+          <div class="ko-bracket-tier-label text-muted small text-uppercase text-center">${escapeHtml(tt("ui.tournament.tier_qf_sf_feed", "Quarterfinals \u2192 Semifinals"))}</div>
+          <div class="ko-bracket-doubles">
+            <div class="ko-bracket-feed">
+              ${qf1Html}
+              ${wireFeedVert}
+              ${sfLeftHtml}
+            </div>
+            <div class="ko-bracket-feed">
+              ${qf2Html}
+              ${wireFeedVert}
+              ${sfRightHtml}
+            </div>
+          </div>
+        </div>
+        <div class="ko-bracket-final-stack">
+          ${fHtml.trim() !== "" ? wireSfF : ""}
+          ${fBlock}
+        </div>`;
+    } else if (hasQfPair && sf1 && !sf2) {
+      const qf1Html = renderMatchCard(qf1, {});
+      const qf2Html = renderMatchCard(qf2, {});
+      const sf1Html = renderMatchCard(sf1, { sfOrigin: true });
+      bodyInner = `
+        <div class="ko-bracket-tier ko-bracket-tier--qf">
+          <div class="ko-bracket-tier-label text-muted small text-uppercase text-center">${escapeHtml(tt("ui.tournament.tier_qf", "Quarterfinals"))}</div>
+          <div class="ko-bracket-doubles ko-bracket-doubles--single-sf">
+            <div class="ko-bracket-qf-pair">${qf1Html}</div>
+            <div class="ko-bracket-qf-pair">${qf2Html}</div>
+            ${wireQfSfMerge}
+            <div class="ko-bracket-sf-span">${sf1Html}</div>
+          </div>
+        </div>
+        <div class="ko-bracket-final-stack">
+          ${fHtml.trim() !== "" ? wireSfF : ""}
+          ${fBlock}
+        </div>`;
+    } else {
+      const qfKeys = ["QF1", "QF2"];
+      const qfHtml = qfKeys.map((k) => renderMatchCard(byKey[k], {})).join("");
+      const sfOrdered =
+        sf1 && sf2 ? [sfUnderQf1, sfUnderQf2] : [byKey.SF1, byKey.SF2].filter(Boolean);
+      const sfHtml = sfOrdered.map((m) => renderMatchCard(m, { sfOrigin: true })).join("");
+      const qfBlock =
+        qfHtml.trim() === ""
+          ? ""
+          : `<div class="ko-bracket-tier ko-bracket-tier--qf">
+          <div class="ko-bracket-tier-label text-muted small text-uppercase">${escapeHtml(tt("ui.tournament.tier_qf", "Quarterfinals"))}</div>
+          <div class="ko-bracket-tier-matches">${qfHtml}</div>
+        </div>
+        ${qfHtml.trim() !== "" && sfHtml.trim() !== "" ? wireQfSfMerge : ""}`;
+      const sfBlock =
+        sfHtml.trim() === ""
+          ? ""
+          : `<div class="ko-bracket-tier ko-bracket-tier--sf">
+          <div class="ko-bracket-tier-label text-muted small text-uppercase">${escapeHtml(tt("ui.tournament.tier_sf", "Semifinals"))}</div>
+          <div class="ko-bracket-tier-matches">${sfHtml}</div>
+        </div>
+        ${fHtml.trim() !== "" ? wireSfF : ""}`;
+      bodyInner = `${qfBlock}${sfBlock}${fBlock}`;
+    }
+
+    const treeLaneA = focusKey ? colFocus : colA;
+    const treeLaneB = focusKey ? colFocus : colB;
+    return `
+      <div class="ko-bracket-tree" style="--ko-lane-a:${treeLaneA};--ko-lane-b:${treeLaneB};">
+        ${bodyInner}
+        ${note}
+      </div>`;
+  }
+
+  function renderKoBracketCard(bracket) {
+    const inner = renderKoBracketInner(bracket);
+    if (!inner) return "";
+    const title = tt("ui.tournament.ko_bracket_title", "Knockout bracket");
+    return `
+      <div class="card mb-4 tournament-ko-bracket-card">
+        <div class="card-header"><h5 class="mb-0">${escapeHtml(title)}</h5></div>
+        <div class="card-body p-2 p-md-3">${inner}</div>
+      </div>`;
   }
 
   function renderCards(cards) {
@@ -207,8 +694,10 @@
     btn.addEventListener("click", () => {
       roundResultsHeatmapEnabled = !roundResultsHeatmapEnabled;
       renderRoundResultsHeatmapControls("tournamentRoundResultsHeatmapControls");
+      renderRoundResultsHeatmapControls("tournamentKoFinaleRoundResultsHeatmapControls");
       renderRoundResultsHeatmapControls("tournamentPlayerRoundResultsHeatmapControls");
       applyRoundResultsHeatmapToTable("tournamentRoundResultsTable", currentRoundResultsHeatmapRange);
+      applyRoundResultsHeatmapToTable("tournamentKoFinaleRoundResultsTable", currentRoundResultsHeatmapRange);
       applyRoundResultsHeatmapToTable("tournamentPlayerRoundTable", currentPlayerRoundHeatmapRange);
     });
   }
@@ -269,8 +758,9 @@
     const tick = () => {
       attempts += 1;
       const okOverview = applyRoundResultsHeatmapToTable("tournamentRoundResultsTable", currentRoundResultsHeatmapRange);
+      const okKo = applyRoundResultsHeatmapToTable("tournamentKoFinaleRoundResultsTable", currentRoundResultsHeatmapRange);
       const okPlayer = applyRoundResultsHeatmapToTable("tournamentPlayerRoundTable", currentPlayerRoundHeatmapRange);
-      const ok = okOverview || okPlayer;
+      const ok = okOverview || okKo || okPlayer;
       if (ok || attempts >= maxAttempts) return;
       window.setTimeout(tick, delayMs);
     };
@@ -280,6 +770,10 @@
   function updateLeaderboardHeader(section) {
     const headerEl = document.querySelector("#tournamentLeaderboardCard .card-header h5");
     if (!headerEl) return;
+    if (section?.is_ko_finale_round) {
+      headerEl.textContent = tt("ui.tournament.ko_placements_title", "Knockout final standings");
+      return;
+    }
     const roundValue = String(currentFilters.round || "").trim();
     if (!roundValue) {
       headerEl.textContent = tt("ui.tournament.leaderboard", "Leaderboard");
@@ -461,11 +955,27 @@
     });
   }
   function setPlayerMode(enabled) {
-    const ids = ["tournamentCards", "tournamentBestEfforts", "tournamentLeaderboardCard", "tournamentRoundResultsCard"];
+    const ids = [
+      "tournamentCards",
+      "tournamentBestEfforts",
+      "tournamentLeaderboardCard",
+      "tournamentRoundResultsCard",
+      "tournamentKoBracketOverview",
+    ];
     ids.forEach((id) => {
       const el = document.getElementById(id);
       if (el) el.style.display = enabled ? "none" : "";
     });
+    const pqCard = document.getElementById("tournamentPostQualificationCard");
+    if (pqCard) {
+      if (enabled) pqCard.style.display = "none";
+      else pqCard.style.display = lastOverviewHasPostQual ? "" : "none";
+    }
+    const koRrCard = document.getElementById("tournamentKoFinaleRoundResultsCard");
+    if (koRrCard) {
+      if (enabled) koRrCard.style.display = "none";
+      else koRrCard.style.display = lastOverviewHasKoRr ? "" : "none";
+    }
     const roundFilter = document.getElementById("tournamentRoundFilterGroup");
     if (roundFilter) roundFilter.style.display = enabled ? "none" : "";
   }
@@ -624,6 +1134,7 @@
           <div class="d-flex justify-content-center mb-3">
             <div id="tournamentPlayerChartsLegend" class="d-flex flex-wrap justify-content-center gap-3"></div>
           </div>
+          <div id="tournamentPlayerKoBracketMount" class="tournament-player-ko-bracket-mount"></div>
           <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
               <h6 class="mb-0">${tt("ui.tournament.results", "Results")}</h6>
@@ -651,6 +1162,10 @@
         const h6 = header.querySelector("h6");
         if (h6) h6.style.marginBottom = "0";
       }
+    }
+    const koPlayerMount = document.getElementById("tournamentPlayerKoBracketMount");
+    if (koPlayerMount) {
+      koPlayerMount.innerHTML = renderKoBracketCard(payload.ko_bracket || { matches: [] });
     }
     renderTable("tournamentPlayerRoundTable", payload.round_table);
     renderRoundResultsHeatmapControls("tournamentPlayerRoundResultsHeatmapControls");
@@ -1205,7 +1720,60 @@
     const section = await fetchJson(
       `/tournament/get_section?season=${encodeURIComponent(season)}&tournament=${encodeURIComponent(tournament)}${roundParam}&n=5`
     );
+    currentTournamentGender = section.tournament_gender || null;
     renderCards(section.cards || []);
+    const koOverview = document.getElementById("tournamentKoBracketOverview");
+    if (koOverview) {
+      koOverview.innerHTML = renderKoBracketCard(section.ko_bracket || { matches: [] });
+    }
+
+    const pqCard = document.getElementById("tournamentPostQualificationCard");
+    const koRrCard = document.getElementById("tournamentKoFinaleRoundResultsCard");
+    const hasPostQual =
+      !String(currentFilters.round || "").trim() &&
+      section.leaderboard_post_qualification &&
+      Array.isArray(section.leaderboard_post_qualification.data) &&
+      section.leaderboard_post_qualification.data.length > 0;
+    if (pqCard) {
+      if (hasPostQual) {
+        pqCard.style.display = "";
+        const h = document.getElementById("tournamentPostQualificationHeader");
+        if (h) {
+          h.textContent = tt("ui.tournament.leaderboard_post_qual", "Qualification — places after the cut");
+        }
+        renderTable("tournamentPostQualificationTable", section.leaderboard_post_qualification);
+      } else {
+        pqCard.style.display = "none";
+        const pqEl = document.getElementById("tournamentPostQualificationTable");
+        if (pqEl) pqEl.innerHTML = "";
+      }
+    }
+    const hasKoRr =
+      !String(currentFilters.round || "").trim() && section.round_results_ko && Array.isArray(section.round_results_ko.columns);
+    if (koRrCard) {
+      if (hasKoRr) {
+        koRrCard.style.display = "";
+        const kh = document.getElementById("tournamentKoFinaleRoundResultsHeader");
+        if (kh) {
+          kh.textContent = tt("ui.tournament.round_results_ko_title", "Knockout round — game results");
+        }
+        renderRoundResultsHeatmapControls("tournamentKoFinaleRoundResultsHeatmapControls");
+        renderTable("tournamentKoFinaleRoundResultsTable", section.round_results_ko);
+        currentRoundResultsHeatmapRange =
+          section?.round_results_ko?.metadata?.heatmap_ranges?.game_score || DEFAULT_GAME_HEATMAP_RANGE;
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => scheduleRoundResultsHeatmapApply());
+        });
+        window.setTimeout(() => scheduleRoundResultsHeatmapApply(20, 150), 1200);
+      } else {
+        koRrCard.style.display = "none";
+        const koTbl = document.getElementById("tournamentKoFinaleRoundResultsTable");
+        if (koTbl) koTbl.innerHTML = "";
+      }
+    }
+    lastOverviewHasPostQual = !!hasPostQual;
+    lastOverviewHasKoRr = !!hasKoRr;
+
     renderBestEfforts(section.best_efforts);
     updateLeaderboardHeader(section);
     renderTable("tournamentLeaderboardTable", section.leaderboard);
@@ -1224,6 +1792,8 @@
     }
     enablePlayerCellNavigation("tournamentLeaderboardTable");
     enablePlayerCellNavigation("tournamentRoundResultsTable");
+    enablePlayerCellNavigation("tournamentPostQualificationTable");
+    enablePlayerCellNavigation("tournamentKoFinaleRoundResultsTable");
   }
 
   async function applyFiltersAndRender(preservePlayer = false) {

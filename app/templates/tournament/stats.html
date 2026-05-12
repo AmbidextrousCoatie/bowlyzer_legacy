@@ -4,6 +4,165 @@
 {% include "components/tables.html" %}
 {% include "components/charts.html" %}
 
+<style>
+  .ko-bracket-tree {
+    --ko-lane-a: #8cbf8a;
+    --ko-lane-b: #a04cbf;
+    max-width: 920px;
+    margin: 0 auto;
+  }
+  .ko-bracket-tier-label {
+    letter-spacing: 0.04em;
+    margin-bottom: 0.35rem;
+  }
+  .ko-bracket-tier-matches {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+  .ko-bracket-tier-matches--center {
+    justify-content: center;
+    max-width: 340px;
+    margin: 0 auto;
+  }
+  .ko-bracket-tier--final .ko-bracket-match {
+    flex: 0 1 320px;
+    max-width: 100%;
+  }
+  .ko-bracket-match {
+    flex: 1 1 0;
+    min-width: 0;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 0.35rem;
+    padding: 0.5rem 0.65rem;
+    background: var(--bs-body-bg, #fff);
+  }
+  .ko-bracket-match[data-phase="final"] {
+    border-width: 2px;
+  }
+  .ko-bracket-phase-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--bs-secondary-color, #6c757d);
+    margin-bottom: 0.35rem;
+  }
+  .ko-bracket-row {
+    font-size: 0.9rem;
+    line-height: 1.35;
+    word-break: break-word;
+  }
+  .ko-bracket-row--lane-a {
+    color: var(--ko-lane-a);
+    font-weight: 600;
+  }
+  .ko-bracket-row--lane-b {
+    color: var(--ko-lane-b);
+    font-weight: 600;
+  }
+  .ko-bracket-row--hi {
+    font-weight: 600;
+    background: rgba(13, 110, 253, 0.08);
+    margin: 0 -0.35rem;
+    padding: 0.1rem 0.35rem;
+    border-radius: 0.2rem;
+  }
+  .ko-bracket-wo,
+  .ko-bracket-series,
+  .ko-bracket-per-game {
+    font-variant-numeric: tabular-nums;
+  }
+  .ko-bracket-per-game {
+    line-height: 1.35;
+  }
+  .ko-bracket-wires {
+    display: block;
+    width: 100%;
+    height: 22px;
+    margin: 0.1rem 0 0.45rem;
+    color: rgba(33, 37, 41, 0.35);
+  }
+  .ko-bracket-wires--feed {
+    height: 20px;
+    margin: 0.2rem 0 0.35rem;
+    width: 100%;
+    max-width: 56px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .ko-bracket-doubles {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem 1rem;
+    align-items: stretch;
+    max-width: 920px;
+    margin: 0 auto 0.35rem;
+  }
+  .ko-bracket-doubles--single-sf {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto auto;
+  }
+  .ko-bracket-doubles--single-sf .ko-bracket-qf-pair {
+    min-width: 0;
+  }
+  .ko-bracket-feed {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    min-width: 0;
+  }
+  .ko-bracket-merge-qf-sf {
+    grid-column: 1 / -1;
+    max-width: 520px;
+    width: 100%;
+    margin: 0.1rem auto 0.35rem;
+  }
+  .ko-bracket-sf-span {
+    grid-column: 1 / -1;
+    max-width: 480px;
+    width: 100%;
+    margin: 0 auto;
+    min-width: 0;
+  }
+  .ko-bracket-final-stack {
+    max-width: 920px;
+    margin: 0 auto;
+  }
+  .ko-bracket-scratch-total {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+  }
+  .ko-bracket-seed,
+  .ko-bracket-origin {
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .ko-bracket-origin {
+    font-size: 0.78em;
+  }
+  .ko-bracket-inferred-pill {
+    font-size: 0.6rem;
+    vertical-align: middle;
+  }
+  @media (max-width: 575.98px) {
+    .ko-bracket-doubles {
+      grid-template-columns: 1fr;
+    }
+    .ko-bracket-tier-matches {
+      flex-direction: column;
+    }
+    .ko-bracket-match {
+      flex: 1 1 auto;
+      width: 100%;
+    }
+    .ko-bracket-tier--final .ko-bracket-match {
+      flex: 1 1 auto;
+    }
+  }
+</style>
+
 <div class="container-fluid mt-3">
     <div class="card mb-4">
         <div class="card-header">
@@ -36,10 +195,29 @@
 
     <div id="tournamentCards" class="mb-4"></div>
 
+    <div id="tournamentKoBracketOverview"></div>
+
     <div class="card mb-4" id="tournamentLeaderboardCard">
         <div class="card-header"><h5 data-i18n="ui.tournament.leaderboard">Leaderboard</h5></div>
         <div class="card-body">
             <div id="tournamentLeaderboardTable"></div>
+        </div>
+    </div>
+
+    <div class="card mb-4" id="tournamentPostQualificationCard" style="display: none;">
+        <div class="card-header"><h5 class="mb-0" id="tournamentPostQualificationHeader"></h5></div>
+        <div class="card-body">
+            <div id="tournamentPostQualificationTable"></div>
+        </div>
+    </div>
+
+    <div class="card mb-4" id="tournamentKoFinaleRoundResultsCard" style="display: none;">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0" id="tournamentKoFinaleRoundResultsHeader"></h5>
+            <div id="tournamentKoFinaleRoundResultsHeatmapControls"></div>
+        </div>
+        <div class="card-body">
+            <div id="tournamentKoFinaleRoundResultsTable"></div>
         </div>
     </div>
 

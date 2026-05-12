@@ -953,13 +953,21 @@ function createTableTabulator(tableId, data, options = {}) {
         }
         : false;
 
-    // Set up initial sort if specified
-    const initialSort = data.default_sort ? [
-        {
-            column: data.default_sort.field,
-            dir: data.default_sort.dir || "desc"  // Default to descending
-        }
-    ] : undefined;
+    // Set up initial sort: optional multi-column sort via metadata.initial_sort (field/dir), else default_sort
+    let initialSort = undefined;
+    if (data.metadata && Array.isArray(data.metadata.initial_sort) && data.metadata.initial_sort.length > 0) {
+        initialSort = data.metadata.initial_sort.map((s) => ({
+            column: s.field,
+            dir: s.dir || "asc",
+        }));
+    } else if (data.default_sort) {
+        initialSort = [
+            {
+                column: data.default_sort.field,
+                dir: data.default_sort.dir || "desc", // Default to descending
+            },
+        ];
+    }
 
     // Extract teams from data and update team color map
     // This ensures team colors are available when rendering tables on direct navigation

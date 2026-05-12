@@ -1,0 +1,14 @@
+{
+  "25/26||Bayerische Meisterschaft - Frauen Einzel": {
+    "ko_finale_series": "scratch_total_2g",
+    "ko_qualifying_cut_rank": 6,
+    "ko_qualifying_cut_round": 1,
+    "ko_qualifying_cut_through_round": 2
+  },
+  "25/26||Bayerische Meisterschaft - Männer Einzel": {
+    "ko_finale_series": "bo3_pins",
+    "ko_qualifying_cut_rank": 6,
+    "ko_qualifying_cut_round": 1,
+    "ko_qualifying_cut_through_round": 2
+  }
+}
