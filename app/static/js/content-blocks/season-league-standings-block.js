@@ -183,51 +183,10 @@ class SeasonLeagueStandingsBlock extends BaseContentBlock {
             const leagueId = leagueIdToken(league);
             const tableId = `tableSeasonLeagueStandings_${leagueId}`;
             
-            // Extract teams for this league and assign colors starting from palette index 0
-            // This ensures each league has its own independent color cycle
+            // Each league: palette from standings row order (position 1 → first swatch)
             if (standings && standings.data && standings.data.length > 0) {
-                const leagueTeams = [];
-                standings.data.forEach(row => {
-                    if (row && row.length > 1 && typeof row[1] === 'string' && row[1].trim() !== '') {
-                        leagueTeams.push(row[1]);
-                    }
-                });
-                
-                // Remove duplicates
-                const uniqueLeagueTeams = [...new Set(leagueTeams)];
-                
-                // Assign colors to this league's teams starting from palette index 0
-                // Clear existing colors for these teams first so they restart the cycle
-                if (uniqueLeagueTeams.length > 0) {
-                    // Access teamColorMap and getPaletteColor from ColorUtils
-                    const teamColorMap = (window.ColorUtils && window.ColorUtils.teamColorMap) || (window.teamColorMap) || {};
-                    const getPaletteColor = (window.ColorUtils && window.ColorUtils.getPaletteColor) || 
-                                          (window.getPaletteColor) || 
-                                          ((idx) => '#888');
-                    
-                    // Clear colors for this league's teams (so they get reassigned from index 0)
-                    uniqueLeagueTeams.forEach(team => {
-                        if (teamColorMap[team]) {
-                            delete teamColorMap[team];
-                        }
-                    });
-                    
-                    // Now assign colors starting from index 0 for this league
-                    let paletteIdx = 0;
-                    uniqueLeagueTeams.forEach(team => {
-                        if (!teamColorMap[team]) {
-                            teamColorMap[team] = getPaletteColor(paletteIdx++);
-                        }
-                    });
-                    
-                    // Update the global reference if needed
-                    if (window.ColorUtils) {
-                        window.ColorUtils.teamColorMap = teamColorMap;
-                    }
-                    if (window.teamColorMap) {
-                        window.teamColorMap = teamColorMap;
-                    }
-                    
+                if (window.ColorUtils && typeof window.ColorUtils.seedTeamColorsFromLeagueTablePayload === 'function') {
+                    window.ColorUtils.seedTeamColorsFromLeagueTablePayload(standings);
                 }
             }
             

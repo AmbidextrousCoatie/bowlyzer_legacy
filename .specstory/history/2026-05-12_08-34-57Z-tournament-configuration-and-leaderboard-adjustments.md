@@ -10598,3 +10598,8830 @@ _**Agent (default)**_
 
 <think><details><summary>Thought Process</summary>
 The fix involves using the KO placement as the `final_position` when available, and potentially adjusting the `best_position` logic accordingly. When determining the final position, use the KO placement as the authoritative standing if the player is in the KO bracket. For players not in KO, retain the pin-based final position from the series. This ensures the final position reflects the official tournament outcome, particularly for finalists who advance to the KO final. When a player is in the KO bracket, use their KO placement as the final position. For players outside the KO bracket, keep the pin-based final position from the series. This ensures accurate representation of tournament outcomes, especially for finalists in the KO final. Edge cases like players in KO placements, those not in KO brackets, or multiple entries for the same place are handled appropriately. A helper function retrieves KO placements for players based on normalized names. When determining the final position, use the KO placement as the authoritative standing if the player is in the KO bracket. For players not in the KO bracket, retain the pin-based final position from the series. This ensures the final position reflects the official tournament outcome, especially for finalists who advance to the KO final. A helper function retrieves KO placements for players based on normalized names. The KO bracket is built first, and placements are always referenced from the full `ko_bracket`, not from an empty payload for individual players. When determining the final position, use the KO placement as the authoritative standing if the player is in the KO bracket. For players not in the KO bracket, retain the pin-based final position from the series. This ensures the final position reflects the official tournament outcome, especially for finalists who advance to the KO final. A helper function retrieves KO placements for players based on normalized names. The KO bracket is built first, and placements are always referenced from the full `ko_bracket`, not from an empty payload for individual players. The `final_position` should be updated to reflect the KO placement when applicable, while `best_position` remains unchanged to preserve its meaning in terms of pin ranking. The charts last point should reflect the final position, including any KO adjustments, to maintain consistency. To achieve this, override the final position in `get_player_section` when building the response, ensuring the position series accurately represents the tournament outcome. This approach avoids mutating progress directly and keeps the logic clean. When `ko_place` is available, update the last element of `position_series` in the payload's `progress_series` to reflect the KO placement. This ensures the chart endpoint shows the correct final position without altering `best_position`, which should remain unchanged to preserve the tournament's best pin rank. Implement `_ko_placement_for_player` as an instance method near `_ko_placements_from_matches`. Verify that all finalists appear in placements, including losers, and handle potential Unicode normalization mismatches in name matching using casefold. If a player participates in the KO bracket but is missing from placements, ensure they are included if a final exists. For incomplete brackets, keep pin-based rankings when KO placements are unavailable. The helper function `_ko_player_in_ko_matches` uses the same name logic as `_ko_placement_for_player`. The `get_player_section` function will be updated to build the `ko_bracket` early, compute `ko_place` from the full `ko_bracket` placements, and set `final_position` to `ko_place` if available, otherwise use the pin-based value. For the chart endpoint, a shallow copy of the progress series dictionary is made, and the `position_series` list is replaced with a modified version where the last element is updated to `ko_place` if available. This ensures the chart displays the correct final position without altering `best_position`. When the user mentions "lists ... as #1 after the last game," the tile uses a summary, while the chart uses progress_series. Both need updates: the progress_series is modified to reflect the KO placement at the last position, and the final_position is recalculated from the updated progress_series. If `ko_place` is available, it overrides the last element of `position_series`, and `final_position` is set to `ko_place`. The order of operations involves building the KO bracket, determining the KO placement for the player, updating the position series with the KO placement if available, and then using the updated series for further processing.</details></think>
+
+_**Agent (default)**_
+
+Identifying the issue: `final_position` comes from `position_series[-1]`, which ranks players by cumulative pins at each game—not KO results. A finalist can lose the final but still rank first on total pins. Using KO bracket `placements` when present to set the displayed final position (and the last point of `position_series` for the chart).
+
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\services\tournament_service.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I'll add `_ko_placement_for_player` after `_ko_player_in_ko_matches` as a static method for consistency. I'll add `_ko_placement_for_player` after `_ko_player_in_ko_matches` as a static method for consistency. return None
+Then rewrite get_player_section block:
+
+```python
+    def get_player_section(self, season: str, tournament: str, player: str) -> Dict[str, Any]:
+        ko_bracket = self._build_ko_bracket_payload(season, tournament)
+        ko_place = self._ko_placement_for_player(ko_bracket, player)
+
+        progress = self.get_player_progress_series(season, tournament, player)
+        pos_series = list(progress.get("position_series") or [])
+        if ko_place is not None and pos_series:
+            pos_series = pos_series[:]
+            pos_series[-1] = ko_place
+```</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\services\tournament_service.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\services\tournament_service.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\services\tournament_service.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Optional is imported.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\tests",
+  "pattern": "get_player_section|position_series"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\tests",
+  "pattern": "get_player_section|position_series",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\services\\tournament_service.py"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\services\\tournament_service.py"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+### Root cause
+
+`summary.final_position` (and the last point on the position chart) came from **`get_player_progress_series`**, which ranks everyone by **cumulative pins** at each game. That is **not** the same as **K.O. placement**: the runner-up can still have the **highest total pins** in the file (e.g. stronger qualifying rounds, format differences in the final, or how games are recorded), so they could show as **#1 on pins** while being **2nd officially** after losing the final.
+
+### Fix
+
+The service already builds **`placements`** from the bracket (`_ko_placements_from_matches`: 1 = winner, 2 = finalist, etc.). For the player section we now:
+
+1. Added **`_ko_placement_for_player`** — resolves the player’s **official KO place** from `ko_bracket["placements"]` (same name rules as elsewhere: strip “(no show)”, normalized compare).
+
+2. In **`get_player_section`**, if that KO place exists:
+   - set **`summary.final_position`** from it (instead of the last pin-based rank);
+   - copy **`position_series`** and set **`position_series[-1] = ko_place`** so the **“after last game”** point on the position chart matches the KO result.
+
+Players **not** listed in KO placements (no final in data, or not in the KO tree) are unchanged and still use **pin-based** ranks.
+
+Relevant code:
+
+```2607:2621:c:\Users\cfell\repos\bowlyzer_legacy\app\services\tournament_service.py
+    @staticmethod
+    def _ko_placement_for_player(bracket: Optional[Dict[str, Any]], player: str) -> Optional[int]:
+        """Official KO standing (1=champion, 2=finalist, …) when bracket placements list the player."""
+        ...
+```
+
+and the `get_player_section` flow that applies `ko_place` to `pos_series[-1]` and returns `progress_out`.
+
+---
+
+_**User**_
+
+okay, done! 
+now onto sth totally differnt: 
+when queriying for league standings, we always compute the standings from the raw data. especially if we request multiple tables for a season overview
+http://127.0.0.1:5000/league/stats?season=25%2F26&database=db_real_merged 
+it takes a considerable amount of time, ~5-10s
+we need to implement some sort of caching. 
+first give me some suggestions on 3 different chaing mechanics on query basis.
+then we will evaluate them based on complexity, robustness and effort to implement.
+
+
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user seeks architectural or design guidance rather than implementation details. They want three distinct caching mechanisms tailored to specific query needs for league standings, where season overviews load multiple tables and recomputed from raw data on each access. I will outline three different approaches with brief tradeoff notes, avoiding detailed scoring until they request evaluation. In-process memoization using LRU or dictionary-based caching keyed by season, league, database, and adapter can be implemented with Flask's `g` or `cachetools.TTLCache`. It supports invalidation via TTL, manual clearing, or versioning.
+
+HTTP-level caching with ETags or Cache-Control headers helps reduce load for repeated requests but offers limited benefit for initial loads without server-side caching.
+
+A persistent cache layer such as Redis, file-backed storage, or SQLite snapshots provides long-term caching across requests and processes. - **A. Application memory cache (TTL/LRU)**  key = hash(season, league, database, endpoint, )
+- **B. HTTP caching / ETag**  same query returns 304 or browser cache
+- **C. Persistent cache layer (Redis, file, SQLite)**  stores serialized JSON by query parameters, survives restarts and shares across workers. Precomputed or materialized aggregates can be updated nightly or during imports, enabling O(1) read performance. Alternatively, in-process caching with TTL or LRU strategies, such as `functools` or `cachetools`, offers fast hits but may duplicate data per worker and lose state on restarts. HTTP-level caching with ETags or Cache-Control headers reduces load for repeated requests, though it doesn't help with initial loads. A persistent cache layer like Redis, file storage, or SQLite snapshots ensures long-term caching across processes and restarts, supporting shared access and better invalidation strategies. Materialized views or Parquet files serve as a dedicated data cache, separate from HTTP responses, improving efficiency for frequently accessed datasets.</details></think>
+
+_**Agent (default)**_
+
+Here are **three query-oriented caching approaches** that fit “multiple tables, same season overview, same underlying data”:
+
+### 1. In-process response cache (TTL / LRU, keyed by query)
+**Idea:** After you compute a standings payload for a given request identity, store it in memory keyed by a stable tuple/hash: e.g. `database`, `season`, `league` (if any), endpoint name, and any other filter that affects the result. Use **TTL** (e.g. 60–300s) and/or **max entries** (LRU eviction).
+
+**Query basis:** One cache entry per distinct query key; repeated calls from the same overview reuse the same entries.
+
+**Typical stack:** `cachetools.TTLCache` / `functools.lru_cache` (with care), or a small internal `dict` + lock.
+
+---
+
+### 2. Conditional HTTP caching (ETag / `Last-Modified` on GET)
+**Idea:** Keep computing on the server *unless* the client sends `If-None-Match` / `If-Modified-Since`. You derive a **fingerprint** from the backing data for that scope (e.g. merged DB identifier + max(`mtime`) of source files + row count, or a stored `data_version` bumped on import). Same fingerprint → **304 Not Modified** with an empty body.
+
+**Query basis:** The “query” is still the URL params; the **validator** ties that response to a data generation id so you don’t serve stale JSON.
+
+**Note:** This mainly speeds **repeat** loads and parallel tabs that share the browser cache; the **first** load in a session still needs help from (1) or (3) unless you add server-side storage.
+
+---
+
+### 3. Persistent materialized cache (disk / Redis / SQLite “snapshot”)
+**Idea:** Serialize the **computed** standings (or intermediate aggregates) to a store keyed by `(database, season, …)`. On a hit, deserialize and return; on miss, compute, write, return. Invalidate when imports finish or when a **data revision** changes.
+
+**Query basis:** Same as (1), but entries **survive process restarts** and are **shared across Gunicorn/uvicorn workers**, so one user warming the cache helps everyone.
+
+**Typical stack:** Redis, or files under `var/cache/league/{db_hash}/{season}/…json`, with atomic write + mtime check.
+
+---
+
+When you’re ready to compare them, we can score **complexity**, **robustness** (staleness, multi-worker, deploys), and **effort** on a small matrix and pick one primary + optional complement (e.g. **(3) persistent + (2) ETag** is a common pair).
+
+---
+
+_**User**_
+
+compare them, i got the feeling that i like the functionality of (3) already the best
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user requests a comparison of the three discussed caching approaches, favoring option 3, the persistent materialized cache.</details></think>
+
+_**Agent (default)**_
+
+### Comparison (query-keyed caching)
+
+| Dimension | **(1) In-process TTL/LRU** | **(2) ETag / conditional GET** | **(3) Persistent materialized cache** |
+|-----------|----------------------------|---------------------------------|----------------------------------------|
+| **What gets faster** | Repeat calls inside the same process (and until eviction/TTL) | Repeat requests when the browser already has the body; optional CDN/proxy | **First and repeat** requests across **all workers** and **after restarts**, for the same query key |
+| **Complexity** | Low: one dict/cache + lock, key builder | Medium: fingerprint contract, headers, 304 paths, client must send validators | Medium–high: storage format, atomic writes, key layout, optional locking |
+| **Robustness** | Weakest: **N workers = N caches**, cold after deploy, easy to serve **stale** if TTL wrong | Strong for **correctness** (no stale without fingerprint change); weak alone for **latency** on cold load | **Strong for latency** if invalidation is clear; staleness risk moves to **“when do we bump revision?”** |
+| **Effort to implement** | Half day-ish | Half day–1 day (plus frontend if you want real 304 usage) | **1–3 days** depending on invalidation story and whether you cache full JSON vs partial aggregates |
+| **Operational footprint** | None | None | **Disk** (simplest) or **Redis** (if multi-host / shared infra) |
+
+### Why your instinct toward **(3)** makes sense
+
+- Your pain is **many tables × one overview × cold compute from raw data** → the win you want is **amortizing work once per data revision**, not just per Python process.
+- **(1)** helps a single busy worker until TTL expires; **Gunicorn/uwsgi multi-worker** still repeats work.
+- **(2)** is a great **add-on** for bandwidth and “refresh without download,” but it **doesn’t remove the 5–10s CPU** on the first full overview unless something **server-side** remembers the result—i.e. **(3)** (or **(1)** as a poor substitute).
+
+### Where **(3)** needs discipline (so it stays robust)
+
+- **Invalidation key**: tie cache entries to a **`data_revision`** (hash of source artifacts, import job id, or explicit bump) so you never debate “is this stale?”
+- **Scope**: start by caching **expensive, read-heavy** payloads (standings tables JSON), not every tiny endpoint.
+- **Concurrency**: file cache → write temp + rename; Redis → SET with TTL; avoid half-written reads.
+- **Serialization**: store **the same JSON** the route would build (simple) vs **intermediate DataFrames** (faster re-use, more fragile).
+
+### Practical recommendation
+
+- **Primary: (3)** for the season-overview standings family (biggest latency win, matches your preference).
+- **Optional later: (2)** on top for clients that re-hit the same URLs with unchanged data (cheap improvement, nice for mobile/slow links).
+
+If you want to proceed implementation-wise next, the main design choice is **disk-backed JSON per `(database, data_revision, season, league_scope, endpoint_id)`** vs Redis; disk is usually the shortest path in a monolith like yours.
+
+---
+
+_**User**_
+
+so, since we are dealing with a lot of historic and stable data, long term caching (3) seems prety good. when are caches invlaidated? can we built some shadow routines to rebuild the cache? lets dive into your implementation proposal
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user seeks a detailed implementation plan for persistent long-term caching, focusing on option 3.</details></think>
+
+_**Agent (default)**_
+
+Exploring how league stats load data and which endpoints fire on the season overview so the proposal fits the codebase.
+
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\routes",
+  "pattern": "league/stats|get_standings|season.*overview"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\routes",
+  "pattern": "league/stats|get_standings|season.*overview",
+  "topFiles": [
+    {
+      "matchCount": 5,
+      "uri": "app/routes/league_routes.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/routes/main.py"
+    },
+    {
+      "matchCount": 5,
+      "uri": "app\\routes\\league_routes.py"
+    }
+  ],
+  "totalFiles": 3,
+  "totalMatches": 11
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **6** results in **1** directory</summary>
+
+Directory: **c:\Users\cfell\repos\bowlyzer_legacy\app** (6 files)
+
+| File |
+|------|
+| `../app/routes/league_routes_legacy.py` |
+| `../app/services/league_service_legacy.py` |
+| `../app/routes/league_routes.py` |
+| `../app/services/league_service.py` |
+| `../app/utils/league_utils.py` |
+| `../app\routes\league_routes.py` |
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\routes\\league_routes.py",
+  "pattern": "@bp\\.route|def get_"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\routes\\league_routes.py",
+  "pattern": "@bp\\.route|def get_",
+  "topFiles": [
+    {
+      "matchCount": 72,
+      "uri": "app\\routes\\league_routes.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 72
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\data_access\adapters\data_adapter_factory.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I have sufficient context. The app utilizes:</details></think>
+
+_**Agent (default)**_
+
+Here’s a concrete **invalidation model**, **shadow/warm rebuild**, and **implementation shape** that fits your Flask + `?database=` + pandas/CSV setup.
+
+---
+
+## 1. When is the cache invalidated?
+
+Treat the cache as **immutable per “data revision”**, not per wall-clock TTL (historic data stays valid for a long time).
+
+**Primary rule:** a cache entry is valid iff its key includes a **`data_revision`** that still matches the live source.
+
+**Ways to define `data_revision` (pick one, or combine):**
+
+| Signal | What it means | Good for |
+|--------|----------------|----------|
+| **File fingerprint** | For the resolved CSV path for `database`: e.g. `(path, st_mtime_ns, st_size)` or a SHA-256 of the file (heavier). | Zero config; invalidates when the merged file is replaced. |
+| **Manifest version** | Your import/merge job writes `database_manifest.json` with `revision`, `built_at`, `source_files[]`. | Clear audit trail; same file replaced in place still bumps revision if the job updates the manifest. |
+| **Explicit bump** | Env `LEAGUE_CACHE_REVISION` or a small `cache_bust` file in a known dir. | Ops “clear everything” without touching data. |
+
+**Invalidation in practice:** you don’t delete old keys eagerly. A **miss** happens when:
+
+- Request computes current `data_revision` for `database`.
+- That differs from the revision embedded in the cache path or in a small sidecar `meta.json` next to the payload.
+
+Old revision directories can be **garbage-collected** by a cron/job (delete dirs older than N revisions or not referenced for M days).
+
+**Language/i18n:** either fold `language` into the cache key (simplest) or **don’t cache translated strings**—cache only language-neutral structures and translate at serve time (smaller surface, slightly more CPU per hit).
+
+---
+
+## 2. Shadow / background rebuild
+
+Yes. Two useful patterns:
+
+**A. Warm pass (offline or low-traffic)**  
+A script or management command walks a list of `(database, season, [league])` and calls the **same functions** the routes use, writing cache entries. Run after each data publish or nightly.
+
+- No change to user-facing latency during warm.
+- Easy to run in CI or a deploy hook.
+
+**B. Stale-while-revalidate (optional, later)**  
+If a request misses but an **older revision** exists, optionally return it with a header `X-Cache-Stale: 1` and trigger a background warm for the new revision (needs a task queue or thread + care in multi-worker setups). More moving parts; skip v1.
+
+**Shadow validation (nice for robustness):**  
+For a sample of keys, **recompute without serving**, compare JSON (or hash) to cached payload; log drift. Catches cache key bugs or nondeterministic ordering.
+
+---
+
+## 3. Implementation proposal (v1)
+
+**Storage layout (filesystem, long-lived):**
+
+```text
+<cache_root>/
+  league/
+    <database_id>/
+      <data_revision>/
+        season_league_standings__season=<hash>.json
+        team_positions__season=...__league=....json
+        ...
+      gc_state.json   # optional
+```
+
+- **`data_revision`**: short hash of fingerprint (e.g. 12 hex chars from `mtime+size+path`).
+- **Entry file**: response body you would have returned from `jsonify(...)` **or** the inner `dict` before `jsonify` (your choice; storing the dict keeps you independent of Flask).
+
+**Sidecar `meta.json` per entry (optional but useful):**
+
+- `revision`, `key`, `built_at`, `endpoint`, `params`
+
+**Integration point (minimal invasion):**
+
+- Small module `app/cache/league_response_cache.py` (or under `business_logic/` if you prefer no Flask in the name): `get_or_build(key, builder_fn) -> dict`.
+- Wrap **only the expensive season-overview endpoints** first, e.g. `get_season_league_standings`, `get_team_positions`, `get_team_averages`, `get_league_history`, etc.—whatever the stats page hammers in parallel.
+
+**Concurrency:**
+
+- Single-flight per key: if two workers miss together, both might build—acceptable v1; v2 use `filelock` or Redis `SETNX`.
+- Write: `tmp` file in same dir, `os.replace` into final name (atomic on same filesystem).
+
+**API knobs:**
+
+- `LEAGUE_CACHE_DIR` (default e.g. repo-local `.cache/league` or system temp).
+- `LEAGUE_CACHE_ENABLED=1` for prod.
+- CLI: `uv run python scripts/warm_league_cache.py --database db_real_merged --all-seasons` (calls service methods in a loop).
+
+---
+
+## 4. Why this matches “historic, stable data”
+
+- **No short TTL** required: validity is **purely data-revision–driven**.
+- **Warm scripts** make the **first** user after a deploy fast too, if you run warm on deploy.
+- **Invalidation** is **predictable**: new merged CSV or new manifest ⇒ new revision ⇒ automatic miss, no manual flush for normal updates.
+
+---
+
+## 5. Suggested rollout order
+
+1. Implement **revision from file mtime+size** + file cache + one endpoint (e.g. `get_season_league_standings`) to prove gains.  
+2. Add wrappers to the other season-overview endpoints that share the same `season`/`database`.  
+3. Add **`warm_league_cache` script** + optional deploy hook.  
+4. Optional: **ETag** on those routes using the same revision (cheap bandwidth win).  
+5. Optional: **GC** of old revision folders.
+
+If you want to move to implementation in-repo next, the first concrete step is identifying **exactly which routes** the league stats page calls for `season=25/26&database=db_real_merged` (network tab or static JS), then ordering them by cost and wrapping the top 3–5.
+
+---
+
+_**User**_
+
+proceed exactly as proposed
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user requests implementation of league response caching as proposed in step 1.</details></think>
+
+_**Agent (default)**_
+
+Implementing persistent league response caching: tracing the league stats page's API calls and integrating the cache layer.
+
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **3** results in **1** directory</summary>
+
+Directory: **c:\Users\cfell\repos\bowlyzer_legacy\app\static** (3 files)
+
+| File |
+|------|
+| `../app/static/js/league/league-data-utils.js` |
+| `../app/static/js/league/league-filter-utils.js` |
+| `../app/static/js/league/league-chart-utils.js` |
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\static\\js",
+  "pattern": "/league/get_"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\static\\js",
+  "pattern": "/league/get_",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "app/static/js/league/league-chart-utils.js"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app/static/js/content-blocks/game-overview-block.js"
+    },
+    {
+      "matchCount": 3,
+      "uri": "app/static/js/league-stats-app.js"
+    },
+    {
+      "matchCount": 4,
+      "uri": "app/static/js/league/league-filter-utils.js"
+    },
+    {
+      "matchCount": 3,
+      "uri": "app/static/js/content-blocks/matchday-block.js"
+    },
+    {
+      "matchCount": 6,
+      "uri": "app/static/js/content-blocks/team-performance-block.js"
+    },
+    {
+      "matchCount": 6,
+      "uri": "app/static/js/core/simple-filter-manager.js"
+    },
+    {
+      "matchCount": 6,
+      "uri": "app/static/js/core/centralized-button-manager.js"
+    },
+    {
+      "matchCount": 5,
+      "uri": "app/static/js/content-blocks/league-season-overview-block.js"
+    },
+    {
+      "matchCount": 5,
+      "uri": "app/static/js/content-blocks/season-overview-block.js"
+    },
+    {
+      "matchCount": 4,
+      "uri": "app/static/js/content-blocks/team-details-block.js"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/static/js/utils/individual-averages-utils.js"
+    },
+    {
+      "matchCount": 9,
+      "uri": "app/static/js/content-blocks/route-test-block.js"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app/static/js/content-blocks/season-league-standings-block.js"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app/static/js/content-blocks/game-team-details-block.js"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/static/js/utils/team-vs-team-utils.js"
+    },
+    {
+      "matchCount": 6,
+      "uri": "app/static/js/content-blocks/league-aggregation-block.js"
+    },
+    {
+      "matchCount": 5,
+      "uri": "app/static/js/league/league-data-utils.js"
+    }
+  ],
+  "totalFiles": 18,
+  "totalMatches": 71
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\config\database_config.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I need to read how get_league_service() passes the database.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\routes\league_routes.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\services\data_manager.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I need to review additional routes including those for team points, positions, averages, season timetable, and aggregation blocks.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\routes\league_routes.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\services\\league_service.py",
+  "pattern": "i18n|get_text"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\services\\league_service.py",
+  "pattern": "i18n|get_text",
+  "topFiles": [
+    {
+      "matchCount": 40,
+      "uri": "app\\services\\league_service.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 100
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Table responses embed i18n strings in column titles from `i18n_service`.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\services\i18n_service.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\config\\database_config.py",
+  "pattern": "class.*Source|get_source_config|file_path"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\config\\database_config.py",
+  "pattern": "class.*Source|get_source_config|file_path",
+  "topFiles": [
+    {
+      "matchCount": 22,
+      "uri": "app\\config\\database_config.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 22
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+i18n uses a global singleton with a mutable `_current_language` field, meaning concurrent users may receive the wrong language if caching is done without including a language key. The cache key must include `i18n_service.get_current_language().value` and `i18n_service.get_translations_version()` to ensure correct language rendering and invalidation on catalog updates. The `i18n_version` is added to the key fragment `cat-{hash}` from `get_translations_version()`. Cache key components are `database_id`, `data_revision`, and `lang`. The `i18n_version` should be included in cache keys for robustness, and the cache key components are `database_id`, `data_revision`, `lang`, and `i18n_ver`. The implementation plan includes defining functions in `app/cache/league_response_cache.py` to resolve data revision, determine cache root path, and check if caching is enabled. User prefers long-term caching with `LEAGUE_CACHE_ENABLED` set to true by default, but can be disabled with `LEAGUE_CACHE_ENABLED=0`. The system defines functions for generating cache keys, reading from cache, and writing to cache atomically. It also includes logic to fetch cached data or build it using a provided builder function, ensuring the cache key incorporates language and revision details for accuracy and freshness. An additional `LEAGUE_CACHE_REVISION` environment variable allows manual cache busting by appending its value to the data revision. The routes wrapper in `league_response_cache` will execute the builder function within the Flask request context with i18n properly set. For 404 responses, caching is discouraged or limited to brief periods, as the system should only cache successful payloads. The route returns `jsonify(...` for errors, which will not be cached under the proposed approach. For successful 200 JSON responses only, the cache wrapper will be used. For 404 errors, the system returns `jsonify(...)` directly without caching. The pattern involves defining a `build` function within the route to handle data retrieval and returning `None` if no data is found, signaling that caching should be skipped. The `league_cache_get_or_set` function then handles fetching or building the payload while ensuring proper caching with language and revision details. If the payload is `None`, it returns a 404 error. The system distinguishes between cache misses and "no data" scenarios by having `try_get` return `Optional[Any]` and `put` handle caching. This ensures that when data is absent, a 404 is returned without caching, while valid data is cached and served from cache on subsequent requests. For serialization, store the dictionary intended for jsonify and return it upon loading, as Flask will re-serialize it without issues.  
+The filename uses a 16-character hash of the sorted query string: `sha256(f"{endpoint}:{database}:{data_rev}:{lang}:{i18n_ver}:{canonical_query}")[:16].json`.  
+The directory structure is `cache_root / safe_db_id / data_rev /`, where `safe_db_id` replaces `/` and `..` in the database ID.  
+The `data_revision` is computed using the database configuration's file path, if available. The function returns "unknown" if the file path is invalid, "missing" if the file does not exist, and a 12-character hash of the file's metadata otherwise. An optional `LEAGUE_CACHE_REVISION` environment variable can be appended to the hash for cache busting.  
+
+The warm-up script iterates through seasons and leagues, using optional flags for database, season, and league parameters. It either calls the Flask test client or directly interacts with the LeagueService to populate the cache for specified endpoints.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\wsgi.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **0** results in **1** directory</summary>
+
+Directory: **c:\Users\cfell\repos\bowlyzer_legacy** (0 files)
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.py",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy",
+  "pattern": "Flask\\("
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy",
+  "pattern": "Flask\\(",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "app/__init__.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 1
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\__init__.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\services\league_service.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I'll create the cache module and a thin helper function for use in routes. If the URL contains no database parameter, the request.args dictionary will not have a 'database' key, making the effective database the default source. To generate a hash, sort the query parameters and include the effective database in a separate field. The cache key includes the effective database, sorted query parameters, language, and translation version, with the hash derived from these values. The file path follows a structured format using sanitized database names and a 16-character hash. A garbage collection script is optional for minimal version, while a warm-up script initializes environment variables. The cache module requires setting a default value for LEAGUE_CACHE_ENABLED and uses a warm-up script that duplicates cache key logic without relying on Flask request objects. The implementation exports necessary functions from the cache module including compute_data_revision, put_payload, cache_paths_for, and is_league_cache_enabled. The cache module includes functions to build cache keys, retrieve and store data, and determine the effective database from query parameters. A warm-up script will initialize the cache by calling route functions with specific parameters, ensuring cached data is available at startup. The warm-up process duplicates cache key logic but avoids Flask request dependencies, using a lambda function that matches the route's return value exactly. The cache module now accepts explicit parameters instead of depending on Flask request objects, with route wrappers passing `dict(request.args)` to the cache layer. A `league_cache_try_get` function retrieves cached data using an endpoint, query arguments, and an explicit database parameter. The warm-up script initializes environment variables and calls route functions with specific parameters to ensure cached data is available at startup. Parsing argparse includes optional `--database`, `--season`, `--league`, `--languages`, and `--all-season-overview` flags. The `league_cache_put` function computes the effective database from the `database` parameter and merges it into the query arguments for consistent hashing. It uses a helper function `_normalize_query` to normalize query arguments by sorting them and ensuring the database is included. Routes pass the effective database using a helper function. The cache module will wrap specific endpoints to enable caching functionality, including standings, history, team points, positions, averages, timetable, and performance data. The implementation handles query parameters and database selection consistently across all wrapped routes. For individual averages, the cache key includes optional week and team parameters to ensure proper caching of large tables. The team points endpoint uses "league" as the parameter name, while other endpoints may use "league_name". The cache module ensures that all relevant parameters are normalized and included in the cache key computation for consistency. I'll add **get_individual_averages** with full query args in hash and implement **get_game_overview** and **get_league_week_table** for season overview functionality. The cache module file will be created with route changes, and a minimal unit test will be added to ensure key stability. The **cache/__init__.py** file will remain empty or export necessary components.</details></think>
+
+_**Agent (default)**_
+
+Implementing the cache module, integrating it into league routes for the season-overview and aggregation endpoints, and adding a warm script.
+
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\cache\__init__.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\cache\league_response_cache.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Fixing i18n access by replacing fragile private `_lock` and `_current_language` with a more robust solution.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\cache\league_response_cache.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\.gitignore",
+  "pattern": "^\\.cache"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\.gitignore",
+  "pattern": "^\\.cache",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user has specified a rule to avoid editing or writing markdown files unless explicitly requested.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\.gitignore</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\.gitignore</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I'll append .cache/ and add a helper wrapper in league_routes to reduce boilerplate.
+
+```python
+from app.
+``` Added cache imports and helper function `with_league_json_cache` to handle caching logic, including fetching from cache or building payload if not cached. If payload is not None, it gets cached using `league_cache_put` with the endpoint key, database, and arguments. The function then returns the payload. Since `request.args` is an ImmutableMultiDict, converting it to a dictionary using `dict(request.args)` works correctly. Endpoints that return 404 when empty will have `build_payload` return None, preventing caching. The `get_team_points` endpoint returns `jsonify(points)`, where points can be a list but remains JSON serializable. A wrapper is added and patched onto each route to handle caching logic consistently. The `league_cache_try_get` function redundantly applies `effective_database_id` when `cache_file_path` already processes it, but this is acceptable. In `try_get`, the code should pass `request.args.get("database")` instead of `database_id` from the route to ensure proper default handling. The cached data is fetched using `league_cache_try_get` with the endpoint, database argument, and query parameters converted to a dictionary. Inside try_get: `db = effective_database_id(database_id)` where database_id can be None - good.
+
+**record_games** - include in warm script as optional
+
+A helper is added to league_routes and routes are modified. A small internal function `_cache_key_from_request` is added to avoid importing request in the cache module.
+
+```python
+def _cache_key_from_request(endpoint_key: str):
+    return endpoint_key, request.args.get("database"), dict(request.args)
+```
+
+For each cached route:
+
+```python
+@bp.route('/league/get_season_league_standings')
+def get_season_league_standings():
+    try:
+        ...
+``` The caching logic is implemented for all listed endpoints, with each route checking cache first and falling back to building the payload if needed. The helper function `_cache_key_from_request` avoids direct request import in the cache module. For each cached route, the endpoint key, database argument, and query parameters are extracted to check cache, and if not found, the payload is built and stored before returning. Endpoints that return 404 when empty will not cache their result. The implementation ensures consistent caching behavior across all routes. get_team_performance_table and get_team_analysis are team-specific and expensive, so they are skipped for v1 unless quick to add, as the focus is on season overview and team data is loaded upon user selection. get_individual_averages is added as a base case. Cache is implemented for the following endpoints: get_season_league_standings, get_league_history, get_team_points, get_team_positions, get_team_averages, get_season_timetable, get_league_averages_history, and get_points_to_win_history. get_top_team_performances, get_top_individual_performances, get_record_games, get_record_individual_games, get_record_team_games, and get_individual_averages are added to the cache implementation. Optional endpoints get_team_performance_table and get_team_analysis are included for completeness when users open team tabs. get_league_week_table and get_game_overview are also cached due to their value and frequency of use. Route edits are implemented in batches with necessary imports added at the top of league_routes. Added cache imports and implemented a warm script helper `warm_pair` that checks for existing cache entries and skips caching if present. If no cache entry exists, it generates the payload using `payload_factory` and stores it in the cache. This approach reduces redundant computations by avoiding caching of already-stored results.</details></think>
+
+_**Agent (default)**_
+
+Adding cache lookups to the targeted routes and creating the warm script.
+
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\routes\league_routes.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\routes\league_routes.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\routes\league_routes.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\routes\league_routes.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\routes\league_routes.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\routes\league_routes.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\routes\league_routes.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\routes\league_routes.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\routes\league_routes.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\routes\league_routes.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\routes\league_routes.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\routes\league_routes.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\routes\league_routes.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\routes\league_routes.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\routes\league_routes.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\routes\league_routes.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\routes\league_routes.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\routes\league_routes.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\routes\league_routes.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\routes\league_routes.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\routes\league_routes.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\routes\league_routes.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\routes\league_routes.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\routes\league_routes.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\routes\league_routes.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\routes\league_routes.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\routes\league_routes.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\routes\league_routes.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\routes\league_routes.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\routes\league_routes.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\routes\league_routes.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Implement the warm script to run from the repository root using sys.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\services\\league_service.py",
+  "pattern": "def get_leagues"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\services\\league_service.py",
+  "pattern": "def get_leagues",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "app\\services\\league_service.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 1
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Warm script structure: A Python script begins with a shebang line. The script initializes a Python environment and imports necessary modules including argparse, os, and sys. It sets up the system path and imports application components such as the app factory, database configuration, and various services. The script defines helper functions for database queries and implements a function to warm up season overview data using league service and internationalization features. The script calls `set_language` with the specified language, then creates a list of pairs containing function names and their corresponding parameters. Each pair includes a lambda function that executes a league service method with named arguments. The league service methods include `get_season_league_standings`, `get_league_history_table_data`, and `get_team_points_simple`. For caching purposes, the script uses `league_cache_put` with keys matching those used by the HTTP endpoints, ensuring that the query dictionary matches what the browser sends. The browser sends `league` instead of `league_name` when calling `get_league_history`. The script checks cache first; if not found, it retrieves data using `ls.get_league_history_table_data` and stores it in cache with matching keys. The function `build_warm_jobs(db, season, league, division)` should return a list of tuples containing endpoint, query dictionary, and callable. For `get_season_league_standings`, the query requires `season` and an optional `division`, using `dict(request.args)` and warming with `division` absent. Season timetable and team points are included. Aggregation endpoints only require `league` in the query: `{"league": league, "database": db}`. When `--season` is provided without `--league`, all leagues for that season are warmed. CLI options include `--database db_real_merged` (required), `--season 25/26` (optional), `--league X` (optional), `--lang de,en` (default both), and `--dry-run` to preview actions. An optional `--max-leagues` flag is added for safety.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\wsgi.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Some installations place the app under league_analyzer_v1, while this workspace locates the app at the project root.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\scripts\warm_league_cache.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Fix the lambda closure bug in the warm script for league_week_table and honor_scores, where the lambda function properly captures the variable wk in Python. The nested lambda correctly captures `ls`, `season`, and `league` from the outer scope, which is good. However, `LeagueService` is being reused across week loops, which is also acceptable since each job list creates its own fresh instance. The lambda closure bug has been fixed, ensuring proper variable capture in the warm script for `league_week_table` and `honor_scores`. The bug in main() incorrectly placed `_season_standings_jobs` inside the inner loop, causing it to run once per season per language instead of once per season per language. This has been corrected so that season standings are generated once per season per language, matching the intended behavior. Duplicate work occurred because `_league_wide_jobs` ran per (season, league) in the inner loop, even though league-wide jobs do not depend on season. This caused repeated execution of `get_league_averages_history` for the same league across seasons. The fix moves `_league_wide_jobs` outside the season loop, ensuring it runs once per league. Additionally, the `main()` function was restructured to set up language-specific operations and gather leagues before iterating over seasons. The code now iterates through languages, seasons, and leagues correctly, ensuring that season standings and league-specific jobs are executed in the right order. League-wide jobs are now run once per league, avoiding duplication. The structure ensures that `get_league_averages_history` is called only once per league, regardless of the number of seasons. The fix prevents redundant execution by moving league-wide jobs outside the season loop. The `main()` function is restructured to handle language-specific operations and gather leagues before iterating over seasons. This ensures that season standings are generated once per season per language, and league-wide jobs run once per league. The lambda closures in the warm script have been fixed to properly capture variables. The issue with `_season_standings_jobs` being placed inside the inner loop has been resolved, ensuring correct behavior. Duplicate work from `_league_wide_jobs` running per (season, league) has been eliminated by moving it outside the season loop. The final structure ensures efficient and correct execution Ensure league-wide jobs are attached only once per league by deduplicating based on (endpoint, frozenset(query)) or running them during the first season a league appears in. Restructure main() into two phases: Phase A handles season overview and week jobs per language, season, and league; Phase B runs league aggregation jobs once per unique league across all seasons. Use a set to collect unique leagues from all seasons for efficient processing. If `args.league` is set, use `[args.league]`; otherwise, gather leagues from all seasons. For each language, set the language, then iterate through seasons and leagues to build jobs, ensuring league-specific tasks are executed correctly.</details></think>
+
+_**Agent (default)**_
+
+Fixing the warm script: deduplicating league-wide jobs and correcting week-loop lambdas (LeagueService must stay bound).
+
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\scripts\warm_league_cache.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Simplify the `get_league_week_table` lambda by defining a function `make(wk)` that returns the desired value.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\scripts\warm_league_cache.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Python loop bug: The default parameter `w: int = wk` is evaluated at function definition time, ensuring each closure correctly captures the current value of `wk`.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\.gitignore</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\tests\test_league_response_cache.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Tests use a nonexistent source for database configuration.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\cfell\repos\bowlyzer_legacy"; py -3 -m pytest tests/test_league_response_cache.py -q</summary>
+
+```bash
+cd "c:\Users\cfell\repos\bowlyzer_legacy"; py -3 -m pytest tests/test_league_response_cache.py -q
+```
+
+```
+C:\Users\cfell\AppData\Local\Programs\Python\Python312\python.exe: No module named pytest
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\cache\\league_response_cache.py",
+    "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\routes\\league_routes.py",
+    "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\scripts\\warm_league_cache.py",
+    "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\tests\\test_league_response_cache.py"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\cache\\league_response_cache.py"
+    },
+    {
+      "relativeWorkspacePath": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\routes\\league_routes.py"
+    },
+    {
+      "relativeWorkspacePath": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\scripts\\warm_league_cache.py"
+    },
+    {
+      "relativeWorkspacePath": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\tests\\test_league_response_cache.py"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\cfell\repos\bowlyzer_legacy"; if (Get-Command uv -ErrorAction SilentlyContinue) { uv run pytest tests/test_league_response_cache.py -q } else { py -3 -c "from app.cache.league_response_cache import normalize_query_for_key; print(normalize_query_for_key({'b':1,'a':2},'db'))" }</summary>
+
+```bash
+cd "c:\Users\cfell\repos\bowlyzer_legacy"; if (Get-Command uv -ErrorAction SilentlyContinue) { uv run pytest tests/test_league_response_cache.py -q } else { py -3 -c "from app.cache.league_response_cache import normalize_query_for_key; print(normalize_query_for_key({'b':1,'a':2},'db'))" }
+```
+
+```
+Traceback (most recent call last):
+  File "&lt;string&gt;", line 1, in &lt;module&gt;
+  File "C:\Users\cfell\repos\bowlyzer_legacy\app\__init__.py", line 1, in &lt;module&gt;
+    from flask import Flask, request, send_from_directory
+ModuleNotFoundError: No module named 'flask'
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Tests import the app module, which initializes Flask, and the test file imports from the app module.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\cfell\repos\bowlyzer_legacy"; .\.venv\Scripts\python.exe -m pytest tests/test_league_response_cache.py -q 2>&1</summary>
+
+```bash
+cd "c:\Users\cfell\repos\bowlyzer_legacy"; .\.venv\Scripts\python.exe -m pytest tests/test_league_response_cache.py -q 2>&1
+```
+
+```
+.\.venv\Scripts\python.exe : Die Benennung ".\.venv\Scripts\python.exe" wurde nicht als Name eines Cmdlet, einer 
+Funktion, einer Skriptdatei oder eines ausf�hrbaren Programms erkannt. �berpr�fen Sie die Schreibweise des Namens, 
+oder ob der Pfad korrekt ist (sofern enthalten), und wiederholen Sie den Vorgang.
+In C:\Users\cfell\AppData\Local\Temp\ps-script-b0a3e1b1-d23d-4299-9a21-0c1f03b1151f.ps1:84 Zeichen:44
++ ... sers\cfell\repos\bowlyzer_legacy"; .\.venv\Scripts\python.exe -m pyte ...
++                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (.\.venv\Scripts\python.exe:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+No virtual environment was found at that path. However, the tests are logically sound.</details></think>
+
+_**Agent (default)**_
+
+Here’s what was implemented.
+
+### 1. `app/cache/league_response_cache.py`
+- **Revision:** `sha256(resolved_path | size | mtime_ns [ | LEAGUE_CACHE_REVISION ])` → first **12** hex chars (new CSV ⇒ new subdirectory).
+- **Layout:** `{LEAGUE_CACHE_DIR or .cache/league}/{sanitized_db_id}/{revision}/{endpoint}__{hash}.json` (write via **`.tmp` + replace**).
+- **Key material:** endpoint id, effective `database`, full sorted query args (with `database` normalized), **language**, **`i18n_service.get_translations_version()`** so translated column titles stay correct when the catalog changes.
+- **Env:** `LEAGUE_CACHE_ENABLED` (default **on** except `0/false/no/off`), `LEAGUE_CACHE_DIR`, `LEAGUE_CACHE_REVISION` (manual bust).
+- **Helpers:** `league_cache_try_get`, `league_cache_put`, `league_cache_invalidate_database` (delete all `*.json` under that DB’s cache tree).
+
+### 2. `app/routes/league_routes.py`
+Helpers `_league_json_cache_get` / `_league_json_cache_put` and caching on these endpoints (try cache → compute → put):
+
+Season / matchday / team: `get_game_overview`, `get_game_team_details`, `get_league_history`, `get_league_week_table`, `get_honor_scores`, `get_season_league_standings`, `get_team_week_details_table`, `get_team_week_head_to_head_table`, `get_team_individual_scores_table`, `get_team_points`, `get_team_positions`, `get_team_averages`, `get_season_timetable`, `get_team_analysis`, `get_team_performance_table`, `get_team_win_percentage_table`, `get_individual_averages`, `get_team_vs_team_comparison`.
+
+Aggregation: `get_league_averages_history`, `get_points_to_win_history`, `get_top_team_performances`, `get_top_individual_performances`, `get_record_games`, `get_record_individual_games`, `get_record_team_games`.
+
+Errors and **404** bodies are **not** cached (only successful JSON).
+
+### 3. `scripts/warm_league_cache.py`
+- Uses **`create_app().app_context()`**, sets language (`de` / `en` by default), warms **season standings**, **per (season, league)** overview + **per week** week table + honor scores, then **once per league** aggregation endpoints (no duplicate league-wide work per season).
+- **Usage:** `uv run python scripts/warm_league_cache.py --database db_real_merged` (optional `--season`, `--league`, `--languages de,en`, `--dry-run`).
+
+### 4. `.gitignore`
+- Added **`.cache/`** so local cache dirs are not committed.
+
+### 5. `tests/test_league_response_cache.py`
+- Small tests for **query normalization**, **effective database**, and **revision** for a bogus source id.
+
+---
+
+**Invalidation recap:** automatic when the backing CSV’s **size/mtime** changes (or path changes); optional **`LEAGUE_CACHE_REVISION`** for a forced new namespace; bumping **i18n catalog** changes **`translations_version`** and thus the hash. Old revision folders can be removed manually or with `league_cache_invalidate_database()` / shell `rm -rf .cache/league/<db_id>`.
+
+**Tests:** Run in your env with `uv run pytest tests/test_league_response_cache.py` (this machine had no project venv/`pytest` on PATH).
+
+---
+
+_**User**_
+
+add a script to erbuild the caches for all avialable seasons (all divisions) and then all permutations of seasons and divisions
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants to add a script to rebuild or warm caches.</details></think>
+
+_**Agent (default)**_
+
+Checking how seasons and divisions interact in the league service and warm script.
+
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\scripts\warm_league_cache.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\services\\league_service.py",
+  "pattern": "division"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\services\\league_service.py",
+  "pattern": "division",
+  "topFiles": [
+    {
+      "matchCount": 12,
+      "uri": "app\\services\\league_service.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 12
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\routes\league_routes.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants to rebuild caches for all available seasons, including aggregated data and individual divisions for `get_season_league_standings`. The user wants to rebuild caches for all available seasons, including aggregated data and individual divisions for `get_season_league_standings`.
+
+For Phase A, cache warming will be done for each season with `get_season_league_standings` using `division=None` to fetch all divisions in one response.
+
+For Phase B, cache warming will be done for each combination of season and division code where the division has leagues in that season, using `get_season_league_standings` with `division=code`. For league-level jobs, when iterating through all divisions, use `get_leagues(season=season, division=div)` to warm only the leagues in that division. The user likely wants cache warming for each (season, division) combination, including cases with no division filter. This includes warming `get_season_league_standings` for `(season, None)` and for each `(season, division)` where the division exists in the season. Additionally, consider iterating leagues per division for other endpoints. Cache warming will be updated to handle both all-leagues and division-specific requests for standings. A new function `_season_standings_jobs_for_division` will generate jobs for standings with optional division filters. The main loop will iterate through each season and division, including a sentinel for all divisions, to warm standings data accordingly. **divisions_for_season**: Retrieve leagues for a season and map them to unique division codes, including an explicit warm for no division parameter (`{"database", "season"}`). For division-specific requests, use `{"database", "season", "division": "state"}`.
+
+**Optional**: When using `--by-division` or in a full warm script, users requested a new script `rebuild_all_caches` or an extension to the existing `warm_league_cache.py` with a flag like `--all-season-division-pairs`. A new script `scripts/rebuild_league_cache_full.py` may be added, or flags could be added to the existing script. The user wants to warm cache for `get_season_league_standings` with all divisions and each division code per season, and optionally iterate leagues per division. A new script `scripts/rebuild_league_caches.py` will be added to force cache rebuilds by deleting existing cache entries for the database. Rebuild caches by invalidating first, then warming with all seasons and divisions. Enumerate seasons and unique division codes, and warm `get_season_league_standings` for each season with and without division filters. The user wants cache warming for the `get_season_league_standings` endpoint across all seasons and divisions, including combinations of season and division codes. This includes generating jobs for all divisions per season and handling optional division filters. A new script `scripts/rebuild_league_caches.py` will be created to rebuild caches by invalidating existing entries and then warming them up, inheriting logic from the existing `warm_league_cache.py` to avoid duplication. The process involves iterating through each season and division pair, including a sentinel for all divisions, and warming standings data accordingly. Additionally, it will cover all leagues across divisions for other endpoints. The user wants a new script `scripts/rebuild_league_caches.py` to rebuild caches by invalidating and then warming them up. This script will handle all seasons and divisions for standings data. The existing `warm_league_cache.py` will be updated with `--rebuild` and `--standings-season-division-grid` flags to support this functionality. A `--verbose` option is also considered. The rebuild process will call invalidate followed by warming with `full_matrix=True`. Refactor `warm_league_cache.py` to include helper functions for iterating division codes and running cache warming with new flags. Create a new script `rebuild_league_caches.py` that parses database input and triggers a rebuild with full standings grid coverage. Update existing scripts to support rebuilding and warming with optional division filters. Adding `_season_standings_jobs_division` to generate jobs for standings with optional division filters. When `full_division_grid=True`, the system will warm `get_season_league_standings` for each season with and without division filters. For each season, it will first run with `division=None` and then for each non-None division code. This ensures full coverage of all divisions per season. A new script `rebuild_league_caches.py` will be created to rebuild caches by invalidating and then warming them up, supporting full matrix coverage of seasons and divisions. The user requested a new script `rebuild_league_caches.py` to rebuild caches by invalidating and then warming them up, which will be implemented as a self-contained script. The existing `warm_league_cache.py` will be refactored to include helper functions for iterating division codes and running cache warming with new flags. A new function `division_codes_for_season` will retrieve division codes for a given season, and the script will support flags like `--rebuild` and `--standings-divisions` to enable full matrix coverage of seasons and divisions. The function `season_standings_job` generates a job for `get_season_league_standings` with optional division filtering. It constructs a query with the database, season, and division if provided, and returns a tuple containing the endpoint, query parameters, and a lambda function to execute the API call with the appropriate division argument. The lambda uses default parameter binding to ensure correct handling of `division=None`. When division is "state", the lambda correctly captures the value using a default argument `d=division`.  
+If rebuild is enabled at the start of `run_warm`, it calls `league_cache_invalidate_database(database)` to clear the cache.  
+The new script `rebuild_league_caches.py` imports `run_warm` from `scripts.warm_league_cache`, but due to packaging concerns, it should instead use `importlib` or run the module directly via `python -m scripts.warm_league_cache` if `scripts` is treated as a package. Alternatively, shared code can be moved into `app/cache/league_cache_warm.py` to avoid circular dependencies. To implement the cache rebuilding and warming functionality cleanly, a new file `app/cache/league_cache_warm.py` will be created to house the core logic, including a `run_league_cache_warm` function that handles database, seasons, leagues, languages, dry-run, rebuild, and standings division grid parameters. This approach avoids duplicating code between scripts and centralizes the logic within the app's cache package. The existing scripts will be updated to act as thin command-line interfaces that delegate to this core function, ensuring clean separation of concerns and maintainability. A new script `scripts/rebuild_league_caches.py` will be added to rebuild league caches by invalidating and warming them up, supporting full matrix coverage of seasons and divisions. It will iterate through all seasons and divisions, calling `run_warm` with `rebuild=True` and `standings_division_grid=True`.
+
+The existing `scripts/warm_league_cache.py` will be updated to include new flags for rebuilding and warming with division grids, while `scripts/rebuild_league_caches.py` will handle the full cache rebuild process independently.
+
+To support these changes, helper functions such as `division_codes_for_season` will be added to `warm_league_cache.py` to retrieve division codes for a given season, enabling proper iteration over all divisions per season during cache warming. The `_season_standings_jobs` function is extended to accept an optional division parameter, with a new helper function `division_codes_for_season` retrieving division codes for a given season. The main loop now iterates through each season, first adding jobs for `division=None`, then for each division code retrieved by `division_codes_for_season`. This ensures full coverage of standings data across all divisions per season. Currently, `_season_standings_jobs` returns a single job with `division=None`. It will be modified to generate one job per division parameter instead. The function will retrieve division codes for the given season and create individual jobs for each division, ensuring full coverage of standings data across all divisions per season. For each division code in a season, a job is created with a lambda function that captures the division code using default parameter binding to avoid closure issues. The `--rebuild` flag in `warm_league_cache.py` triggers cache invalidation before warming. A new script, `scripts/rebuild_league_caches.py`, is introduced to invalidate and warm league caches across all seasons and division combinations. The `warm_league_cache.py` script now defaults to warming standings for each season with and without division filters, ensuring full coverage of standings data. A new `--skip-division-standings` flag allows skipping division-specific warming when only aggregate standings are needed. To support this, the `_season_standings_jobs` function was updated to always include division grid warming, and `rebuild_league_caches.py` was adjusted to use `subprocess` for invoking `warm_league_cache.py` with `--rebuild` and `--database` arguments. The `--rebuild` flag in `warm_league_cache.py` now triggers cache invalidation before warming. The `--skip-division-standings` flag is added to allow users to skip division-specific standings warming when only aggregate standings are required. The `run_warm` function in `league_cache_warm.py` now supports rebuilding and warming with division grids, and the `division_codes_for_season` helper The function `_season_standings_jobs` has been renamed to `_all_season_standings_jobs` and now returns one job for each division in addition to the base job, resulting in a total of 1 + len(codes) jobs. A new helper function `division_codes_for_season` retrieves division codes for a given season. The `--rebuild` flag clears the cache for the specified database. The script `scripts/rebuild_league_caches.py` now uses argparse to handle `--database`, `--languages`, and `--dry-run` arguments. Due to packaging constraints, it imports and executes `warm_league_cache.py` using `importlib.util` rather than a direct import. This approach loads the module dynamically from its file location and calls `mod.main_rebuild_all(database)` to perform the rebuild operation. The `main_rebuild_all()` function will be added to `warm_league_cache.py` to handle rebuilding by setting `rebuild=True` and calling the inner `_run` function. Alternatively, `rebuild_league_caches.py` will contain the full path setup, argparse configuration, and invoke the shared `run()` function defined in `warm_league_cache.py`. The core logic will be moved into a top-level `run_warm(...)` function in `warm_league_cache.py`, with `main()` calling `run_warm(**vars(args))`. The `rebuild_league_caches.py` script will manage path setup and invoke the shared `run()` function using `importlib` to avoid circular dependencies. The definitive approach involves moving `run_warm()` into `app/cache/league_cache_warm.py`, where it imports LeagueService and other dependencies. Both scripts will handle paths differently: `warm_league_cache.py` will insert the root path and import `run_warm` from `app.cache.league_cache_warm`, while `rebuild_league_caches.py` will also adjust paths and call `run_warm` with specific parameters like `rebuild=True`. This avoids circular dependencies and keeps shared logic centralized. The `warm_league_cache.py` script is updated to include support for division-specific standings and a `--rebuild` flag for cache invalidation. A new script, `rebuild_league_caches.py`, is added to handle full cache rebuilding across all seasons and divisions by invoking `warm_league_cache.py` with appropriate arguments. The `rebuild_league_caches.py` script manages path setup and uses `subprocess` to call the warm script with `--rebuild` and `--database` options. The `warm_league_cache.py` script now defaults to warming standings for each season with and without division filters, ensuring full coverage of standings data. A `--skip-division-standings` flag is included to skip division-specific warming when only aggregate standings are needed. The `_season_standings_jobs` function is updated to return one job per division in addition to the base job, ensuring comprehensive standings coverage. Helper functions like `division_codes_for_season` are The rebuild script now passes `--rebuild` and uses the same defaults, with `warm_league_cache.py` gaining `--rebuild` and multi-division standings support. The `rebuild_league_caches.py` script invokes `warm_league_cache.py` using `subprocess` with `--rebuild` and `--database` options, ensuring consistent behavior. However, this approach loses argparse support for languages, so an alternative method using `sys.path.insert` and `importlib` is considered to maintain full functionality while avoiding circular dependencies. The script manipulates `sys.argv` to include `--rebuild` and calls `warm_league_cache.py` using `runpy.run_path` with `run_name="__main__"`. It sets up a parser for `--database`, `--languages`, and `--dry-run` arguments, then temporarily modifies `sys.argv` to invoke the warm script with `--rebuild` and additional arguments. The original `sys.argv` is restored after execution.</details></think>
+
+_**Agent (default)**_
+
+Refactoring the warm script to add division-aware season standings, a `--rebuild` flag (invalidate then warm), and a thin `rebuild_league_caches.py` wrapper.
+
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\scripts\warm_league_cache.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\scripts\warm_league_cache.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\scripts\warm_league_cache.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Add Optional to the imports in warm_league_cache. The import already includes `Optional` on line 21. The `league_cache_invalidate_database` function accepts an optional database parameter. For each season, we calculate standings both without division and for each division separately, but do not compute cross-products of seasons and divisions for league-level endpoints that do not accept division filters in their API. Since filtering by division in a second loop over `(season, division)` produces the same leagues as `get_leagues(season)` when unioned, the division-based approach is redundant. The primary goal remains computing standings permutations.
+
+A new script `rebuild_league_caches.py` is added for rebuilding caches.
+
+When `--league` is specified, all division standings should still be computed since standings are global per season.
+
+If `--season` is set, only the division grid for that season is computed.
+
+The warm file requires linting.
+
+For PowerShell users running the rebuild script, a shebang is added to the .ps1 file. For the rebuild script, use argparse to parse arguments and delegate execution via subprocess or runpy. The script imports necessary modules after adjusting the path. It utilizes the ROOT and LEGACY paths to ensure proper module resolution. The main function sets up argument parsing for database and languages, with a default value for languages. The script invalidates and rebuilds league caches for all seasons and seasondivision standings. The script adds a `--dry-run` argument for testing without executing changes. It uses `argparse` to parse command-line inputs and dynamically imports and executes the `warm_league_cache.py` module with specified arguments, including database, languages, and rebuild flags. The script adjusts `sys.argv` to pass these parameters to the imported module.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\scripts\rebuild_league_caches.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Add an optional loop to process each season and division code, considering only warm leagues within each division. This is redundant for cache keys because league names are unique.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\cache\league_response_cache.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\scripts\\warm_league_cache.py",
+    "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\scripts\\rebuild_league_caches.py"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\scripts\\warm_league_cache.py"
+    },
+    {
+      "relativeWorkspacePath": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\scripts\\rebuild_league_caches.py"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+A dry-run rebuild currently invalidates only when not in dry-run mode.</details></think>
+
+_**Agent (default)**_
+
+Here’s what was added and how it behaves.
+
+### Behavior
+- For **every season** in the source, `get_season_league_standings` is warmed for:
+  1. **No `division`** – same as “all divisions” in the UI.
+  2. **Each division code** that actually has leagues that season (`state` / `south` / `north`, from `get_league_division_map()`), matching `?season=…&division=…`.
+- All **per-league** and **league-wide** warm steps are unchanged (every league in each season, then aggregation endpoints per league).
+
+### `scripts/warm_league_cache.py` updates
+- **`--rebuild`** – calls `league_cache_invalidate_database(database)` (unless `--dry-run`), then warms again.
+- **`--standings-no-division-grid`** – only the aggregate standings call (no per-division variants), for quicker runs.
+- Helpers: `division_codes_for_season`, `_all_season_standings_jobs` (aggregate + each division).
+
+### New `scripts/rebuild_league_caches.py`
+- Thin wrapper: loads `warm_league_cache.py` and runs it with **`--rebuild`** and the same defaults (all seasons, full division grid, both languages unless overridden).
+
+### Commands
+```bash
+uv run python scripts/rebuild_league_caches.py --database db_real_merged
+uv run python scripts/rebuild_league_caches.py --database db_real_merged --languages de,en --dry-run
+# equivalent:
+uv run python scripts/warm_league_cache.py --database db_real_merged --rebuild
+```
+
+---
+
+_**User**_
+
+add cmd line output on current combo and overall progress
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants improved command-line output for warm/rebuild league cache scripts, including display of the current combo being processed and overall progress.</details></think>
+
+_**Agent (default)**_
+
+Refactoring the warm script to precompute job lists and print `[current/total]` plus a clear combo description.
+
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\scripts\warm_league_cache.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I'll add a helper function `format_job_combo` that takes `lang`, `endpoint`, and `query` as parameters and returns a human-readable one-line combination of these elements. For each language, construct two flat lists`season_jobs` and `league_wide_jobs`or combine them into one ordered list. Track overall progress using a global counter and total job count across all languages. During processing, display progress per language and overall completion percentage. For each language, iterate through its jobs and increment a global counter, printing progress updates with current index, total count, and percentage completion. The `dry_run` mode maintains the same numbering sequence. Build `per_lang_jobs` by iterating over languages and seasons, where job counts remain consistent per language despite language-specific caching requirements. For each league, extend the jobs list with league-wide jobs. Store these jobs in `per_lang_jobs` and calculate the grand total as the product of job template length and number of languages. Build `jobs_template` once, then for each language, iterate through the template to generate jobs with proper indexing and progress tracking. The base index for each language is its index multiplied by the job template length, and the grand total remains constant across languages. I'll create a `collect_jobs()` function that returns a list of (endpoint, query, build) tuples for a single language, which will be reused across all languages. The function will iterate through seasons and leagues to build the complete job list. Then I'll calculate the grand total as the product of the template length and number of languages, initializing a counter that increments for each job processed. For each language, I'll set the language context and process each job from the template, updating the counter and tracking progress. The progress percentage is calculated as `f"{100.0 * idx / grand_total:.1f}%"` when `grand_total` is available, otherwise it shows "100%". A helper function `_job_combo_label` formats job details by including endpoint and query parameters like season, division, league, and week, omitting any None values for clarity. It constructs a readable string combining these elements. append(f"season={query['season']}")
+    if query.get("division"):
+        parts.append(f"division={query['division']}")
+    if query.get("league"):
+        parts.append(f"league={query['league']}")
+    if query.get("week"):
+        parts.append(f"week={query['week']}")
+    return " | ".join(parts)
+
+I'll extract `build_job_plan(...)` that returns the list, used from main. Edge: dry-run still prints progress. Add `lang=de` in the progress line. I'll implement `build_job_plan` inside main after acquiring ls0, seasons, and all_leagues, using the database, seasons, and all_leagues parameters along with flags from args. The function will collect jobs by iterating through seasons and leagues, building job templates with endpoint, query, and build components. It will handle single league mode and standings grid options, returning a list of job tuples. The implementation will reuse the existing job collection logic while ensuring proper indexing and progress tracking across languages and jobs.</details></think>
+
+_**Agent (default)**_
+
+Extracting job collection and adding `[n/total]` plus percentage and a clear combo line for each step.
+
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\scripts\warm_league_cache.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\scripts\warm_league_cache.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Verify that Optional is imported from the typing module on line 21. Read the lints.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\scripts\\warm_league_cache.py"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\scripts\\warm_league_cache.py"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Here’s what changed in `scripts/warm_league_cache.py`:
+
+### Progress output
+1. **Up-front plan** – After building the job list, it prints something like:  
+   `Plan: 420 job(s) × 2 language(s) = 840 total (database='db_real_merged', seasons=8, leagues=45)`
+
+2. **Per job** – Each line includes:
+   - **`[current/grand_total]`** across all languages
+   - **`(pct%)`** with one decimal (overall progress)
+   - **`lang=de|...`** current language
+   - **Combo** – `endpoint | season=… | division=… | league=… | week=…` (only segments that exist in the query)
+   - **`-> hit` / `miss-built` / `skip-empty`** (or `-> dry-run`)
+
+3. **Refactor** – `collect_warm_jobs(...)` builds the full list once per run; the main loop walks that list for each language so **`grand_total`** is exact.
+
+Example line:
+```text
+[127/840] ( 15.1%) lang=de | get_league_week_table | season=25/26 | league=Some League | week=3  -> miss-built
+```
+
+`scripts/rebuild_league_caches.py` is unchanged; it still calls `warm_league_cache.main()`, so it gets the same output automatically.
+
+---
+
+_**User**_
+
+i ran the script for like 30s but did not see any progress info, then Ctrl Ced 
+PS C:\Users\cfell\repos\bowlyzer_legacy> C:\Users\cfell\venvs\league_analyzer\Scripts\python.exe scripts/warm_league_cache.py --database db_real_merged --rebuild
+Rebuild: removed 7 cached file(s) under database='db_real_merged'
+## DA - Pandas - get_seasons - Getting seasons for league_name: None and team_name: None
+## DA - Pandas - get_seasons - Seasons: ['22/23', '23/24', '24/25', '25/26']
+Traceback (most recent call last):
+  File "C:\Users\cfell\repos\bowlyzer_legacy\scripts\warm_league_cache.py", line 380, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "C:\Users\cfell\repos\bowlyzer_legacy\scripts\warm_league_cache.py", line 342, in main
+    plan = collect_warm_jobs(
+           ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\cfell\repos\bowlyzer_legacy\scripts\warm_league_cache.py", line 274, in collect_warm_jobs
+    jobs.extend(_league_wide_jobs(database, league))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\cfell\repos\bowlyzer_legacy\scripts\warm_league_cache.py", line 153, in _league_wide_jobs
+    ls = LeagueService(database=database)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\cfell\repos\bowlyzer_legacy\app\services\league_service.py", line 49, in __init__
+    self.adapter = DataAdapterFactory.create_adapter(adapter_type, database=database)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\cfell\repos\bowlyzer_legacy\data_access\adapters\data_adapter_factory.py", line 26, in create_adapter
+    return DataAdapterPandas(path_to_csv_data=pathlib.Path(config.file_path))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\cfell\repos\bowlyzer_legacy\data_access\adapters\data_adapter_pandas.py", line 52, in __init__
+    self._load_data()
+  File "C:\Users\cfell\repos\bowlyzer_legacy\data_access\adapters\data_adapter_pandas.py", line 100, in _load_data
+    self.df = normalize_legacy_dataframe_types(self.df)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\cfell\repos\bowlyzer_legacy\data_access\dtype_normalization.py", line 62, in normalize_legacy_dataframe_types
+    out[col] = pd.to_numeric(out[col], errors="coerce").astype("Float64")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\cfell\venvs\league_analyzer\Lib\site-packages\pandas\core\tools\numeric.py", line 232, in to_numeric
+    values, new_mask = lib.maybe_convert_numeric(  # type: ignore[call-overload]
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user reports two issues: first, there is no progress information displayed for 30 seconds during the `collect_warm_jobs` process; second, the progress output only appears after `collect_warm_jobs` finishes building the complete job plan. The `collect_warm_jobs` process is expensive because it calls `_league_wide_jobs` for every league, creating a new `LeagueService` instance each time, which reloads the entire CSV into pandas. This results in the large dataframe being loaded N times during plan buildingonce per league in `_league_wide_jobs`, multiple times in `_season_league_jobs`, and in standings jobs.
+
+A `KeyboardInterrupt` occurred during `normalize_legacy_dataframe_types` while jobs were being built, as `_league_wide_jobs` instantiated `LeagueService(database=database)`, causing another data reload.
+
+The fix should address these redundant data loads and improve interrupt handling. Print progress during plan building by flushing stdout and displaying stages such as "Collecting jobs: season X/Y..." and "Adding league-wide jobs...". Reuse a single LeagueService instance across all job builders instead of creating new instances for each function, to avoid redundant data loading. Currently, `_season_league_jobs`, `_league_wide_jobs`, and `_season_standings_jobs` each instantiate LeagueService independently, causing repeated CSV reloads. The `_all_season_standings_jobs` function creates two `LeagueService` instances, one in `_all...` and another in `_season_standings_jobs`, leading to redundant CSV loading. Each `LeagueService` instantiation reloads the CSV file via `_load_data()` in its `__init__` method. To optimize performance, refactor the code to reuse a single `LeagueService` instance across all job builders, passing it as an argument instead of creating new instances. This avoids repeated data loading and improves efficiency. Pass `ls` into `_season_league_jobs`, `_season_standings_jobs`, and `_all_season_standings_jobs`. Modify `collect_warm_jobs` to create a single `LeagueService` instance (`ls0`) and pass it everywhere. Update all relevant functions to accept an optional `ls: LeagueService` parameter, defaulting to creating one for backward compatibility, and ensure the lambda in `_season_standings_jobs` uses the shared instance. Also, print early before `collect_warm_jobs`:
+```python
+print("Building job plan (scanning seasons/leagues)", flush=True)
+```
+Inside `collect_warm_jobs`, print progress:
+```python
+for si, season in enumerate(seasons):
+    print(f"  plan: season {si+1}/{len(seasons)} {season!r} ", flush=True)
+```
+For the league-wide section:
+```python
+for li, league in enumerate(all_leagues):
+    if li % 10 == 0:
+        print(f"  plan: league-wide {li+1}/{len(all_leagues)} ", flush=True)
+``` To optimize performance, refactor job-building helpers to accept a shared `LeagueService` instance (`ls`) as a parameter, eliminating redundant CSV reloads. Replace direct `LeagueService` instantiation within functions like `_league_wide_jobs` with usage of the passed-in instance. Update all related functions to take `ls` as a first parameter after `database` or as a keyword argument, ensuring consistent reuse of the single `LeagueService` instance across all job builders. This approach avoids closures capturing `ls` and enables lazy instantiation of job descriptors instead of pre-building callables that close over `ls`.</details></think>
+
+_**Agent (default)**_
+
+Identifying the issue: `collect_warm_jobs` builds the plan by calling `_league_wide_jobs` for every league — each call created a new `LeagueService` and reloaded the full CSV, so the plan phase could take minutes with no progress. Refactoring to reuse a single `LeagueService` and adding flushed progress lines during plan construction.
+
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\scripts\warm_league_cache.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I need to modify `_season_league_jobs` to accept `ls` as its first argument and eliminate the internal `LeagueService()` instantiation. Change `_league_wide_jobs`, `_season_standings_jobs`, and `_all_season_standings_jobs` to accept `ls` as their first argument. Update `collect_warm_jobs` to pass `ls0` everywhere and include a print statement with flush during iteration. Fix the lambda closure bug in `_season_league_jobs` by adding default arguments to prevent late binding issues with the loop variables `league` and `season`.</details></think>
+
+_**Agent (default)**_
+
+Passing a single shared `LeagueService` through all job builders — each `_league_wide_jobs` call was constructing a new service and reloading the full CSV. Adding immediate messages and `flush=True` so output appears under PowerShell.
+
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\scripts\warm_league_cache.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\scripts\warm_league_cache.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\scripts\warm_league_cache.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\scripts\warm_league_cache.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\scripts\warm_league_cache.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\scripts\warm_league_cache.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Add at the top of the main function, after imports or at the script entry point: Add line-buffered stdout configuration for immediate progress display in Windows environments, and include flush=True in all print statements within the main function. Insert a loading message before creating the LeagueService instance.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\scripts\warm_league_cache.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\scripts\warm_league_cache.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\scripts\warm_league_cache.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\scripts\warm_league_cache.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\scripts\warm_league_cache.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\scripts\\warm_league_cache.py"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\scripts\\warm_league_cache.py"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Here’s what was going on and what we changed.
+
+### Why it looked stuck
+
+The traceback shows the process was **still loading the merged CSV** and running **`normalize_legacy_dataframe_types`** (`pd.to_numeric` on columns). That step can take **tens of seconds to minutes** on a large file, and until recently there was **no message between “rebuild removed…” and the end of that load**, so it felt like a hang. Your Ctrl+C hit **during that load**, not during cache warming.
+
+Plan building was also improved earlier so it **reuses one `LeagueService`** instead of reloading the CSV per league.
+
+### What we added now
+
+In `scripts/warm_league_cache.py`:
+
+1. **`sys.stdout.reconfigure(line_buffering=True)`** at the start of `main()` so PowerShell shows lines as soon as they’re printed (when supported).
+2. **Clear milestones with `flush=True`:**
+   - Before `LeagueService(...)`: *“Loading league data once (this can take a while on large CSVs)…”*
+   - After seasons/leagues are known: *“Data ready: …”*
+   - *“Building job plan…”* → then the existing plan summary
+   - *“Warming caches (each line is one endpoint)…”* before the `[n/total]` loop
+3. **All `print` calls in `main()`** now use **`flush=True`**.
+
+So you should see **immediate** feedback that the slow part is **CSV load**, not silence.
+
+If anything still buffers oddly on your setup, run with **unbuffered** Python:  
+`python -u scripts/warm_league_cache.py ...` (or your venv’s `python.exe -u`).
+
+---
+
+_**User**_
+
+okay, so you build like a full cache, thats fine, now i see the progress
+
+---
+
+_**Agent (default)**_
+
+Good to hear the progress output is doing its job. The slow part is still the one-time CSV load and normalization; after that you should see steady `[n/total]` lines as each endpoint warms. If you want to trim warm time later, we can add flags to skip languages or narrow seasons/leagues.
+
+---
+
+_**User**_
+
+so after initial build up, recreating the data for a request is only necessary, if the input file changed? i guess we will need to either do scoped hashes of the input file of split it up. because in the current setup, a single added game in 2026 forces reevaluation of all caches in the hitory of bowling
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user inquires about the league cache invalidation strategy.</details></think>
+
+_**Agent (default)**_
+
+Checking how cache revision and keys are computed so we can answer accurately.
+
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\cache\league_response_cache.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I now have a clear picture. The `compute_data_revision` function uses: The `compute_data_revision` function tracks changes through file size and mtime, causing any CSV modification to alter the revision hash. This results in cache paths like `league_cache_dir/db/rev/endpoint__hash.json`, where changing `rev` moves all cached files into a new directory. Consequently, endpoints miss the cache until it's rebuilt. The user correctly identifies that after an initial build, caching should only update when inputs change. The current system treats any change to a CSV file as an input modification, triggering a new revision hash and moving all cached files to a new directory. This causes all endpoints to miss the cache until it's rebuilt. Users want more granular control, such as scoped hashes or split files, so that changes to individual entrieslike one 2026 gamedont invalidate the entire cache. A content hash would still treat any line change as a full update, while splitting inputs could allow finer-grained invalidation. CSV files are organized by season or league, with revisions tracked per file used by a routehowever, this approach is complex due to routes often aggregating data across multiple seasons. A scoped or incremental revision system could hash data based on partitions like `(season, league)` after loading, though this requires scanning the data or maintaining a manifest of row ranges. Alternatively, a Merkle or columnar approach allows endpoints to declare dependencies on specific logical partitions, hashing those partitions instead of entire files.</details></think>
+
+_**Agent (default)**_
+
+Your read is right for how it works today.
+
+### What actually drives invalidation
+
+`compute_data_revision` does **not** read the file contents. It hashes **path + size + mtime** (plus optional `LEAGUE_CACHE_REVISION`):
+
+```47:62:c:\Users\cfell\repos\bowlyzer_legacy\app\cache\league_response_cache.py
+def compute_data_revision(database_id: str) -> str:
+    """
+    Short hash so when the CSV changes (replace or edit), revision changes.
+    """
+    cfg = database_config.get_source_config(database_id)
+    if not cfg or not cfg.file_path:
+        return "unknown"
+    p = Path(cfg.file_path)
+    if not p.is_file():
+        return "missing"
+    st = p.stat()
+    parts = f"{p.resolve()}|{st.st_size}|{int(st.st_mtime_ns)}"
+    extra = (os.environ.get(_ENV_REVISION) or "").strip()
+    if extra:
+        parts += f"|{extra}"
+    return hashlib.sha256(parts.encode("utf-8")).hexdigest()[:12]
+```
+
+Cache paths include that revision, so when **any** edit changes size or mtime, you get a **new revision namespace**. Nothing recomputes “all of history” unless something **requests** those endpoints; but **every** cached response is a miss until filled again (browser or warm script). So one new 2026 row does force a **full logical invalidation** of the persisted cache for that database, even though most payloads would be bitwise identical.
+
+A **full-file content hash** would behave the same: one changed row → new digest → same story.
+
+### Getting finer-grained invalidation
+
+You’d need a revision that reflects **only the slices of data each response depends on**, for example:
+
+- **Split sources**: historical extract vs “current season” append-only file; composite adapter; revision = combine hashes of **files actually read** per route (heavy design change).
+- **Partition hashes**: e.g. maintain hashes per `(season, league)` or per stable row ranges in a manifest updated by the ETL pipeline; put something like `data_revision_season_league` into the cache key for endpoints that only touch one partition (routes that aggregate everything still need a “global” revision or the max of partitions).
+- **ETL-owned manifest**: build step writes `partitions.json` with content hashes per chunk; app keys cache off that instead of whole CSV mtime.
+
+So: **yes**, after warm-up, recomputation is only needed when the cache thinks the data changed — but today “data changed” means **the whole backing file’s identity changed**, not “this season’s slice changed.” Tightening that means **scoped revisions or split inputs**, with the rule that any endpoint that spans partitions must depend on **all** relevant partition revisions (or a rolled-up summary).
+
+If you want to pursue one direction (e.g. “only invalidate 25/26 when that season’s rows change”), we can sketch how that maps to your actual routes and merged CSV columns next.
+
+---
+
+_**User**_
+
+the introduced caching somehow seems to interfere with the team colors. for each league, the palette should be used from start depending on the teams positions
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The league caching feature is causing issues with team colors.</details></think>
+
+_**Agent (default)**_
+
+Tracing how team colors are assigned and whether caching alters ordering or payload shape.
+
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.{py,js,html}",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app",
+  "pattern": "color|palette|teamColor|team_color"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app",
+  "pattern": "color|palette|teamColor|team_color",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "app/static/js/content-blocks/game-team-details-block.js"
+    },
+    {
+      "matchCount": 8,
+      "uri": "app/utils/league_utils.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/static/js/content-blocks/game-overview-block.js"
+    },
+    {
+      "matchCount": 3,
+      "uri": "app/static/js/content-blocks/route-test-block.js"
+    },
+    {
+      "matchCount": 15,
+      "uri": "app/templates/test.html"
+    },
+    {
+      "matchCount": 4,
+      "uri": "app\\templates\\tournament\\stats.html"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/static/js/chart-adapters.js"
+    },
+    {
+      "matchCount": 20,
+      "uri": "app/templates/components/database_selector.html"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app/static/js/content-blocks/season-overview-block.js"
+    },
+    {
+      "matchCount": 4,
+      "uri": "app/templates/team/stats.html"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/static/js/content-blocks/league-season-overview-block.js"
+    },
+    {
+      "matchCount": 19,
+      "uri": "app/templates/components/tables.html"
+    }
+  ],
+  "totalFiles": 12,
+  "totalMatches": 742
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.py",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app",
+  "pattern": "league_cache|league_json_cache"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app",
+  "pattern": "league_cache|league_json_cache",
+  "topFiles": [
+    {
+      "matchCount": 9,
+      "uri": "app\\cache\\league_response_cache.py"
+    },
+    {
+      "matchCount": 55,
+      "uri": "app\\routes\\league_routes.py"
+    },
+    {
+      "matchCount": 55,
+      "uri": "app/routes/league_routes.py"
+    }
+  ],
+  "totalFiles": 3,
+  "totalMatches": 119
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I need to understand ColorUtils.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\static\js\theme\color-utils.js</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.js",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\static\\js",
+  "pattern": "getTeamColor|registerTeam|teamColor|position"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\static\\js",
+  "pattern": "getTeamColor|registerTeam|teamColor|position",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "app/static/js/utils/individual-averages-utils.js"
+    },
+    {
+      "matchCount": 7,
+      "uri": "app/static/js/legacy/team-chart-utils.js"
+    },
+    {
+      "matchCount": 10,
+      "uri": "app/static/js/content-blocks/season-league-standings-block.js"
+    },
+    {
+      "matchCount": 3,
+      "uri": "app/static/js/utils/team-vs-team-utils.js"
+    },
+    {
+      "matchCount": 7,
+      "uri": "app/static/js/content-blocks/season-overview-block.js"
+    },
+    {
+      "matchCount": 12,
+      "uri": "app/static/js/theme/color-utils.js"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/static/js/content-blocks/game-overview-block.js"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/static/js/utils/league-standings-card-utils.js"
+    },
+    {
+      "matchCount": 12,
+      "uri": "app\\static\\js\\tournament-stats-app.js"
+    },
+    {
+      "matchCount": 5,
+      "uri": "app/static/js/core/league-content-renderer.js"
+    },
+    {
+      "matchCount": 28,
+      "uri": "app/static/js/league/league-chart-utils.js"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app/static/js/content-blocks/league-aggregation-block.js"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app/static/js/content-blocks/response-display-block.js"
+    },
+    {
+      "matchCount": 9,
+      "uri": "app/static/js/content-blocks/league-season-overview-block.js"
+    },
+    {
+      "matchCount": 12,
+      "uri": "app/static/js/tournament-stats-app.js"
+    },
+    {
+      "matchCount": 18,
+      "uri": "app/static/js/content-blocks/team-performance-block.js"
+    },
+    {
+      "matchCount": 7,
+      "uri": "app/static/js/chart-adapters.js"
+    },
+    {
+      "matchCount": 3,
+      "uri": "app/static/js/content-blocks/route-test-block.js"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app/static/js/league/league-data-utils.js"
+    },
+    {
+      "matchCount": 17,
+      "uri": "app/static/js/content-blocks/team-history-block.js"
+    }
+  ],
+  "totalFiles": 20,
+  "totalMatches": 159
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The key file is `season-league-standings-block`. The key file is `season-league-standings-block`. The issue likely stems from key ordering in JavaScript objects, where JSON.parse preserves insertion order, and Python dictionaries guarantee insertion order since version 3.7+.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\static\js\content-blocks\season-league-standings-block.js</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\static\js\theme\color-utils.js</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I see a critical bug in the `season-league-standings-block`. The code builds `uniqueLeagueTeams` using a Set to remove duplicates while preserving insertion order, but there's a potential issue if the team name column index in `row[1]` is incorrect due to an API change or JSON deserialization issues. The `uniqueLeagueTeams` Set deduplicates entries while preserving the order of first occurrence, ensuring that duplicate teams are handled gracefully. However, a potential issue arises from Python's JSON serialization behavior: when Flask returns `jsonify(dict)` in Python 3.7+, dictionary insertion order is preserved. But caching involves `json.dumps` followed by `json.loads`, which could alter ordering if not handled carefully. Since the client uses `response.json()` in the browser, the cached response must maintain consistent ordering through the Flask endpoint.
+
+The flow is as follows:
+1. On cache miss, compute the payload and store it using `league_cache_put` with `json.dumps`.
+2. Subsequent requests retrieve the cached data via `json.loads`.
+3. The client processes the response using `response.json()`. Next request reads cached data using `json.loads`, returning a Python dictionary. The route likely returns this via Flasks `jsonify`. Differences in structure between cached and fresh responsessuch as tuple-to-list conversion or key sortingcould impact the client. A simpler issue may be a race condition in `league-season-overview-block.js`, where `Promise.all` handles multiple fetches simultaneously, potentially causing inconsistent data handling. If positions or points load first and trigger `updateTeamColorMap` or chart updates based on object key iteration order, team ordering might become alphabetical or arbitrary. When standings later loads, it could attempt to reassign colors inconsistently. The `get_team_positions` cached response may have a data object with non-deterministic key order, as JavaScript's `Object.keys()` orders integer-like keys numerically first, followed by string keys in insertion orderthis behavior persists through JSON serialization.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\routes\league_routes.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\static\js\content-blocks\league-season-overview-block.js</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I see! In `loadSeasonData`, after `Promise.all`: 1.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\static\js\content-blocks\league-season-overview-block.js</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.js",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\static\\js",
+  "pattern": "teamColorMap|updateTeamColorMap|getPaletteColor"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\static\\js",
+  "pattern": "teamColorMap|updateTeamColorMap|getPaletteColor",
+  "topFiles": [
+    {
+      "matchCount": 4,
+      "uri": "app\\static\\js\\tournament-stats-app.js"
+    },
+    {
+      "matchCount": 11,
+      "uri": "app/static/js/content-blocks/season-league-standings-block.js"
+    },
+    {
+      "matchCount": 19,
+      "uri": "app/static/js/theme/color-utils.js"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/static/js/league/league-chart-utils.js"
+    },
+    {
+      "matchCount": 6,
+      "uri": "app/static/js/content-blocks/team-performance-block.js"
+    },
+    {
+      "matchCount": 4,
+      "uri": "app/static/js/tournament-stats-app.js"
+    }
+  ],
+  "totalFiles": 6,
+  "totalMatches": 45
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+How does `createTableTabulator` assign colorsdoes it use `updateTeamColorMap` based on row order? Does `createLineChart` use `teamColorMap` or palette index? In the league-season-overview flow, `createTimetable` likely doesn't assign team colors, while `createStandingsTable` creates a Tabulator table using standings data. `createPointsChart` and `createPositionsChart` both use `createLineChart`. If `createTableTabulator`'s formatter calls `getTeamColor(team)` before teams are in the map, it falls back to `getPaletteColor(fallbackIndex)`, so the chart code should be checked to confirm this behavior.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\static\js\chart-adapters.js</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.js",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\static\\js",
+  "pattern": "createLineChart|updateTeamColorMap|getTeamColor"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\static\\js",
+  "pattern": "createLineChart|updateTeamColorMap|getTeamColor",
+  "topFiles": [
+    {
+      "matchCount": 11,
+      "uri": "app/static/js/chart-adapters.js"
+    },
+    {
+      "matchCount": 8,
+      "uri": "app/static/js/content-blocks/league-season-overview-block.js"
+    },
+    {
+      "matchCount": 5,
+      "uri": "app/static/js/content-blocks/team-performance-block.js"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/static/js/legacy/team-chart-utils.js"
+    },
+    {
+      "matchCount": 6,
+      "uri": "app/static/js/theme/color-utils.js"
+    },
+    {
+      "matchCount": 6,
+      "uri": "app/static/js/content-blocks/league-aggregation-block.js"
+    },
+    {
+      "matchCount": 5,
+      "uri": "app/static/js/content-blocks/response-display-block.js"
+    },
+    {
+      "matchCount": 3,
+      "uri": "app/static/js/league/league-chart-utils.js"
+    },
+    {
+      "matchCount": 7,
+      "uri": "app/static/js/content-blocks/season-overview-block.js"
+    },
+    {
+      "matchCount": 8,
+      "uri": "app/static/js/content-blocks/team-history-block.js"
+    }
+  ],
+  "totalFiles": 10,
+  "totalMatches": 60
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\static\\js",
+  "pattern": "function createLineChart"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\static\\js",
+  "pattern": "function createLineChart",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "app/static/js/chart-adapters.js"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 1
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.js",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\static\\js",
+  "pattern": "createLineChart"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\static\\js",
+  "pattern": "createLineChart",
+  "topFiles": [
+    {
+      "matchCount": 8,
+      "uri": "app/static/js/content-blocks/league-season-overview-block.js"
+    },
+    {
+      "matchCount": 5,
+      "uri": "app/static/js/content-blocks/response-display-block.js"
+    },
+    {
+      "matchCount": 6,
+      "uri": "app/static/js/content-blocks/league-aggregation-block.js"
+    },
+    {
+      "matchCount": 6,
+      "uri": "app/static/js/content-blocks/season-overview-block.js"
+    },
+    {
+      "matchCount": 5,
+      "uri": "app/static/js/chart-adapters.js"
+    }
+  ],
+  "totalFiles": 5,
+  "totalMatches": 30
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy",
+  "pattern": "createLineChart"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy",
+  "pattern": "createLineChart",
+  "topFiles": [
+    {
+      "matchCount": 5,
+      "uri": "app/static/js/content-blocks/response-display-block.js"
+    },
+    {
+      "matchCount": 1,
+      "uri": "docs/FRONTEND_REFACTORING_PLAN.md"
+    },
+    {
+      "matchCount": 6,
+      "uri": "app/static/js/content-blocks/league-aggregation-block.js"
+    },
+    {
+      "matchCount": 5,
+      "uri": "app/templates/components/charts.html"
+    },
+    {
+      "matchCount": 8,
+      "uri": "app/static/js/content-blocks/league-season-overview-block.js"
+    },
+    {
+      "matchCount": 19,
+      "uri": ".specstory/history/2026-04-22_11-48-04Z-database-schema-for-tournament-results.md"
+    },
+    {
+      "matchCount": 6,
+      "uri": "app/static/js/content-blocks/season-overview-block.js"
+    },
+    {
+      "matchCount": 1,
+      "uri": "docs/archive/CONTENT_BLOCKS_FIXES.md"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app/templates/test.html"
+    },
+    {
+      "matchCount": 5,
+      "uri": "app/static/js/chart-adapters.js"
+    }
+  ],
+  "totalFiles": 10,
+  "totalMatches": 58
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\templates\components\charts.html</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Found the issue in `createLineChart`. The issue in `createLineChart` stems from how colors are assigned based on the `order` array, which defaults to `Object.keys(data)` when no order is provided. In JavaScript, `Object.keys()` maintains the insertion order of object properties, and `JSON.parse` preserves key order from JSON strings. Since Python's `json.dumps` also preserves insertion order in Python 3.7+, the original order from the API response is maintained throughout the process. Flask's `jsonify` preserves dictionary key order. The issue occurs if the server builds the `data` dictionary with a different iteration order than the `sorted_by_total` order. When `order` defaults to `Object.keys(data)`, color assignments may not align with standings. While `data.sorted_by_total` is passed explicitly for points charts, positions use `data.sorted_by_best || data.sorted_by_total || Object.keys(data.data)`. The Python functions `get_team_positions` and `get_team_points` must consistently provide `sorted_by_total` as a stable-ordered list. If cached responses round-trip through JSON and involve numeric team names or unusual data, the issue may stem from caching interfering with order preservation. While `json.loads` in Python preserves key order from JSON files, and Flasks `jsonify` typically maintains order, the problem could arise if `jsonify` were to sort keys or if the cache write process alters ordering. A critical bug exists in how cache is written with `json.` The `default=str` parameter in `json.dumps(payload, default=str)` does not alter nested structures; it only converts non-serializable objects to strings. Duplicate keys in JSON cause later values to overwrite earlier ones during `json.loads`, though this is rare. If `sorted_by_total` is missing from cached data, it could cause issues with color assignment. The `league_service` must ensure `get_team_positions` consistently returns `sorted_by_total`. The palette should reflect team positions, assigning colors based on rank: 1st place = color 0, 2nd = color 1, etc. The `createLineChart` function uses `updateTeamColorMap(order)` with `sorted_by_total` (points-based order) instead of position order (league rank), which can cause color mismatches if the two orders differ. While the standings table uses position order for color assignment, the chart relies on `sorted_by_total` from the API. This design tension was likely exacerbated by caching, introducing the bug. **Hypothesis**: Without cache, the `data` dictionary from Flask might have keys in a different order than when cached data is used, potentially causing `sorted_by_total` to differ upon JSON parsing.  
+**Another hypothesis**: Timing matterswithout cache, network latency caused the standings table to render first, populating colors before charts ran. With cache, all responses return quickly in `Promise.all`, fixing the execution order: timetable, standings, points, positions. So that shouldn't change.
+
+Unless  Tabulator render is async. The standings table might call its formatter after `createLineChart` runs when responses are fast.
+
+Sequence:
+1. `createStandingsTable(data)` calls `createTableTabulator` synchronously, but Tabulator might defer the formatter to the next tick.
+2. `createPointsChart` calls `createLineChart`, which then calls `updateTeamColorMap(sorted_by_total)`, overwriting team colors in the map.
+3. If the order in `sorted_by_total` differs from the position order in standings, colors shift.
+
+Without cache, slower network might have allowed Tabulator to finish formatters before charts ran  unlikely. The `updateTeamColorMap` function in color-utils only assigns new colors to teams not already in the map but does not reindex existing teams. This means that if the order of teams changes, the color assignments do not update accordingly, leading to misaligned colors in the chart. If teams A, B, C are in the color map with colors from standings (positions 1, 2, 3), and `createLineChart` calls `updateTeamColorMap(sorted_order)` with order [B, A, C] (by points), then:
+
+- For B: already in map  **keeps old color** (position 2 color)
+- For A: already in map  **keeps old color**
+- For C: already in map  **keeps old color**
+
+Colors remain as **first assignment**  determined by whichever component called `updateTeamColorMap` or assigned first.
+
+The line `if (!teamColorMap[team])` prevents reassignment, so the **first** to assign wins for each team. **createLineChart** calls `updateTeamColorMap(order)` with `sorted_by_total` as the order, assigning colors based on this order. Since `updateTeamColorMap` only assigns colors to teams not already in the map, the **first chart** to run determines the color assignment for each team.
+
+**createStandingsTable** uses Tabulator, which may call `getTeamColor` during rendering. However, `getTeamColor` does not add teams to the color map; it only retrieves or assigns a color using a fallback index if the team is not present.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\templates\components\tables.html</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I need to check the position column formatter, specifically the `getTeamColor(teamName)` function, and determine if the row order matters.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\templates\components\tables.html</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+When not in a map, position circles use `getTeamColor(normalizedName)`, which defaults to `getPaletteColor(fallbackIndex)` with `fallbackIndex=0`. This means every team receives color index 0 when no map is present. When no map is present, all circles appear the same color because `getTeamColor` defaults to palette index 0. The `updateTeamColorMap` function later assigns unique colors, but if the chart updates before the standings table refreshes, the position circles may retain incorrect colors. This issue arises from the order of execution in league-season-overview where Tabulator renders first with `getTeamColor` returning palette 0, then `createPointsChart` updates the color map, but the already-rendered circles do not refresh. When cache is slow, the same issue occurs unless Tabulator redraws. With fast cache, Tabulator may render after charts, since Tabulator is synchronous in `createTableTabulator` and formatters run during table build. Thus, if the map is still empty when formatting, all standings position circles will default to the first palette color. This could happen if the map wasn't populated earlier, such as during a previous page view. The **season-league-standings-block** correctly populates the map before rendering the standings table. For **league-season-overview-block**, the fix involves seeding `teamColorMap` from standings data in position order before `createStandingsTable`, using the same approach as the working block. Additionally, `createLineChart` should replace colors in the current league context based on position order, or ensure standings data is seeded first. Caching may cause issues if the map isn't populated early enough, leading to incorrect color assignment. The order of teams in `sorted_by_total` may differ from the JSON key order in `data`, which could cause `updateTeamColorMap` to assign colors incorrectly if it relies on the order of keys in `data`. This discrepancy can occur even with caching, especially if the data is processed differently depending on how it's fetched or cached.
+
+The `Promise.all` behavior ensures all data arrives together, so sequential processing isn't an issue here. However, the timing of when `updateTeamColorMap` runs relative to rendering can still affect color assignment if the map isn't populated early enough. The key concern is ensuring consistent ordering between `sorted_by_total` and `data` to avoid incorrect color mapping.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\services\\league_service.py",
+  "pattern": "sorted_by_total|sorted_by_best"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\services\\league_service.py",
+  "pattern": "sorted_by_total|sorted_by_best",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.py",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy",
+  "pattern": "sorted_by_total"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy",
+  "pattern": "sorted_by_total",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "app/models/series_data.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 2
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\models\series_data.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.py",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app",
+  "pattern": "get_team_points|get_team_positions|TeamPoints|PositionSeries"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app",
+  "pattern": "get_team_points|get_team_positions|TeamPoints|PositionSeries",
+  "topFiles": [
+    {
+      "matchCount": 4,
+      "uri": "app/services/league_service_legacy.py"
+    },
+    {
+      "matchCount": 12,
+      "uri": "app/routes/league_routes.py"
+    },
+    {
+      "matchCount": 5,
+      "uri": "app/services/league_service.py"
+    },
+    {
+      "matchCount": 12,
+      "uri": "app\\routes\\league_routes.py"
+    },
+    {
+      "matchCount": 7,
+      "uri": "app/routes/league_routes_legacy.py"
+    }
+  ],
+  "totalFiles": 5,
+  "totalMatches": 41
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\services\league_service.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The team order in the `weekly_points` dictionary insertion is alphabetical, as the teams are sorted alphabetically during the union operation. SeriesData.to_dict stores data in alphabetical order due to Python dict insertion order preservation. The `sorted_by_total` sorting ensures teams are ordered by points. The line chart uses `updateTeamColorMap(sorted_by_total)` to assign colors based on point rankings. The standings table in `get_league_history` likely displays rows in league position order rather than alphabetical order. Tabulator formatters call `getTeamColor` before `updateTeamColorMap` if charts are updated afterward. The execution order in `loadSeasonData` starts with `createTimetable`. The standings table renders before the charts populate the teamColorMap, causing all teams to use the fallback color (getPaletteColor(0)) due to an empty map. Although `updateTeamColorMap` fills the map later, Tabulator has already rendered with incorrect colors. The bug occurs because `getTeamColor` does not add missing teams to the map, so they default to index 0. Caching might make the issue visible because it retains the initial state where the map was empty, leading to consistent incorrect coloring. Perhaps without cache, the issue arose because requests didnt all complete within one frame, causing user scrolling or tabulator redraw to trigger formatters again after charts were rendered. Alternatively, if get_league_history was slow, get_team_points might have finished first in parallel, though Promise.all waits for both, and JavaScript execution order after await remains consistent: standings before points chart. Unless there was a race condition in Promise.alls destructuring order, which is now fixed as [standings, points, positions, timetable]. Promise.all ensures all promises complete before continuing, so network timing isn't the issue. If a fetch fails and returns null, the order could change, but that would affect the entire load process. Another possibility is that ECharts or Tabulator asynchronously renders, causing the initial paint to use an empty teamColorMap, with subsequent renders not occurring unless a resize event forces a redraw. Caching causes faster, smaller responses and tighter timing, potentially leading to different batching of DOM updates in Tabulator. The user wants palette colors to reflect standings position order, not points-based sorting. Charts use points-based sorting, while the standings table uses row order. The season-league-standings block explicitly relies on the table's row order for displaying data.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\services\\league_service.py",
+  "pattern": "get_league_history|league_history"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\services\\league_service.py",
+  "pattern": "get_league_history|league_history",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "app\\services\\league_service.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 2
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\routes\league_routes.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\services\league_service.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The table structure is derived from TableData.to_dict(). The table structure is derived from TableData.to_dict().</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\models",
+  "pattern": "class TableData|def to_dict"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\models",
+  "pattern": "class TableData|def to_dict",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "app/models/series_data.py"
+    },
+    {
+      "matchCount": 5,
+      "uri": "app/models/table_data.py"
+    }
+  ],
+  "totalFiles": 2,
+  "totalMatches": 6
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\models\table_data.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The league history table consists of columns grouped by `field`, with `data` represented as a list of lists containing any data type.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\services\league_service.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+So league history rows are `[position, team, ...` League history rows have the structure `[position, team, ...]`, where index 1 contains the team name. A helper function can extract teams by either using `row[1]` if the row structure matches or by finding the `team` field in flattened columns for safer handling. The function should build `columnOrder` from `data.columns` and locate the `team` field to extract team names from each row. If the data is invalid, return an empty array. Otherwise, locate the column index for the team field by checking column groups, falling back to index 1 if not found. Extract team names from each row using the determined index. If the name is a non-empty string, add it to the teams array after trimming. Return a set of unique team names preserving their order from the standings data. In case of duplicates, the first occurrence is kept. The function `seedTeamColorsFromStandingsPayload` uses this list of teams to remove existing color mappings for those teams in the global color map. The function iterates through teams, assigning each a color from a palette if it doesn't already have one, and updates the global color map. It preserves existing color mappings to maintain standings order. The `updateTeamColorMap` function ensures that existing entries in the color map are not overwritten, thus maintaining the original order of teams. This process occurs before any child components are created.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\static\js\content-blocks\season-overview-block.js</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Season-overview loads the table first, then fetches parallel charts. In season-overview, the table renders before charts, causing the map to be empty and all teams to show the same color. Although league-season-overview uses Promise.all to render table and charts simultaneously, the table doesn't redraw after chart updates. The fix is to seed team colors from standings before any rendering in league-season-overview.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*league*",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\static\\js",
+  "pattern": "Promise\\.all\\("
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\static\\js",
+  "pattern": "Promise\\.all\\(",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "app/static/js/league-stats-app.js"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/static/js/content-blocks/league-aggregation-block.js"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/static/js/content-blocks/league-season-overview-block.js"
+    }
+  ],
+  "totalFiles": 3,
+  "totalMatches": 4
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I'll add `seedTeamColorsFromLeagueTableData` to color-utils.js and call it from 1. Add `seedTeamColorsFromLeagueTableData` to `color-utils.js` and call it from `league-season-overview-block.js` before `Promise.all`. Check `league-aggregation-block.js` to ensure teams/colors display correctly. Modify `createLineChart` to respect existing team color maps, as `updateTeamColorMap` doesn't overwrite. The cleanest solution is to seed colors from standings row order before rendering tables and charts for the league season view. The sorted_by_total order matches standings position for points, but the position chart uses sorted_by_best, which may differ from standings. The user wants palette by standings position, not sorted_by_best. Seeding colors from the standings table ensures the color mapping matches the table display, with each team's color correctly assigned even if chart series order differs from standings. The implementation in color-utils.js maintains a single source of truth for team colors.
+
+```javascript
+function seedTeamColorsFromLeagueTablePayload(tablePayload) {
+    if (!tablePayload || !Array.isArray(tablePayload.data) || !tablePayload.columns) {
+        return;
+    }
+    // Find column index for team field (league standings use field "team")
+    let teamColIndex = -1;
+    let flatIndex = 0;
+```</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\templates\components\tables.html</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I'll use the `flattenColumnMetadata` pattern, which is located inside tables.html. I'll duplicate the flatten logic from color-utils to find the team column index in the row array, following the same order as flatColumns.
+
+```javascript
+function findLeagueTableTeamColumnIndex(tablePayload) {
+  const groups = tablePayload.columns || [];
+  let idx = 0;
+  for (let g = 0; g < groups.length; g++) {
+    const group = groups[g];
+    if (!group || !Array.isArray(group.columns)) continue;
+    for (let c = 0; c < group.columns.length; c++) {
+      const field = group.columns[c].field;
+      if (field === 'team' || field === 'team_name') {
+        return idx;
+      }
+      idx++;
+    }
+  }
+``` return 1; // legacy league table: col 0 = pos, col 1 = team
+}
+
+function seedTeamColorsFromLeagueTablePayload(tablePayload) {
+  if (typeof globalObj.ColorUtils === 'undefined') return;
+  const teamIdx = findLeagueTableTeamColumnIndex(tablePayload);
+  const rows = tablePayload.data;
+  if (!Array.isArray(rows) || teamIdx < 0) return;
+
+  const teams = [];
+  for (let r = 0; r < rows.length; r++) {
+    const row = rows[r];
+    if (!Array.isArray(row) || teamIdx >= row.length) continue;
+    const raw = row[teamIdx];
+    if (raw === null || raw === undefined) continue;
+  }
+} The code processes team names from a league table payload, trims them, and adds them to an array. It then removes existing color mappings for these teams and assigns new colors from a palette, updating the global team color map accordingly. The function `seedTeamColorsFromLeagueTablePayload` is defined within an IIFE in color-utils and correctly accesses `getPaletteColor` and `teamColorMap` through closure. It should be exported on the ColorUtils object. To handle potential duplicate teams, a Set is used to maintain unique team names while preserving order. The function is called from league-season-overview-block.js after Promise.all resolves.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\static\js\content-blocks\league-aggregation-block.js</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+League aggregation does not utilize the same league standings table with position circles used in parallel - different charts are employed instead. The focus is on league-season-overview-block.js, with updates to season-overview-block.js for consistency even when disabled. In color-utils.js, implement `leagueTableTeamColumnIndex` after `updateTeamColorMap` and before `getTeamColor`, which determines the column index for team data in a league table based on the table payload's structure. The function `leagueTableTeamColumnIndex` identifies the column index for team data in a league table by examining the table payload's structure. It returns the index of the 'team' or 'team_name' field within the columns array, defaulting to 1 if not found. This index is then used in `seedTeamColorsFromLeagueTablePayload` to extract team data from the table payload for color seeding purposes. The code iterates through rows to extract team names, skipping invalid or duplicate entries. If no valid teams are found, it removes existing color mappings for those teams and assigns new colors from a palette.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\templates\\components\\charts.html",
+  "pattern": "createScatterChartMultiAxis|updateTeamColorMap"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\templates\\components\\charts.html",
+  "pattern": "createScatterChartMultiAxis|updateTeamColorMap",
+  "topFiles": [
+    {
+      "matchCount": 7,
+      "uri": "app\\templates\\components\\charts.html"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 7
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\templates\components\charts.html</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\templates\components\charts.html</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\templates\components\charts.html</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Scatter utilizes `getTeamColor(team)`; if the map is seeded from standings, this is correct. After applying the fix, the execution order is: seed from standings, then createTimetable (without team colors), followed by createStandingsTable where formatters use getTeamColor and the map is populated. Next, createPointsChart updates the team color map, and createWeeklyPointsChart uses getTeamColor with an already populated map. Finally, createPositionsChart also updates the team color map. If standings order differs from sorted totals, table colors still reflect standings, which is acceptable. Implement accordingly.</details></think>
+
+_**Agent (default)**_
+
+Identifying the issue: `league-season-overview-block.js` loads standings, points, positions, and timetable in parallel, then builds the standings table before charts. Tabulator formatters call `getTeamColor` while `teamColorMap` is still empty, so every team gets `getPaletteColor(0)` (same color). Faster cached responses make that race more visible. Seeding `teamColorMap` from the league history table row order (standings positions) before any table or chart renders fixes it. Adding `ColorUtils.seedTeamColorsFromLeagueTablePayload` and using it in the affected blocks.
+
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\static\js\theme\color-utils.js</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\static\js\theme\color-utils.js</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\static\js\content-blocks\league-season-overview-block.js</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\static\js\content-blocks\season-overview-block.js</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\static\js\content-blocks\season-league-standings-block.js</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The season-league-standings feature currently has a bug. The feature iterates per league and should reset the color palette for each league's card. The updated `seedTeamColorsFromLeagueTablePayload` function only removes teams from the current standings table and reassigns colors starting at index 0 for those teams, without clearing teams from other leagues. When processing a second league on the same page, it deletes only the teams from league 2 and assigns colors 0, 1, 2... to those teams. For different leagues, each should have its own independent color palette starting from position 1. The old code cleared teams from the current league and reassigned colors from index 0, but it didn't clear teams from other leagues, which could lead to inconsistent color assignments if the same team appears in multiple leagues.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\static\js\content-blocks\season-league-standings-block.js</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\static\js\content-blocks\season-league-standings-block.js</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\static\\js\\content-blocks",
+  "pattern": "get_league_history|get_league_week"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\static\\js\\content-blocks",
+  "pattern": "get_league_history|get_league_week",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "app\\static\\js\\content-blocks\\season-overview-block.js"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app\\static\\js\\content-blocks\\league-season-overview-block.js"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app\\static\\js\\content-blocks\\matchday-block.js"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app\\static\\js\\content-blocks\\route-test-block.js"
+    }
+  ],
+  "totalFiles": 4,
+  "totalMatches": 7
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\static\js\content-blocks\matchday-block.js</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Matchday-block also utilizes Promise. The week table uses the same column layout as the league table, with a "team" field at index 1. The `get_league_week_table_simple` function returns data similar to `get_league_table_simple` but with `include_history=False`. This data includes a "team" column following the same pattern.
+
+Colors should be seeded in matchday, but the order in the week snapshot may reflect standings for that specific week, maintaining the same TableData structure. Seeding should occur before rendering in `loadLeagueWeekTable` when tableData is available. However, since `Promise.all` runs four loaders in parallel, the first one to finish might render team vs team before the week table completes.
+
+Therefore, refactoring matchday is needed, likely involving:
+1. Fetch the week table first, seed it, then run the remaining operations in parallel. Alternatively, await the week table JSON in the main function, seed it, and then run the other operations in parallel. The simplest approach is to modify `loadMatchDayData` to fetch the week table, seed it, and then use `Promise.all` for the remaining tasks. Since `loadLeagueWeekTable` currently handles both fetching and rendering, it should be split into separate fetch, seed, and render steps. Team vs team might use team circles too. The loadMatchDayData function needs refactoring to fetch the week table first, seed it, and then run remaining operations in parallel. This involves separating fetch, seed, and render steps from loadLeagueWeekTable and modifying loadMatchDayData to handle seeding before Promise.all execution. renderLeagueWeekTableFromData extracts the rendering logic from loadLeagueWeekTable. In loadMatchDayData, fetch the week table first, seed it, then render it alongside other operations using Promise.all. _renderLeagueWeekTable(tableData) is added, and loadLeagueWeekTable is modified to fetch data and then render, either using preloaded data or fetching fresh data. A minimal change involves skipping the fetch in loadLeagueWeekTable if preloaded tableData is provided, though this approach is considered messy. A better solution is to refactor loadMatchDayData to fetch the week table first, seed the colors, and then run remaining operations in parallel using Promise.all. This ensures proper seeding before rendering and maintains the existing structure while enabling more flexible data handling.</details></think>
+
+_**Agent (default)**_
+
+Seeding colors before parallel renders in `matchday-block.js` — it uses the same `Promise.all` pattern.
+
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\static\js\content-blocks\matchday-block.js</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+loadMatchDayData will first fetch the week table, then seed and parallelize the data. Refactor loadLeagueWeekTable to split renderLeagueWeekTableIntoContainer(tableData) internal method. If fetching fails, an error must be displayed in the table container, similar to the existing error handling in loadLeagueWeekTable. The error handling logic should be consistent between the two methods. loadMatchDayData fetches week table data asynchronously, seeds team colors if available, and renders the table. If fetching fails, it logs the error and displays an error message in the table container. The code needs refactoring to ensure the week table is fetched and rendered before other operations begin. The current implementation runs the week table fetch in parallel with other promises, which can cause issues if other operations depend on the week table data. To fix this, the week table fetch must complete first before starting other operations. This ensures proper execution order and prevents race conditions. The error handling should remain consistent across all methods. The code fetches league week table data asynchronously, and if the fetch fails, it displays an error message in the table container. It then seeds team colors if available and proceeds with parallel operations. The error handling is consistent with existing methods.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\static\js\content-blocks\matchday-block.js</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\static\\js\\theme\\color-utils.js",
+    "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\static\\js\\content-blocks\\league-season-overview-block.js",
+    "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\static\\js\\content-blocks\\matchday-block.js",
+    "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\static\\js\\content-blocks\\season-league-standings-block.js",
+    "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\static\\js\\content-blocks\\season-overview-block.js"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\static\\js\\theme\\color-utils.js"
+    },
+    {
+      "relativeWorkspacePath": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\static\\js\\content-blocks\\league-season-overview-block.js"
+    },
+    {
+      "relativeWorkspacePath": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\static\\js\\content-blocks\\matchday-block.js"
+    },
+    {
+      "relativeWorkspacePath": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\static\\js\\content-blocks\\season-league-standings-block.js"
+    },
+    {
+      "relativeWorkspacePath": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\static\\js\\content-blocks\\season-overview-block.js"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Here’s what was going wrong and what we changed.
+
+### Cause (not broken JSON from the cache)
+
+Team colors come from the shared `teamColorMap`. `getTeamColor` only **reads** that map; if a name isn’t there yet, it falls back to `getPaletteColor(0)` — so **every team gets the first swatch**.
+
+`createLineChart` in `charts.html` calls `updateTeamColorMap(order)`, which **fills** the map — but only **after** charts run.
+
+On views that load several endpoints with `Promise.all` (e.g. league season overview, match day), the **standings Tabulator** can render **in parallel** with other work. With **fast cached responses**, formatters run while the map is still empty → all position circles share one color. That looked like “caching broke colors,” but it was really **ordering / parallel render**, made obvious by cache speed.
+
+Standings order is already correct in the API: `get_league_table_simple` builds rows in `sorted_teams` order (`pos`, `team`, …).
+
+### Fix
+
+1. **`ColorUtils.seedTeamColorsFromLeagueTablePayload`** in `color-utils.js`  
+   - Finds the `team` / `team_name` column the same way as the flattened Tabulator layout (with fallback index `1` for the classic `#` + `team` layout).  
+   - Walks `data` **in row order** and assigns `palette[0]`, `palette[1]`, …
+
+2. **Call the seed before any table/charts that rely on colors**  
+   - `league-season-overview-block.js`: right after `Promise.all`, before `createTimetable` / standings / charts.  
+   - `matchday-block.js`: fetch week table **first**, seed, then `Promise.all` the rest (so team vs team and the week table don’t race).  
+   - `season-overview-block.js`: seed after fetch, before building the table.  
+   - `season-league-standings-block.js`: uses the same helper instead of duplicating logic.
+
+`createLineChart` → `updateTeamColorMap` still runs afterward but **does not overwrite** existing map entries, so **standings position order** stays the source of truth for colors on that screen.
+
+After a refresh, you should see distinct colors aligned with table rank again, with or without cache.
+
+---
+
+_**User**_
+
+still not resolved. how it should look like, and the problematic case 
+http://127.0.0.1:5000/league/stats?season=23%2F24&database=db_real_merged 
+
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user states that the team color issue remains unresolved. The issue is that team colors are assigned based on team names rather than ranks, causing repetition in cases where identical team names appear at different ranks. In the Bezirksliga Sd 1 example, teams like "Munich Mave" at rank 2 and 4 both use teal, and "SG Rottendorf" at rank 1 and 6 use different colors. This results in inconsistent color coding across ranks. Teams with identical names at different ranks are assigned the same colors, causing repetition. The issue arises because `getTeamColor` maps teams to colors based on their names, leading to repeated color assignments when the same team name appears at multiple ranks. Even though there are 10 colors available for 6 teams, the current implementation causes palette index wrapping, resulting in reused colors. The issue may stem from `getTeamColor` using truncated team names for display while mapping full names, causing conflicts. Alternatively, if a team appears at different ranks, its color might be reused from an earlier seeding. For instance, if "Munich Mave" at rank 4 was previously seeded at rank 1, it could reuse the same color (teal, index 0), even though it's a different team. This leads to repeated color assignments due to shared team strings across ranks. It's unlikely that Munich Mave at rank 4 is the cause of the issue. The position formatter might be using the wrong field, possibly reading the team name incorrectly for some rows, causing multiple rows to resolve to the same key. The `updateTeamColorMap` function from charts runs with `sorted_by_total` order and does not overwrite existing entries, yet seeding occurs first. It's possible that charts run before seeding for certain cards. Additionally, since there are multiple blocks on the page showing season league standings with many leagues in separate cards, seeding occurs per league. For example, in league A teams 1-6 are seeded, while in league B teams are deleted from the map and reassigned colors 0, 1, etc., but league A teams remain unchanged. When rendering league B, teams are seeded in order, with **BC EMAX** receiving color 0 (teal). However, during table rendering, formatters should use the updated color map, but they may not. The render order involves iterating through `data.leagues.forEach`, seeding and rendering each league separately. After seeding league 1 (Nord 3), the map contains 6 teams with colors 05. For league 2 (Sd 1), `seedTeamColorsFromLeagueTablePayload(standings)` deletes teams from the map that appear in Sd 1s standings and assigns colors 0, 1, 2, etc., in row order. So BC EMAX (rank 1) gets teal (0), Munich Mave rank 2 gets color 1, etc.  
+However, if team names like "SG Rottendorf" appear in both Nord 3 and Sd 1 leagues, they are deleted from the map when seeding Sd 1, then reassigned colors based on their order in the standings. If "Munich Mavericks" appears twice in the Sd 1 table at ranks 2 and 4, the first occurrence is added to the `teams` array, and the second is skipped due to deduplication. Colors are assigned only to unique team names in first-seen order. Thus, if both ranks refer to the same normalized team name, they will share the same colororange for rank 2, and teal for rank 4causing inconsistency. Rank 2 shows Orange for "Munich Mave" and Rank 4 shows Teal for the same team, suggesting different full names like "Munich Mavericks A" and "Munich Mavericks B" might be the cause. However, the issue isn't duplicate names. Instead, different teamsBC EMAX and Munich Maveare both assigned the same color teal, which maps to palette index 0. This suggests either both teams are mapped to the same color or one uses a map entry while the other defaults to teal via a fallback. If the team color map is correct, with BC EMAX  0, Munich Mave2  1, BK Mnchen  2, Munich Mave4  3, then rank 4 should show the fourth color (index 3), not teal. This suggests the teams array might only contain three unique teams or that the column index is incorrect, causing the wrong data to be read. If `leagueTableTeamColumnIndex` is used but the week table has a different column layout than league history, the index could be misaligned between payloads for `get_season_league_standings` and `get_league_history`.</details></think>
+
+_**Agent (default)**_
+
+Tracing the season-all-leagues standings payload structure — color repetition suggests we're seeding from the wrong column or the standings shape differs from `get_league_history`.
+
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.py",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app",
+  "pattern": "get_season_league_standings"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app",
+  "pattern": "get_season_league_standings",
+  "topFiles": [
+    {
+      "matchCount": 8,
+      "uri": "app/routes/league_routes.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app/services/league_service.py"
+    },
+    {
+      "matchCount": 8,
+      "uri": "app\\routes\\league_routes.py"
+    }
+  ],
+  "totalFiles": 3,
+  "totalMatches": 18
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\services\league_service.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The standings are retrieved using `get_league_week_table_simple`, which invokes `get_league_table_simple` with `include_history=False`. The code checks if the current column is a position column using `groupIndex === 0 && columnIndex === 0`, which corresponds to the `#` (position) column, not the team column. This means the team color is likely based on the team column, not the position column. The formatter logic confirms this by checking for `team_position` and `opponent_position` fields specifically. The first column, labeled "#", represents rank numbers and displays colored circles indicating rank, with colors derived from `getTeamColor(teamName)`. The team name is resolved from either `rowData['player_name']` or the `teamField` field, which likely refers to the second column containing team data. The `isPositionColumn` check confirms that the first column is indeed the rank column, not the team column. The `pos` column formatter retrieves the team from `rowData['team']`, but field names should be verified. The `isPositionColumn` logic identifies the position column as the first column in the first group, and the fallback team name resolution uses `rowData['player_name']` or `rowData[teamField]`. For column 0 (#), the team name is correctly retrieved from `rowData['team']` when `teamField` is 'team'. The repeating color pattern of 1/4 and 2/5 suggests a modulo-based coloring scheme, possibly related to a 10-color rainbowPastel palette or a rank-based mapping such as `getPaletteColor(rank % 3)`. However, since there are only 6 teams, it's more likely that `teamColorMap` has only 3 entries, causing colors to repeat every 3 positions. Alternatively, if a team isn't found in the map, `getTeamColor` defaults to `fallbackIndex = 0`, which would result in the same color being used for multiple teams. All unmapped teams are assigned teal (the first palette color). When some teams are mapped to colors 0, 1, and 2, and others are not, all unmapped teams default to color 0 (teal). The observed pattern of ranks 16 being colored teal, orange, green, teal, orange, red indicates a repeating 3-color cycle: 0, 1, 2, 0, 1, 2. This suggests that `getTeamColor` uses `getPaletteColor(position % 3)` or that the color map only includes three teams, causing incorrect resolution for rows 4 through 6. If the map contains only three teams, then unlisted teams default to `getPaletteColor(0)`, which is teal. Since `getTeamColor` uses `fallbackIndex = 0` for missing teams, all unmapped teams should appear as teal, not alternating colors. The consistent teal coloring suggests that `getTeamColor` always defaults to index 0 for missing entries, unless Tabulator passes a different index per rowthough this seems unlikely. Alternatively, the formatters might use the cell value or row index in some way when calling `getTeamColor`. The code calls `getTeamColor(normalizedName)` without using the row index. The `updateTeamColorMap` function is likely seeded with only 3 unique team names from Sd 1, due to deduplication removing duplicates and losing rank order for rows 46. A `seen` set tracks unique names in row order, so if rows 46 contain duplicate team names already seen in positions 13, those teams receive colors from the initial 3-color map. This results in repeated color assignments, especially for unmapped teams defaulting to teal. There are 6 different teams, resulting in 6 entries. However, if `leagueTableTeamColumnIndex` incorrectly returns 0 instead of 1, the formatter would extract row numbers (1, 2, 3, 4, 5, 6) rather than team names. These numbers, when coerced to strings, would be treated as unique team identifiers, leading to incorrect color assignment based on these numeric strings rather than actual team names.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\utils\json_safe.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The pattern 0,1,2,0,1,2 repeats every three numbers. The position column could use `getTeamColor` with position numbers as strings, but team names for lookup might fail. If the map is seeded with actual team names but the # column formatter uses incorrect data, issues may arise. The position column logic checks for `groupIndex === 0 && columnIndex === 0` to determine the first column, and uses `rowData['player_name']` or `rowData[teamField]` for the team name. If `teamField` defaults to `'team'`, then `teamName = rowData['team']` retrieves the actual team name, which is used to get the color from `getTeamColor(teamName)`. The map is built using `row[teamIdx]` during seeding, assuming `teamIdx` is correct and matches the `team` field in Tabulator's rowData. If `teamIdx` is wrong, it could cause mismatches even if `rowData['team']` is read correctly. The period-3 pattern suggests that `updateTeamColorMap` might be triggered multiple times across chart loads on the same page, especially when only the top 3 teams are sorted and displayed.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\templates\components\tables.html</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+`teamFieldGuess` is assigned the value of `data.columns?.[0]?.columns?.[1]`. The second column of the first group should be `team`. The `leagueTableTeamColumnIndex` scans all groups to find the first field with `team`, and in the first group, `team` is at index 1. However, if the first column is not `pos` but something else in a German build, that needs consideration. Column definitions use `field="pos"` and `field="team"` from Python. It's also possible that in period 3, the column might be determined by `row __rowIndex` modulo some value.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\static\\js",
+  "pattern": "updateTeamColorMap|seedTeamColors"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\static\\js",
+  "pattern": "updateTeamColorMap|seedTeamColors",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "app\\static\\js\\content-blocks\\season-overview-block.js"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app\\static\\js\\content-blocks\\matchday-block.js"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app\\static\\js\\content-blocks\\season-league-standings-block.js"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app\\static\\js\\content-blocks\\league-season-overview-block.js"
+    },
+    {
+      "matchCount": 5,
+      "uri": "app/static/js/theme/color-utils.js"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app/static/js/content-blocks/team-performance-block.js"
+    },
+    {
+      "matchCount": 5,
+      "uri": "app\\static\\js\\theme\\color-utils.js"
+    }
+  ],
+  "totalFiles": 7,
+  "totalMatches": 20
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The file charts.html contains an updateTeamColorMap wrapper, which is utilized by createLineChart.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\static\\js",
+  "pattern": "renderLeagueStandingsTable"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\static\\js",
+  "pattern": "renderLeagueStandingsTable",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "app/static/js/content-blocks/season-league-standings-block.js"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app\\static\\js\\content-blocks\\season-league-standings-block.js"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app/static/js/content-blocks/matchday-block.js"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app\\static\\js\\content-blocks\\matchday-block.js"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app/static/js/utils/league-standings-card-utils.js"
+    }
+  ],
+  "totalFiles": 5,
+  "totalMatches": 10
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\static\js\utils\league-standings-card-utils.js</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\templates\\components\\tables.html",
+  "pattern": "disableTeamColorUpdate|teamColor"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\templates\\components\\tables.html",
+  "pattern": "disableTeamColorUpdate|teamColor",
+  "topFiles": [
+    {
+      "matchCount": 8,
+      "uri": "app\\templates\\components\\tables.html"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 8
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\templates\components\tables.html</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Found the issue: when `disableTeamColorUpdate: true` is set (as used by `renderLeagueStandingsTable`), it prevents team color updates.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\templates\components\tables.html</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Let me think about the `updateTeamColorMap` behavior again. The `updateTeamColorMap` function removes unused teams from the color map and assigns colors to new teams using a palette index. When `disableTeamColorUpdate` is false, teams are deduplicated while preserving their original order from the table. When `disableTeamColorUpdate` is true, the system seeds colors using `seedTeamColorsFromLeagueTablePayload`, which identifies the team column index by finding the first column with field `'team'` or `'team_name'`. 
+
+Column groups may contain columns with fields matching `'team'` or `'team_name'` in their flatten order, but nested titles with substrings are checked for exact field matches. 
+
+Regarding frozen columns in Tabulator, it's unclear whether they are duplicated in the column model, which could cause differences between flatten order and row array indices. The row data is generated using the same column order as Python emits, and the `leagueTableTeamColumnIndex` aligns with the flattened JSON metadata order, matching row array indices. It's unlikely that extra column groups with a field named 'team' exist. German i18n field names remain as `team` from the backend. The `transformedData` mapping might involve virtual columns affecting indices. The bug occurs specifically during period 3 for 6 teams, and `getPaletteColor` calculates colors using `Math.abs(index) % currentPalette`. The mod 3 result likely comes from the palette index calculation, where `Math.abs(index) % currentPalette` is used to assign colors. However, this doesn't directly explain the mod 3 behavior unless there's an issue with how the index is calculated or applied.
+
+Using rank-based coloring for the # columnassigning `palette[rowIndex % n]` based on positioncould resolve issues like teams from the same club getting identical colors in different periods and prevent cross-league color contamination. This approach ensures each row uses its position in the table to determine its color, rather than relying on team names or other identifiers. For the position circle in the first column, use `getPaletteColor(rowIndexInStandings)` or `getPaletteColor((posNumber - 1) % palette.length)` instead of `getTeamColor(teamName)`. This aligns with the user's request to color by standing position rather than team identity. While charts should maintain consistent team colors across different views, the standings table rank badge should use position-based coloring, where position 1 gets color 0, position 2 gets color 1, and so on. The rank column should use position-based coloring instead of team name-based coloring. This ensures that teams appearing multiple times in the table, such as "SG Rottendorf" at ranks 1 and 6, receive different colors based on their position rather than their name. Using a team-color map by name would assign the same color to the same team name, which is incorrect. The correct approach is to use `getPaletteColor(rowIndexInStandings)` or `getPaletteColor((posNumber - 1) % palette.length)` to ensure each rank badge is colored according to its position in the standings table. The bug in Image 2 likely stems from team name collisions or the color mapping logic assigning the same color to different teams sharing a normalized name prefix. Since Image 1 shows different colors for two "SG Rottendorf" entries, the working case in Nord 3 must be using row-based or position-based coloring rather than team name mapping. This suggests that the color assignment in the working case is tied to the row index or standing position, not the team name itself. Unless the two SG Rottendorf teams have different full names that truncate to the same value, the team map would differ. The user notes "SG Rottendorf..." appearing twice with different colors, indicating either distinct full names or position-based coloring. In Sd 1, ranks 1 and 4 both show teal, representing different teams (BC EMAX vs Munich Mave), which should be colors 0 and 3 if position-basedconfirming that Sd is broken relative to position-based coloring. The fix should explicitly use rank or row position for the # column circle color in league standings tables. For the `#` column formatter, use the rank number from the cell value or the row index to determine the color. Since the `pos` column displays the rank, the formatter should extract the rank number from the cell value and apply `getPaletteColor((rankNum - 1) % palette.length)` to ensure consistent coloring based on position. The `#` column in league tables should use position-based coloring to ensure consistent and unique colors per rank, avoiding team name collisions. For the ranking column, extract the rank number and apply `getPaletteColor((rankNum - 1) % palette.length)` to assign colors based on position rather than team identity. This approach prevents issues like identical colors for teams with similar names and maintains consistency with the standings tables visual logic. Charts on other pages can optionally adopt the same team-color mapping for consistency, though they currently use `getTeamColor(team)` based on sorted totals. Each league resets its palette from rank 1, ensuring proper color distribution within individual tables.</details></think>
+
+_**Agent (default)**_
+
+Identifying the issue: rank badges used `getTeamColor(teamName)`, so duplicate or colliding names and a shared global `teamColorMap` cause repeats. Position badges should use the displayed rank (1 → palette[0], 2 → palette[1], …), matching the Nord example where two similarly named teams get different colors. Implementing rank-based colors for the standings `#` / `pos` column.
+
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\templates\components\tables.html</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I need to switch the branch for: I need to switch the branch for league standings rank column using rank-based palette when `field === 'pos'` or for the first column of the first group regardless of field name. The `isPositionColumn` is true for the first column of the first group, including league standings where field is `pos`. The safe rule is to use rank from cell value when `field === 'pos` or when `groupIndex === 0 && columnIndex === 0` and field is `pos`. If the first column is not `pos` but still rank-like, the league table uses `pos`. For `team_position` and `opponent_position`, the position values can be used directly for palette coloring with `getPaletteColor(Number(value)-1)`. For player tables, the first column may not represent a rank, so it could fall back to showing the index. When `groupIndex === 0 && columnIndex === 0` and there's no `teamName`, the value might default to `formattedValue` without applying the circle formatting. If no teamName is present, the value defaults to formattedValue without circle formatting. The strategy involves checking early for fields like 'pos' or 'table_position' to use rank from the value. For the first column of the first group, including when field is 'pos', the rank is used directly. However, if field is 'pos', it may still fall through to use teamName from teamField. The implementation checks for specific fields such as 'team_position' or 'opponent_position' before handling the general case for the first column of the first group. For the `pos` field, the code incorrectly uses the else branch, setting `teamName` from `teamField` and then applying `getTeamColor(team)`which uses a global map based on team name instead of rank-based coloring. This happens because the rank column (`pos`) is caught by `isPositionColumn` due to being the first column of the first group (`groupIndex===0 && columnIndex===0`), causing it to take the else branch that retrieves team names rather than using the rank value directly. The repeating pattern occurs when updateTeamColorMap or seed assigns colors, causing collisions where the same team appears with different colors across rows. A bug in Sd shows BC EMAX rank 1 as teal and Munich Mave rank 2 as orange, but rank 4 Munich Mave also appears as teal, matching rank 1 instead of using orange. This likely stems from two different teams with similar truncated names being normalized to the same string, resulting in identical colors despite being separate entities. So it's not a same-name issue for rank 4. The palette cycle suggests that `getTeamColor` uses a map, but the formatter may receive incorrect team names. User sorting by clicking headers changes row order, but position values remain the same, so colors should follow team names and not cycle. The correct behavior is that the position columns circle color should depend solely on the displayed rank number. The fix should implement:
+
+```javascript
+if (isPositionColumn && !settings.disablePositionCircle) {
+``` For the league standings rank column (`field === 'pos'`), the color should be determined by the rank number using the palette, not by a global team map. If the value is valid and represents a rank, it should be colored accordingly using `getPaletteColor(rankNum - 1)`. Otherwise, the original formatted value is shown inside a circle div. If `field !== 'pos'`, the logic continues to check for team names and apply appropriate coloring.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\templates\\components\\tables.html",
+  "pattern": "tab-position-circle|position.*circle|getTeamColor"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\templates\\components\\tables.html",
+  "pattern": "tab-position-circle|position.*circle|getTeamColor",
+  "topFiles": [
+    {
+      "matchCount": 22,
+      "uri": "app\\templates\\components\\tables.html"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 22
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\templates\components\tables.html</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\templates\components\tables.html</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I need to patch the Tabulator formatter block to use rank-based color when the field is 'pos'.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\templates\components\tables.html</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+There are two formatter blocks: one for flattened format (with hasGroupTitles false) starting around line 442, and another for normal groups starting around line 732. Both formatter blocks need to be patched with early handling for `field === 'pos'`. For the compact path at line 554, add a rank branch at the start of the `if (isPositionColumn && !settings.disablePositionCircle)` block. For the grouped path at line 787, add the same logic. A helper function should be added at the top of the script to avoid duplication, which checks if the field is 'pos' and processes the rank value accordingly. If the rank is not a valid number or less than one, return null. Otherwise, retrieve the color from the palette using the rank number minus one, or return null if the color utility is unavailable. In both formatter blocks, if the column is a position column and position circles are enabled, use the rank badge color for the circle; otherwise, proceed with existing team-based logic. For the `pos` column, `formattedValue` is computed earlier in the formatter logic, even though the position check happens later. Since `pos` has `decimal_places: 0`, it may follow the decimal formatting branch before the position-specific logic. However, this is acceptable because `formattedValue` is already set before the position handling code runs. The order of operations ensures that `formattedValue` is available when needed for position checks. 
+
+Regarding Bootstrap3, the code snippet shows an early exit condition for group and index zero, which likely relates to initial rendering behavior.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\templates\components\tables.html</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I'll add a small helper after ColorUtils is loaded - the tables. html loads color-utils first, and I'll add the helper function right after the opening `<script>` of tables or before createTableTabulator, specifically after line 119 `flattenColumnMetadata`. The new function `positionRankBadgeColor` will handle league standings "#" column coloring based on display rank rather than team colors. The code checks if the rank number is valid and returns the corresponding palette color from `ColorUtils.getPaletteColor`, or null if invalid. For game views, the `team_position` field could use similar logic, where a value of 3 would map to palette index 2.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\templates\components\tables.html</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+For bootstrap3 single-row at 2072, use `positionRankBadgeColor(col`.</details></think>
+
+_**Agent (default)**_
+
+Using rank-based palette colors for the standings `#` column (`field === 'pos'`). Team-name lookups caused collisions and repeated swatches; coloring by displayed rank (1→palette[0], …) matches the intended behavior.
+
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\templates\components\tables.html</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\templates\components\tables.html</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\templates\components\tables.html</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Bootstrap3 two-row path replaces getTeamColor(row1. The code now uses `positionRankBadgeColor` with `col.field` to determine colors for position badges, falling back to `getTeamColor` when the field is not 'pos'.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\templates\components\tables.html</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\templates\components\tables.html</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+In the flat formatter path, `formattedValue` is used before being defined for the pos column.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\templates\\components\\tables.html"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\templates\\components\\tables.html"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Provide a concise summary for the user based on the shared URL.</details></think>
+
+_**Agent (default)**_
+
+### What was actually wrong
+
+Caching only made it more obvious. The **rank badge** in `Tabellenstand` was colored with **`getTeamColor(team name)`** and the global `teamColorMap`. That ties the swatch to **identity**, not **place in the table**.
+
+So you could get **repeated colors** (your Süd 1 case: ranks 1 & 4 both teal, 2 & 5 both orange) whenever the map / names / order didn’t line up with “one color per rank”. Your “good” Nord example with **two “SG Rottendorf…” rows in different colors** is exactly **rank-based** coloring, not pure team-name coloring.
+
+### Fix
+
+In `app/templates/components/tables.html`:
+
+1. Added **`positionRankBadgeColor(field, rawValue, formattedValue)`** — for the standings **`pos`** column (`#`), the badge color is **`ColorUtils.getPaletteColor(rank - 1)`** from the **displayed rank** (1-based).
+
+2. Wired it into **both** Tabulator formatter paths (flat + grouped columns) and the **Bootstrap3** standings renderers, so Tabulator and fallback tables behave the same.
+
+So for each league card: **rank 1 → palette[0], rank 2 → palette[1], …** up to the palette length (then it wraps modulo palette size, same as before for large leagues).
+
+After deploy, hard-refresh  
+`http://127.0.0.1:5000/league/stats?season=23%2F24&database=db_real_merged`  
+and the Süd 1–style repeats on the `#` column should be gone.
+
+The earlier **seed** logic is still useful for **charts and other team-keyed UI**; the **standings rank circle** no longer depends on that map.
+
+---
+
+_**User**_
+
+base-content-block.js?v=ae85feea:8 🔄 BaseContentBlock class definition loaded
+stats?season=23%2F24&database=db_real_merged:5091 🚀 Initializing application...
+stats?season=23%2F24&database=db_real_merged:5103 ✅ Application initialized
+league-stats-app.js?v=e9a97230:391 📄 DOM loaded, initializing LeagueStatsApp...
+league-stats-app.js?v=e9a97230:27 🚀 Initializing LeagueStatsApp...
+league-stats-app.js?v=e9a97230:74 🧱 Initializing content blocks...
+league-stats-app.js?v=e9a97230:78 🔄 Creating SeasonLeagueStandingsBlock...
+league-stats-app.js?v=e9a97230:80 🔄 Creating LeagueAggregationBlock...
+league-stats-app.js?v=e9a97230:82 🔄 Creating LeagueSeasonOverviewBlock...
+league-stats-app.js?v=e9a97230:84 🔄 Creating SeasonOverviewBlock...
+league-stats-app.js?v=e9a97230:86 🔄 Creating MatchDayBlock...
+league-stats-app.js?v=e9a97230:88 🔄 Creating TeamDetailsBlock...
+league-stats-app.js?v=e9a97230:90 🔄 Creating TeamPerformanceBlock...
+league-stats-app.js?v=e9a97230:92 🔄 Creating GameOverviewBlock...
+league-stats-app.js?v=e9a97230:94 🔄 Creating GameTeamDetailsBlock...
+league-stats-app.js?v=e9a97230:108 ✅ Content blocks initialized
+centralized-button-manager.js?v=0d9c7b8f:103 🚀 CentralizedButtonManager: Handling initial state: {team: '', season: '23/24', division: '', week: '', round: '', …}
+centralized-button-manager.js?v=0d9c7b8f:182 📋 CentralizedButtonManager: Processing groups: (6) ['season', 'division', 'league', 'week', 'round', 'team']
+centralized-button-manager.js?v=0d9c7b8f:183 📋 CentralizedButtonManager: Current constraints: {}
+centralized-button-manager.js?v=0d9c7b8f:232 🔧 CentralizedButtonManager: Processing group season
+centralized-button-manager.js?v=0d9c7b8f:331 🌐 CentralizedButtonManager: Fetching candidates for season: /league/get_available_seasons?database=db_real_merged
+centralized-button-manager.js?v=0d9c7b8f:332 🌐 CentralizedButtonManager: Current constraints for season: {}
+stats?season=23%2F24&database=db_real_merged:397 Sources info response: {available_sources: Array(8), current_display_name: 'Real Data (Merged League)', current_source: 'db_real_merged', sources_info: {…}, success: true}
+stats?season=23%2F24&database=db_real_merged:402 Loaded sources info: {db_real_merged: {…}}
+stats?season=23%2F24&database=db_real_merged:403 Current source: db_real_merged
+centralized-button-manager.js?v=0d9c7b8f:341 📊 CentralizedButtonManager: Received candidates for season: (4) ['22/23', '23/24', '24/25', '25/26']
+centralized-button-manager.js?v=0d9c7b8f:263 ✅ CentralizedButtonManager: Keeping current selection for season: 23/24
+centralized-button-manager.js?v=0d9c7b8f:295 🎨 CentralizedButtonManager: Populating buttons for season with 4 candidates
+centralized-button-manager.js?v=0d9c7b8f:364 🎨 CentralizedButtonManager: Populating season - current selection: "23/24", candidates: (4) ['22/23', '23/24', '24/25', '25/26']
+centralized-button-manager.js?v=0d9c7b8f:454 ✅ CentralizedButtonManager: Populated season with 4 candidates, selected: 23/24
+centralized-button-manager.js?v=0d9c7b8f:455 ✅ CentralizedButtonManager: Created 4 buttons for season
+centralized-button-manager.js?v=0d9c7b8f:232 🔧 CentralizedButtonManager: Processing group division
+centralized-button-manager.js?v=0d9c7b8f:321 🔗 CentralizedButtonManager: Adding constraint season=23/24 for division
+centralized-button-manager.js?v=0d9c7b8f:331 🌐 CentralizedButtonManager: Fetching candidates for division: /league/get_available_divisions?season=23%2F24&database=db_real_merged
+centralized-button-manager.js?v=0d9c7b8f:332 🌐 CentralizedButtonManager: Current constraints for division: {season: '23/24'}
+centralized-button-manager.js?v=0d9c7b8f:341 📊 CentralizedButtonManager: Received candidates for division: (3) [{…}, {…}, {…}]
+centralized-button-manager.js?v=0d9c7b8f:283 🔄 CentralizedButtonManager: Invalid selection for division, clearing selection
+centralized-button-manager.js?v=0d9c7b8f:295 🎨 CentralizedButtonManager: Populating buttons for division with 3 candidates
+centralized-button-manager.js?v=0d9c7b8f:364 🎨 CentralizedButtonManager: Populating division - current selection: "", candidates: (3) [{…}, {…}, {…}]
+centralized-button-manager.js?v=0d9c7b8f:454 ✅ CentralizedButtonManager: Populated division with 3 candidates, selected: 
+centralized-button-manager.js?v=0d9c7b8f:455 ✅ CentralizedButtonManager: Created 3 buttons for division
+centralized-button-manager.js?v=0d9c7b8f:232 🔧 CentralizedButtonManager: Processing group league
+centralized-button-manager.js?v=0d9c7b8f:237 ⚠️ CentralizedButtonManager: Prerequisites not met for league
+centralized-button-manager.js?v=0d9c7b8f:238 ⚠️ CentralizedButtonManager: Clearing buttons for league
+centralized-button-manager.js?v=0d9c7b8f:232 🔧 CentralizedButtonManager: Processing group week
+centralized-button-manager.js?v=0d9c7b8f:237 ⚠️ CentralizedButtonManager: Prerequisites not met for week
+centralized-button-manager.js?v=0d9c7b8f:238 ⚠️ CentralizedButtonManager: Clearing buttons for week
+centralized-button-manager.js?v=0d9c7b8f:232 🔧 CentralizedButtonManager: Processing group round
+centralized-button-manager.js?v=0d9c7b8f:237 ⚠️ CentralizedButtonManager: Prerequisites not met for round
+centralized-button-manager.js?v=0d9c7b8f:238 ⚠️ CentralizedButtonManager: Clearing buttons for round
+centralized-button-manager.js?v=0d9c7b8f:232 🔧 CentralizedButtonManager: Processing group team
+centralized-button-manager.js?v=0d9c7b8f:237 ⚠️ CentralizedButtonManager: Prerequisites not met for team
+centralized-button-manager.js?v=0d9c7b8f:238 ⚠️ CentralizedButtonManager: Clearing buttons for team
+centralized-button-manager.js?v=0d9c7b8f:192 🔄 CentralizedButtonManager: Triggering state change callback with state: {team: '', season: '23/24', division: '', week: '', round: '', …}
+centralized-button-manager.js?v=0d9c7b8f:193 🔄 CentralizedButtonManager: Callback function: function
+league-stats-app.js?v=e9a97230:112 🔄 LeagueStatsApp: Button state changed, rendering content: {team: '', season: '23/24', division: '', week: '', round: '', …}
+league-stats-app.js?v=e9a97230:113 🔄 LeagueStatsApp: State keys: (8) ['team', 'season', 'division', 'week', 'round', 'league', 'league_long', 'database']
+league-stats-app.js?v=e9a97230:114 🔄 LeagueStatsApp: Round value:  Type: string
+league-stats-app.js?v=e9a97230:311 🎨 Rendering content for state: {team: '', season: '23/24', division: '', week: '', round: '', …}
+league-stats-app.js?v=e9a97230:312 🎨 Available content blocks: (9) ['season-league-standings', 'league-aggregation', 'league-season-overview', 'season-overview', 'matchday', 'team-details', 'team-performance', 'game-overview', 'game-team-details']
+league-stats-app.js?v=e9a97230:323 🔄 Rendering block: season-league-standings with state: {season: '23/24', league: '', week: '', round: '', team: ''}
+stats?season=23%2F24&database=db_real_merged:5243 🔄 getCurrentDatabase called, returning: db_real_merged
+stats?season=23%2F24&database=db_real_merged:5260 🔄 fetchWithDatabase called: {originalUrl: '/league/get_season_league_standings?season=23%2F24', urlWithDatabase: '/league/get_season_league_standings?season=23%2F24&database=db_real_merged'}
+league-stats-app.js?v=e9a97230:323 🔄 Rendering block: league-aggregation with state: {season: '23/24', league: '', week: '', round: '', team: ''}
+league-stats-app.js?v=e9a97230:323 🔄 Rendering block: league-season-overview with state: {season: '23/24', league: '', week: '', round: '', team: ''}
+league-stats-app.js?v=e9a97230:323 🔄 Rendering block: season-overview with state: {season: '23/24', league: '', week: '', round: '', team: ''}
+league-stats-app.js?v=e9a97230:323 🔄 Rendering block: matchday with state: {season: '23/24', league: '', week: '', round: '', team: ''}
+league-stats-app.js?v=e9a97230:323 🔄 Rendering block: team-details with state: {season: '23/24', league: '', week: '', round: '', team: ''}
+league-stats-app.js?v=e9a97230:323 🔄 Rendering block: team-performance with state: {season: '23/24', league: '', week: '', round: '', team: ''}
+league-stats-app.js?v=e9a97230:323 🔄 Rendering block: game-overview with state: {season: '23/24', league: '', week: '', round: '', team: ''}
+league-stats-app.js?v=e9a97230:323 🔄 Rendering block: game-team-details with state: {season: '23/24', league: '', week: '', round: '', team: ''}
+centralized-button-manager.js?v=0d9c7b8f:196 ✅ CentralizedButtonManager: State change callback executed successfully
+league-stats-app.js?v=e9a97230:331 ✅ Rendered block: league-aggregation
+league-stats-app.js?v=e9a97230:331 ✅ Rendered block: league-season-overview
+league-stats-app.js?v=e9a97230:331 ✅ Rendered block: season-overview
+league-stats-app.js?v=e9a97230:331 ✅ Rendered block: matchday
+league-stats-app.js?v=e9a97230:331 ✅ Rendered block: team-details
+league-stats-app.js?v=e9a97230:331 ✅ Rendered block: team-performance
+league-stats-app.js?v=e9a97230:331 ✅ Rendered block: game-overview
+league-stats-app.js?v=e9a97230:331 ✅ Rendered block: game-team-details
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BZL_N1 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_BZL_N1" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BZL_N2 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_BZL_N2" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BZL_N3 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_BZL_N3" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BZL_S1 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_BZL_S1" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BZL_S2 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_BZL_S2" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BZL_S3 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_BZL_S3" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BZOL_N1 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_BZOL_N1" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BZOL_N2 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_BZOL_N2" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BZOL_N3 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_BZOL_N3" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BZOL_S1 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_BZOL_S1" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BZOL_S3 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_BZOL_S3" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BayL with 10 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_BayL" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BayL_D with 10 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_BayL_D" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_KL_N1 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_KL_N1" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_KL_N2 with 4 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_KL_N2" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_KL_N3 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_KL_N3" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_KL_S1 with 5 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_KL_S1" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_KL_S2 with 5 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_KL_S2" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_KL_S3 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_KL_S3" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_LL_N_D with 3 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_LL_N_D" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_LL_N1 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_LL_N1" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_LL_N2 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_LL_N2" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_LL_S with 6 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_LL_S" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_LL_S_D with 8 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_LL_S_D" successfully created/updated (Tabulator)
+league-stats-app.js?v=e9a97230:331 ✅ Rendered block: season-league-standings
+league-stats-app.js?v=e9a97230:338 ✅ Content rendering complete
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+(anonymous) @ league-stats-app.js?v=e9a97230:116
+processAllButtonGroups @ centralized-button-manager.js?v=0d9c7b8f:195
+await in processAllButtonGroups
+handleInitialState @ centralized-button-manager.js?v=0d9c7b8f:113
+initialize @ centralized-button-manager.js?v=0d9c7b8f:90
+initializeContentBlocks @ league-stats-app.js?v=e9a97230:118
+initialize @ league-stats-app.js?v=e9a97230:43
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+(anonymous) @ league-stats-app.js?v=e9a97230:116
+processAllButtonGroups @ centralized-button-manager.js?v=0d9c7b8f:195
+await in processAllButtonGroups
+handleInitialState @ centralized-button-manager.js?v=0d9c7b8f:113
+initialize @ centralized-button-manager.js?v=0d9c7b8f:90
+initializeContentBlocks @ league-stats-app.js?v=e9a97230:118
+initialize @ league-stats-app.js?v=e9a97230:43
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+(anonymous) @ league-stats-app.js?v=e9a97230:116
+processAllButtonGroups @ centralized-button-manager.js?v=0d9c7b8f:195
+await in processAllButtonGroups
+handleInitialState @ centralized-button-manager.js?v=0d9c7b8f:113
+initialize @ centralized-button-manager.js?v=0d9c7b8f:90
+initializeContentBlocks @ league-stats-app.js?v=e9a97230:118
+initialize @ league-stats-app.js?v=e9a97230:43
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+(anonymous) @ league-stats-app.js?v=e9a97230:116
+processAllButtonGroups @ centralized-button-manager.js?v=0d9c7b8f:195
+await in processAllButtonGroups
+handleInitialState @ centralized-button-manager.js?v=0d9c7b8f:113
+initialize @ centralized-button-manager.js?v=0d9c7b8f:90
+initializeContentBlocks @ league-stats-app.js?v=e9a97230:118
+initialize @ league-stats-app.js?v=e9a97230:43
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+league-stats-app.js?v=e9a97230:311 🎨 Rendering content for state: {team: '', season: '23/24', division: '', week: '', round: '', …}
+league-stats-app.js?v=e9a97230:312 🎨 Available content blocks: (9) ['season-league-standings', 'league-aggregation', 'league-season-overview', 'season-overview', 'matchday', 'team-details', 'team-performance', 'game-overview', 'game-team-details']
+league-stats-app.js?v=e9a97230:323 🔄 Rendering block: season-league-standings with state: {season: '23/24', league: '', week: '', round: '', team: ''}
+stats?season=23%2F24&database=db_real_merged:5243 🔄 getCurrentDatabase called, returning: db_real_merged
+stats?season=23%2F24&database=db_real_merged:5260 🔄 fetchWithDatabase called: {originalUrl: '/league/get_season_league_standings?season=23%2F24', urlWithDatabase: '/league/get_season_league_standings?season=23%2F24&database=db_real_merged'}
+league-stats-app.js?v=e9a97230:323 🔄 Rendering block: league-aggregation with state: {season: '23/24', league: '', week: '', round: '', team: ''}
+league-stats-app.js?v=e9a97230:323 🔄 Rendering block: league-season-overview with state: {season: '23/24', league: '', week: '', round: '', team: ''}
+league-stats-app.js?v=e9a97230:323 🔄 Rendering block: season-overview with state: {season: '23/24', league: '', week: '', round: '', team: ''}
+league-stats-app.js?v=e9a97230:323 🔄 Rendering block: matchday with state: {season: '23/24', league: '', week: '', round: '', team: ''}
+league-stats-app.js?v=e9a97230:323 🔄 Rendering block: team-details with state: {season: '23/24', league: '', week: '', round: '', team: ''}
+league-stats-app.js?v=e9a97230:323 🔄 Rendering block: team-performance with state: {season: '23/24', league: '', week: '', round: '', team: ''}
+league-stats-app.js?v=e9a97230:323 🔄 Rendering block: game-overview with state: {season: '23/24', league: '', week: '', round: '', team: ''}
+league-stats-app.js?v=e9a97230:323 🔄 Rendering block: game-team-details with state: {season: '23/24', league: '', week: '', round: '', team: ''}
+league-stats-app.js?v=e9a97230:331 ✅ Rendered block: league-aggregation
+league-stats-app.js?v=e9a97230:331 ✅ Rendered block: league-season-overview
+league-stats-app.js?v=e9a97230:331 ✅ Rendered block: season-overview
+league-stats-app.js?v=e9a97230:331 ✅ Rendered block: matchday
+league-stats-app.js?v=e9a97230:331 ✅ Rendered block: team-details
+league-stats-app.js?v=e9a97230:331 ✅ Rendered block: team-performance
+league-stats-app.js?v=e9a97230:331 ✅ Rendered block: game-overview
+league-stats-app.js?v=e9a97230:331 ✅ Rendered block: game-team-details
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+(anonymous) @ league-stats-app.js?v=e9a97230:116
+processAllButtonGroups @ centralized-button-manager.js?v=0d9c7b8f:195
+await in processAllButtonGroups
+handleInitialState @ centralized-button-manager.js?v=0d9c7b8f:113
+initialize @ centralized-button-manager.js?v=0d9c7b8f:90
+initializeContentBlocks @ league-stats-app.js?v=e9a97230:118
+initialize @ league-stats-app.js?v=e9a97230:43
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+(anonymous) @ league-stats-app.js?v=e9a97230:116
+processAllButtonGroups @ centralized-button-manager.js?v=0d9c7b8f:195
+await in processAllButtonGroups
+handleInitialState @ centralized-button-manager.js?v=0d9c7b8f:113
+initialize @ centralized-button-manager.js?v=0d9c7b8f:90
+initializeContentBlocks @ league-stats-app.js?v=e9a97230:118
+initialize @ league-stats-app.js?v=e9a97230:43
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+(anonymous) @ league-stats-app.js?v=e9a97230:116
+processAllButtonGroups @ centralized-button-manager.js?v=0d9c7b8f:195
+await in processAllButtonGroups
+handleInitialState @ centralized-button-manager.js?v=0d9c7b8f:113
+initialize @ centralized-button-manager.js?v=0d9c7b8f:90
+initializeContentBlocks @ league-stats-app.js?v=e9a97230:118
+initialize @ league-stats-app.js?v=e9a97230:43
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+(anonymous) @ league-stats-app.js?v=e9a97230:116
+processAllButtonGroups @ centralized-button-manager.js?v=0d9c7b8f:195
+await in processAllButtonGroups
+handleInitialState @ centralized-button-manager.js?v=0d9c7b8f:113
+initialize @ centralized-button-manager.js?v=0d9c7b8f:90
+initializeContentBlocks @ league-stats-app.js?v=e9a97230:118
+initialize @ league-stats-app.js?v=e9a97230:43
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+(anonymous) @ league-stats-app.js?v=e9a97230:116
+processAllButtonGroups @ centralized-button-manager.js?v=0d9c7b8f:195
+await in processAllButtonGroups
+handleInitialState @ centralized-button-manager.js?v=0d9c7b8f:113
+initialize @ centralized-button-manager.js?v=0d9c7b8f:90
+initializeContentBlocks @ league-stats-app.js?v=e9a97230:118
+initialize @ league-stats-app.js?v=e9a97230:43
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+(anonymous) @ league-stats-app.js?v=e9a97230:116
+processAllButtonGroups @ centralized-button-manager.js?v=0d9c7b8f:195
+await in processAllButtonGroups
+handleInitialState @ centralized-button-manager.js?v=0d9c7b8f:113
+initialize @ centralized-button-manager.js?v=0d9c7b8f:90
+initializeContentBlocks @ league-stats-app.js?v=e9a97230:118
+initialize @ league-stats-app.js?v=e9a97230:43
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+(anonymous) @ league-stats-app.js?v=e9a97230:116
+processAllButtonGroups @ centralized-button-manager.js?v=0d9c7b8f:195
+await in processAllButtonGroups
+handleInitialState @ centralized-button-manager.js?v=0d9c7b8f:113
+initialize @ centralized-button-manager.js?v=0d9c7b8f:90
+initializeContentBlocks @ league-stats-app.js?v=e9a97230:118
+initialize @ league-stats-app.js?v=e9a97230:43
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+(anonymous) @ league-stats-app.js?v=e9a97230:116
+processAllButtonGroups @ centralized-button-manager.js?v=0d9c7b8f:195
+await in processAllButtonGroups
+handleInitialState @ centralized-button-manager.js?v=0d9c7b8f:113
+initialize @ centralized-button-manager.js?v=0d9c7b8f:90
+initializeContentBlocks @ league-stats-app.js?v=e9a97230:118
+initialize @ league-stats-app.js?v=e9a97230:43
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+(anonymous) @ league-stats-app.js?v=e9a97230:116
+processAllButtonGroups @ centralized-button-manager.js?v=0d9c7b8f:195
+await in processAllButtonGroups
+handleInitialState @ centralized-button-manager.js?v=0d9c7b8f:113
+initialize @ centralized-button-manager.js?v=0d9c7b8f:90
+initializeContentBlocks @ league-stats-app.js?v=e9a97230:118
+initialize @ league-stats-app.js?v=e9a97230:43
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+(anonymous) @ league-stats-app.js?v=e9a97230:116
+processAllButtonGroups @ centralized-button-manager.js?v=0d9c7b8f:195
+await in processAllButtonGroups
+handleInitialState @ centralized-button-manager.js?v=0d9c7b8f:113
+initialize @ centralized-button-manager.js?v=0d9c7b8f:90
+initializeContentBlocks @ league-stats-app.js?v=e9a97230:118
+initialize @ league-stats-app.js?v=e9a97230:43
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+(anonymous) @ league-stats-app.js?v=e9a97230:116
+processAllButtonGroups @ centralized-button-manager.js?v=0d9c7b8f:195
+await in processAllButtonGroups
+handleInitialState @ centralized-button-manager.js?v=0d9c7b8f:113
+initialize @ centralized-button-manager.js?v=0d9c7b8f:90
+initializeContentBlocks @ league-stats-app.js?v=e9a97230:118
+initialize @ league-stats-app.js?v=e9a97230:43
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+(anonymous) @ league-stats-app.js?v=e9a97230:116
+processAllButtonGroups @ centralized-button-manager.js?v=0d9c7b8f:195
+await in processAllButtonGroups
+handleInitialState @ centralized-button-manager.js?v=0d9c7b8f:113
+initialize @ centralized-button-manager.js?v=0d9c7b8f:90
+initializeContentBlocks @ league-stats-app.js?v=e9a97230:118
+initialize @ league-stats-app.js?v=e9a97230:43
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+(anonymous) @ league-stats-app.js?v=e9a97230:116
+processAllButtonGroups @ centralized-button-manager.js?v=0d9c7b8f:195
+await in processAllButtonGroups
+handleInitialState @ centralized-button-manager.js?v=0d9c7b8f:113
+initialize @ centralized-button-manager.js?v=0d9c7b8f:90
+initializeContentBlocks @ league-stats-app.js?v=e9a97230:118
+initialize @ league-stats-app.js?v=e9a97230:43
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+(anonymous) @ league-stats-app.js?v=e9a97230:116
+processAllButtonGroups @ centralized-button-manager.js?v=0d9c7b8f:195
+await in processAllButtonGroups
+handleInitialState @ centralized-button-manager.js?v=0d9c7b8f:113
+initialize @ centralized-button-manager.js?v=0d9c7b8f:90
+initializeContentBlocks @ league-stats-app.js?v=e9a97230:118
+initialize @ league-stats-app.js?v=e9a97230:43
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+(anonymous) @ league-stats-app.js?v=e9a97230:116
+processAllButtonGroups @ centralized-button-manager.js?v=0d9c7b8f:195
+await in processAllButtonGroups
+handleInitialState @ centralized-button-manager.js?v=0d9c7b8f:113
+initialize @ centralized-button-manager.js?v=0d9c7b8f:90
+initializeContentBlocks @ league-stats-app.js?v=e9a97230:118
+initialize @ league-stats-app.js?v=e9a97230:43
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+(anonymous) @ league-stats-app.js?v=e9a97230:116
+processAllButtonGroups @ centralized-button-manager.js?v=0d9c7b8f:195
+await in processAllButtonGroups
+handleInitialState @ centralized-button-manager.js?v=0d9c7b8f:113
+initialize @ centralized-button-manager.js?v=0d9c7b8f:90
+initializeContentBlocks @ league-stats-app.js?v=e9a97230:118
+initialize @ league-stats-app.js?v=e9a97230:43
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+(anonymous) @ league-stats-app.js?v=e9a97230:116
+processAllButtonGroups @ centralized-button-manager.js?v=0d9c7b8f:195
+await in processAllButtonGroups
+handleInitialState @ centralized-button-manager.js?v=0d9c7b8f:113
+initialize @ centralized-button-manager.js?v=0d9c7b8f:90
+initializeContentBlocks @ league-stats-app.js?v=e9a97230:118
+initialize @ league-stats-app.js?v=e9a97230:43
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+(anonymous) @ league-stats-app.js?v=e9a97230:116
+processAllButtonGroups @ centralized-button-manager.js?v=0d9c7b8f:195
+await in processAllButtonGroups
+handleInitialState @ centralized-button-manager.js?v=0d9c7b8f:113
+initialize @ centralized-button-manager.js?v=0d9c7b8f:90
+initializeContentBlocks @ league-stats-app.js?v=e9a97230:118
+initialize @ league-stats-app.js?v=e9a97230:43
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+(anonymous) @ league-stats-app.js?v=e9a97230:116
+processAllButtonGroups @ centralized-button-manager.js?v=0d9c7b8f:195
+await in processAllButtonGroups
+handleInitialState @ centralized-button-manager.js?v=0d9c7b8f:113
+initialize @ centralized-button-manager.js?v=0d9c7b8f:90
+initializeContentBlocks @ league-stats-app.js?v=e9a97230:118
+initialize @ league-stats-app.js?v=e9a97230:43
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+(anonymous) @ league-stats-app.js?v=e9a97230:116
+processAllButtonGroups @ centralized-button-manager.js?v=0d9c7b8f:195
+await in processAllButtonGroups
+handleInitialState @ centralized-button-manager.js?v=0d9c7b8f:113
+initialize @ centralized-button-manager.js?v=0d9c7b8f:90
+initializeContentBlocks @ league-stats-app.js?v=e9a97230:118
+initialize @ league-stats-app.js?v=e9a97230:43
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BZL_N1 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_BZL_N1" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BZL_N2 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_BZL_N2" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BZL_N3 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_BZL_N3" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BZL_S1 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_BZL_S1" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BZL_S2 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_BZL_S2" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BZL_S3 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_BZL_S3" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BZOL_N1 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_BZOL_N1" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BZOL_N2 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_BZOL_N2" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BZOL_N3 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_BZOL_N3" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BZOL_S1 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_BZOL_S1" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BZOL_S3 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_BZOL_S3" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BayL with 10 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_BayL" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BayL_D with 10 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_BayL_D" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_KL_N1 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_KL_N1" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_KL_N2 with 4 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_KL_N2" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_KL_N3 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_KL_N3" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_KL_S1 with 5 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_KL_S1" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_KL_S2 with 5 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_KL_S2" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_KL_S3 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_KL_S3" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_LL_N_D with 3 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_LL_N_D" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_LL_N1 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_LL_N1" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_LL_N2 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_LL_N2" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_LL_S with 6 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_LL_S" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_LL_S_D with 8 rows
+stats?season=23%2F24&database=db_real_merged:2151 Table "tableSeasonLeagueStandings_LL_S_D" successfully created/updated (Tabulator)
+league-stats-app.js?v=e9a97230:331 ✅ Rendered block: season-league-standings
+league-stats-app.js?v=e9a97230:338 ✅ Content rendering complete
+league-stats-app.js?v=e9a97230:66 ✅ LeagueStatsApp initialized successfully
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+initialize @ league-stats-app.js?v=e9a97230:64
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+initialize @ league-stats-app.js?v=e9a97230:64
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+initialize @ league-stats-app.js?v=e9a97230:64
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+initialize @ league-stats-app.js?v=e9a97230:64
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+initialize @ league-stats-app.js?v=e9a97230:64
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+initialize @ league-stats-app.js?v=e9a97230:64
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+initialize @ league-stats-app.js?v=e9a97230:64
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+initialize @ league-stats-app.js?v=e9a97230:64
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+initialize @ league-stats-app.js?v=e9a97230:64
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+initialize @ league-stats-app.js?v=e9a97230:64
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+initialize @ league-stats-app.js?v=e9a97230:64
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+initialize @ league-stats-app.js?v=e9a97230:64
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+initialize @ league-stats-app.js?v=e9a97230:64
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+initialize @ league-stats-app.js?v=e9a97230:64
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+initialize @ league-stats-app.js?v=e9a97230:64
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+initialize @ league-stats-app.js?v=e9a97230:64
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+initialize @ league-stats-app.js?v=e9a97230:64
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+initialize @ league-stats-app.js?v=e9a97230:64
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+initialize @ league-stats-app.js?v=e9a97230:64
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+initialize @ league-stats-app.js?v=e9a97230:64
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+initialize @ league-stats-app.js?v=e9a97230:64
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+initialize @ league-stats-app.js?v=e9a97230:64
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+initialize @ league-stats-app.js?v=e9a97230:64
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+stats?season=23%2F24&database=db_real_merged:1692 Uncaught (in promise) ReferenceError: formattedValue is not defined
+    at ge.formatter (stats?season=23%2F24&database=db_real_merged:1692:81)
+    at ge.formatValue (tabulator.min.js?v=331249f2:2:235725)
+    at tabulator.min.js?v=331249f2:2:87745
+    at Array.forEach (<anonymous>)
+    at R._chain (tabulator.min.js?v=331249f2:2:87715)
+    at n.chain (tabulator.min.js?v=331249f2:2:2050)
+    at n._generateContents (tabulator.min.js?v=331249f2:2:6970)
+    at n.layoutElement (tabulator.min.js?v=331249f2:2:8500)
+    at n.getElement (tabulator.min.js?v=331249f2:2:7584)
+    at tabulator.min.js?v=331249f2:2:26940
+formatter @ stats?season=23%2F24&database=db_real_merged:1692
+formatValue @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+_chain @ tabulator.min.js?v=331249f2:2
+chain @ tabulator.min.js?v=331249f2:2
+_generateContents @ tabulator.min.js?v=331249f2:2
+layoutElement @ tabulator.min.js?v=331249f2:2
+getElement @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+renderRowCells @ tabulator.min.js?v=331249f2:2
+initialize @ tabulator.min.js?v=331249f2:2
+_virtualRenderFill @ tabulator.min.js?v=331249f2:2
+renderRows @ tabulator.min.js?v=331249f2:2
+renderTable @ tabulator.min.js?v=331249f2:2
+refreshActiveData @ tabulator.min.js?v=331249f2:2
+_setDataActual @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setData @ tabulator.min.js?v=331249f2:2
+load @ tabulator.min.js?v=331249f2:2
+_loadInitialData @ tabulator.min.js?v=331249f2:2
+_create @ tabulator.min.js?v=331249f2:2
+(anonymous) @ tabulator.min.js?v=331249f2:2
+setTimeout
+A @ tabulator.min.js?v=331249f2:2
+$e @ tabulator.min.js?v=331249f2:2
+createTableTabulator @ stats?season=23%2F24&database=db_real_merged:2148
+renderLeagueStandingsTable @ league-standings-card-utils.js?v=73f68181:122
+(anonymous) @ season-league-standings-block.js?v=9a4439c7:195
+renderSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:181
+loadSeasonLeagueStandings @ season-league-standings-block.js?v=9a4439c7:84
+await in loadSeasonLeagueStandings
+render @ season-league-standings-block.js?v=9a4439c7:31
+(anonymous) @ league-stats-app.js?v=e9a97230:330
+renderContent @ league-stats-app.js?v=e9a97230:321
+initialize @ league-stats-app.js?v=e9a97230:64
+await in initialize
+(anonymous) @ league-stats-app.js?v=e9a97230:394
+
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user encounters a ReferenceError where `formattedValue` is not defined within the Tabulator formatter.</details></think>
+
+_**Agent (default)**_
+
+Moving the rank-badge check to after `formattedValue` is defined — it's currently referenced before declaration.
+
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\templates\components\tables.html</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Interesting - in this flat path, `formattedValue` is defined at line 505, and the position column block starts at line 578.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\templates\components\tables.html</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\templates\components\tables.html</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The grouped-column formatter does not include `formattedValue`; it uses `return value ??` instead.</details></think>
+
+_**Agent (default)**_
+
+Replacing references to `formattedValue` in the grouped-column formatter — that branch never defines `formattedValue`.
+
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\templates\components\tables.html</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\templates\\components\\tables.html"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\templates\\components\\tables.html"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Here’s what broke: league standings use the **grouped** Tabulator column builder (`hasGroupTitles` is true). That formatter never defines `let formattedValue = …`; it only uses `value` and returns `value ?? ''` at the end. The rank-badge snippet was copied from the **flat** column formatter (where `formattedValue` exists) and referenced `formattedValue` anyway → `ReferenceError`.
+
+**Change:** In the grouped formatter, call `positionRankBadgeColor(field, value, value)` and render `${value ?? ''}` in the circle, same as the rest of that branch.
+
+Reload `/league/stats?...` and the console error should be gone; rank colors still follow the `#` / `pos` value.
+
+---
+
+_**User**_
+
+colors are consistent, error is gone! 
+reduce the debug output in browser side
+base-content-block.js?v=ae85feea:8 🔄 BaseContentBlock class definition loaded
+stats?season=23%2F24&database=db_real_merged:5092 🚀 Initializing application...
+stats?season=23%2F24&database=db_real_merged:5104 ✅ Application initialized
+league-stats-app.js?v=e9a97230:391 📄 DOM loaded, initializing LeagueStatsApp...
+league-stats-app.js?v=e9a97230:27 🚀 Initializing LeagueStatsApp...
+league-stats-app.js?v=e9a97230:74 🧱 Initializing content blocks...
+league-stats-app.js?v=e9a97230:78 🔄 Creating SeasonLeagueStandingsBlock...
+league-stats-app.js?v=e9a97230:80 🔄 Creating LeagueAggregationBlock...
+league-stats-app.js?v=e9a97230:82 🔄 Creating LeagueSeasonOverviewBlock...
+league-stats-app.js?v=e9a97230:84 🔄 Creating SeasonOverviewBlock...
+league-stats-app.js?v=e9a97230:86 🔄 Creating MatchDayBlock...
+league-stats-app.js?v=e9a97230:88 🔄 Creating TeamDetailsBlock...
+league-stats-app.js?v=e9a97230:90 🔄 Creating TeamPerformanceBlock...
+league-stats-app.js?v=e9a97230:92 🔄 Creating GameOverviewBlock...
+league-stats-app.js?v=e9a97230:94 🔄 Creating GameTeamDetailsBlock...
+league-stats-app.js?v=e9a97230:108 ✅ Content blocks initialized
+centralized-button-manager.js?v=0d9c7b8f:103 🚀 CentralizedButtonManager: Handling initial state: {team: '', season: '23/24', division: '', week: '', round: '', …}
+centralized-button-manager.js?v=0d9c7b8f:182 📋 CentralizedButtonManager: Processing groups: (6) ['season', 'division', 'league', 'week', 'round', 'team']
+centralized-button-manager.js?v=0d9c7b8f:183 📋 CentralizedButtonManager: Current constraints: {}
+centralized-button-manager.js?v=0d9c7b8f:232 🔧 CentralizedButtonManager: Processing group season
+centralized-button-manager.js?v=0d9c7b8f:331 🌐 CentralizedButtonManager: Fetching candidates for season: /league/get_available_seasons?database=db_real_merged
+centralized-button-manager.js?v=0d9c7b8f:332 🌐 CentralizedButtonManager: Current constraints for season: {}
+stats?season=23%2F24&database=db_real_merged:397 Sources info response: {available_sources: Array(8), current_display_name: 'Real Data (Merged League)', current_source: 'db_real_merged', sources_info: {…}, success: true}
+stats?season=23%2F24&database=db_real_merged:402 Loaded sources info: {db_real_merged: {…}}
+stats?season=23%2F24&database=db_real_merged:403 Current source: db_real_merged
+centralized-button-manager.js?v=0d9c7b8f:341 📊 CentralizedButtonManager: Received candidates for season: (4) ['22/23', '23/24', '24/25', '25/26']
+centralized-button-manager.js?v=0d9c7b8f:263 ✅ CentralizedButtonManager: Keeping current selection for season: 23/24
+centralized-button-manager.js?v=0d9c7b8f:295 🎨 CentralizedButtonManager: Populating buttons for season with 4 candidates
+centralized-button-manager.js?v=0d9c7b8f:364 🎨 CentralizedButtonManager: Populating season - current selection: "23/24", candidates: (4) ['22/23', '23/24', '24/25', '25/26']
+centralized-button-manager.js?v=0d9c7b8f:454 ✅ CentralizedButtonManager: Populated season with 4 candidates, selected: 23/24
+centralized-button-manager.js?v=0d9c7b8f:455 ✅ CentralizedButtonManager: Created 4 buttons for season
+centralized-button-manager.js?v=0d9c7b8f:232 🔧 CentralizedButtonManager: Processing group division
+centralized-button-manager.js?v=0d9c7b8f:321 🔗 CentralizedButtonManager: Adding constraint season=23/24 for division
+centralized-button-manager.js?v=0d9c7b8f:331 🌐 CentralizedButtonManager: Fetching candidates for division: /league/get_available_divisions?season=23%2F24&database=db_real_merged
+centralized-button-manager.js?v=0d9c7b8f:332 🌐 CentralizedButtonManager: Current constraints for division: {season: '23/24'}
+centralized-button-manager.js?v=0d9c7b8f:341 📊 CentralizedButtonManager: Received candidates for division: (3) [{…}, {…}, {…}]
+centralized-button-manager.js?v=0d9c7b8f:283 🔄 CentralizedButtonManager: Invalid selection for division, clearing selection
+centralized-button-manager.js?v=0d9c7b8f:295 🎨 CentralizedButtonManager: Populating buttons for division with 3 candidates
+centralized-button-manager.js?v=0d9c7b8f:364 🎨 CentralizedButtonManager: Populating division - current selection: "", candidates: (3) [{…}, {…}, {…}]
+centralized-button-manager.js?v=0d9c7b8f:454 ✅ CentralizedButtonManager: Populated division with 3 candidates, selected: 
+centralized-button-manager.js?v=0d9c7b8f:455 ✅ CentralizedButtonManager: Created 3 buttons for division
+centralized-button-manager.js?v=0d9c7b8f:232 🔧 CentralizedButtonManager: Processing group league
+centralized-button-manager.js?v=0d9c7b8f:237 ⚠️ CentralizedButtonManager: Prerequisites not met for league
+centralized-button-manager.js?v=0d9c7b8f:238 ⚠️ CentralizedButtonManager: Clearing buttons for league
+centralized-button-manager.js?v=0d9c7b8f:232 🔧 CentralizedButtonManager: Processing group week
+centralized-button-manager.js?v=0d9c7b8f:237 ⚠️ CentralizedButtonManager: Prerequisites not met for week
+centralized-button-manager.js?v=0d9c7b8f:238 ⚠️ CentralizedButtonManager: Clearing buttons for week
+centralized-button-manager.js?v=0d9c7b8f:232 🔧 CentralizedButtonManager: Processing group round
+centralized-button-manager.js?v=0d9c7b8f:237 ⚠️ CentralizedButtonManager: Prerequisites not met for round
+centralized-button-manager.js?v=0d9c7b8f:238 ⚠️ CentralizedButtonManager: Clearing buttons for round
+centralized-button-manager.js?v=0d9c7b8f:232 🔧 CentralizedButtonManager: Processing group team
+centralized-button-manager.js?v=0d9c7b8f:237 ⚠️ CentralizedButtonManager: Prerequisites not met for team
+centralized-button-manager.js?v=0d9c7b8f:238 ⚠️ CentralizedButtonManager: Clearing buttons for team
+centralized-button-manager.js?v=0d9c7b8f:192 🔄 CentralizedButtonManager: Triggering state change callback with state: {team: '', season: '23/24', division: '', week: '', round: '', …}
+centralized-button-manager.js?v=0d9c7b8f:193 🔄 CentralizedButtonManager: Callback function: function
+league-stats-app.js?v=e9a97230:112 🔄 LeagueStatsApp: Button state changed, rendering content: {team: '', season: '23/24', division: '', week: '', round: '', …}
+league-stats-app.js?v=e9a97230:113 🔄 LeagueStatsApp: State keys: (8) ['team', 'season', 'division', 'week', 'round', 'league', 'league_long', 'database']
+league-stats-app.js?v=e9a97230:114 🔄 LeagueStatsApp: Round value:  Type: string
+league-stats-app.js?v=e9a97230:311 🎨 Rendering content for state: {team: '', season: '23/24', division: '', week: '', round: '', …}
+league-stats-app.js?v=e9a97230:312 🎨 Available content blocks: (9) ['season-league-standings', 'league-aggregation', 'league-season-overview', 'season-overview', 'matchday', 'team-details', 'team-performance', 'game-overview', 'game-team-details']
+league-stats-app.js?v=e9a97230:323 🔄 Rendering block: season-league-standings with state: {season: '23/24', league: '', week: '', round: '', team: ''}
+stats?season=23%2F24&database=db_real_merged:5244 🔄 getCurrentDatabase called, returning: db_real_merged
+stats?season=23%2F24&database=db_real_merged:5261 🔄 fetchWithDatabase called: {originalUrl: '/league/get_season_league_standings?season=23%2F24', urlWithDatabase: '/league/get_season_league_standings?season=23%2F24&database=db_real_merged'}
+league-stats-app.js?v=e9a97230:323 🔄 Rendering block: league-aggregation with state: {season: '23/24', league: '', week: '', round: '', team: ''}
+league-stats-app.js?v=e9a97230:323 🔄 Rendering block: league-season-overview with state: {season: '23/24', league: '', week: '', round: '', team: ''}
+league-stats-app.js?v=e9a97230:323 🔄 Rendering block: season-overview with state: {season: '23/24', league: '', week: '', round: '', team: ''}
+league-stats-app.js?v=e9a97230:323 🔄 Rendering block: matchday with state: {season: '23/24', league: '', week: '', round: '', team: ''}
+league-stats-app.js?v=e9a97230:323 🔄 Rendering block: team-details with state: {season: '23/24', league: '', week: '', round: '', team: ''}
+league-stats-app.js?v=e9a97230:323 🔄 Rendering block: team-performance with state: {season: '23/24', league: '', week: '', round: '', team: ''}
+league-stats-app.js?v=e9a97230:323 🔄 Rendering block: game-overview with state: {season: '23/24', league: '', week: '', round: '', team: ''}
+league-stats-app.js?v=e9a97230:323 🔄 Rendering block: game-team-details with state: {season: '23/24', league: '', week: '', round: '', team: ''}
+centralized-button-manager.js?v=0d9c7b8f:196 ✅ CentralizedButtonManager: State change callback executed successfully
+league-stats-app.js?v=e9a97230:331 ✅ Rendered block: league-aggregation
+league-stats-app.js?v=e9a97230:331 ✅ Rendered block: league-season-overview
+league-stats-app.js?v=e9a97230:331 ✅ Rendered block: season-overview
+league-stats-app.js?v=e9a97230:331 ✅ Rendered block: matchday
+league-stats-app.js?v=e9a97230:331 ✅ Rendered block: team-details
+league-stats-app.js?v=e9a97230:331 ✅ Rendered block: team-performance
+league-stats-app.js?v=e9a97230:331 ✅ Rendered block: game-overview
+league-stats-app.js?v=e9a97230:331 ✅ Rendered block: game-team-details
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BZL_N1 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_BZL_N1" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BZL_N2 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_BZL_N2" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BZL_N3 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_BZL_N3" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BZL_S1 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_BZL_S1" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BZL_S2 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_BZL_S2" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BZL_S3 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_BZL_S3" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BZOL_N1 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_BZOL_N1" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BZOL_N2 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_BZOL_N2" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BZOL_N3 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_BZOL_N3" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BZOL_S1 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_BZOL_S1" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BZOL_S3 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_BZOL_S3" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BayL with 10 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_BayL" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BayL_D with 10 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_BayL_D" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_KL_N1 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_KL_N1" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_KL_N2 with 4 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_KL_N2" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_KL_N3 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_KL_N3" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_KL_S1 with 5 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_KL_S1" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_KL_S2 with 5 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_KL_S2" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_KL_S3 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_KL_S3" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_LL_N_D with 3 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_LL_N_D" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_LL_N1 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_LL_N1" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_LL_N2 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_LL_N2" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_LL_S with 6 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_LL_S" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_LL_S_D with 8 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_LL_S_D" successfully created/updated (Tabulator)
+league-stats-app.js?v=e9a97230:331 ✅ Rendered block: season-league-standings
+league-stats-app.js?v=e9a97230:338 ✅ Content rendering complete
+league-stats-app.js?v=e9a97230:311 🎨 Rendering content for state: {team: '', season: '23/24', division: '', week: '', round: '', …}
+league-stats-app.js?v=e9a97230:312 🎨 Available content blocks: (9) ['season-league-standings', 'league-aggregation', 'league-season-overview', 'season-overview', 'matchday', 'team-details', 'team-performance', 'game-overview', 'game-team-details']
+league-stats-app.js?v=e9a97230:323 🔄 Rendering block: season-league-standings with state: {season: '23/24', league: '', week: '', round: '', team: ''}
+stats?season=23%2F24&database=db_real_merged:5244 🔄 getCurrentDatabase called, returning: db_real_merged
+stats?season=23%2F24&database=db_real_merged:5261 🔄 fetchWithDatabase called: {originalUrl: '/league/get_season_league_standings?season=23%2F24', urlWithDatabase: '/league/get_season_league_standings?season=23%2F24&database=db_real_merged'}
+league-stats-app.js?v=e9a97230:323 🔄 Rendering block: league-aggregation with state: {season: '23/24', league: '', week: '', round: '', team: ''}
+league-stats-app.js?v=e9a97230:323 🔄 Rendering block: league-season-overview with state: {season: '23/24', league: '', week: '', round: '', team: ''}
+league-stats-app.js?v=e9a97230:323 🔄 Rendering block: season-overview with state: {season: '23/24', league: '', week: '', round: '', team: ''}
+league-stats-app.js?v=e9a97230:323 🔄 Rendering block: matchday with state: {season: '23/24', league: '', week: '', round: '', team: ''}
+league-stats-app.js?v=e9a97230:323 🔄 Rendering block: team-details with state: {season: '23/24', league: '', week: '', round: '', team: ''}
+league-stats-app.js?v=e9a97230:323 🔄 Rendering block: team-performance with state: {season: '23/24', league: '', week: '', round: '', team: ''}
+league-stats-app.js?v=e9a97230:323 🔄 Rendering block: game-overview with state: {season: '23/24', league: '', week: '', round: '', team: ''}
+league-stats-app.js?v=e9a97230:323 🔄 Rendering block: game-team-details with state: {season: '23/24', league: '', week: '', round: '', team: ''}
+league-stats-app.js?v=e9a97230:331 ✅ Rendered block: league-aggregation
+league-stats-app.js?v=e9a97230:331 ✅ Rendered block: league-season-overview
+league-stats-app.js?v=e9a97230:331 ✅ Rendered block: season-overview
+league-stats-app.js?v=e9a97230:331 ✅ Rendered block: matchday
+league-stats-app.js?v=e9a97230:331 ✅ Rendered block: team-details
+league-stats-app.js?v=e9a97230:331 ✅ Rendered block: team-performance
+league-stats-app.js?v=e9a97230:331 ✅ Rendered block: game-overview
+league-stats-app.js?v=e9a97230:331 ✅ Rendered block: game-team-details
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BZL_N1 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_BZL_N1" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BZL_N2 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_BZL_N2" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BZL_N3 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_BZL_N3" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BZL_S1 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_BZL_S1" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BZL_S2 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_BZL_S2" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BZL_S3 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_BZL_S3" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BZOL_N1 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_BZOL_N1" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BZOL_N2 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_BZOL_N2" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BZOL_N3 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_BZOL_N3" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BZOL_S1 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_BZOL_S1" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BZOL_S3 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_BZOL_S3" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BayL with 10 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_BayL" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_BayL_D with 10 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_BayL_D" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_KL_N1 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_KL_N1" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_KL_N2 with 4 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_KL_N2" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_KL_N3 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_KL_N3" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_KL_S1 with 5 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_KL_S1" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_KL_S2 with 5 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_KL_S2" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_KL_S3 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_KL_S3" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_LL_N_D with 3 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_LL_N_D" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_LL_N1 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_LL_N1" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_LL_N2 with 6 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_LL_N2" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_LL_S with 6 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_LL_S" successfully created/updated (Tabulator)
+league-standings-card-utils.js?v=73f68181:121 Creating Tabulator table tableSeasonLeagueStandings_LL_S_D with 8 rows
+stats?season=23%2F24&database=db_real_merged:2152 Table "tableSeasonLeagueStandings_LL_S_D" successfully created/updated (Tabulator)
+league-stats-app.js?v=e9a97230:331 ✅ Rendered block: season-league-standings
+league-stats-app.js?v=e9a97230:338 ✅ Content rendering complete
+league-stats-app.js?v=e9a97230:66 ✅ LeagueStatsApp initialized successfully
+
+keep central info like queries, but dont report every single UI bit
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user aims to minimize verbose console output.</details></think>
+
+_**Agent (default)**_
+
+Searching for `console.log` usage in league stats and related scripts to gate verbose logs while preserving fetch/query logging.
+
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\static\\js\\league-stats-app.js",
+  "pattern": "console\\.(log|debug|info)"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\static\\js\\league-stats-app.js",
+  "pattern": "console\\.(log|debug|info)",
+  "topFiles": [
+    {
+      "matchCount": 34,
+      "uri": "app\\static\\js\\league-stats-app.js"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 34
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\static\\js\\centralized-button-manager.js",
+  "pattern": "console\\.(log|debug|info)"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\static\\js\\centralized-button-manager.js",
+  "pattern": "console\\.(log|debug|info)",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\static\\js\\utils\\league-standings-card-utils.js",
+  "pattern": "console\\.(log|debug|info)"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\static\\js\\utils\\league-standings-card-utils.js",
+  "pattern": "console\\.(log|debug|info)",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "app\\static\\js\\utils\\league-standings-card-utils.js"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 2
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\static\\js\\content-blocks\\base-content-block.js",
+  "pattern": "console\\.(log|debug|info)"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\static\\js\\content-blocks\\base-content-block.js",
+  "pattern": "console\\.(log|debug|info)",
+  "topFiles": [
+    {
+      "matchCount": 9,
+      "uri": "app\\static\\js\\content-blocks\\base-content-block.js"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 9
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\templates\\league",
+  "pattern": "console\\.(log|debug|info)"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\templates\\league",
+  "pattern": "console\\.(log|debug|info)",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **1** result in **1** directory</summary>
+
+Directory: **c:\Users\cfell\repos\bowlyzer_legacy** (1 file)
+
+| File |
+|------|
+| `../app/static/js/core/centralized-button-manager.js` |
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\templates\\components\\tables.html",
+  "pattern": "console\\.(log|debug|info)"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\templates\\components\\tables.html",
+  "pattern": "console\\.(log|debug|info)",
+  "topFiles": [
+    {
+      "matchCount": 7,
+      "uri": "app\\templates\\components\\tables.html"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 7
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **4** results in **1** directory</summary>
+
+Directory: **c:\Users\cfell\repos\bowlyzer_legacy** (4 files)
+
+| File |
+|------|
+| `../app/templates/tournament/stats.html` |
+| `../app/templates/team/stats.html` |
+| `../app\templates\tournament\stats.html` |
+| `../app/templates/league/stats.html` |
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I need to add a small shared debug flag helper, potentially in the league-stats-app. I'll implement a debug flag helper using `window.__BOWL_LEAGUE_UI_DEBUG__`, `localStorage`, or query parameters, with a fallback to `false` if any step fails. The function will check for `bowlyzerLeagueUiDebug` in `localStorage` or `leagueUiDebug` in the URL search params, defaulting to `false` if none are found or if an error occurs during evaluation. Use `window.__bowlyzerLeagueUiDebug` set based on `localStorage` or URL parameters, read at the start of `league-stats-app.js`.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\templates\\league\\stats.html",
+  "pattern": "console\\.(log|debug|info)"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\templates\\league\\stats.html",
+  "pattern": "console\\.(log|debug|info)",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\static\\js\\core\\centralized-button-manager.js",
+  "pattern": "console\\.(log|debug|info)"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\static\\js\\core\\centralized-button-manager.js",
+  "pattern": "console\\.(log|debug|info)",
+  "topFiles": [
+    {
+      "matchCount": 37,
+      "uri": "app\\static\\js\\core\\centralized-button-manager.js"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 37
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The file stats.html may embed scripts differently, as grep did not find any console references in league/stats.html.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\templates\\league",
+  "pattern": "console\\.|getCurrentDatabase|fetchWithDatabase"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\templates\\league",
+  "pattern": "console\\.|getCurrentDatabase|fetchWithDatabase",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **3** results in **1** directory</summary>
+
+Directory: **c:\Users\cfell\repos\bowlyzer_legacy\app\templates** (3 files)
+
+| File |
+|------|
+| `../app/templates/league/stats.html` |
+| `../app/templates/league/club_matrix.html` |
+| `../app/templates/league/week_matrix.html` |
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\templates\league\stats.html</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app",
+  "pattern": "getCurrentDatabase|fetchWithDatabase|Initializing application"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app",
+  "pattern": "getCurrentDatabase|fetchWithDatabase|Initializing application",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "app/static/js/legacy/team-filter-utils.js"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/static/js/content-blocks/season-league-standings-block.js"
+    },
+    {
+      "matchCount": 4,
+      "uri": "app/static/js/content-blocks/season-overview-block.js"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/static/js/content-blocks/game-overview-block.js"
+    },
+    {
+      "matchCount": 5,
+      "uri": "app\\static\\js\\content-blocks\\league-season-overview-block.js"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/static/js/content-blocks/game-team-details-block.js"
+    },
+    {
+      "matchCount": 5,
+      "uri": "app/static/js/content-blocks/league-season-overview-block.js"
+    },
+    {
+      "matchCount": 4,
+      "uri": "app/static/js/legacy/team-chart-utils.js"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app\\static\\js\\content-blocks\\matchday-block.js"
+    },
+    {
+      "matchCount": 3,
+      "uri": "app/static/js/league-stats-app.js"
+    },
+    {
+      "matchCount": 4,
+      "uri": "app\\static\\js\\content-blocks\\season-overview-block.js"
+    },
+    {
+      "matchCount": 4,
+      "uri": "app/templates/index.html"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/static/js/league/league-chart-utils.js"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app/static/js/core/simple-filter-manager.js"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app/static/js/tournament-stats-app.js"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app\\static\\js\\tournament-stats-app.js"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/static/js/content-blocks/base-content-block.js"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app/static/js/content-blocks/matchday-block.js"
+    },
+    {
+      "matchCount": 3,
+      "uri": "app/static/js/legacy/team-data-utils.js"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/static/js/api-test-app.js"
+    }
+  ],
+  "totalFiles": 31,
+  "totalMatches": 82
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants to reduce debug output on the browser side. Keep essential information such as fetch URLs while reducing verbose UI logs. Gate or remove detailed logging for database operations, class loading, emoji outputs, and button manager logs, retaining only necessary query details when debugging is enabled. Keep only the fetch URLs and gate all other logs unless debugging is enabled.</details></think>

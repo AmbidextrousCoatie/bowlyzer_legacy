@@ -162,9 +162,26 @@ class MatchDayBlock extends BaseContentBlock {
         const { season, league, week } = state;
         
         try {
-            // Load table, honor scores, individual averages, and team vs team comparison in parallel
+            let tableData = null;
+            try {
+                const response = await fetchWithDatabase(
+                    `/league/get_league_week_table?season=${season}&league=${league}&week=${week}`
+                );
+                tableData = await response.json();
+            } catch (error) {
+                console.error('Error loading league week table:', error);
+                const container = document.getElementById('tableLeagueWeek');
+                if (container) {
+                    container.innerHTML = `<div class="alert alert-danger">${typeof t === 'function' ? t('error_loading_data', 'Error loading week results') : 'Error loading week results'}</div>`;
+                }
+            }
+
+            if (tableData && window.ColorUtils && typeof window.ColorUtils.seedTeamColorsFromLeagueTablePayload === 'function') {
+                window.ColorUtils.seedTeamColorsFromLeagueTablePayload(tableData);
+            }
+
             await Promise.all([
-                this.loadLeagueWeekTable(season, league, week),
+                tableData != null ? this.renderLeagueWeekTableFromData(tableData) : Promise.resolve(),
                 this.loadHonorScores(season, league, week),
                 this.loadIndividualAverages(state),
                 this.loadTeamVsTeamComparison(season, league, week)
@@ -175,41 +192,28 @@ class MatchDayBlock extends BaseContentBlock {
         }
     }
 
-    async loadLeagueWeekTable(season, league, week) {
-        try {
-            const response = await fetchWithDatabase(`/league/get_league_week_table?season=${season}&league=${league}&week=${week}`);
-            const tableData = await response.json();
-            
-            
-            // Use shared utility function
-            if (typeof window.renderLeagueStandingsTable === 'function') {
-                window.renderLeagueStandingsTable('tableLeagueWeek', tableData);
-            } else {
-                // Fallback to old implementation
-                const container = document.getElementById('tableLeagueWeek');
-                if (container) {
-                    if (typeof createTableTabulator === 'function') {
-                        createTableTabulator('tableLeagueWeek', tableData, { 
-                            disablePositionCircle: false,
-                            enableSpecialRowStyling: true,
-                            tooltips: true
-                        });
-                    } else if (typeof createTableBootstrap3 === 'function') {
-                        createTableBootstrap3('tableLeagueWeek', tableData, { 
-                            disablePositionCircle: false,
-                            enableSpecialRowStyling: true 
-                        });
-                    } else {
-                        container.innerHTML = `<div class="alert alert-warning">${typeof t === 'function' ? t('no_data', 'Table creation function not available') : 'Table creation function not available'}</div>`;
-                    }
-                }
-            }
-        } catch (error) {
-            console.error('Error loading league week table:', error);
-            const container = document.getElementById('tableLeagueWeek');
-            if (container) {
-                container.innerHTML = `<div class="alert alert-danger">${typeof t === 'function' ? t('error_loading_data', 'Error loading week results') : 'Error loading week results'}</div>`;
-            }
+    async renderLeagueWeekTableFromData(tableData) {
+        if (typeof window.renderLeagueStandingsTable === 'function') {
+            window.renderLeagueStandingsTable('tableLeagueWeek', tableData);
+            return;
+        }
+        const container = document.getElementById('tableLeagueWeek');
+        if (!container) {
+            return;
+        }
+        if (typeof createTableTabulator === 'function') {
+            createTableTabulator('tableLeagueWeek', tableData, { 
+                disablePositionCircle: false,
+                enableSpecialRowStyling: true,
+                tooltips: true
+            });
+        } else if (typeof createTableBootstrap3 === 'function') {
+            createTableBootstrap3('tableLeagueWeek', tableData, { 
+                disablePositionCircle: false,
+                enableSpecialRowStyling: true 
+            });
+        } else {
+            container.innerHTML = `<div class="alert alert-warning">${typeof t === 'function' ? t('no_data', 'Table creation function not available') : 'Table creation function not available'}</div>`;
         }
     }
 

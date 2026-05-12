@@ -184,6 +184,10 @@ class LeagueSeasonOverviewBlock extends BaseContentBlock {
             
             const [standingsData, pointsData, positionsData, timetableData] = await Promise.all(dataPromises);
 
+            if (standingsData && window.ColorUtils && typeof window.ColorUtils.seedTeamColorsFromLeagueTablePayload === 'function') {
+                window.ColorUtils.seedTeamColorsFromLeagueTablePayload(standingsData);
+            }
+
             // Create components with available data
             if (timetableData) this.createTimetable(timetableData);
             if (standingsData) this.createStandingsTable(standingsData);

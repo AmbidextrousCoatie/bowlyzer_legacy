@@ -13,8 +13,18 @@ from app.config.debug_config import debug_config
 from app.models.table_data import TableData, ColumnGroup, Column
 from app.utils.league_utils import resolve_league_long_name, get_league_division_map
 from app.config.database_config import database_config
+from app.cache.league_response_cache import league_cache_put, league_cache_try_get
 
 bp = Blueprint('league', __name__)
+
+def _league_json_cache_get(endpoint_key: str):
+    return league_cache_try_get(endpoint_key, request.args.get("database"), dict(request.args))
+
+
+def _league_json_cache_put(endpoint_key: str, payload):
+    if payload is None:
+        return
+    league_cache_put(endpoint_key, request.args.get("database"), dict(request.args), payload)
 
 def get_league_service():
     """Helper function to get LeagueService with database parameter"""
@@ -146,6 +156,10 @@ def get_game_overview():
         except ValueError:
             return jsonify({"error": "Week and round must be valid integers"}), 400
         
+        hit = _league_json_cache_get("get_game_overview")
+        if hit is not None:
+            return jsonify(hit)
+
         league_service = get_league_service()
         table_data = league_service.get_game_overview_data(
             season=season,
@@ -153,11 +167,12 @@ def get_game_overview():
             week=week,
             round_number=round_number
         )
-        
+
         response_data = table_data.to_dict()
+        _league_json_cache_put("get_game_overview", response_data)
         response_size = sys.getsizeof(str(response_data))
         debug_config.log_route('league.get_game_overview', params, response_size)
-        
+
         return jsonify(response_data)
     except Exception as e:
         debug_config.log_route('league.get_game_overview', dict(request.args), f"ERROR: {str(e)}")
@@ -186,6 +201,10 @@ def get_game_team_details():
         except ValueError:
             return jsonify({"error": "Week and round must be valid integers"}), 400
         
+        hit = _league_json_cache_get("get_game_team_details")
+        if hit is not None:
+            return jsonify(hit)
+
         league_service = get_league_service()
         table_data = league_service.get_game_team_details_data(
             season=season,
@@ -194,11 +213,12 @@ def get_game_team_details():
             team=team,
             round_number=round_number
         )
-        
+
         response_data = table_data.to_dict()
+        _league_json_cache_put("get_game_team_details", response_data)
         response_size = sys.getsizeof(str(response_data))
         debug_config.log_route('league.get_game_team_details', params, response_size)
-        
+
         return jsonify(response_data)
     except Exception as e:
         debug_config.log_route('league.get_game_team_details', dict(request.args), f"ERROR: {str(e)}")
@@ -233,19 +253,24 @@ def get_league_history():
         
         if not all([season, league]):
             return jsonify({'error': 'Missing required parameters'}), 400
-        
+
+        hit = _league_json_cache_get("get_league_history")
+        if hit is not None:
+            return jsonify(hit)
+
         league_service = get_league_service()
         table_data = league_service.get_league_history_table_data(
             league_name=league,
             season=season
         )
-        
+
         response_data = table_data.to_dict()
+        _league_json_cache_put("get_league_history", response_data)
         response_size = sys.getsizeof(str(response_data))
         debug_config.log_route('league.get_league_history', params, response_size)
-        
+
         return jsonify(response_data)
-        
+
     except Exception as e:
         debug_config.log_route('league.get_league_history', dict(request.args), f"ERROR: {str(e)}")
         return jsonify({'error': str(e)}), 500
@@ -263,16 +288,21 @@ def get_league_week_table():
         if not season or not league:
             return jsonify({"error": i18n_service.get_text("season_league_required")}), 400
 
+        hit = _league_json_cache_get("get_league_week_table")
+        if hit is not None:
+            return jsonify(hit)
+
         league_service = get_league_service()
         table_data = league_service.get_league_week_table_simple(season=season, league=league, week=week)
-        
+
         if not table_data:
             return jsonify({"message": "No data found for these filters"}), 404
-        
+
         response_data = table_data.to_dict()
+        _league_json_cache_put("get_league_week_table", response_data)
         response_size = sys.getsizeof(str(response_data))
         debug_config.log_route('league.get_league_week_table', params, response_size)
-        
+
         return jsonify(response_data)
     except Exception as e:
         debug_config.log_route('league.get_league_week_table', dict(request.args), f"ERROR: {str(e)}")
@@ -292,15 +322,20 @@ def get_season_league_standings():
         if not season:
             return jsonify({"error": i18n_service.get_text("season_required")}), 400
 
+        hit = _league_json_cache_get("get_season_league_standings")
+        if hit is not None:
+            return jsonify(hit)
+
         league_service = get_league_service()
         standings_data = league_service.get_season_league_standings(season=season, division=division)
-        
+
         if not standings_data:
             return jsonify({"message": "No data found for this season"}), 404
-        
+
+        _league_json_cache_put("get_season_league_standings", standings_data)
         response_size = sys.getsizeof(str(standings_data))
         debug_config.log_route('league.get_season_league_standings', params, response_size)
-        
+
         return jsonify(standings_data)
     except Exception as e:
         debug_config.log_route('league.get_season_league_standings', dict(request.args), f"ERROR: {str(e)}")
@@ -319,20 +354,24 @@ def get_team_week_details_table():
         if not all([season, league, week, team]):
             return jsonify({'error': i18n_service.get_text('missing_parameters')}), 400
         
-        # Get the table data from the service
+        hit = _league_json_cache_get("get_team_week_details_table")
+        if hit is not None:
+            return jsonify(hit)
+
         league_service = get_league_service()
         table_data = league_service.get_team_week_details_table_data(
-            league=league, 
-            season=season, 
+            league=league,
+            season=season,
             team=team,
             week=week
         )
-        
+
         if not table_data:
             return jsonify({"message": "No data found for these filters"}), 404
-        
-        # Convert TableData to dictionary and return as JSON
-        return jsonify(table_data.to_dict())
+
+        payload = table_data.to_dict()
+        _league_json_cache_put("get_team_week_details_table", payload)
+        return jsonify(payload)
         
     except Exception as e:
         import traceback
@@ -353,22 +392,26 @@ def get_team_week_head_to_head_table():
             return jsonify({'error': 'Missing required parameters'}), 400
         
         week = int(week_str)
-        
-        # Get the table data from the service
+
+        hit = _league_json_cache_get("get_team_week_head_to_head_table")
+        if hit is not None:
+            return jsonify(hit)
+
         league_service = get_league_service()
         table_data = league_service.get_team_week_head_to_head_table_data(
-            league=league, 
-            season=season, 
-            team=team, 
+            league=league,
+            season=season,
+            team=team,
             week=week,
             view_mode=view_mode
         )
-        
+
         if not table_data:
             return jsonify({"message": "No data found for these filters"}), 404
-        
-        # Convert TableData to dictionary and return as JSON
-        return jsonify(table_data.to_dict())
+
+        payload = table_data.to_dict()
+        _league_json_cache_put("get_team_week_head_to_head_table", payload)
+        return jsonify(payload)
         
     except Exception as e:
         import traceback
@@ -466,20 +509,22 @@ def get_honor_scores():
         week = int(request.args.get('week'))
         
 
-        
-        league_service = get_league_service()
-        
-        honor_scores = league_service.get_honor_scores(
-            league=league, 
-            season=season, 
-            week=week, 
-            number_of_individual_scores=3, 
-            number_of_team_scores=3, 
-            number_of_individual_averages=3, 
-            number_of_team_averages=3
-        )
-        
+        hit = _league_json_cache_get("get_honor_scores")
+        if hit is not None:
+            return jsonify(hit)
 
+        league_service = get_league_service()
+
+        honor_scores = league_service.get_honor_scores(
+            league=league,
+            season=season,
+            week=week,
+            number_of_individual_scores=3,
+            number_of_team_scores=3,
+            number_of_individual_averages=3,
+            number_of_team_averages=3,
+        )
+        _league_json_cache_put("get_honor_scores", honor_scores)
         return jsonify(honor_scores)
     except Exception as e:
         print(f"Error in get_honor_scores: {str(e)}")
@@ -495,14 +540,17 @@ def get_team_points():
         print(f"Team Points - Received request with: season={season}, league={league}")
         if not all([season, league]):
             return jsonify({'error': i18n_service.get_text('missing_parameters')}), 400
-            
+
+        hit = _league_json_cache_get("get_team_points")
+        if hit is not None:
+            return jsonify(hit)
+
         league_service = get_league_service()
         points = league_service.get_team_points_simple(
             league_name=league,
             season=season
         )
-        
-        #print(points)
+        _league_json_cache_put("get_team_points", points)
         return jsonify(points)
         
     except Exception as e:
@@ -547,14 +595,17 @@ def get_team_positions():
         print(f"Team Positions - Received request with: season={season}, league={league}")
         if not all([season, league]):
             return jsonify({'error': i18n_service.get_text('missing_parameters')}), 400
-            
+
+        hit = _league_json_cache_get("get_team_positions")
+        if hit is not None:
+            return jsonify(hit)
+
         league_service = get_league_service()
         positions = league_service.get_team_positions_simple(
             league_name=league,
             season=season
         )
-        
-        #print(positions)
+        _league_json_cache_put("get_team_positions", positions)
         return jsonify(positions)
         
     except Exception as e:
@@ -572,13 +623,17 @@ def get_team_averages():
 
         if not all([season, league]):
             return jsonify({'error': i18n_service.get_text('missing_parameters')}), 400
-            
+
+        hit = _league_json_cache_get("get_team_averages")
+        if hit is not None:
+            return jsonify(hit)
+
         league_service = get_league_service()
         averages = league_service.get_team_averages_simple(
             league_name=league,
             season=season
         )
-        #print(averages)
+        _league_json_cache_put("get_team_averages", averages)
         return jsonify(averages)
         
     except Exception as e:
@@ -829,6 +884,11 @@ def get_team_individual_scores_table():
         if not all([season, league, week_str, team]):
             return jsonify({'error': 'Missing required parameters'}), 400
         week = int(week_str)
+
+        hit = _league_json_cache_get("get_team_individual_scores_table")
+        if hit is not None:
+            return jsonify(hit)
+
         league_service = get_league_service()
         table_data = league_service.get_team_individual_scores_table(
             league=league,
@@ -836,7 +896,9 @@ def get_team_individual_scores_table():
             team=team,
             week=week
         )
-        return jsonify(table_data.to_dict())
+        payload = table_data.to_dict()
+        _league_json_cache_put("get_team_individual_scores_table", payload)
+        return jsonify(payload)
     except Exception as e:
         import traceback
         print(f"Error in get_team_individual_scores_table: {str(e)}")
@@ -857,10 +919,15 @@ def get_league_averages_history():
             return jsonify({'error': 'Missing required parameter: league'}), 400
         
         print(f"League Averages History - Received request with: league={league}")
-        
+
+        hit = _league_json_cache_get("get_league_averages_history")
+        if hit is not None:
+            return jsonify(hit)
+
         debug = request.args.get('debug', 'false').lower() == 'true'
         league_service = get_league_service()
         data = league_service.get_league_averages_history(league=league, debug=debug)
+        _league_json_cache_put("get_league_averages_history", data)
         return jsonify(data)
         
     except Exception as e:
@@ -877,10 +944,15 @@ def get_points_to_win_history():
             return jsonify({'error': 'Missing required parameter: league'}), 400
         
         print(f"Points to Win History - Received request with: league={league}")
-        
+
+        hit = _league_json_cache_get("get_points_to_win_history")
+        if hit is not None:
+            return jsonify(hit)
+
         debug = request.args.get('debug', 'false').lower() == 'true'
         league_service = get_league_service()
         data = league_service.get_points_to_win_history(league=league, debug=debug)
+        _league_json_cache_put("get_points_to_win_history", data)
         return jsonify(data)
         
     except Exception as e:
@@ -897,10 +969,16 @@ def get_top_team_performances():
             return jsonify({'error': 'Missing required parameter: league'}), 400
         
         print(f"Top Team Performances - Received request with: league={league}")
-        
+
+        hit = _league_json_cache_get("get_top_team_performances")
+        if hit is not None:
+            return jsonify(hit)
+
         league_service = get_league_service()
         table_data = league_service.get_top_team_performances(league=league)
-        return jsonify(table_data.to_dict())
+        payload = table_data.to_dict()
+        _league_json_cache_put("get_top_team_performances", payload)
+        return jsonify(payload)
         
     except Exception as e:
         print(f"Error in get_top_team_performances: {str(e)}")
@@ -916,10 +994,16 @@ def get_top_individual_performances():
             return jsonify({'error': 'Missing required parameter: league'}), 400
         
         print(f"Top Individual Performances - Received request with: league={league}")
-        
+
+        hit = _league_json_cache_get("get_top_individual_performances")
+        if hit is not None:
+            return jsonify(hit)
+
         league_service = get_league_service()
         table_data = league_service.get_top_individual_performances(league=league)
-        return jsonify(table_data.to_dict())
+        payload = table_data.to_dict()
+        _league_json_cache_put("get_top_individual_performances", payload)
+        return jsonify(payload)
         
     except Exception as e:
         print(f"Error in get_top_individual_performances: {str(e)}")
@@ -935,10 +1019,16 @@ def get_record_games():
             return jsonify({'error': 'Missing required parameter: league'}), 400
         
         print(f"Record Games - Received request with: league={league}")
-        
+
+        hit = _league_json_cache_get("get_record_games")
+        if hit is not None:
+            return jsonify(hit)
+
         league_service = get_league_service()
         table_data = league_service.get_record_games(league=league)
-        return jsonify(table_data.to_dict())
+        payload = table_data.to_dict()
+        _league_json_cache_put("get_record_games", payload)
+        return jsonify(payload)
         
     except Exception as e:
         print(f"Error in get_record_games: {str(e)}")
@@ -954,10 +1044,16 @@ def get_record_individual_games():
             return jsonify({'error': 'Missing required parameter: league'}), 400
         
         print(f"Record Individual Games - Received request with: league={league}")
-        
+
+        hit = _league_json_cache_get("get_record_individual_games")
+        if hit is not None:
+            return jsonify(hit)
+
         league_service = get_league_service()
         table_data = league_service.get_record_individual_games(league=league)
-        return jsonify(table_data.to_dict())
+        payload = table_data.to_dict()
+        _league_json_cache_put("get_record_individual_games", payload)
+        return jsonify(payload)
         
     except Exception as e:
         print(f"Error in get_record_individual_games: {str(e)}")
@@ -973,10 +1069,16 @@ def get_record_team_games():
             return jsonify({'error': 'Missing required parameter: league'}), 400
         
         print(f"Record Team Games - Received request with: league={league}")
-        
+
+        hit = _league_json_cache_get("get_record_team_games")
+        if hit is not None:
+            return jsonify(hit)
+
         league_service = get_league_service()
         table_data = league_service.get_record_team_games(league=league)
-        return jsonify(table_data.to_dict())
+        payload = table_data.to_dict()
+        _league_json_cache_put("get_record_team_games", payload)
+        return jsonify(payload)
         
     except Exception as e:
         print(f"Error in get_record_team_games: {str(e)}")
@@ -997,9 +1099,14 @@ def get_season_timetable():
             return jsonify({'error': 'Missing required parameters: league, season'}), 400
         
         print(f"Season Timetable - Received request with: league={league}, season={season}")
-        
+
+        hit = _league_json_cache_get("get_season_timetable")
+        if hit is not None:
+            return jsonify(hit)
+
         league_service = get_league_service()
         data = league_service.get_season_timetable(league=league, season=season)
+        _league_json_cache_put("get_season_timetable", data)
         return jsonify(data)
         
     except Exception as e:
@@ -1019,8 +1126,13 @@ def get_team_analysis():
 
         print(f"Team Analysis - Received request with: league={league}, season={season}, team={team}")
 
+        hit = _league_json_cache_get("get_team_analysis")
+        if hit is not None:
+            return jsonify(hit)
+
         league_service = get_league_service()
         analysis_data = league_service.get_team_analysis(league=league, season=season, team=team)
+        _league_json_cache_put("get_team_analysis", analysis_data)
         return jsonify(analysis_data)
 
     except Exception as e:
@@ -1038,9 +1150,15 @@ def get_team_performance_table():
         if not all([league, season, team]):
             return jsonify({'error': 'Missing required parameters: league, season, team'}), 400
 
+        hit = _league_json_cache_get("get_team_performance_table")
+        if hit is not None:
+            return jsonify(hit)
+
         league_service = get_league_service()
         table_data = league_service.get_team_performance_table_data(league=league, season=season, team=team)
-        return jsonify(table_data.to_dict())
+        payload = table_data.to_dict()
+        _league_json_cache_put("get_team_performance_table", payload)
+        return jsonify(payload)
 
     except Exception as e:
         print(f"Error in get_team_performance_table: {str(e)}")
@@ -1057,9 +1175,15 @@ def get_team_win_percentage_table():
         if not all([league, season, team]):
             return jsonify({'error': 'Missing required parameters: league, season, team'}), 400
 
+        hit = _league_json_cache_get("get_team_win_percentage_table")
+        if hit is not None:
+            return jsonify(hit)
+
         league_service = get_league_service()
         table_data = league_service.get_team_win_percentage_table_data(league=league, season=season, team=team)
-        return jsonify(table_data.to_dict())
+        payload = table_data.to_dict()
+        _league_json_cache_put("get_team_win_percentage_table", payload)
+        return jsonify(payload)
 
     except Exception as e:
         print(f"Error in get_team_win_percentage_table: {str(e)}")
@@ -1090,10 +1214,16 @@ def get_individual_averages():
             filter_info += f", week={week}"
         if team is not None:
             filter_info += f", team={team}"
+
+        hit = _league_json_cache_get("get_individual_averages")
+        if hit is not None:
+            return jsonify(hit)
+
         league_service = get_league_service()
         table_data = league_service.get_individual_averages(league=league, season=season, week=week, team=team)
-
-        return jsonify(table_data.to_dict())
+        payload = table_data.to_dict()
+        _league_json_cache_put("get_individual_averages", payload)
+        return jsonify(payload)
         
     except Exception as e:
         print(f"Error in get_individual_averages: {str(e)}")
@@ -1118,11 +1248,15 @@ def get_team_vs_team_comparison():
             except ValueError:
                 return jsonify({'error': 'Invalid week parameter'}), 400
         
-        # Get league service and fetch real data
+        hit = _league_json_cache_get("get_team_vs_team_comparison")
+        if hit is not None:
+            return jsonify(hit)
+
         league_service = get_league_service()
         table_data = league_service.get_team_vs_team_comparison_table(league, season, week_int)
-        
-        return jsonify(table_data.to_dict())
+        payload = table_data.to_dict()
+        _league_json_cache_put("get_team_vs_team_comparison", payload)
+        return jsonify(payload)
         
     except Exception as e:
         print(f"Error in get_team_vs_team_comparison: {str(e)}")

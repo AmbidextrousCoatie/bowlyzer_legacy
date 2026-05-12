@@ -164,6 +164,19 @@
     </style>
 </head>
 <body>
+    <script>
+    (function () {
+        function isBowlyzerVerboseUi() {
+            try {
+                if (window.__BOWLYZER_VERBOSE_UI__ === true) return true;
+                if (typeof URLSearchParams !== 'undefined' && new URLSearchParams(window.location.search).get('verboseUi') === '1') return true;
+                if (typeof localStorage !== 'undefined' && localStorage.getItem('bowlyzerVerboseUi') === '1') return true;
+            } catch (e) { /* ignore */ }
+            return false;
+        }
+        window.isBowlyzerVerboseUi = isBowlyzerVerboseUi;
+    })();
+    </script>
     <!-- Include navbar component -->
     {% include 'components/navbar.html' %}
 
@@ -472,13 +485,17 @@
         
         // Refresh current data to update table headers and chart labels
         function refreshCurrentData() {
-            console.log('🔄 Refreshing current data for language change');
+            if (window.isBowlyzerVerboseUi && window.isBowlyzerVerboseUi()) {
+                console.log('🔄 Refreshing current data for language change');
+            }
             
             // Check if we're on the league stats page
             if (window.location.pathname.includes('/league/stats')) {
                 // Trigger content refresh for league stats
                 if (typeof window.leagueStatsApp !== 'undefined' && window.leagueStatsApp.renderContent) {
-                    console.log('🔄 Refreshing league stats content');
+                    if (window.isBowlyzerVerboseUi && window.isBowlyzerVerboseUi()) {
+                        console.log('🔄 Refreshing league stats content');
+                    }
                     window.leagueStatsApp.renderContent();
                 } else {
                     // Fallback to legacy refresh
@@ -512,7 +529,9 @@
             if (window.location.pathname.includes('/team/stats')) {
                 // Trigger content refresh for team stats
                 if (typeof window.teamStatsApp !== 'undefined' && window.teamStatsApp.renderContent) {
-                    console.log('🔄 Refreshing team stats content');
+                    if (window.isBowlyzerVerboseUi && window.isBowlyzerVerboseUi()) {
+                        console.log('🔄 Refreshing team stats content');
+                    }
                     window.teamStatsApp.renderContent();
                 }
             }
@@ -521,7 +540,9 @@
             if (window.location.pathname.includes('/test')) {
                 // Trigger content refresh for API test
                 if (typeof window.apiTestApp !== 'undefined' && window.apiTestApp.renderContent) {
-                    console.log('🔄 Refreshing API test content');
+                    if (window.isBowlyzerVerboseUi && window.isBowlyzerVerboseUi()) {
+                        console.log('🔄 Refreshing API test content');
+                    }
                     window.apiTestApp.renderContent();
                 }
             }
@@ -587,7 +608,9 @@
         
         // Initialize everything when DOM is loaded
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Initializing application...');
+            if (window.isBowlyzerVerboseUi && window.isBowlyzerVerboseUi()) {
+                console.log('🚀 Initializing application...');
+            }
             
             // Setup selectors
             setupLanguageSelector();
@@ -599,13 +622,17 @@
             // Setup global database change listener
             setupGlobalDatabaseListener();
             
-            console.log('✅ Application initialized');
+            if (window.isBowlyzerVerboseUi && window.isBowlyzerVerboseUi()) {
+                console.log('✅ Application initialized');
+            }
         });
         
         // Global database change listener
         function setupGlobalDatabaseListener() {
             window.addEventListener('databaseChanged', async (event) => {
-                console.log('🌐 Global database change detected:', event.detail);
+                if (window.isBowlyzerVerboseUi && window.isBowlyzerVerboseUi()) {
+                    console.log('🌐 Global database change detected:', event.detail);
+                }
                 
                 // Wait a moment for the server to process the change
                 await new Promise(resolve => setTimeout(resolve, 300));
@@ -636,7 +663,9 @@
         }
         
         async function refreshLeagueComponents() {
-            console.log('🔄 Refreshing league components...');
+            if (window.isBowlyzerVerboseUi && window.isBowlyzerVerboseUi()) {
+                console.log('🔄 Refreshing league components...');
+            }
             
             // Try to refresh league-specific components
             const methods = [
@@ -661,7 +690,9 @@
         }
         
         async function refreshTeamComponents() {
-            console.log('🔄 Refreshing team components...');
+            if (window.isBowlyzerVerboseUi && window.isBowlyzerVerboseUi()) {
+                console.log('🔄 Refreshing team components...');
+            }
             
             const methods = [
                 'updateTeamSelect',
@@ -686,7 +717,9 @@
         }
         
         async function refreshPlayerComponents() {
-            console.log('🔄 Refreshing player components...');
+            if (window.isBowlyzerVerboseUi && window.isBowlyzerVerboseUi()) {
+                console.log('🔄 Refreshing player components...');
+            }
             
             if (typeof window.reloadPlayerSearchList === 'function') {
                 try {
@@ -715,7 +748,9 @@
         }
         
         async function refreshGenericComponents() {
-            console.log('🔄 Refreshing generic components...');
+            if (window.isBowlyzerVerboseUi && window.isBowlyzerVerboseUi()) {
+                console.log('🔄 Refreshing generic components...');
+            }
             
             const methods = [
                 'refreshCurrentData',
@@ -739,7 +774,6 @@
         function getCurrentDatabase() {
             const urlParams = new URLSearchParams(window.location.search);
             const database = urlParams.get('database') || '';
-            console.log('🔄 getCurrentDatabase called, returning:', database);
             return database;
         }
         
@@ -756,7 +790,8 @@
         
         function fetchWithDatabase(url, options = {}) {
             const urlWithDatabase = addDatabaseParam(url);
-            console.log('🔄 fetchWithDatabase called:', { originalUrl: url, urlWithDatabase });
+            const method = ((options && options.method) || 'GET').toUpperCase();
+            console.info('[API]', method, urlWithDatabase);
             return fetch(urlWithDatabase, options);
         }
     </script>

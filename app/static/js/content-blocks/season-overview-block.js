@@ -190,8 +190,11 @@ class SeasonOverviewBlock extends BaseContentBlock {
         try {
             const response = await fetchWithDatabase(`/league/get_league_history?season=${season}&league=${league}`);
             const tableData = await response.json();
-            
-            
+
+            if (tableData && window.ColorUtils && typeof window.ColorUtils.seedTeamColorsFromLeagueTablePayload === 'function') {
+                window.ColorUtils.seedTeamColorsFromLeagueTablePayload(tableData);
+            }
+
             const container = document.getElementById('leagueTableHistory');
             if (container) {
                 // Use the proper createTableBootstrap3 function for structured TableData

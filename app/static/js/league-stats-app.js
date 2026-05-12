@@ -2,6 +2,12 @@
  * LeagueStatsApp - Main application coordinator for league statistics page
  * Manages content blocks and state synchronization
  */
+function bowlyzerVlog(...args) {
+    if (typeof window !== 'undefined' && window.isBowlyzerVerboseUi && window.isBowlyzerVerboseUi()) {
+        console.log(...args);
+    }
+}
+
 class LeagueStatsApp {
     constructor() {
         this.contentBlocks = new Map();
@@ -24,7 +30,7 @@ class LeagueStatsApp {
 
     async initialize() {
         try {
-            console.log('🚀 Initializing LeagueStatsApp...');
+            bowlyzerVlog('🚀 Initializing LeagueStatsApp...');
             
             // Get initial state from URL (URLStateManager initializes in constructor)
             this.currentState = { ...this.currentState, ...this.urlStateManager.getState() };
@@ -63,7 +69,7 @@ class LeagueStatsApp {
             // Initial render with final state
             await this.renderContent();
             
-            console.log('✅ LeagueStatsApp initialized successfully');
+            bowlyzerVlog('✅ LeagueStatsApp initialized successfully');
         } catch (error) {
             console.error('❌ Error initializing LeagueStatsApp:', error);
             throw error;
@@ -71,27 +77,27 @@ class LeagueStatsApp {
     }
 
     async initializeContentBlocks() {
-        console.log('🧱 Initializing content blocks...');
+        bowlyzerVlog('🧱 Initializing content blocks...');
         
         try {
             // Create content blocks FIRST (they initialize in their constructors)
-            console.log('🔄 Creating SeasonLeagueStandingsBlock...');
+            bowlyzerVlog('🔄 Creating SeasonLeagueStandingsBlock...');
             const seasonLeagueStandingsBlock = new SeasonLeagueStandingsBlock();
-            console.log('🔄 Creating LeagueAggregationBlock...');
+            bowlyzerVlog('🔄 Creating LeagueAggregationBlock...');
             const leagueAggregationBlock = new LeagueAggregationBlock();
-            console.log('🔄 Creating LeagueSeasonOverviewBlock...');
+            bowlyzerVlog('🔄 Creating LeagueSeasonOverviewBlock...');
             const leagueSeasonOverviewBlock = new LeagueSeasonOverviewBlock();
-            console.log('🔄 Creating SeasonOverviewBlock...');
+            bowlyzerVlog('🔄 Creating SeasonOverviewBlock...');
             const seasonOverviewBlock = new SeasonOverviewBlock();
-            console.log('🔄 Creating MatchDayBlock...');
+            bowlyzerVlog('🔄 Creating MatchDayBlock...');
             const matchDayBlock = new MatchDayBlock();
-            console.log('🔄 Creating TeamDetailsBlock...');
+            bowlyzerVlog('🔄 Creating TeamDetailsBlock...');
             const teamDetailsBlock = new TeamDetailsBlock();
-            console.log('🔄 Creating TeamPerformanceBlock...');
+            bowlyzerVlog('🔄 Creating TeamPerformanceBlock...');
             const teamPerformanceBlock = new TeamPerformanceBlock();
-            console.log('🔄 Creating GameOverviewBlock...');
+            bowlyzerVlog('🔄 Creating GameOverviewBlock...');
             const gameOverviewBlock = new GameOverviewBlock();
-            console.log('🔄 Creating GameTeamDetailsBlock...');
+            bowlyzerVlog('🔄 Creating GameTeamDetailsBlock...');
             const gameTeamDetailsBlock = new GameTeamDetailsBlock();
             
             // Store blocks (no filter-controls block needed anymore)
@@ -105,13 +111,13 @@ class LeagueStatsApp {
             this.contentBlocks.set('game-overview', gameOverviewBlock);
             this.contentBlocks.set('game-team-details', gameTeamDetailsBlock);
             
-            console.log('✅ Content blocks initialized');
+            bowlyzerVlog('✅ Content blocks initialized');
             
             // Initialize centralized button manager for league mode with content rendering callback
             this.buttonManager = new CentralizedButtonManager(this.urlStateManager, 'league', (state) => {
-                console.log('🔄 LeagueStatsApp: Button state changed, rendering content:', state);
-                console.log('🔄 LeagueStatsApp: State keys:', Object.keys(state));
-                console.log('🔄 LeagueStatsApp: Round value:', state.round, 'Type:', typeof state.round);
+                bowlyzerVlog('🔄 LeagueStatsApp: Button state changed, rendering content:', state);
+                bowlyzerVlog('🔄 LeagueStatsApp: State keys:', Object.keys(state));
+                bowlyzerVlog('🔄 LeagueStatsApp: Round value:', state.round, 'Type:', typeof state.round);
                 this.currentState = { ...state };
                 this.renderContent();
             });
@@ -131,24 +137,24 @@ class LeagueStatsApp {
 
         // Listen for external events (data source changes, palette changes)
         window.handleDataSourceChange = () => {
-            console.log('📊 Data source changed - refreshing content');
+            bowlyzerVlog('📊 Data source changed - refreshing content');
             this.renderContent();
         };
         
         // Listen for database changes
         window.addEventListener('databaseChanged', (event) => {
-            console.log('🔄 Database changed event received:', event.detail);
+            bowlyzerVlog('🔄 Database changed event received:', event.detail);
             this.handleDatabaseChange(event.detail.database);
         });
         
         // Listen for language changes
         window.addEventListener('languageChanged', (event) => {
-            console.log('🔄 Language changed event received:', event.detail);
+            bowlyzerVlog('🔄 Language changed event received:', event.detail);
             this.handleLanguageChange(event.detail.language);
         });
 
         window.handlePaletteChange = () => {
-            console.log('🎨 Palette changed - refreshing content');
+            bowlyzerVlog('🎨 Palette changed - refreshing content');
             this.renderContent();
         };
 
@@ -159,7 +165,7 @@ class LeagueStatsApp {
     }
 
     async handleStateChange(newState) {
-        console.log('🔄 State changed:', newState);
+        bowlyzerVlog('🔄 State changed:', newState);
         
         // Check if state actually changed to prevent unnecessary updates
         const stateChanged = JSON.stringify(this.currentState) !== JSON.stringify(newState);
@@ -169,9 +175,9 @@ class LeagueStatsApp {
         
         // Always render content on initial load or if state changed
         if (!stateChanged && Object.values(this.currentState).some(val => val && val !== '')) {
-            console.log('Initial load with state, rendering content');
+            bowlyzerVlog('Initial load with state, rendering content');
         } else if (!stateChanged) {
-            console.log('State unchanged, skipping update');
+            bowlyzerVlog('State unchanged, skipping update');
             return;
         }
         
@@ -251,7 +257,7 @@ class LeagueStatsApp {
      * Handle database changes
      */
     async handleDatabaseChange(newDatabase) {
-        console.log('🔄 Handling database change to:', newDatabase);
+        bowlyzerVlog('🔄 Handling database change to:', newDatabase);
         
         try {
             // Update URL state with new database
@@ -276,7 +282,7 @@ class LeagueStatsApp {
             // Render content with new state
             this.renderContent();
             
-            console.log('✅ Database change handled successfully');
+            bowlyzerVlog('✅ Database change handled successfully');
             
         } catch (error) {
             console.error('❌ Error handling database change:', error);
@@ -287,13 +293,13 @@ class LeagueStatsApp {
      * Handle language changes
      */
     async handleLanguageChange(newLanguage) {
-        console.log('🔄 Handling language change to:', newLanguage);
+        bowlyzerVlog('🔄 Handling language change to:', newLanguage);
         
         try {
             // Re-render all content to update translations
             this.renderContent();
             
-            console.log('✅ Language change handled successfully');
+            bowlyzerVlog('✅ Language change handled successfully');
             
         } catch (error) {
             console.error('❌ Error handling language change:', error);
@@ -302,14 +308,14 @@ class LeagueStatsApp {
 
     async renderContent() {
         if (this.isRenderingContent) {
-            console.log('Content rendering already in progress, skipping');
+            bowlyzerVlog('Content rendering already in progress, skipping');
             return;
         }
         
         try {
             this.isRenderingContent = true;
-            console.log('🎨 Rendering content for state:', this.currentState);
-            console.log('🎨 Available content blocks:', Array.from(this.contentBlocks.keys()));
+            bowlyzerVlog('🎨 Rendering content for state:', this.currentState);
+            bowlyzerVlog('🎨 Available content blocks:', Array.from(this.contentBlocks.keys()));
             
             // Check if we have any content blocks
             if (this.contentBlocks.size === 0) {
@@ -320,7 +326,7 @@ class LeagueStatsApp {
             // Render all content blocks in parallel for better performance
             const renderPromises = Array.from(this.contentBlocks.entries()).map(async ([blockName, block]) => {
                 try {
-                    console.log(`🔄 Rendering block: ${blockName} with state:`, {
+                    bowlyzerVlog(`🔄 Rendering block: ${blockName} with state:`, {
                         season: this.currentState.season,
                         league: this.currentState.league,
                         week: this.currentState.week,
@@ -328,14 +334,14 @@ class LeagueStatsApp {
                         team: this.currentState.team
                     });
                     await block.render(this.currentState);
-                    console.log(`✅ Rendered block: ${blockName}`);
+                    bowlyzerVlog(`✅ Rendered block: ${blockName}`);
                 } catch (error) {
                     console.error(`❌ Error rendering block ${blockName}:`, error);
                 }
             });
             
             await Promise.all(renderPromises);
-            console.log('✅ Content rendering complete');
+            bowlyzerVlog('✅ Content rendering complete');
             
         } catch (error) {
             console.error('❌ Error during content rendering:', error);
@@ -388,7 +394,7 @@ let leagueStatsApp;
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
-        console.log('📄 DOM loaded, initializing LeagueStatsApp...');
+        bowlyzerVlog('📄 DOM loaded, initializing LeagueStatsApp...');
         
         leagueStatsApp = new LeagueStatsApp();
         await leagueStatsApp.initialize();

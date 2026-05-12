@@ -398,6 +398,73 @@
         });
     }
 
+    /**
+     * Column index of the team name in a TableData row (same flatten order as Tabulator path).
+     * League standings from get_league_history use field "team" in the ranking group.
+     */
+    function leagueTableTeamColumnIndex(tablePayload) {
+        const groups = tablePayload && tablePayload.columns;
+        if (!Array.isArray(groups)) {
+            return 1;
+        }
+        let idx = 0;
+        for (let g = 0; g < groups.length; g++) {
+            const group = groups[g];
+            if (!group || !Array.isArray(group.columns)) {
+                continue;
+            }
+            for (let c = 0; c < group.columns.length; c++) {
+                const field = group.columns[c].field;
+                if (field === "team" || field === "team_name") {
+                    return idx;
+                }
+                idx++;
+            }
+        }
+        return 1;
+    }
+
+    /**
+     * Assign palette colors in league-standings row order (position 1 → palette[0], …) before
+     * tables/charts render. Needed when several endpoints load in parallel (e.g. cached JSON),
+     * so Tabulator formatters do not all hit getTeamColor with an empty map.
+     */
+    function seedTeamColorsFromLeagueTablePayload(tablePayload) {
+        if (!tablePayload || !Array.isArray(tablePayload.data)) {
+            return;
+        }
+        const teamIdx = leagueTableTeamColumnIndex(tablePayload);
+        const rows = tablePayload.data;
+        const teams = [];
+        const seen = new Set();
+        for (let r = 0; r < rows.length; r++) {
+            const row = rows[r];
+            if (!Array.isArray(row) || teamIdx < 0 || teamIdx >= row.length) {
+                continue;
+            }
+            const raw = row[teamIdx];
+            if (raw === null || raw === undefined) {
+                continue;
+            }
+            const name = String(raw).trim();
+            if (!name || seen.has(name)) {
+                continue;
+            }
+            seen.add(name);
+            teams.push(name);
+        }
+        if (!teams.length) {
+            return;
+        }
+        teams.forEach(t => {
+            delete teamColorMap[t];
+        });
+        let paletteIdx = 0;
+        teams.forEach(t => {
+            teamColorMap[t] = getPaletteColor(paletteIdx++);
+        });
+    }
+
     function getTeamColor(teamName, fallbackIndex = 0) {
         if (teamName && teamColorMap[teamName]) {
             return teamColorMap[teamName];
@@ -520,6 +587,8 @@
         getSemanticColor,
         getThemeColor,
         updateTeamColorMap,
+        leagueTableTeamColumnIndex,
+        seedTeamColorsFromLeagueTablePayload,
         getTeamColor,
         updatePlayerColorMap,
         getPlayerColor,

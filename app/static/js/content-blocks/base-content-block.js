@@ -5,8 +5,6 @@
  * Provides common functionality for data fetching, rendering, and lifecycle management
  */
 
-console.log('🔄 BaseContentBlock class definition loaded');
-
 class BaseContentBlock {
     constructor(config) {
         // Required configuration
@@ -106,8 +104,6 @@ class BaseContentBlock {
         const params = this.buildParams(filterState);
         const url = `${this.dataEndpoint}?${params}`;
         
-        console.log(`${this.id}: Fetching data from ${url}`);
-        
         try {
             const response = await fetchWithDatabase(url);
             
@@ -133,7 +129,9 @@ class BaseContentBlock {
             // Implement retry logic
             if (this.retryCount < this.maxRetries) {
                 this.retryCount++;
-                console.log(`${this.id}: Retrying... (${this.retryCount}/${this.maxRetries})`);
+                if (window.isBowlyzerVerboseUi && window.isBowlyzerVerboseUi()) {
+                    console.log(`${this.id}: Retrying... (${this.retryCount}/${this.maxRetries})`);
+                }
                 
                 // Wait before retry (exponential backoff)
                 await new Promise(resolve => setTimeout(resolve, 1000 * this.retryCount));
@@ -164,7 +162,9 @@ class BaseContentBlock {
         
         // Check if already rendering
         if (this.isRendering) {
-            console.log(`${this.id}: Already rendering, skipping...`);
+            if (window.isBowlyzerVerboseUi && window.isBowlyzerVerboseUi()) {
+                console.log(`${this.id}: Already rendering, skipping...`);
+            }
             return;
         }
         
@@ -173,13 +173,17 @@ class BaseContentBlock {
         const lastStateKey = this.getStateKey(this.lastRenderedState);
         
         if (currentStateKey === lastStateKey) {
-            console.log(`${this.id}: State unchanged, skipping render`);
+            if (window.isBowlyzerVerboseUi && window.isBowlyzerVerboseUi()) {
+                console.log(`${this.id}: State unchanged, skipping render`);
+            }
             return;
         }
         
         // Check if we can render with this state
         if (!this.canRender(filterState)) {
-            console.log(`${this.id}: Cannot render with current state:`, filterState);
+            if (window.isBowlyzerVerboseUi && window.isBowlyzerVerboseUi()) {
+                console.log(`${this.id}: Cannot render with current state:`, filterState);
+            }
             this.showPlaceholder();
             return;
         }
@@ -199,7 +203,9 @@ class BaseContentBlock {
                 // Render with data
                 await this.render(data, filterState);
                 
-                console.log(`${this.id}: Rendered successfully`);
+                if (window.isBowlyzerVerboseUi && window.isBowlyzerVerboseUi()) {
+                    console.log(`${this.id}: Rendered successfully`);
+                }
                 
             } catch (error) {
                 console.error(`${this.id}: Render error:`, error);
@@ -294,7 +300,9 @@ class BaseContentBlock {
                 Object.values(Chart.instances).forEach(chartInstance => {
                     if (chartInstance && chartInstance.canvas === canvas) {
                         try {
-                            console.log(`${this.id}: Clearing orphaned chart instance`);
+                            if (window.isBowlyzerVerboseUi && window.isBowlyzerVerboseUi()) {
+                                console.log(`${this.id}: Clearing orphaned chart instance`);
+                            }
                             chartInstance.destroy();
                         } catch (error) {
                             console.warn(`${this.id}: Error clearing orphaned chart:`, error);
@@ -307,7 +315,9 @@ class BaseContentBlock {
             const ctx = canvas.getContext('2d');
             if (ctx && ctx.chart) {
                 try {
-                    console.log(`${this.id}: Clearing chart from canvas context`);
+                    if (window.isBowlyzerVerboseUi && window.isBowlyzerVerboseUi()) {
+                        console.log(`${this.id}: Clearing chart from canvas context`);
+                    }
                     ctx.chart.destroy();
                 } catch (error) {
                     console.warn(`${this.id}: Error clearing chart from context:`, error);

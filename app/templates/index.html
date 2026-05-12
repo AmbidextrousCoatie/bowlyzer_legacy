@@ -56,8 +56,6 @@
 <script>
     const DEFAULT_DATABASE = "{{ default_database }}";
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🔄 Loading latest events with database:', getCurrentDatabase());
-    
     // Use fetchWithDatabase to include the database parameter
     fetchWithDatabase('{{ url_for("league.get_latest_events") }}')
         .then(response => response.json())

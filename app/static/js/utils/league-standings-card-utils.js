@@ -118,7 +118,9 @@ function renderLeagueStandingsTable(tableId, standingsData, options = {}) {
     
     // Use Tabulator for structured TableData
     if (typeof createTableTabulator === 'function') {
-        console.log(`Creating Tabulator table ${tableId} with ${standingsData.data ? standingsData.data.length : 0} rows`);
+        if (window.isBowlyzerVerboseUi && window.isBowlyzerVerboseUi()) {
+            console.log(`Creating Tabulator table ${tableId} with ${standingsData.data ? standingsData.data.length : 0} rows`);
+        }
         createTableTabulator(tableId, standingsData, { 
             disablePositionCircle: false, // Show position circles for league standings
             enableSpecialRowStyling: true,
@@ -127,7 +129,9 @@ function renderLeagueStandingsTable(tableId, standingsData, options = {}) {
             ...options
         });
     } else if (typeof createTableBootstrap3 === 'function') {
-        console.log(`Fallback: Using createTableBootstrap3 for ${tableId}`);
+        if (window.isBowlyzerVerboseUi && window.isBowlyzerVerboseUi()) {
+            console.log(`Fallback: Using createTableBootstrap3 for ${tableId}`);
+        }
         createTableBootstrap3(tableId, standingsData, {
             disablePositionCircle: false,
             enableSpecialRowStyling: true,

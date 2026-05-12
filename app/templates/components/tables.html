@@ -118,6 +118,25 @@ function flattenColumnMetadata(columnGroups = []) {
     return flatColumns;
 }
 
+/**
+ * League standings rank column (field "pos"): badge color by displayed rank (1-based),
+ * independent of teamColorMap — avoids duplicate swatches when names collide or map order drifts.
+ */
+function positionRankBadgeColor(field, rawValue, formattedValue) {
+    if (field !== 'pos') {
+        return null;
+    }
+    const rankRaw = formattedValue != null && formattedValue !== '' ? formattedValue : rawValue;
+    const rankNum = parseInt(String(rankRaw).trim(), 10);
+    if (!Number.isFinite(rankNum) || rankNum < 1) {
+        return null;
+    }
+    if (window.ColorUtils && typeof window.ColorUtils.getPaletteColor === 'function') {
+        return window.ColorUtils.getPaletteColor(rankNum - 1);
+    }
+    return null;
+}
+
 function mapCellMetadata(cellMetadata = {}, columnOrder = []) {
     const mapped = {};
     Object.entries(cellMetadata).forEach(([key, styles]) => {
@@ -557,6 +576,10 @@ function createTableTabulator(tableId, data, options = {}) {
                                             (!settings.disablePositionCircle && groupIndex === 0 && columnIndex === 0);
                     
                     if (isPositionColumn && !settings.disablePositionCircle) {
+                        const rankSwatch = positionRankBadgeColor(field, value, formattedValue);
+                        if (rankSwatch) {
+                            return `<div class="tab-position-circle" style="background-color: ${rankSwatch};">${formattedValue ?? ''}</div>`;
+                        }
                         let teamName = null;
                         if (field === 'team_position') {
                             // For team position, use team name from the same row
@@ -785,6 +808,11 @@ function createTableTabulator(tableId, data, options = {}) {
                                             (!settings.disablePositionCircle && columnInfo.groupIndex === 0 && columnInfo.columnIndex === 0);
                     
                     if (isPositionColumn && !settings.disablePositionCircle) {
+                        // This formatter branch has no formattedValue (unlike flat column path); use raw cell value.
+                        const rankSwatch = positionRankBadgeColor(field, value, value);
+                        if (rankSwatch) {
+                            return `<div class="tab-position-circle" style="background-color: ${rankSwatch};">${value ?? ''}</div>`;
+                        }
                         let teamName = null;
                         if (field === 'team_position') {
                             // For team position, use team name from the same row
@@ -1240,7 +1268,9 @@ function createTableTabulator(tableId, data, options = {}) {
     const tabulatorInstance = new Tabulator(`#${tableId}`, tabulatorOptions);
     window[tableId + 'Instance'] = tabulatorInstance;
 
-    console.log(`Table "${tableId}" successfully created/updated (Tabulator)`);
+    if (typeof window !== 'undefined' && window.isBowlyzerVerboseUi && window.isBowlyzerVerboseUi()) {
+        console.log(`Table "${tableId}" successfully created/updated (Tabulator)`);
+    }
     
     // Register tableBuilt callback AFTER instantiation (as shown in funsies.html)
     // This is more reliable than passing it as an option
@@ -1922,8 +1952,12 @@ function createTableBootstrap3(tableId, data, options = {}) {
                                     </div>`;
                                 } else if (groupIndex === 0 && index === 0 && !disablePositionCircle) {
                                     // Handle position circle for first column of first group - regular tables
-                                    const color1 = getTeamColor(row1.rowData[1]);
-                                    const color2 = getTeamColor(row2.rowData[1]);
+                                    let color1 = getTeamColor(row1.rowData[1]);
+                                    let color2 = getTeamColor(row2.rowData[1]);
+                                    const rank1 = positionRankBadgeColor(col.field, value1, value1);
+                                    const rank2 = positionRankBadgeColor(col.field, value2, value2);
+                                    if (rank1) color1 = rank1;
+                                    if (rank2) color2 = rank2;
                                     td1.innerHTML = `<div style="width: 24px; height: 24px; border-radius: 50%; background-color: ${color1}; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; margin: 0 auto;">${value1}</div>`;
                                     td2.innerHTML = `<div style="width: 24px; height: 24px; border-radius: 50%; background-color: ${color2}; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; margin: 0 auto;">${value2}</div>`;
                                 } else {
@@ -2070,9 +2104,10 @@ function createTableBootstrap3(tableId, data, options = {}) {
                                 <span>${teamName}</span>
                             </div>`;
                         } else if (groupIndex === 0 && index === 0 && !disablePositionCircle) {
-                            // Special handling for position column (first column of first group) - regular tables
-                            // Use the position value (not team name) for the circle
-                            const color = getTeamColor(rowData[1]); // Still use team name for color
+                            // Standings "#" / pos: color by displayed rank; other tables keep team-based map
+                            let color = getTeamColor(rowData[1]);
+                            const rankSwatch = positionRankBadgeColor(col.field, value, value);
+                            if (rankSwatch) color = rankSwatch;
                             td.innerHTML = `<div style="width: 24px; height: 24px; border-radius: 50%; background-color: ${color}; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; margin: 0 auto;">${value}</div>`;
                         } else if (col.is_html === true && typeof value === 'string') {
                             td.innerHTML = value;
@@ -2166,7 +2201,9 @@ function createTableBootstrap3(tableId, data, options = {}) {
     document.getElementById(tableId).innerHTML = '';  // Clear existing content
     document.getElementById(tableId).appendChild(tableWrapper);
     
-    console.log(`Table "${tableId}" successfully created/updated`);
+    if (typeof window !== 'undefined' && window.isBowlyzerVerboseUi && window.isBowlyzerVerboseUi()) {
+        console.log(`Table "${tableId}" successfully created/updated`);
+    }
 }
 
 
