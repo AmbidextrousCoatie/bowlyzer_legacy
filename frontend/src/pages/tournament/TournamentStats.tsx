@@ -297,9 +297,12 @@ function FilterRail(props: FilterRailProps) {
             >
               <option value="">{t("ui.tournament.all_latest", "Gesamt")}</option>
               {props.rounds.map((r) => (
-                <option key={String(r.round_number)} value={String(r.round_number)}>
+                <option
+                  key={String(r.round_number)}
+                  value={String(r.round_number)}
+                  title={r.round_name ? String(r.round_name) : undefined}
+                >
                   {r.round_number}
-                  {r.round_name ? ` · ${r.round_name}` : ""}
                 </option>
               ))}
             </SelectControl>

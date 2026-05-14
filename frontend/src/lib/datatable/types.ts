@@ -13,6 +13,8 @@ export type ColumnDef = {
   decimal_places?: number | string | null;
   sortable?: boolean;
   tooltip?: string;
+  /** Per-column freeze; when any column in a group sets this, only those columns freeze (not the whole group). */
+  frozen?: "left" | "right";
   cssClass?: string;
   headerClass?: string;
   style?: Record<string, string | number>;

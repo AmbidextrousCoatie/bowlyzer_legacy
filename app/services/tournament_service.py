@@ -761,17 +761,20 @@ class TournamentService:
                 leaderboard["rank"] = leaderboard["total_score"].rank(method="min", ascending=False).astype(int)
 
             spieler_title = i18n_service.get_text("ui.tournament.lb_group_players")
+            hcp_short = i18n_service.get_text("ui.tournament.handicap_col_short")
+            hcp_tip = i18n_service.get_text("ui.tournament.handicap_per_game_tooltip")
             base_columns = [
-                Column(title="#", field="rank", width="60px", align="center", decimal_places=0),
-                Column(title=i18n_service.get_text("player"), field="player", width="220px", align="left"),
+                Column(title="#", field="rank", width="60px", align="center", decimal_places=0, frozen="left"),
+                Column(title=i18n_service.get_text("player"), field="player", width="132px", align="left", frozen="left"),
             ]
             if use_hc_round:
                 base_columns.append(
                     Column(
-                        title=i18n_service.get_text("ui.tournament.handicap_per_game"),
+                        title=hcp_short,
                         field="handicap_display",
                         width="100px",
                         align="center",
+                        tooltip=hcp_tip,
                     )
                 )
             if include_club:
@@ -877,7 +880,6 @@ class TournamentService:
                 columns=[
                     ColumnGroup(
                         title=spieler_title,
-                        frozen="left",
                         style={"backgroundColor": "#f8f9fa"},
                         header_style={"fontWeight": "bold"},
                         columns=base_columns,
@@ -988,15 +990,16 @@ class TournamentService:
             sp_grp = i18n_service.get_text("ui.tournament.lb_group_players")
             sc_grp = i18n_service.get_text("ui.tournament.lb_group_scratch")
             nt_grp = i18n_service.get_text("ui.tournament.lb_group_net")
-            hcp_title = i18n_service.get_text("ui.tournament.handicap_per_game")
+            hcp_short = i18n_service.get_text("ui.tournament.handicap_col_short")
+            hcp_tip = i18n_service.get_text("ui.tournament.handicap_per_game_tooltip")
             tot_sc = i18n_service.get_text("ui.tournament.lb_total_scratch")
             avg_sc = i18n_service.get_text("ui.tournament.lb_avg_scratch")
             tot_n = i18n_service.get_text("ui.tournament.lb_total_net")
             avg_n = i18n_service.get_text("ui.tournament.lb_avg_net")
             spieler_columns = [
-                Column(title="#", field="rank", width="60px", align="center", decimal_places=0),
-                Column(title=i18n_service.get_text("player"), field="player", width="220px", align="left"),
-                Column(title=hcp_title, field="handicap_display", width="100px", align="center"),
+                Column(title="#", field="rank", width="60px", align="center", decimal_places=0, frozen="left"),
+                Column(title=i18n_service.get_text("player"), field="player", width="132px", align="left", frozen="left"),
+                Column(title=hcp_short, field="handicap_display", width="100px", align="center", tooltip=hcp_tip),
             ]
             if include_club:
                 spieler_columns.append(
@@ -1006,7 +1009,7 @@ class TournamentService:
             for rn in round_numbers:
                 title = round_name_map.get(rn) or f"Round {rn}"
                 scratch_columns.append(
-                    Column(title=title, field=f"round_{rn}", width="110px", align="center", decimal_places=0)
+                    Column(title=title, field=f"round_{rn}", width="94px", align="center", decimal_places=0)
                 )
             scratch_columns.extend(
                 [
@@ -1021,7 +1024,6 @@ class TournamentService:
             grouped_columns = [
                 ColumnGroup(
                     title=sp_grp,
-                    frozen="left",
                     style={"backgroundColor": "#f8f9fa"},
                     header_style={"fontWeight": "bold"},
                     columns=spieler_columns,
@@ -1043,14 +1045,14 @@ class TournamentService:
             table_metadata: Dict[str, Any] = {"leaderboard_mode": "scratch_net_handicap"}
         else:
             columns = [
-                Column(title="#", field="rank", width="60px", align="center", decimal_places=0),
-                Column(title=i18n_service.get_text("player"), field="player", width="220px", align="left"),
+                Column(title="#", field="rank", width="60px", align="center", decimal_places=0, frozen="left"),
+                Column(title=i18n_service.get_text("player"), field="player", width="132px", align="left", frozen="left"),
             ]
             if include_club:
                 columns.append(Column(title=i18n_service.get_text("ui.player.club"), field="club", width="220px", align="left"))
             for rn in round_numbers:
                 title = round_name_map.get(rn) or f"Round {rn}"
-                columns.append(Column(title=title, field=f"round_{rn}", width="110px", align="center", decimal_places=0))
+                columns.append(Column(title=title, field=f"round_{rn}", width="94px", align="center", decimal_places=0))
             columns.append(
                 Column(title=i18n_service.get_text("total"), field="total_score", width="100px", align="center", decimal_places=0)
             )
@@ -1063,7 +1065,6 @@ class TournamentService:
             grouped_columns = [
                 ColumnGroup(
                     title="",
-                    frozen="left",
                     style={"backgroundColor": "#f8f9fa"},
                     columns=leading_cols,
                 ),
@@ -1267,6 +1268,8 @@ class TournamentService:
             ).reset_index(drop=True)
 
             spieler_title = i18n_service.get_text("ui.tournament.lb_group_players")
+            hcp_short = i18n_service.get_text("ui.tournament.handicap_col_short")
+            hcp_tip = i18n_service.get_text("ui.tournament.handicap_per_game_tooltip")
             player_keys = [Columns.player_name, id_col]
             if include_club:
                 player_keys.append(Columns.club)
@@ -1277,16 +1280,17 @@ class TournamentService:
                     hcp_lbl_map[tuple(pkt) if isinstance(pkt, tuple) else (pkt,)] = _aggregate_handicap_leaderboard_label(sub)
 
             rank_cols = [
-                Column(title="#", field="overall_rank", width="70px", align="center", decimal_places=0),
-                Column(title=i18n_service.get_text("player"), field="player", width="220px", align="left"),
+                Column(title="#", field="overall_rank", width="70px", align="center", decimal_places=0, frozen="left"),
+                Column(title=i18n_service.get_text("player"), field="player", width="132px", align="left", frozen="left"),
             ]
             if use_hc_rr:
                 rank_cols.append(
                     Column(
-                        title=i18n_service.get_text("ui.tournament.handicap_per_game"),
+                        title=hcp_short,
                         field="handicap_display",
                         width="92px",
                         align="center",
+                        tooltip=hcp_tip,
                     )
                 )
             if include_club:
@@ -1318,7 +1322,6 @@ class TournamentService:
                 col_groups: List[ColumnGroup] = [
                     ColumnGroup(
                         title=spieler_title,
-                        frozen="left",
                         style={"backgroundColor": get_theme_color("background")},
                         header_style={"fontWeight": "bold"},
                         columns=rank_cols,
@@ -1344,10 +1347,11 @@ class TournamentService:
             else:
                 handicap_cols_schema = [
                     Column(
-                        title=i18n_service.get_text("ui.tournament.handicap_per_game"),
+                        title=hcp_short,
                         field="handicap_per_game",
                         width="92px",
                         align="center",
+                        tooltip=hcp_tip,
                     ),
                     Column(
                         title=i18n_service.get_text("ui.tournament.scratch_plus_handicap_four"),
@@ -1368,7 +1372,6 @@ class TournamentService:
                 col_groups = [
                     ColumnGroup(
                         title=spieler_title,
-                        frozen="left",
                         style={"backgroundColor": get_theme_color("background")},
                         header_style={"fontWeight": "bold"},
                         columns=rank_cols,
@@ -1431,10 +1434,12 @@ class TournamentService:
                 },
             )
 
+        hcp_short = i18n_service.get_text("ui.tournament.handicap_col_short")
+        hcp_tip = i18n_service.get_text("ui.tournament.handicap_per_game_tooltip")
         columns = []
         if include_stage_column:
             columns.append(Column(title="Stage", field="round_name", width="150px", align="left"))
-        columns.append(Column(title="Player", field="player", width="220px", align="left"))
+        columns.append(Column(title="Player", field="player", width="132px", align="left"))
         if include_club:
             columns.append(Column(title="Club", field="club", width="220px", align="left"))
         for g in game_numbers:
@@ -1449,10 +1454,11 @@ class TournamentService:
             )
         columns.append(
             Column(
-                title=i18n_service.get_text("ui.tournament.handicap_per_game"),
+                title=hcp_short,
                 field="handicap_per_game",
                 width="92px",
                 align="center",
+                tooltip=hcp_tip,
             )
         )
         columns.append(
@@ -2817,15 +2823,14 @@ class TournamentService:
                     club_map.setdefault(nm, c)
 
         base_cols = [
-            Column(title=i18n_service.get_text("position"), field="place", width="70px", align="center", decimal_places=0),
-            Column(title=i18n_service.get_text("player"), field="player", width="240px", align="left"),
+            Column(title=i18n_service.get_text("position"), field="place", width="70px", align="center", decimal_places=0, frozen="left"),
+            Column(title=i18n_service.get_text("player"), field="player", width="144px", align="left", frozen="left"),
         ]
         if include_club:
             base_cols.append(Column(title=i18n_service.get_text("ui.player.club"), field="club", width="200px", align="left"))
         grouped_columns = [
             ColumnGroup(
                 title="",
-                frozen="left",
                 style={"backgroundColor": "#f8f9fa"},
                 columns=base_cols,
             )

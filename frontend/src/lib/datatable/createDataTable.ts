@@ -360,6 +360,9 @@ export function createDataTable(
     data.columns.forEach((group, groupIndex) => {
       if (!Array.isArray(group.columns)) return;
       const groupFrozen = group.frozen === "left" || group.frozen === "right" ? group.frozen : null;
+      const hasPerColumnFrozen = (group.columns ?? []).some(
+        (c) => c.frozen === "left" || c.frozen === "right",
+      );
       const isHighlighted = group.highlighted === true;
       group.columns.forEach((column, columnIndex) => {
         const info = columnLookup[`${groupIndex}-${columnIndex}`];
@@ -375,7 +378,12 @@ export function createDataTable(
           transformedData,
           makeFormatter(column, info, isHighlighted, groupIndex, columnIndex),
         );
-        if (groupFrozen) (def as { frozen?: unknown }).frozen = groupFrozen;
+        const colFrozen = column.frozen === "left" || column.frozen === "right" ? column.frozen : null;
+        if (hasPerColumnFrozen) {
+          if (colFrozen) (def as { frozen?: string }).frozen = colFrozen;
+        } else if (groupFrozen) {
+          (def as { frozen?: string }).frozen = groupFrozen;
+        }
         tabulatorColumns.push(def);
       });
     });
@@ -385,6 +393,9 @@ export function createDataTable(
         if (!Array.isArray(group.columns)) return null;
         const groupFrozen =
           group.frozen === "left" || group.frozen === "right" ? group.frozen : null;
+        const hasPerColumnFrozen = (group.columns ?? []).some(
+          (c) => c.frozen === "left" || c.frozen === "right",
+        );
         const isHighlighted = group.highlighted === true;
         let groupCssClass = group.cssClass ?? "";
         if (isHighlighted) groupCssClass = (groupCssClass + " tab-group-highlighted").trim();
@@ -392,7 +403,7 @@ export function createDataTable(
           .map((column, columnIndex) => {
             const info = columnLookup[`${groupIndex}-${columnIndex}`];
             if (!info) return null;
-            return buildColumnDefinition(
+            const def = buildColumnDefinition(
               column,
               info,
               isHighlighted,
@@ -404,6 +415,11 @@ export function createDataTable(
               makeFormatter(column, info, isHighlighted, info.groupIndex, info.columnIndex),
               useStripedGroups ? groupIndex : null,
             );
+            const colFrozen = column.frozen === "left" || column.frozen === "right" ? column.frozen : null;
+            if (hasPerColumnFrozen && colFrozen) {
+              (def as { frozen?: string }).frozen = colFrozen;
+            }
+            return def;
           })
           .filter((c): c is ColumnDefinition => c !== null);
         const groupDef: ColumnDefinition = {
@@ -412,7 +428,7 @@ export function createDataTable(
           cssClass: groupCssClass || undefined,
           columns: childDefs,
         };
-        if (groupFrozen) (groupDef as { frozen?: unknown }).frozen = groupFrozen;
+        if (groupFrozen && !hasPerColumnFrozen) (groupDef as { frozen?: unknown }).frozen = groupFrozen;
         return groupDef;
       })
       .filter((g): g is ColumnDefinition => g !== null);

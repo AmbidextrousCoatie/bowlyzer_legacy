@@ -265,6 +265,11 @@ class I18nService:
                 "en": "Hcp / game",
                 "de": "Hcp / Spiel",
             },
+            "ui.tournament.handicap_col_short": {"en": "Hdc", "de": "Hdc"},
+            "ui.tournament.handicap_per_game_tooltip": {
+                "en": "Handicap / game",
+                "de": "Handicap / Spiel",
+            },
             "ui.tournament.scratch_plus_handicap_four": {
                 "en": "Scratch + Hcp (4 games)",
                 "de": "Scratch + Hcp (4 Spiele)",

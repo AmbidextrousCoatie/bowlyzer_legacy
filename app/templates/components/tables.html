@@ -433,6 +433,9 @@ function createTableTabulator(tableId, data, options = {}) {
             }
             
             const groupFrozenDirection = group.frozen === 'left' || group.frozen === 'right' ? group.frozen : null;
+            const hasPerColumnFrozen = Array.isArray(group.columns) && group.columns.some(function (col) {
+                return col.frozen === 'left' || col.frozen === 'right';
+            });
             const isHighlighted = group.highlighted === true;
             
             group.columns.forEach((column, columnIndex) => {
@@ -698,8 +701,13 @@ function createTableTabulator(tableId, data, options = {}) {
                     cssClass: cssClasses.join(' ') || undefined
                 };
 
-                // Set frozen on individual column if group was frozen
-                if (groupFrozenDirection) {
+                // Freeze: whole group, or only columns that set column.frozen
+                const colFrozenDir = (column.frozen === 'left' || column.frozen === 'right') ? column.frozen : null;
+                if (hasPerColumnFrozen) {
+                    if (colFrozenDir) {
+                        columnDefinition.frozen = colFrozenDir;
+                    }
+                } else if (groupFrozenDirection) {
                     columnDefinition.frozen = groupFrozenDirection;
                 }
 
@@ -729,6 +737,9 @@ function createTableTabulator(tableId, data, options = {}) {
         }
 
         const groupFrozenDirection = group.frozen === 'left' || group.frozen === 'right' ? group.frozen : null;
+        const hasPerColumnFrozen = group.columns.some(function (col) {
+            return col.frozen === 'left' || col.frozen === 'right';
+        });
         
         // Use backend flag for highlighting
         const isHighlighted = group.highlighted === true;
@@ -942,12 +953,19 @@ function createTableTabulator(tableId, data, options = {}) {
                 
                 columnDefinition.cssClass = cssClasses.join(' ');
 
+                const colFrozenDir = (column.frozen === 'left' || column.frozen === 'right') ? column.frozen : null;
+                if (hasPerColumnFrozen) {
+                    if (colFrozenDir) {
+                        columnDefinition.frozen = colFrozenDir;
+                    }
+                }
+
                 return columnDefinition;
             }).filter(Boolean)
         };
 
-        // Set frozen on the parent group, not individual columns
-        if (groupFrozenDirection) {
+        // Set frozen on the parent group only when the whole group freezes (no per-column overrides)
+        if (groupFrozenDirection && !hasPerColumnFrozen) {
             groupDefinition.frozen = groupFrozenDirection;
         }
 

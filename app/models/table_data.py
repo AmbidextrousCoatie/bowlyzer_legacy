@@ -17,6 +17,9 @@ class Column:
     decimal_places: Optional[int] = None  # Number of decimal places to display (0, 1, 2, etc.)
     style: Optional[Dict[str, str]] = None  # Custom CSS styles
     tooltip: Optional[str] = None  # Tooltip text for column header
+    # When set on one or more columns in a group, renderers freeze those columns only
+    # (instead of freezing the entire ColumnGroup).
+    frozen: Optional[str] = None  # "left", "right"
 
 @dataclass
 class ColumnGroup:
@@ -71,6 +74,7 @@ class TableData:
                             **({"decimal_places": col.decimal_places} if col.decimal_places is not None else {}),
                             **({"style": col.style} if col.style else {}),
                             **({"tooltip": col.tooltip} if col.tooltip else {}),
+                            **({"frozen": col.frozen} if col.frozen else {}),
                         }
                         for col in group.columns
                     ],

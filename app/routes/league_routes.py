@@ -812,6 +812,8 @@ def get_translations():
                     "ui.tournament.highest_game", "ui.tournament.highest_pair", "ui.tournament.highest_block",
                     "ui.tournament.player_handicap_card", "ui.tournament.apriori_avg_label",
                     "ui.tournament.handicap_ref_label",
+                    "ui.tournament.handicap_col_short",
+                    "ui.tournament.handicap_per_game_tooltip",
                     "ui.tournament.cum_avg_over_games", "ui.tournament.cut_line_mode",
                     "ui.tournament.cut", "ui.tournament.dynamic", "ui.tournament.static",
                     "ui.tournament.dynamic_cut_pace", "ui.tournament.horizontal_cut",

@@ -984,8 +984,12 @@
         const value = String(item.value ?? "");
         const label = String(item.label ?? value);
         const active = value === String(activeValue ?? "");
+        const titleAttr =
+          item.title != null && String(item.title).trim() !== ""
+            ? ` title="${escapeAttr(String(item.title))}"`
+            : "";
         return `
-          <button type="button" class="btn btn-sm ${active ? "btn-primary" : "btn-outline-primary"} me-2 mb-2" data-value="${escapeAttr(value)}">
+          <button type="button" class="btn btn-sm ${active ? "btn-primary" : "btn-outline-primary"} me-2 mb-2"${titleAttr} data-value="${escapeAttr(value)}">
             ${escapeHtml(label)}
           </button>
         `;
@@ -1965,7 +1969,8 @@
     const roundItems = [{ value: "", label: tt("ui.tournament.all_latest", "Total") }].concat(
       rounds.map((r) => ({
         value: String(r.round_number),
-        label: `${r.round_number} - ${r.round_name || tt("ui.tournament.round", "Round")}`,
+        label: String(r.round_number),
+        title: (r.round_name && String(r.round_name).trim()) || `${tt("ui.tournament.round", "Round")} ${r.round_number}`,
       }))
     );
     const preferredRound = currentFilters.round;
