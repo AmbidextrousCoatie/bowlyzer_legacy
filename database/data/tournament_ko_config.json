@@ -3,12 +3,40 @@
     "ko_finale_series": "scratch_total_2g",
     "ko_qualifying_cut_rank": 6,
     "ko_qualifying_cut_round": 1,
-    "ko_qualifying_cut_through_round": 2
+    "ko_qualifying_cut_through_round": 2,
+    "player_cards": [
+      "summary_final_position",
+      "summary_average",
+      "summary_best_position",
+      "best_highest_game",
+      "best_highest_block"
+    ]
   },
   "25/26||Bayerische Meisterschaft - Männer Einzel": {
     "ko_finale_series": "bo3_pins",
     "ko_qualifying_cut_rank": 6,
     "ko_qualifying_cut_round": 1,
-    "ko_qualifying_cut_through_round": 2
+    "ko_qualifying_cut_through_round": 2,
+    "player_cards": [
+      "summary_final_position",
+      "summary_average",
+      "summary_best_position",
+      "best_highest_game",
+      "best_highest_block"
+    ]
+  },
+  "25/26||Clubmeisterschaft Donaubowler 2026": {
+    "ko_finale_series": "bo3_pins",
+    "ko_qualifying_cut_rank": 6,
+    "ko_qualifying_cut_round": 1,
+    "ko_qualifying_cut_through_round": 6,
+    "player_cards": [
+      "summary_final_position",
+      "summary_best_position",
+      "summary_average",
+      "best_highest_game",
+      "handicap_profile",
+      "best_highest_block"
+    ]
   }
 }

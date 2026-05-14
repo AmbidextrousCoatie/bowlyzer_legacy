@@ -71,6 +71,12 @@ export type TournamentPlayerSummary = {
   final_position?: number | null;
 };
 
+export type TournamentPlayerHandicapProfile = {
+  a_priori_average?: number | null;
+  handicap_per_game?: number | null;
+  handicap_reference?: number | null;
+};
+
 export type TournamentPlayerBestEfforts = {
   highest_game?: {
     score?: number | null;
@@ -79,11 +85,22 @@ export type TournamentPlayerBestEfforts = {
   } | null;
   highest_pair?: { score?: number | null; stage?: string | null; pair?: string | null } | null;
   highest_block?: { score?: number | null; stage?: string | null } | null;
+  handicap_profile?: TournamentPlayerHandicapProfile | null;
 };
+
+export type TournamentPlayerCardId =
+  | "summary_final_position"
+  | "summary_average"
+  | "summary_best_position"
+  | "best_highest_game"
+  | "best_highest_pair"
+  | "handicap_profile"
+  | "best_highest_block";
 
 export type TournamentPlayerSection = {
   player: string;
   player_club?: string | null;
+  player_card_layout?: TournamentPlayerCardId[];
   round_table: TableData;
   best_efforts?: TournamentPlayerBestEfforts;
   progress_series?: TournamentProgressSeries;

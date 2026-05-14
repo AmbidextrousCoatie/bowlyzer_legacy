@@ -28,6 +28,8 @@ class Columns:
     club: str = 'Club'  # Player club/team label
     game_number: str = 'Game Number'  # Game within series (reuses round_number concept)
     handicap: str = 'Handicap'  # Per-game handicap for tournaments
+    apriori_average: str = 'A Priori Average'  # Sheet a priori average (club handicap basis)
+    handicap_reference: str = 'Handicap Reference'  # Reference score used with a priori for hcp formula
     stage_rank: str = 'Stage Rank'  # Rank within current stage after each game
     cumulative_score: str = 'Cumulative Score'  # Running score in current stage
     cut_line: str = 'Cut Line'  # Current cut threshold score for stage
@@ -40,7 +42,8 @@ class Columns:
             return [self.season, self.week, self.date, self.league_name, self.players_per_team, self.location, self.round_number, 
                     self.match_number, self.team_name, self.position, self.player_name, self.player_id, self.team_name_opponent,
                     self.score, self.points, self.input_data, self.computed_data, self.event_type, self.event_name, 
-                    self.round_name, self.club, self.game_number, self.handicap, self.stage_rank, self.cumulative_score, self.cut_line]
+                    self.round_name, self.club, self.game_number, self.handicap, self.apriori_average,
+                    self.handicap_reference, self.stage_rank, self.cumulative_score, self.cut_line]
         
 @dataclass
 class ColumnsExtra:

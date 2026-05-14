@@ -1,10 +1,13 @@
-from typing import Optional, List, Dict, Any, Union
+from typing import Optional, List, Dict, Any, Union, TYPE_CHECKING
 from data_access.adapters.data_adapter import DataAdapter
 from enum import Enum
 from database.config import path_to_csv_data
 from abc import ABC, abstractmethod
 from data_access.models.league_models import TeamSeasonPerformance
 import pathlib
+
+if TYPE_CHECKING:
+    from app.config.database_config import DataSourceConfig
 
 class DataAdapterSelector(Enum):
     """Enum for selecting data adapter type"""
@@ -14,21 +17,50 @@ class DataAdapterSelector(Enum):
 
 class DataAdapterFactory:
     @staticmethod
+    def _pandas_from_source_config(config: "DataSourceConfig"):
+        """Build a pandas adapter from a data source, optionally merging supplemental CSVs."""
+        from data_access.adapters.data_adapter_pandas import DataAdapterPandas
+        import pandas as pd
+
+        merge_paths = getattr(config, "merge_file_paths", None) or ()
+        if merge_paths:
+            paths: List[pathlib.Path] = []
+            if config.file_path:
+                primary = pathlib.Path(config.file_path)
+                if primary.is_file():
+                    paths.append(primary)
+            for extra in merge_paths:
+                p = pathlib.Path(extra)
+                if p.is_file():
+                    paths.append(p)
+            if paths:
+                dfs = [
+                    pd.read_csv(p, sep=";", dtype=str, low_memory=False) for p in paths
+                ]
+                merged = pd.concat(dfs, ignore_index=True)
+                # Duplicate header names (e.g. BOM-prefixed "Season") break filters; keep first column each.
+                merged = merged.loc[:, ~merged.columns.duplicated()].copy()
+                return DataAdapterPandas(df=merged)
+            return None
+
+        if config.file_path:
+            return DataAdapterPandas(path_to_csv_data=pathlib.Path(config.file_path))
+        return None
+
+    @staticmethod
     def create_adapter(adapter_type: DataAdapterSelector, database: str = None) -> DataAdapter:
         if adapter_type == DataAdapterSelector.PANDAS:
             from data_access.adapters.data_adapter_pandas import DataAdapterPandas
             if database:
                 # Map abstract database ID to actual file path
-                from app.config.database_config import database_config
+                from app.config.database_config import database_config, DATABASE_DATA_DIR
                 config = database_config.get_source_config(database)
-                if config and config.file_path:
-                    # Use the full path from config
-                    return DataAdapterPandas(path_to_csv_data=pathlib.Path(config.file_path))
-                else:
-                    # Fallback: construct path from filename
-                    from app.config.database_config import DATABASE_DATA_DIR
-                    actual_filename = database_config.get_filename_for_source(database)
-                    return DataAdapterPandas(path_to_csv_data=pathlib.Path(DATABASE_DATA_DIR) / actual_filename)
+                if config:
+                    adapter = DataAdapterFactory._pandas_from_source_config(config)
+                    if adapter is not None:
+                        return adapter
+                actual_filename = database_config.get_filename_for_source(database)
+                return DataAdapterPandas(path_to_csv_data=pathlib.Path(DATABASE_DATA_DIR) / actual_filename)
             else:
                 # Fallback to current DataManager logic
                 try:
@@ -39,13 +71,12 @@ class DataAdapterFactory:
 
                     # Create path to current data source using database_config
                     config = database_config.get_source_config(current_source)
-                    if config and config.file_path:
-                        current_path = pathlib.Path(config.file_path)
-                    else:
-                        # Fallback: construct path from source ID
-                        filename = database_config.get_filename_for_source(current_source)
-                        current_path = pathlib.Path(DATABASE_DATA_DIR) / filename
-
+                    if config:
+                        adapter = DataAdapterFactory._pandas_from_source_config(config)
+                        if adapter is not None:
+                            return adapter
+                    filename = database_config.get_filename_for_source(current_source)
+                    current_path = pathlib.Path(DATABASE_DATA_DIR) / filename
                     return DataAdapterPandas(path_to_csv_data=current_path)
                 except ImportError:
                     # Fallback to config if DataManager not available

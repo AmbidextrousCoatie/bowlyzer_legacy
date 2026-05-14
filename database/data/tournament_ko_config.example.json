@@ -1,4 +1,5 @@
 {
+  "_comment_player_cards": "Optional player_cards: ordered list of metric tile ids for /tournament/get_player_section. Valid ids: summary_final_position, summary_average, summary_best_position, best_highest_game, best_highest_pair (Nord/Süd BM lane events), handicap_profile (hcp data in CSV), best_highest_block. Unknown ids are ignored. Omit player_cards to use server defaults (heuristic pair + handicap from event name / data).",
   "25/26||Bayerische Meisterschaft - Frauen Einzel": {
     "ko_finale_series": "scratch_total_2g",
     "ko_qualifying_cut_rank": 6,
@@ -10,5 +11,12 @@
     "ko_qualifying_cut_rank": 6,
     "ko_qualifying_cut_round": 1,
     "ko_qualifying_cut_through_round": 2
+  },
+  "25/26||Clubmeisterschaft Donaubowler 2026": {
+    "_comment": "Unsanctioned club championship. Stage 1: 6 sets of 4 games, all count; top 6 advance. Handicap per player comes from import data, not this file. ko_qualifying_cut_through_round=6 assumes round_number 1..6 map to the six sets; use 1 if stage 1 is a single round in CSV.",
+    "ko_finale_series": "bo3_pins",
+    "ko_qualifying_cut_rank": 6,
+    "ko_qualifying_cut_round": 1,
+    "ko_qualifying_cut_through_round": 6
   }
 }

@@ -83,12 +83,54 @@
     return await res.json();
   }
 
+  /** Enable with ?tournamentDebug=1 or localStorage.setItem("bowlyzerTournamentStatsDebug","1") */
+  function tournamentStatsDebugEnabled() {
+    try {
+      return (
+        new URLSearchParams(window.location.search).has("tournamentDebug") ||
+        localStorage.getItem("bowlyzerTournamentStatsDebug") === "1"
+      );
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /** DevTools: filter console by `[tournament-stats]`. */
+  function dbgTournamentStats(phase, detail) {
+    if (!tournamentStatsDebugEnabled()) return;
+    console.info("[tournament-stats]", phase, detail);
+  }
+
+  /** Map calendar year in URL (2026) to bowling season label (25/26) when present in API list. */
+  function normalizeSeasonFromUrl(urlSeason, seasonsFromApi) {
+    const s = (urlSeason || "").trim();
+    const list = Array.isArray(seasonsFromApi) ? seasonsFromApi.map(String) : [];
+    if (!s || !list.length) return s;
+    if (list.includes(s)) return s;
+    const m = /^(\d{4})$/.exec(s);
+    if (m) {
+      const y = parseInt(m[1], 10);
+      if (Number.isFinite(y)) {
+        const candidate = `${String(y - 1).slice(-2)}/${String(y).slice(-2)}`;
+        if (list.includes(candidate)) return candidate;
+      }
+    }
+    return s;
+  }
+
   function escapeHtml(s) {
     return String(s ?? "")
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;");
+  }
+
+  function escapeAttr(s) {
+    return String(s ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
   }
 
   function koBracketNormName(n) {
@@ -881,7 +923,6 @@
   let roundResultsHeatmapEnabled = false;
   let currentRoundResultsHeatmapRange = DEFAULT_GAME_HEATMAP_RANGE;
   let currentPlayerRoundHeatmapRange = DEFAULT_GAME_HEATMAP_RANGE;
-  const playerComboCache = new Map();
   const currentFilters = {
     season: "",
     tournament: "",
@@ -944,8 +985,8 @@
         const label = String(item.label ?? value);
         const active = value === String(activeValue ?? "");
         return `
-          <button type="button" class="btn btn-sm ${active ? "btn-primary" : "btn-outline-primary"} me-2 mb-2" data-value="${value}">
-            ${label}
+          <button type="button" class="btn btn-sm ${active ? "btn-primary" : "btn-outline-primary"} me-2 mb-2" data-value="${escapeAttr(value)}">
+            ${escapeHtml(label)}
           </button>
         `;
       })
@@ -985,24 +1026,6 @@
     return (input?.value || "").trim();
   }
 
-  async function comboHasPlayer(season, tournament, player) {
-    if (!season || !tournament || !player) return false;
-    const key = `${season}||${tournament}||${player.toLowerCase()}`;
-    if (playerComboCache.has(key)) return playerComboCache.get(key);
-    try {
-      const players = await fetchJson(
-        `/tournament/get_available_players?season=${encodeURIComponent(season)}&tournament=${encodeURIComponent(tournament)}`
-      );
-      const found = Array.isArray(players) && players.some((p) => String(p).toLowerCase() === player.toLowerCase());
-      playerComboCache.set(key, found);
-      return found;
-    } catch (err) {
-      console.warn("comboHasPlayer lookup failed:", err);
-      playerComboCache.set(key, false);
-      return false;
-    }
-  }
-
   async function loadPlayers(season, tournament, round, preservePlayer = false) {
     const list = document.getElementById("tournamentPlayersList");
     const input = document.getElementById("tournamentPlayerInput");
@@ -1030,6 +1053,129 @@
     }
   }
 
+  const DEFAULT_PLAYER_CARD_LAYOUT = [
+    "summary_final_position",
+    "summary_average",
+    "summary_best_position",
+    "best_highest_game",
+    "best_highest_block",
+  ];
+
+  function buildPlayerMetricCardHtml(cardId, payload) {
+    const s = payload.summary || {};
+    const b = payload.best_efforts || {};
+    const hp = b.handicap_profile;
+    if (cardId === "summary_final_position") {
+      return `
+            <div class="col-md-4">
+              <div class="card h-100" id="tournamentFinalPositionCard">
+                <div class="card-header"><h6>${tt("ui.tournament.final_position", "Final Position")}</h6></div>
+                <div class="card-body">
+                  <div class="h5 mb-1">${s.final_position ?? "-"}</div>
+                  <small class="text-muted">${tt("ui.tournament.after_final_game", "After final game")}</small>
+                </div>
+              </div>
+            </div>`;
+    }
+    if (cardId === "summary_average") {
+      return `
+            <div class="col-md-4">
+              <div class="card h-100">
+                <div class="card-header"><h6>${tt("ui.tournament.average", "Average")}</h6></div>
+                <div class="card-body">
+                  <div class="h5 mb-1">${s.average ?? "-"}</div>
+                  <small class="text-muted">${tt("ui.tournament.cumulated", "Cumulated")}</small>
+                </div>
+              </div>
+            </div>`;
+    }
+    if (cardId === "summary_best_position") {
+      return `
+            <div class="col-md-4">
+              <div class="card h-100">
+                <div class="card-header"><h6>${tt("ui.tournament.best_position", "Best Position")}</h6></div>
+                <div class="card-body">
+                  <div class="h5 mb-1">${s.best_position ?? "-"}</div>
+                  <small class="text-muted">${s.best_position_game ?? ""}</small>
+                </div>
+              </div>
+            </div>`;
+    }
+    if (cardId === "best_highest_game") {
+      return `
+            <div class="col-md-4">
+              <div class="card h-100">
+                <div class="card-header"><h6>${tt("ui.tournament.highest_game", "Highest Game")}</h6></div>
+                <div class="card-body">
+                  <div class="h5 mb-1">${b.highest_game?.score ?? "-"}</div>
+                  <small class="text-muted">${b.highest_game?.stage || ""} ${b.highest_game?.game ? `(G${b.highest_game.game})` : ""}</small>
+                </div>
+              </div>
+            </div>`;
+    }
+    if (cardId === "best_highest_pair") {
+      return `
+            <div class="col-md-4">
+              <div class="card h-100">
+                <div class="card-header"><h6>${tt("ui.tournament.highest_pair", "Highest Pair")}</h6></div>
+                <div class="card-body">
+                  <div class="h5 mb-1">${b.highest_pair?.score ?? "-"}</div>
+                  <small class="text-muted">${b.highest_pair?.stage || ""} ${b.highest_pair?.pair ? `(${b.highest_pair.pair})` : ""}</small>
+                </div>
+              </div>
+            </div>`;
+    }
+    if (cardId === "handicap_profile") {
+      return `
+            <div class="col-md-4">
+              <div class="card h-100">
+                <div class="card-header"><h6>${tt("ui.tournament.player_handicap_card", "Handicap")}</h6></div>
+                <div class="card-body">
+                  <div class="h5 mb-1">${hp?.handicap_per_game != null ? hp.handicap_per_game : "—"}</div>
+                  <small class="text-muted d-block">${tt("ui.tournament.apriori_avg_label", "a priori average")}: ${
+                    hp?.a_priori_average != null ? hp.a_priori_average : "—"
+                  }</small>
+                  ${
+                    hp?.handicap_reference != null
+                      ? `<small class="text-muted d-block mt-1">${tt("ui.tournament.handicap_ref_label", "Reference")}: ${hp.handicap_reference}</small>`
+                      : ""
+                  }
+                </div>
+              </div>
+            </div>`;
+    }
+    if (cardId === "best_highest_block") {
+      return `
+            <div class="col-md-4">
+              <div class="card h-100">
+                <div class="card-header"><h6>${tt("ui.tournament.highest_block", "Highest Block")}</h6></div>
+                <div class="card-body">
+                  <div class="h5 mb-1">${b.highest_block?.score ?? "-"}</div>
+                  <small class="text-muted">${b.highest_block?.stage || ""}</small>
+                </div>
+              </div>
+            </div>`;
+    }
+    return "";
+  }
+
+  function buildPlayerMetricRowsHtml(payload) {
+    const layout =
+      Array.isArray(payload.player_card_layout) && payload.player_card_layout.length > 0
+        ? payload.player_card_layout
+        : DEFAULT_PLAYER_CARD_LAYOUT;
+    const rows = [];
+    for (let i = 0; i < layout.length; i += 3) {
+      rows.push(layout.slice(i, i + 3));
+    }
+    return rows
+      .map((row, idx) => {
+        const margin = idx === 0 ? "mb-3" : "mb-3 mt-8";
+        return `<div class="row g-3 ${margin}">${row.map((cid) => buildPlayerMetricCardHtml(cid, payload)).join("")}</div>`;
+      })
+      .join("");
+  }
+
   function renderPlayerSection(payload) {
     const container = document.getElementById("tournamentPlayerSection");
     if (!container) return;
@@ -1047,64 +1193,7 @@
           </div>
         </div>
         <div class="card-body">
-          <div class="row g-3 mb-3">
-            <div class="col-md-4">
-              <div class="card h-100" id="tournamentFinalPositionCard">
-                <div class="card-header"><h6>${tt("ui.tournament.final_position", "Final Position")}</h6></div>
-                <div class="card-body">
-                  <div class="h5 mb-1">${payload.summary?.final_position ?? "-"}</div>
-                  <small class="text-muted">${tt("ui.tournament.after_final_game", "After final game")}</small>
-                </div>
-              </div>
-            </div>
-            <div class="col-md-4">
-              <div class="card h-100">
-                <div class="card-header"><h6>${tt("ui.tournament.average", "Average")}</h6></div>
-                <div class="card-body">
-                  <div class="h5 mb-1">${payload.summary?.average ?? "-"}</div>
-                  <small class="text-muted">${tt("ui.tournament.cumulated", "Cumulated")}</small>
-                </div>
-              </div>
-            </div>
-            <div class="col-md-4">
-              <div class="card h-100">
-                <div class="card-header"><h6>${tt("ui.tournament.best_position", "Best Position")}</h6></div>
-                <div class="card-body">
-                  <div class="h5 mb-1">${payload.summary?.best_position ?? "-"}</div>
-                  <small class="text-muted">${payload.summary?.best_position_game ?? ""}</small>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="row g-3 mb-3">
-            <div class="col-md-4">
-              <div class="card h-100">
-                <div class="card-header"><h6>${tt("ui.tournament.highest_game", "Highest Game")}</h6></div>
-                <div class="card-body">
-                  <div class="h5 mb-1">${payload.best_efforts?.highest_game?.score ?? "-"}</div>
-                  <small class="text-muted">${payload.best_efforts?.highest_game?.stage || ""} ${payload.best_efforts?.highest_game?.game ? `(G${payload.best_efforts.highest_game.game})` : ""}</small>
-                </div>
-              </div>
-            </div>
-            <div class="col-md-4">
-              <div class="card h-100">
-                <div class="card-header"><h6>${tt("ui.tournament.highest_pair", "Highest Pair")}</h6></div>
-                <div class="card-body">
-                  <div class="h5 mb-1">${payload.best_efforts?.highest_pair?.score ?? "-"}</div>
-                  <small class="text-muted">${payload.best_efforts?.highest_pair?.stage || ""} ${payload.best_efforts?.highest_pair?.pair ? `(${payload.best_efforts.highest_pair.pair})` : ""}</small>
-                </div>
-              </div>
-            </div>
-            <div class="col-md-4">
-              <div class="card h-100">
-                <div class="card-header"><h6>${tt("ui.tournament.highest_block", "Highest Block")}</h6></div>
-                <div class="card-body">
-                  <div class="h5 mb-1">${payload.best_efforts?.highest_block?.score ?? "-"}</div>
-                  <small class="text-muted">${payload.best_efforts?.highest_block?.stage || ""}</small>
-                </div>
-              </div>
-            </div>
-          </div>
+          ${buildPlayerMetricRowsHtml(payload)}
           <div class="row g-3 mb-3">
             <div class="col-md-6">
               <div class="card h-100">
@@ -1671,8 +1760,17 @@
   async function getAvailableSeasons(tournament) {
     try {
       const tournamentParam = tournament ? `?tournament=${encodeURIComponent(tournament)}` : "";
-      const data = await fetchJson(`/tournament/get_available_seasons${tournamentParam}`);
-      return Array.isArray(data) ? data : [];
+      const path = `/tournament/get_available_seasons${tournamentParam}`;
+      const data = await fetchJson(path);
+      const list = Array.isArray(data) ? data : [];
+      dbgTournamentStats("get_available_seasons", {
+        fetchPath: path,
+        fetchWithDatabase: withDatabase(path),
+        tournamentFilter: tournament || null,
+        count: list.length,
+        seasons: list,
+      });
+      return list;
     } catch (err) {
       console.error("Failed to load seasons:", err);
       return [];
@@ -1681,8 +1779,17 @@
 
   async function getAvailableTournaments(season) {
     try {
-      const data = await fetchJson(`/tournament/get_available_tournaments?season=${encodeURIComponent(season)}`);
-      return Array.isArray(data) ? data : [];
+      const path = `/tournament/get_available_tournaments?season=${encodeURIComponent(season)}`;
+      const data = await fetchJson(path);
+      const list = Array.isArray(data) ? data : [];
+      dbgTournamentStats("get_available_tournaments", {
+        fetchPath: path,
+        fetchWithDatabase: withDatabase(path),
+        season: season || null,
+        count: list.length,
+        tournaments: list,
+      });
+      return list;
     } catch (err) {
       console.error("Failed to load tournaments:", err);
       return [];
@@ -1702,12 +1809,36 @@
     }
   }
 
+  function _normPickToken(s) {
+    const t = String(s ?? "").trim();
+    if (!t) return "";
+    try {
+      return t.normalize("NFC");
+    } catch (e) {
+      return t;
+    }
+  }
+
   function pickValue(items, preferred) {
     if (!Array.isArray(items) || items.length === 0) return "";
-    const normalizedPreferred = preferred == null ? "" : String(preferred);
-    const match = items.find((item) => String(item.value ?? item) === normalizedPreferred);
-    if (match) return String(match.value ?? match);
-    return String(items[0].value ?? items[0]);
+    const wantRaw = preferred == null ? "" : String(preferred).trim();
+    const want = _normPickToken(wantRaw);
+    const rowVals = items.map((item) => String(item.value ?? item).trim());
+
+    if (wantRaw) {
+      const idxExact = rowVals.findIndex((v) => v === wantRaw);
+      if (idxExact >= 0) return rowVals[idxExact];
+      const idxTrim = rowVals.findIndex((v) => v.trim() === wantRaw);
+      if (idxTrim >= 0) return rowVals[idxTrim];
+      const low = wantRaw.toLowerCase();
+      const idxCi = rowVals.findIndex((v) => v.toLowerCase() === low);
+      if (idxCi >= 0) return rowVals[idxCi];
+      if (want) {
+        const idxNfc = rowVals.findIndex((v) => _normPickToken(v) === want);
+        if (idxNfc >= 0) return rowVals[idxNfc];
+      }
+    }
+    return rowVals[0] ?? "";
   }
 
   async function renderSection() {
@@ -1848,21 +1979,18 @@
   }
 
   async function refreshTournamentButtons() {
-    const tournaments = await getAvailableTournaments(currentFilters.season);
-    let tournamentItems = tournaments.map((name) => ({ value: name, label: name }));
-    const selectedPlayer = getSelectedPlayer();
-    if (selectedPlayer) {
-      const checks = await Promise.all(
-        tournamentItems.map(async (item) => ({
-          item,
-          ok: await comboHasPlayer(currentFilters.season, item.value, selectedPlayer),
-        }))
-      );
-      const filtered = checks.filter((x) => x.ok).map((x) => x.item);
-      if (filtered.length > 0) tournamentItems = filtered;
-    }
     const preferredTournament = currentFilters.tournament;
+    const season = currentFilters.season;
+    const tournaments = await getAvailableTournaments(currentFilters.season);
+    const tournamentItems = tournaments.map((name) => ({ value: name, label: name }));
     currentFilters.tournament = pickValue(tournamentItems, currentFilters.tournament);
+    dbgTournamentStats("refresh_tournament_buttons", {
+      season,
+      preferredTournament,
+      listCount: tournamentItems.length,
+      tournaments,
+      pickedTournament: currentFilters.tournament,
+    });
     renderButtonGroup("tournamentNameButtons", tournamentItems, currentFilters.tournament, async (value) => {
       currentFilters.tournament = value || "";
       await refreshTournamentButtons();
@@ -1873,20 +2001,18 @@
   }
 
   async function refreshSeasonButtons() {
+    const preferredSeason = currentFilters.season;
+    const tournament = currentFilters.tournament;
     const seasons = await getAvailableSeasons(currentFilters.tournament);
-    let seasonItems = seasons.map((s) => ({ value: String(s), label: String(s) }));
-    const selectedPlayer = getSelectedPlayer();
-    if (selectedPlayer && currentFilters.tournament) {
-      const checks = await Promise.all(
-        seasonItems.map(async (item) => ({
-          item,
-          ok: await comboHasPlayer(item.value, currentFilters.tournament, selectedPlayer),
-        }))
-      );
-      const filtered = checks.filter((x) => x.ok).map((x) => x.item);
-      if (filtered.length > 0) seasonItems = filtered;
-    }
+    const seasonItems = seasons.map((s) => ({ value: String(s), label: String(s) }));
     currentFilters.season = pickValue(seasonItems, currentFilters.season);
+    dbgTournamentStats("refresh_season_buttons", {
+      tournamentFilter: tournament,
+      preferredSeason,
+      listCount: seasonItems.length,
+      seasons,
+      pickedSeason: currentFilters.season,
+    });
     renderButtonGroup("tournamentSeasonButtons", seasonItems, currentFilters.season, async (value) => {
       currentFilters.season = value || "";
       await refreshSeasonButtons();
@@ -1904,14 +2030,33 @@
     refreshTournamentUiText();
     renderRoundResultsHeatmapControls();
     const params = new URLSearchParams(window.location.search);
+    const rawSeasonParam = params.get("season");
     const deepLinkedPlayer = (params.get("player") || "").trim();
-    const seasons = await getAvailableSeasons();
+    currentFilters.tournament = params.get("tournament") || "";
+    const seasons = await getAvailableSeasons(currentFilters.tournament);
     const seasonItems = seasons.map((s) => ({ value: String(s), label: String(s) }));
-    currentFilters.season = pickValue(seasonItems, params.get("season"));
+    const explicitSeason = normalizeSeasonFromUrl(rawSeasonParam, seasons);
+    if (rawSeasonParam) {
+      currentFilters.season = pickValue(seasonItems, explicitSeason);
+    } else if (currentFilters.tournament && seasons.length > 0) {
+      // Tournament-only deep links: pick the newest season that contains this event.
+      currentFilters.season = String(seasons[seasons.length - 1]);
+    } else {
+      currentFilters.season = pickValue(seasonItems, "");
+    }
+
+    dbgTournamentStats("init:after_url_parse", {
+      locationSearch: window.location.search,
+      database: getCurrentDatabase(),
+      rawSeasonParam,
+      normalizedSeasonParam: explicitSeason,
+      urlTournament: currentFilters.tournament,
+      seasonsFromApi: seasons,
+      chosenSeason: currentFilters.season,
+    });
 
     await refreshSeasonButtons();
 
-    currentFilters.tournament = params.get("tournament") || "";
     await refreshTournamentButtons();
 
     currentFilters.round = params.get("round") || "";

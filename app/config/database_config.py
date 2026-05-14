@@ -5,7 +5,7 @@ Manages available data sources and their settings
 
 import csv
 import os
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -20,6 +20,8 @@ GF_TOURNAMENT_EXPORT_DIR = LEGACY_V1_DIR / "database" / "input" / "gf_tables_exp
 GF_SBM_CANONICAL_CSV = GF_TOURNAMENT_EXPORT_DIR / "gf_table_124__sbm_suedbayerische_meisterschaft_2026__canonical_clean.csv"
 GF_NBM_CANONICAL_CSV = GF_TOURNAMENT_EXPORT_DIR / "gf_table_125__nbm_nordbayerische_meisterschaft_2026__canonical_clean.csv"
 GF_REGIONAL_COMBINED_POSTPROCESSED_CSV = GF_TOURNAMENT_EXPORT_DIR / "gf_tournaments_2026__combined_postprocessed.csv"
+# Club / Excel imports that are not produced by the GF tables export pipeline (keeps GF CSV overwrite-safe).
+MANUAL_TOURNAMENT_POSTPROCESSED_CSV = DATABASE_DATA_DIR / "tournament_manual_postprocessed.csv"
 GF_PLAYER_COMBINED_CSV = GF_TOURNAMENT_EXPORT_DIR / "gf_player_stats__league_plus_tournaments.csv"
 HISTORICAL_LEAGUE_RESULTS_CSV = LEGACY_V1_DIR / "database" / "data" / "historical_league_results.csv"
 MERGED_LEAGUE_RESULTS_CSV = LEGACY_V1_DIR / "database" / "data" / "league_results_merged.csv"
@@ -68,6 +70,7 @@ def _ensure_tournament_postprocessed_csv_stub(path: Path) -> None:
         "Cumulative Score",
         "Stage Rank",
         "Cut Line",
+        "Cut Basis",
         "Overall Cumulative Score",
     ]
     with path.open("w", encoding="utf-8", newline="") as f:
@@ -121,7 +124,11 @@ def _build_player_merged_hybrid_csv() -> None:
     if GF_REGIONAL_COMBINED_POSTPROCESSED_CSV.is_file():
         with GF_REGIONAL_COMBINED_POSTPROCESSED_CSV.open("r", encoding="utf-8-sig", newline="") as f:
             reader = csv.DictReader(f, delimiter=";")
-            tournament_rows = [{str(k): str(v or "") for k, v in row.items()} for row in reader]
+            tournament_rows.extend([{str(k): str(v or "") for k, v in row.items()} for row in reader])
+    if MANUAL_TOURNAMENT_POSTPROCESSED_CSV.is_file():
+        with MANUAL_TOURNAMENT_POSTPROCESSED_CSV.open("r", encoding="utf-8-sig", newline="") as f:
+            reader = csv.DictReader(f, delimiter=";")
+            tournament_rows.extend([{str(k): str(v or "") for k, v in row.items()} for row in reader])
 
     headers = sorted({k for r in (league_rows + tournament_rows) for k in r.keys()})
     if not headers:
@@ -161,7 +168,9 @@ class DataSourceConfig:
     is_default: bool = False
     is_enabled: bool = True
     file_path: Optional[str] = None
-    
+    # Optional extra CSVs (same schema) concatenated after the primary file_path when loading pandas.
+    merge_file_paths: Tuple[str, ...] = ()
+
     def __post_init__(self):
         if self.file_path is None:
             # Use absolute path relative to league_analyzer_v1 directory
@@ -203,20 +212,6 @@ class DatabaseConfig:
                 is_enabled=True,
                 file_path=str(MERGED_LEAGUE_RESULTS_CSV),
             ),
-            'db_tournament_geek_2026': DataSourceConfig(
-                filename='tournament_combined_2024_2026_postprocessed.csv',
-                display_name='Tournament Data (Combined 2024-2026)',
-                description='Combined synthetic tournament dataset (Geek Masters + Mythic Legends) across seasons 2024-2026',
-                is_default=False,
-                is_enabled=True
-            ),
-            'db_tournament_myth_2024_2026': DataSourceConfig(
-                filename='tournament_mythic_legends_2024_2026_postprocessed.csv',
-                display_name='Tournament Data (Mythic Legends 2024-2026)',
-                description='Synthetic mythology tournament dataset (Greek, Egyptian, Norse, and more) across seasons 2024-2026',
-                is_default=False,
-                is_enabled=False
-            ),
             'db_tournament_sbm_2026_gf': DataSourceConfig(
                 filename='gf_table_124__sbm_suedbayerische_meisterschaft_2026__canonical_clean.csv',
                 display_name='Tournament Data (SBM 2026, GF)',
@@ -236,10 +231,11 @@ class DatabaseConfig:
             'db_tournament_regions_2026_gf': DataSourceConfig(
                 filename='gf_tournaments_2026__combined_postprocessed.csv',
                 display_name='Tournament Data (SBM+NBM 2026, GF)',
-                description='Combined regional tournament dataset (SBM + NBM) transformed and postprocessed from GF exports',
+                description='GF regional tournament export (SBM + NBM + XLS Bayerische). Club Excel imports live in tournament_manual_postprocessed.csv and are merged into player hybrid separately.',
                 is_default=False,
                 is_enabled=True,
                 file_path=str(GF_REGIONAL_COMBINED_POSTPROCESSED_CSV),
+                merge_file_paths=(str(MANUAL_TOURNAMENT_POSTPROCESSED_CSV),),
             ),
             'db_player_combined_gf': DataSourceConfig(
                 filename='gf_player_stats__league_plus_tournaments.csv',
@@ -264,6 +260,7 @@ class DatabaseConfig:
             _ensure_tournament_postprocessed_csv_stub(GF_SBM_CANONICAL_CSV)
             _ensure_tournament_postprocessed_csv_stub(GF_NBM_CANONICAL_CSV)
             _ensure_tournament_postprocessed_csv_stub(GF_REGIONAL_COMBINED_POSTPROCESSED_CSV)
+            _ensure_tournament_postprocessed_csv_stub(MANUAL_TOURNAMENT_POSTPROCESSED_CSV)
             _ensure_tournament_postprocessed_csv_stub(GF_PLAYER_COMBINED_CSV)
             _ensure_historical_league_csv_stub(HISTORICAL_LEAGUE_RESULTS_CSV)
             _ensure_merged_league_csv_stub(MERGED_LEAGUE_RESULTS_CSV)

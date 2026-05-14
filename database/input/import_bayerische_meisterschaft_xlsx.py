@@ -50,6 +50,8 @@ POSTPROCESSED_HEADERS = [
     "Game Number",
     "Score",
     "Handicap",
+    "A Priori Average",
+    "Handicap Reference",
     "Cumulative Score",
     "Stage Rank",
     "Cut Line",
@@ -536,7 +538,8 @@ def _write_csv_rows(path: Path, rows: List[Dict[str, str]]) -> None:
     with path.open("w", encoding="utf-8", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=POSTPROCESSED_HEADERS, delimiter=";")
         writer.writeheader()
-        writer.writerows(rows)
+        for row in rows:
+            writer.writerow({h: str(row.get(h, "") or "") for h in POSTPROCESSED_HEADERS})
 
 
 def _merge_into_combined(new_rows: List[Dict[str, str]]) -> Tuple[int, int]:

@@ -4,7 +4,10 @@ import { EChart } from "../../../lib/charts/EChart";
 import { DataTable } from "../../../lib/datatable/DataTable";
 import { getHeatMapColor, getSemanticColor } from "../../../lib/color-utils";
 import type {
+  TournamentPlayerBestEfforts,
+  TournamentPlayerCardId,
   TournamentPlayerSection as TournamentPlayerSectionData,
+  TournamentPlayerSummary,
   TournamentProgressSeries,
 } from "../../../hooks/useTournament";
 
@@ -34,7 +37,115 @@ const DEFAULT_RANGE: Required<HeatmapRange> = {
   perfect_score: 300,
 };
 
+const DEFAULT_PLAYER_CARD_LAYOUT: TournamentPlayerCardId[] = [
+  "summary_final_position",
+  "summary_average",
+  "summary_best_position",
+  "best_highest_game",
+  "best_highest_block",
+];
+
 const PLAYER_COLOR = "#2563eb";
+
+function chunkBy<T>(arr: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) {
+    out.push(arr.slice(i, i + size));
+  }
+  return out;
+}
+
+function PlayerMetricTile({
+  id,
+  summary,
+  bestEfforts,
+  t,
+}: {
+  id: TournamentPlayerCardId;
+  summary: TournamentPlayerSummary;
+  bestEfforts: TournamentPlayerBestEfforts;
+  t: (key: string, fallback?: string) => string;
+}) {
+  switch (id) {
+    case "summary_final_position":
+      return (
+        <Tile
+          id="tournamentFinalPositionCard"
+          label={t("ui.tournament.final_position", "Endplatz")}
+          value={fmt(summary.final_position)}
+          sub={t("ui.tournament.after_final_game", "Nach letztem Spiel")}
+          highlight
+        />
+      );
+    case "summary_average":
+      return (
+        <Tile
+          label={t("ui.tournament.average", "Durchschnitt")}
+          value={fmt(summary.average, 2)}
+          sub={t("ui.tournament.cumulated", "Kumuliert")}
+        />
+      );
+    case "summary_best_position":
+      return (
+        <Tile
+          label={t("ui.tournament.best_position", "Beste Platzierung")}
+          value={fmt(summary.best_position)}
+          sub={summary.best_position_game ?? ""}
+        />
+      );
+    case "best_highest_game":
+      return (
+        <Tile
+          label={t("ui.tournament.highest_game", "Bestes Spiel")}
+          value={fmt(bestEfforts.highest_game?.score)}
+          sub={`${bestEfforts.highest_game?.stage ?? ""} ${
+            bestEfforts.highest_game?.game ? `(G${bestEfforts.highest_game.game})` : ""
+          }`.trim()}
+        />
+      );
+    case "best_highest_pair":
+      return (
+        <Tile
+          label={t("ui.tournament.highest_pair", "Bestes Paar")}
+          value={fmt(bestEfforts.highest_pair?.score)}
+          sub={`${bestEfforts.highest_pair?.stage ?? ""} ${
+            bestEfforts.highest_pair?.pair ? `(${bestEfforts.highest_pair.pair})` : ""
+          }`.trim()}
+        />
+      );
+    case "handicap_profile":
+      return (
+        <Tile
+          label={t("ui.tournament.player_handicap_card", "Handicap")}
+          value={fmt(bestEfforts.handicap_profile?.handicap_per_game)}
+          sub={[
+            `${t("ui.tournament.apriori_avg_label", "Apriori-Schnitt")}: ${fmt(
+              bestEfforts.handicap_profile?.a_priori_average,
+              1,
+            )}`,
+            bestEfforts.handicap_profile?.handicap_reference != null
+              ? `${t("ui.tournament.handicap_ref_label", "Referenz")}: ${fmt(
+                  bestEfforts.handicap_profile.handicap_reference,
+                  1,
+                )}`
+              : "",
+          ]
+            .filter(Boolean)
+            .join(" · ")}
+        />
+      );
+    case "best_highest_block":
+      return (
+        <Tile
+          label={t("ui.tournament.highest_block", "Bester Block")}
+          value={fmt(bestEfforts.highest_block?.score)}
+          sub={bestEfforts.highest_block?.stage ?? ""}
+        />
+      );
+    default:
+      return null;
+  }
+}
 
 export function PlayerSection({ data, heatmapEnabled, onToggleHeatmap, onBack, t }: Props) {
   const [cutMode, setCutMode] = useState<CutMode>("dynamic");
@@ -43,6 +154,10 @@ export function PlayerSection({ data, heatmapEnabled, onToggleHeatmap, onBack, t
   const summary = data.summary ?? {};
   const bestEfforts = data.best_efforts ?? {};
   const series = data.progress_series ?? null;
+  const cardLayout =
+    data.player_card_layout && data.player_card_layout.length > 0
+      ? data.player_card_layout
+      : DEFAULT_PLAYER_CARD_LAYOUT;
 
   const avgOption = useMemo<EChartsOption | null>(
     () => buildAverageOption(series, data.player, cutMode, t),
@@ -102,46 +217,20 @@ export function PlayerSection({ data, heatmapEnabled, onToggleHeatmap, onBack, t
         </button>
       </div>
 
-      <div className="grid grid-cols-1 gap-x-12 gap-y-6 md:grid-cols-3">
-        <Tile
-          label={t("ui.tournament.final_position", "Endplatz")}
-          value={fmt(summary.final_position)}
-          sub={t("ui.tournament.after_final_game", "Nach letztem Spiel")}
-          highlight
-        />
-        <Tile
-          label={t("ui.tournament.average", "Durchschnitt")}
-          value={fmt(summary.average, 2)}
-          sub={t("ui.tournament.cumulated", "Kumuliert")}
-        />
-        <Tile
-          label={t("ui.tournament.best_position", "Beste Platzierung")}
-          value={fmt(summary.best_position)}
-          sub={summary.best_position_game ?? ""}
-        />
-      </div>
-
-      <div className="mt-8 grid grid-cols-1 gap-x-12 gap-y-6 md:grid-cols-3">
-        <Tile
-          label={t("ui.tournament.highest_game", "Bestes Spiel")}
-          value={fmt(bestEfforts.highest_game?.score)}
-          sub={`${bestEfforts.highest_game?.stage ?? ""} ${
-            bestEfforts.highest_game?.game ? `(G${bestEfforts.highest_game.game})` : ""
-          }`.trim()}
-        />
-        <Tile
-          label={t("ui.tournament.highest_pair", "Bestes Paar")}
-          value={fmt(bestEfforts.highest_pair?.score)}
-          sub={`${bestEfforts.highest_pair?.stage ?? ""} ${
-            bestEfforts.highest_pair?.pair ? `(${bestEfforts.highest_pair.pair})` : ""
-          }`.trim()}
-        />
-        <Tile
-          label={t("ui.tournament.highest_block", "Bester Block")}
-          value={fmt(bestEfforts.highest_block?.score)}
-          sub={bestEfforts.highest_block?.stage ?? ""}
-        />
-      </div>
+      {chunkBy(cardLayout, 3).map((row, ri) => (
+        <div
+          key={ri}
+          className={
+            ri === 0
+              ? "grid grid-cols-1 gap-x-12 gap-y-6 md:grid-cols-3"
+              : "mt-8 grid grid-cols-1 gap-x-12 gap-y-6 md:grid-cols-3"
+          }
+        >
+          {row.map((id) => (
+            <PlayerMetricTile key={`${ri}-${id}`} id={id} summary={summary} bestEfforts={bestEfforts} t={t} />
+          ))}
+        </div>
+      ))}
 
       <div className="mt-12 grid grid-cols-1 gap-8 lg:grid-cols-2">
         <div>
@@ -221,14 +310,17 @@ function Tile({
   value,
   sub,
   highlight,
+  id,
 }: {
   label: string;
   value: string;
   sub?: string;
   highlight?: boolean;
+  id?: string;
 }) {
   return (
     <div
+      id={id}
       className={
         "rounded-sm border p-4 " +
         (highlight ? "border-accent bg-accent-tint" : "border-border bg-surface")

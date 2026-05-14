@@ -51,7 +51,11 @@ class DataAdapterPandas(DataAdapter):
         if path_to_csv_data is not None and path_to_csv_data.exists():
             self._load_data()
         elif df is not None:
-            self.df = df
+            work = df.copy()
+            if work.columns.duplicated().any():
+                work = work.loc[:, ~work.columns.duplicated()].copy()
+            self.df = normalize_legacy_dataframe_types(work)
+            self._normalize_week_column()
         elif database is not None:
             # Load from database parameter
             self._load_data_from_database()
@@ -97,6 +101,8 @@ class DataAdapterPandas(DataAdapter):
         """Load data from CSV file"""
 
         self.df = pd.read_csv(self.data_path, sep=";", dtype=str, low_memory=False)
+        if self.df.columns.duplicated().any():
+            self.df = self.df.loc[:, ~self.df.columns.duplicated()].copy()
         self.df = normalize_legacy_dataframe_types(self.df)
         self._normalize_week_column()
 

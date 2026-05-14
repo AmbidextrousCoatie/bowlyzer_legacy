@@ -46,6 +46,8 @@ def normalize_legacy_dataframe_types(df: pd.DataFrame) -> pd.DataFrame:
         Columns.score,
         Columns.points,
         Columns.handicap,
+        Columns.apriori_average,
+        Columns.handicap_reference,
         Columns.stage_rank,
         Columns.cumulative_score,
         Columns.cut_line,

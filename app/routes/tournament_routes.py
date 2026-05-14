@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from flask import Blueprint, jsonify, render_template, request
 
 from app.config.database_config import database_config
@@ -6,21 +8,47 @@ from app.services.tournament_service import TournamentService
 
 bp = Blueprint("tournament", __name__)
 
+# Removed from ``database_config``; old bookmarks still send these IDs.
+_LEGACY_SYNTHETIC_TOURNAMENT_IDS = frozenset(
+    {"db_tournament_geek_2026", "db_tournament_myth_2024_2026"}
+)
+
+# Real GF / club tournament CSVs only (never synthetic demo datasets).
+# SBM/NBM are single-meet extracts — use only when the regional combined file is absent.
+_REGIONAL_TOURNAMENT_SOURCE = "db_tournament_regions_2026_gf"
+_SINGLE_MEET_TOURNAMENT_SOURCES = (
+    "db_tournament_sbm_2026_gf",
+    "db_tournament_nbm_2026_gf",
+)
+
+
+def _normalize_requested_tournament_database(requested: str | None) -> str | None:
+    if not requested:
+        return None
+    if requested in _LEGACY_SYNTHETIC_TOURNAMENT_IDS:
+        return "db_tournament_regions_2026_gf"
+    return requested
+
 
 def _resolve_default_tournament_source() -> str:
     """
-    Prefer the combined tournament dataset source.
-    Falls back to any tournament-capable source, then global default.
+    Prefer the regional combined (+ manual) merge whenever that CSV exists.
+
+    Previously we fell back to SBM/NBM when ``get_tournaments()`` on the regional
+    source was empty (e.g. stub or load glitch). Those extracts only contain one event
+    each, so the UI looked like there was a single tournament for the whole season.
     """
-    preferred_source = "db_tournament_regions_2026_gf"
     try:
-        preferred_service = TournamentService(database=preferred_source)
-        if preferred_service.get_tournaments():
-            return preferred_source
+        cfg = database_config.get_source_config(_REGIONAL_TOURNAMENT_SOURCE)
+        if cfg and cfg.file_path:
+            p = Path(cfg.file_path)
+            if p.is_file() and p.stat().st_size > 0:
+                TournamentService(database=_REGIONAL_TOURNAMENT_SOURCE)
+                return _REGIONAL_TOURNAMENT_SOURCE
     except Exception:
         pass
 
-    for source_id in [s for s in database_config.get_available_sources() if s.startswith("db_tournament_")]:
+    for source_id in _SINGLE_MEET_TOURNAMENT_SOURCES:
         try:
             svc = TournamentService(database=source_id)
             if svc.get_tournaments():
@@ -31,12 +59,13 @@ def _resolve_default_tournament_source() -> str:
 
 
 def get_tournament_service() -> TournamentService:
-    requested_database = request.args.get("database")
+    requested_database = _normalize_requested_tournament_database(
+        request.args.get("database")
+    )
     if requested_database:
-        requested_service = TournamentService(database=requested_database)
-        # If caller passes a DB without tournament rows, transparently fall back.
-        if requested_service.get_tournaments():
-            return requested_service
+        # Always honor an explicit source. League-only CSVs have no tournaments;
+        # falling back here silently swapped users to synthetic/mythic data.
+        return TournamentService(database=requested_database)
     return TournamentService(database=_resolve_default_tournament_source())
 
 
