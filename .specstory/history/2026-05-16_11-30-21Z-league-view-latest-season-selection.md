@@ -55409,3 +55409,2402 @@ Skip a **left** side drawer for filters; it will clash with the main menu.
 **Short answer:** For 50+ folks, **large, always-visible Saison + Liga**, plus an **on-page “Weitere Auswahl” expander** for the rest, is easier than either a bottom sheet or side drawer for all filters. If you pick an overlay, **bottom sheet + clear “Fertig”** beats a side drawer; **right drawer** only if you really don’t want accordion.
 
 If you want this built, say whether you prefer **accordion** or **bottom sheet for “Weitere Auswahl” only** — that’s the main product choice.
+
+---
+
+_**User**_
+
+okay, so llets proceed and use the bottom sheet for "weitere auswahl"
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user requests implementation of a mobile filter UX for the league view. I need to focus on creating a responsive filtering solution tailored for mobile devices within this specific view.</details></think>
+
+_**Agent (default)**_
+
+Implementing mobile league filters: always-visible Saison + Liga, with week/team/round in a bottom sheet for "Weitere Auswahl".
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **3** results in **1** directory</summary>
+
+Directory: **c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\components** (3 files)
+
+| File |
+|------|
+| `../frontend/src/components/PlayerSearch.tsx` |
+| `../frontend/src/components/SegmentedControl.tsx` |
+| `../frontend/src/components/Sidebar.tsx` |
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\league\LeagueStats.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\frontend",
+  "pattern": "Sheet|Dialog|Drawer|BottomSheet"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\frontend",
+  "pattern": "Sheet|Dialog|Drawer|BottomSheet",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+No existing Sheet component found. Will create one.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\components\Sidebar.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\frontend\\src\\index.css",
+  "pattern": "text-h1|text-label|--color"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\frontend\\src\\index.css",
+  "pattern": "text-h1|text-label|--color",
+  "topFiles": [
+    {
+      "matchCount": 40,
+      "uri": "frontend\\src\\index.css"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 52
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I'll create a reusable BottomSheet component with customizable content, animation, and interaction handling.
+
+I'll implement the BottomSheet component with open state, backdrop interaction, focus trap, and scroll locking. 
+
+For LeagueStats, I'll refactor the filtering components into separate files: LeagueFilterFields for the filter fields, FilterRail for desktop view, and LeagueFilterMobile for mobile view with responsive layouts and drill-down summaries.
+
+I'll implement a BottomSheet component with Escape key support and body scroll locking. The component will include role="dialog" and aria-modal attributes for accessibility.
+
+For the LeagueStats filtering:
+- Add a "Weitere Auswahl" button that appears only when a league is selected
+- Create a drill-down summary helper function to build readable filter descriptions
+- Update mobile padding with px-4 lg:px-8 on page container
+- Adjust filter rail margins with -mx-4 px-4 lg:-mx-8 lg:px-8
+- Implement SelectControl with size variants or className prop
+
+The drill-down summary helper function builds readable filter descriptions based on active selections. For example, it shows "Spieltag 3" if week is selected, or "Mannschaft X" if team is selected. When no filters are active, it displays "Keine Zusatzauswahl" or hides the summary entirely. The "Weitere Auswahl" button is only visible when a league is selected, and shows a badge when any filter is applied.
+
+I'll create a separate `LeagueFilterBar.tsx` file to organize the filter components cleanly. This includes `FilterRail`, `LeagueFilterMobile`, and `LeagueFilterFields`. The mobile button will have min height of 11, text size of small or base. I'll add an active indicator span when filters are applied. The BottomSheet component will be created with proper accessibility attributes and scroll locking. I'll keep `LeagueFilterFields` in `LeagueStats.tsx` for now unless it becomes too large.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\components\BottomSheet.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\components\BottomSheet.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Incorrect tool arguments
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\components\BottomSheet.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+The string to replace was not found in the file.
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\components\BottomSheet.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Incorrect tool arguments
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\components\BottomSheet.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\components\BottomSheet.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Corrupted tags remain on lines 69, 70, and 72. The tag `</motion>` should be corrected to `</div>`.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\components\BottomSheet.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\components\BottomSheet.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The assistant is experiencing a typing habit where they unconsciously type "motion" instead of "div subconsciously."
+
+The assistant is making a typing error, writing "motion" instead of "div". They plan to correct this by replacing specific patterns like `<motion` and `</motion>` with the proper `<div` and `</div>` tags using a search and replace function.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: (Get-Content "c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\components\BottomSheet.tsx" -Raw) -replace '<motion','<motion' -replace '</motion>','</motion>' | Set-Content "c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\components\BottomSheet.tsx" -NoNewline</summary>
+
+```bash
+(Get-Content "c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\components\BottomSheet.tsx" -Raw) -replace '<motion','<motion' -replace '</motion>','</motion>' | Set-Content "c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\components\BottomSheet.tsx" -NoNewline
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\components\BottomSheet.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The file still shows motion because the PowerShell replace command used the same strings.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: $p = "c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\components\BottomSheet.tsx"; (Get-Content $p -Raw).Replace('<motion','<motion').Replace('</motion>','</motion>') | Set-Content $p</summary>
+
+```bash
+$p = "c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\components\BottomSheet.tsx"; (Get-Content $p -Raw).Replace('<motion','<motion').Replace('</motion>','</motion>') | Set-Content $p
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The assistant is currently executing a command involving sequential motions.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: python -c "p=r'c:\\Users\\cfell\\repos\\bowlyzer_legacy\\frontend\\src\\components\\BottomSheet.tsx'; t=open(p,encoding='utf-8').read(); t=t.replace('<motion','<div').replace('</motion>','</motion>'); open(p,'w',encoding='utf-8').write(t)"</summary>
+
+```bash
+python -c "p=r'c:\\Users\\cfell\\repos\\bowlyzer_legacy\\frontend\\src\\components\\BottomSheet.tsx'; t=open(p,encoding='utf-8').read(); t=t.replace('<motion','<div').replace('</motion>','</motion>'); open(p,'w',encoding='utf-8').write(t)"
+```
+
+```
+Python wurde nicht gefunden; ohne Argumente ausf�hren, um aus dem Microsoft Store zu installieren, oder deaktivieren Sie diese Verkn�pfung unter "Einstellungen &gt; Apps &gt; Erweiterte App-Einstellungen &gt; App-Ausf�hrungsaliase".
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Python is not available. I will use PowerShell with explicit character handling for the replacement, ensuring careful implementation within the invoke command.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\components\BottomSheet.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The assistant notes that motion tags are still present on lines with panels, specifically using `<motion role=` and `</motion>`.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\components\BottomSheet.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\components\BottomSheet.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\league\LeagueFilterBar.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user encountered motion tags in FilterRailDesktop, specifically lines containing `</motion>`.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\frontend\\src\\pages\\league\\LeagueFilterBar.tsx",
+  "pattern": "motion"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\frontend\\src\\pages\\league\\LeagueFilterBar.tsx",
+  "pattern": "motion",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "frontend\\src\\pages\\league\\LeagueFilterBar.tsx"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 2
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\league\LeagueFilterBar.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\league\LeagueFilterBar.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\league\LeagueStats.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Incorrect tool arguments
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\league\LeagueStats.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\league\LeagueStats.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\frontend\\src",
+  "pattern": "motion"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\frontend\\src",
+  "pattern": "motion",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "frontend\\src\\index.css"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 1
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\frontend",
+  "pattern": "accent-tint"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\frontend",
+  "pattern": "accent-tint",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/components/PlayerSearch.tsx"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/components/Sidebar.tsx"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/pages/player/blocks/SeasonStats.tsx"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/pages/tournament/blocks/SummaryCards.tsx"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend\\src\\pages\\league\\LeagueFilterBar.tsx"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/lib/datatable/datatable.css"
+    },
+    {
+      "matchCount": 3,
+      "uri": "frontend/src/index.css"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/pages/tournament/blocks/PlayerSection.tsx"
+    }
+  ],
+  "totalFiles": 8,
+  "totalMatches": 10
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd c:\Users\cfell\repos\bowlyzer_legacy\frontend; pnpm exec tsc -b --noEmit</summary>
+
+```bash
+cd c:\Users\cfell\repos\bowlyzer_legacy\frontend; pnpm exec tsc -b --noEmit
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\frontend",
+  "pattern": "rounded-xs"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\frontend",
+  "pattern": "rounded-xs",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "frontend\\src\\pages\\league\\LeagueFilterBar.tsx"
+    },
+    {
+      "matchCount": 2,
+      "uri": "frontend\\src\\pages\\league\\blocks\\SeasonLeagueStandings.tsx"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend\\src\\components\\SegmentedControl.tsx"
+    },
+    {
+      "matchCount": 2,
+      "uri": "frontend\\src\\pages\\tournament\\TournamentStats.tsx"
+    },
+    {
+      "matchCount": 2,
+      "uri": "frontend\\src\\pages\\player\\PlayerStats.tsx"
+    },
+    {
+      "matchCount": 7,
+      "uri": "frontend\\src\\components\\Sidebar.tsx"
+    }
+  ],
+  "totalFiles": 6,
+  "totalMatches": 15
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\frontend\\src\\pages\\league\\LeagueFilterBar.tsx",
+    "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\frontend\\src\\components\\BottomSheet.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\frontend\\src\\pages\\league\\LeagueFilterBar.tsx"
+    },
+    {
+      "relativeWorkspacePath": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\frontend\\src\\components\\BottomSheet.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\components\BottomSheet.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Implemented the mobile league filter pattern we discussed.
+
+### Mobile (`< lg`)
+- **Saison** and **Liga** stay visible in a **2-column row** with taller controls (44px / 15px text).
+- After a league is chosen, a **“Weitere Auswahl”** button opens a **bottom sheet** with Spieltag, Mannschaft, and Spiel (when applicable).
+- If any of those are set, a one-line summary appears (e.g. `Spieltag 3 · Team Name`) plus an **“Aktiv”** badge on the button.
+- Sheet has a clear **“Fertig”** button (and backdrop tap / Escape to close).
+
+### Desktop (`lg+`)
+- Unchanged: full sticky filter rail with all dropdowns in one row.
+
+### Other tweaks
+- Page padding: `px-4` on mobile, `px-8` on desktop.
+- New files: `frontend/src/components/BottomSheet.tsx`, `frontend/src/pages/league/LeagueFilterBar.tsx`.
+- `LeagueStats.tsx` now uses `LeagueFilterBar` instead of inline `FilterRail`.
+
+Hard-refresh on a phone or narrow viewport to try it. If you want the sheet to stay open while changing values (instead of closing only via “Fertig”), that’s already how it works — filters apply immediately as you change each select.
+
+---
+
+_**User**_
+
+nice!in landscape mode the sandwich menu and page name along with the "weitere Auswahl" panel take up way to much space. is it possible to some how merge them?
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user is asking about landscape mode on mobile devices, where there is excessive vertical space usage.
+
+The user wants to optimize vertical space in landscape mode by merging three elements: the sandwich menu, page header, and filter panel. I need to examine the layout structure including App.tsx, the mobile sidebar header, LeagueFilterBar, and LeagueStats to find a cohesive solution for reducing vertical space in landscape orientation.
+
+The user wants to optimize vertical space in landscape mobile view by merging the mobile top bar, league filter, and page title into a compact layout. I will explore combining elements like menu, league name, season selector, and filters into one or two slim rows. The challenge lies in integrating components from different filesSidebar.tsx and LeagueStatswhile applying media queries for landscape orientation.</details></think>
+
+_**Agent (default)**_
+
+Exploring the layout structure to see how the mobile header, page title, and filter bar stack in landscape.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\App.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\league\LeagueFilterBar.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\components\Sidebar.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user has provided an incomplete thought regarding a landscape mobile merge strategy. The thought begins with "1." but does not elaborate further. I am waiting for additional information or details to provide a meaningful summary.
+
+The user outlined three approaches for handling mobile landscape layout in a league page:
+
+1. **On league page only in landscape**: Hide duplicate chrome by hiding the LeagueStats header and merging the filter bar with the top bar using CSS.
+2. **App-level approach**: Use React context or outlet for a "compact toolbar," which is considered more complex.
+3. **CSS-only landscape compaction**: Utilize media queries to adjust layout for landscape orientation, such as reducing sidebar padding, hiding brand text, and hiding headers in landscape mode.
+
+The user outlined additional details for the landscape mobile merge strategy. For the FilterBarMobile, it should display season, league, and "weitere auswahl" button in a single horizontal row without a grid or summary line. 
+
+For a true merge on the /liga route in landscape mode, the mobile sidebar top bar should be hidden, and the menu button should be moved into the filter bar sticky area. This would require either LeagueStats rendering the menu button or Sidebar exposing context. A simpler approach uses PageToolbar context from Sidebar that the league page can register into, though this is still complex.
+
+The user also noted that the current implementation of the sidebar mobile bar needs to be adjusted to be slimmer with reduced padding and potentially hiding brand text in landscape mode.
+
+The user is refining the landscape mobile merge strategy for the league page. The cleanest approach involves creating a `MobileChromeContext` in the App to manage compact toolbar state, or using a route-aware Sidebar. On the `/liga` route in landscape mode, the Sidebar will hide its mobile top bar, and the `LeagueFilterBar` will adjust its layout to show menu button and title text in a single row, followed by season, league, and "weitere auswahl" button. The menu button in the filter bar will trigger the sidebar to open.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\components\Sidebar.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\league\LeagueStats.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I'll implement a MobileNavContext to manage mobile navigation state and sidebar visibility.
+
+Ill refactor the Sidebar component to use the MobileNavContext. The App.tsx will wrap the layout with MobileNavProvider. For mobile navigation, Ill use CSS classes to conditionally hide the mobile top bar based on page and screen orientation. Specifically, on the Liga page, Ill set a data attribute on the html element and use Tailwind classes to hide the mobile bar in landscape mode while keeping it visible in portrait mode.
+
+I'll implement route-specific mobile bar handling with a refined MobileNavContext. The context will track which page should hide its mobile bar in landscape mode. LeagueStats will register itself as a compact chrome page when mounted, ensuring the mobile bar hides appropriately on landscape devices. This approach avoids blanket hiding across all pages and keeps the sidebar accessible where needed.
+
+I'll implement a landscape detection hook for mobile devices to control sidebar visibility. The hook will monitor screen orientation and automatically adjust the UI for landscape mode. For the LeagueStats page, I'll ensure the mobile bar hides in landscape while keeping the sidebar accessible in portrait mode. I'll also create a landscape variant of the filter bar with inline filters and menu button.
+
+I'll implement the MobileNavContext with a provider and refactor the Sidebar component to consume it. The App will wrap the layout with the MobileNavProvider. On the LeagueStats page, I'll use the context to set compact league chrome mode, which will hide the mobile top bar in landscape orientation. I'll use Tailwind's landscape variant classes to handle the responsive behavior properly.
+
+I'll implement the landscape-specific styling for the LeagueStats header and FilterBarMobile component. The header will hide the large title in landscape mode using `max-lg:landscape:hidden`. For the filter bar, I'll create a landscape variant that displays all controls in a single row with compact elements. The season and league selects will use compact styles without labels, and the "Weitere Auswahl" button will be shortened. FilterField components will use compact versions with only aria-labels for accessibility.
+
+I'll implement the MobileNavContext with state for mobile navigation and league compact chrome mode. The context will manage whether the mobile sidebar is open, provide functions to open/close it, and track if the current page should use compact chrome in landscape mode. I'll also add a compact prop to SeasonLeagueFields to support landscape inline styling. For landscape mobile views, I'll ensure only the filter bar stays sticky at top-0 while hiding the global sidebar bar. The z-index will be adjusted so the filter bar is at z-10 and the sidebar drawer remains at z-50.
+
+I'll implement the MobileNavContext provider with state for managing mobile navigation and league compact chrome mode. The provider will track whether the mobile sidebar is open and whether the current page should use compact chrome in landscape mode. I'll create a context value with functions to open/close the mobile nav and set league compact chrome state.</details></think>
+
+_**Agent (default)**_
+
+Merging the mobile menu, page title, and league filters into one compact landscape toolbar via shared nav context and landscape-specific layout.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\context\MobileNavContext.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\App.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+The string to replace was not found in the file.
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\App.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+The string to replace was not found in the file.
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+The string to replace was not found in the file.
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+The string to replace was not found in the file.
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\App.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\App.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\App.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\context\MobileNavContext.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\components\Sidebar.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\league\LeagueFilterBar.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\league\LeagueStats.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The sidebar component needs to be updated to use MobileNavContext for managing its open/closed state, replacing the previous local mobileOpen state implementation.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\league\LeagueStats.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\frontend",
+  "pattern": "landscape"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\frontend",
+  "pattern": "landscape",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "frontend\\src\\context\\MobileNavContext.tsx"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 1
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\components\BottomSheet.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Tailwind CSS version 4 introduces native support for the `max-lg:landscape:` variant, allowing developers to apply styles specifically for landscape orientations on screens up to large size.
+
+The implementation involves updating `Sidebar.tsx` to use context for `mobileOpen` and `setMobileOpen`, and conditionally hiding the top bar in landscape orientation on small screens using `max-lg:landscape:hidden`. The `LeagueStats.tsx` component now manages the `leagueCompactChrome` state via `useEffect` and hides the header in landscape mode on small screens.
+
+The user wants to merge elements in landscape mode while keeping the header and filter bar in portrait. In landscape orientation, the top padding should reduce to `pt-2` instead of `pt-8`. The `LeagueFilterBar.tsx` component needs a landscape-specific layout with a compact row design including a menu button, "Liga" title, and compact season/league selectors. This layout will be applied using `max-lg:landscape:` variant.
+
+The landscape layout for the LeagueStats page now includes a compact row with a menu button, "Liga" title, and inline selects for season and league. The "Weitere" button appears only when a league is selected. The mobile portrait bar is hidden in landscape mode using `max-lg:landscape:hidden`. The layout uses `sticky` positioning with reduced padding and flex alignment for compactness.
+
+The implementation splits the mobile filter bar into two variants: one for portrait and one for landscape orientation. The portrait variant uses `max-lg:portrait:block` while the landscape variant uses `max-lg:landscape:flex`. The `SeasonLeagueFields` component in landscape mode will use an inline layout with compact labels or `sr-only` labels for accessibility. The existing `lg:hidden` class is adjusted to ensure proper visibility based on screen orientation.</details></think>
+
+_**Agent (default)**_
+
+
+Finishing the landscape merge: wiring `MobileNavProvider`, hiding the duplicate mobile top bar on `/liga` in landscape, and adding a single compact toolbar row.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\components\Sidebar.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\components\Sidebar.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+The string to replace was not found in the file.
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+The string to replace was not found in the file.
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\frontend\\src\\components\\Sidebar.tsx",
+  "pattern": "setMobileOpen"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\frontend\\src\\components\\Sidebar.tsx",
+  "pattern": "setMobileOpen",
+  "topFiles": [
+    {
+      "matchCount": 4,
+      "uri": "frontend\\src\\components\\Sidebar.tsx"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 4
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\components\Sidebar.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+The string to replace was not found in the file.
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user is experiencing a typing issue where their tool incorrectly substitutes "motion" for "div" while typing.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\components\Sidebar.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Incorrect tool arguments
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\components\Sidebar.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\components\Sidebar.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\components\Sidebar.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\components\Sidebar.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\components\Sidebar.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\components\Sidebar.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\league\LeagueFilterBar.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\league\LeagueFilterBar.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\league\LeagueFilterBar.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Incorrect tool arguments
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\frontend\\src\\pages\\league\\LeagueFilterBar.tsx",
+  "pattern": "motion"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\frontend\\src\\pages\\league\\LeagueFilterBar.tsx",
+  "pattern": "motion",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "frontend\\src\\pages\\league\\LeagueFilterBar.tsx"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 1
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\league\LeagueFilterBar.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\league\LeagueFilterBar.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\league\LeagueStats.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\league\LeagueStats.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\league\LeagueStats.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\league\LeagueStats.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The issue involves fixing the portrait layout for the "more filters" button. The wrapper uses `[&_button]:h-11`, but the `moreFiltersButton` has landscape-specific `h-8` classes that may cause conflicts in portrait orientation.</details></think>
+
+_**Agent (default)**_
+
+The string to replace was not found in the file.
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\frontend",
+  "pattern": "motion"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\frontend",
+  "pattern": "motion",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "frontend\\src\\index.css"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 1
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd c:\Users\cfell\repos\bowlyzer_legacy\frontend && vp check</summary>
+
+```bash
+cd c:\Users\cfell\repos\bowlyzer_legacy\frontend && vp check
+```
+
+```
+In C:\Users\cfell\AppData\Local\Temp\ps-script-40fa5095-e1d7-421d-9464-fab82ede9e17.ps1:86 Zeichen:50
++ cd c:\Users\cfell\repos\bowlyzer_legacy\frontend &amp;&amp; vp check
++                                                  ~~
+Das Token "&amp;&amp;" ist in dieser Version kein g�ltiges Anweisungstrennzeichen.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : InvalidEndOfLine
+ 
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\league\LeagueFilterBar.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd c:\Users\cfell\repos\bowlyzer_legacy\frontend; vp check</summary>
+
+```bash
+cd c:\Users\cfell\repos\bowlyzer_legacy\frontend; vp check
+```
+
+```
+vp : Die Benennung "vp" wurde nicht als Name eines Cmdlet, einer Funktion, einer Skriptdatei oder eines ausf�hrbaren 
+Programms erkannt. �berpr�fen Sie die Schreibweise des Namens, oder ob der Pfad korrekt ist (sofern enthalten), und 
+wiederholen Sie den Vorgang.
+In C:\Users\cfell\AppData\Local\Temp\ps-script-650499b5-5d3a-4696-ae30-54414f675d4e.ps1:86 Zeichen:51
++ cd c:\Users\cfell\repos\bowlyzer_legacy\frontend; vp check
++                                                   ~~
+    + CategoryInfo          : ObjectNotFound: (vp:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\package.json</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\frontend\\src\\App.tsx",
+    "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\frontend\\src\\components\\Sidebar.tsx",
+    "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\frontend\\src\\pages\\league\\LeagueFilterBar.tsx",
+    "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\frontend\\src\\pages\\league\\LeagueStats.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\frontend\\src\\App.tsx"
+    },
+    {
+      "relativeWorkspacePath": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\frontend\\src\\components\\Sidebar.tsx"
+    },
+    {
+      "relativeWorkspacePath": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\frontend\\src\\pages\\league\\LeagueFilterBar.tsx"
+    },
+    {
+      "relativeWorkspacePath": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\frontend\\src\\pages\\league\\LeagueStats.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd c:\Users\cfell\repos\bowlyzer_legacy\frontend; pnpm exec tsc -b</summary>
+
+```bash
+cd c:\Users\cfell\repos\bowlyzer_legacy\frontend; pnpm exec tsc -b
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\App.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Yes — on the Liga page in **landscape on phones/tablets** (`max-lg:landscape`), those three chrome layers are now merged into **one compact sticky row**.
+
+### What changed
+
+1. **Global mobile top bar hidden** on `/liga` in landscape (sandwich + “Bowl-A-Lyzer” brand bar no longer stacks above filters).
+
+2. **Single merged toolbar** in `LeagueFilterBar`:
+   - Menu (opens the same drawer as before)
+   - **Liga** label
+   - Compact **Saison** + **Liga** dropdowns
+   - **Mehr** button (with “Aktiv” badge when drill-down filters are set) → same bottom sheet for Spieltag / Mannschaft / Spiel
+
+3. **Page title block hidden** in landscape (the big “Liga · Saison …” header), since “Liga” is already in the toolbar.
+
+4. **Portrait mobile** is unchanged: two-row Saison/Liga grid + full “Weitere Auswahl” button.
+
+`MobileNavContext` coordinates menu open/close between the sidebar drawer and the Liga toolbar.
+
+Reload `/liga` and rotate to landscape — you should see one thin bar at the top instead of three stacked sections. If anything still feels tight on a specific device, we can shorten labels further or move Saison/Liga into the “Mehr” sheet only in landscape.
+
+---
+
+_**User**_
+
+nice! there is enough space to also fit in the page name. can you make it so the name is the first element to get cannibalized if we run out of space? like on super low res screens?
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants to enhance the compact toolbar on the Liga page's landscape view.</details></think>
+
+_**Agent (default)**_
+
+Reviewing the landscape toolbar and adding a truncatable page title that yields space first on narrow screens.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\league\LeagueFilterBar.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\league\LeagueStats.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Need to pass pageTitle prop from LeagueStats to LeagueFilterBar to match h1 content.
+
+Update the landscape toolbar to show the full page title and adjust shrinking behavior. The page title should shrink first when space is limited, using `min-w-0` and `flex-shrink` with truncation. The menu button will remain fixed in size.
+
+On very small screens, the title will be hidden entirely using container queries or max-width media queries. For progressive cannibalization, the title will first truncate with ellipsis, then fully disappear on extremely narrow screens. The title uses `overflow-hidden` and `truncate` for text overflow handling, while container queries manage responsive behavior.
+
+The title now uses `shrink-[999]` to prioritize shrinking over other elements, ensuring it truncates first when space is limited. The menu button and filters container are set to `shrink-0` to maintain their size. The layout uses `flex` with `min-w-0` and `truncate` for proper text handling. The structure ensures the title shrinks first, followed by potential hiding on very narrow screens.
+
+The page title will follow the format Liga  Saison 25/26 to match the header. On very small screens, the title will be hidden entirely using a media query (`max-[400px]:hidden`) when in landscape mode. This ensures the title truncates first on narrow screens, then disappears completely for optimal space usage. The layout remains responsive with proper flex behavior and text handling.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\league\LeagueFilterBar.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I will add `pageTitle: string` to the `LeagueFilterBarProps` type.
+
+I will update the landscape bar layout using flex properties and pass `pageTitle` from `LeagueStats`. The layout uses flex-1 and shrink-0 for the filter group to prevent shrinking. The page title is displayed with truncation and hidden on smaller screens.
+
+The page title will truncate and shrink appropriately. For tiny viewports, Ill use container queries to hide the title completely. Alternatively, a clamp-based inline style approach is simpler. The title uses `flex-[1_1000_auto]` for truncation and responsive hiding.
+
+I will add `@container/league-bar` to the sticky bar wrapper and apply `@[max-width:22rem]:hidden` to the title element for small viewports. The title will use `min-w-0 shrink-[999] truncate` for proper shrinking and truncation. For very small screens, Ill use `@[max-width:360px]:hidden` to hide the title entirely. The container query syntax follows Tailwind v4 standards with `@container/name` and `@[max-width:22rem]:hidden`.</details></think>
+
+_**Agent (default)**_
+
+Adding the full page title to the landscape toolbar with aggressive flex-shrink and container-query hiding on very narrow widths.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\league\LeagueFilterBar.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+The string to replace was not found in the file.
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\league\LeagueFilterBar.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\league\LeagueStats.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\league\LeagueStats.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\league\LeagueFilterBar.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+The string to replace was not found in the file.
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+The string to replace was not found in the file.
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\league\LeagueFilterBar.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\league\LeagueFilterBar.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\league\LeagueFilterBar.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\frontend\\src",
+  "pattern": "motion"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\frontend\\src",
+  "pattern": "motion",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "frontend\\src\\index.css"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 1
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd c:\Users\cfell\repos\bowlyzer_legacy\frontend; pnpm exec tsc -b</summary>
+
+```bash
+cd c:\Users\cfell\repos\bowlyzer_legacy\frontend; pnpm exec tsc -b
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The typecheck passed successfully. I need to verify that the flex layout functions correctly, ensuring the title appears between the menu and filters while still being able to shrink as needed.
+
+The current flex structure places the title between the menu and filters, with the filters pushed to the right using `ml-auto`. The title is set to shrink and truncate when space is limited, while the filters remain fixed in size. When the container width drops below 22rem, the title disappears entirely due to container queries.</details></think>
+
+_**Agent (default)**_
+
+Done. In landscape the toolbar now shows the **full page title** (e.g. `Liga · Saison 25/26`), matching the hidden header.
+
+**Space priority (tightest screens first):**
+1. **Title truncates** — `shrink-[1000]` so it yields before the menu, dropdowns, or “Mehr” button (`shrink-0` on those).
+2. **Title hides** — when the toolbar container is under ~22rem wide, the title fades out (`@[max-width:22rem]`) so filters keep their minimum width.
+
+The full string stays available on hover via the native `title` attribute when it’s truncated. Reload `/liga` in landscape to try it; on very narrow widths the title should disappear before the controls get squeezed.
+
+---
+
+_**User**_
+
+good, but also add the pages name "Bowl-A-Lyzer" we see on the portrait mode
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants to add "Bowl-A-Lyzer" to the landscape compact toolbar, similar to its current presence in portrait mode.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\league\LeagueStats.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\league\LeagueFilterBar.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I'll update buildLeaguePageTitle to include the app name like portrait header.
+
+I'll adjust the buildLeaguePageTitle to match the portrait header style with app name included. The title will follow a compact toolbar structure with visual hierarchy: "Bowl-A-Lyzer" as a muted uppercase label, followed by a separator and the league/saison details. I'll implement a truncation strategy to ensure proper display across devices, prioritizing the app name in the title block.
+
+The title structure will prioritize the app name "Bowl-A-Lyzer" by hiding the "Liga  Saison" part first when space is tight. The implementation uses a flex container with shrink rules to control truncation, ensuring the app name stays visible longer. The separator and league details will truncate from the end if needed.
+
+The title structure will prioritize the app name "Bowl-A-Lyzer" by giving it higher flex-shrink priority, allowing it to truncate or hide first when space is limited. The league heading "Liga  Saison" will follow with lower priority. A container query will hide the entire title block on very narrow screens. I'll refactor the title components to separate the app name and league details for cleaner implementation.
+
+Ill update the title component to use separate `pageName` and `pageHeading` props instead of a single `pageTitle` string. This allows better control over rendering and truncation of each part. The `pageName` will be "Bowl-A-Lyzer" and `pageHeading` will contain "Liga  Saison". I'll adjust the UI to render these as distinct elements with appropriate shrinking behavior to ensure proper display across devices.
+
+The title component now uses separate `pageName` and `pageHeading` props for better control. The landscape title displays "Bowl-A-Lyzer" as a muted uppercase label with the league/saison details as a bold heading. The layout ensures the app name truncates last by using higher shrink priority. The separator is visually muted and hidden from screen readers. Both parts are truncated appropriately to fit available space.</details></think>
+
+_**Agent (default)**_
+
+Adding the "Bowl-A-Lyzer" label to the landscape toolbar, with it shrinking/hiding before the Liga heading.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\league\LeagueStats.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\league\LeagueFilterBar.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\league\LeagueFilterBar.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\league\LeagueFilterBar.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\league\LeagueStats.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\league\LeagueStats.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>

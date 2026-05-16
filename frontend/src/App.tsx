@@ -1,5 +1,6 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { MobileNavProvider } from "./context/MobileNavContext";
 import { Sidebar } from "./components/Sidebar";
 import { LeagueStats } from "./pages/league/LeagueStats";
 import { PlayerStats } from "./pages/player/PlayerStats";
@@ -10,19 +11,21 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <div className="flex min-h-screen flex-col bg-background lg:flex-row">
-          <Sidebar />
-          <main className="flex-1 min-w-0">
-            <Routes>
-              <Route path="/" element={<Navigate to="/liga" replace />} />
-              <Route path="/liga" element={<LeagueStats />} />
-              <Route path="/turnier" element={<TournamentStats />} />
-              <Route path="/mannschaft" element={<Placeholder title="Mannschaft" />} />
-              <Route path="/spieler" element={<PlayerStats />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </main>
-        </div>
+        <MobileNavProvider>
+          <div className="flex min-h-screen flex-col bg-background lg:flex-row">
+            <Sidebar />
+            <main className="flex-1 min-w-0">
+              <Routes>
+                <Route path="/" element={<Navigate to="/liga" replace />} />
+                <Route path="/liga" element={<LeagueStats />} />
+                <Route path="/turnier" element={<TournamentStats />} />
+                <Route path="/mannschaft" element={<Placeholder title="Mannschaft" />} />
+                <Route path="/spieler" element={<PlayerStats />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </main>
+          </div>
+        </MobileNavProvider>
       </BrowserRouter>
     </QueryClientProvider>
   );

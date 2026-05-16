@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
+import { useMobileNav } from "../context/MobileNavContext";
 
 type Theme = "light" | "dark";
 type Lang = "de" | "en";
@@ -60,7 +61,7 @@ export function Sidebar() {
     return (localStorage.getItem("ds:theme") as Theme) ?? "light";
   });
   const [lang, setLang] = useState<Lang>("de");
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const { mobileOpen, openMobileNav, closeMobileNav, leagueCompactChrome } = useMobileNav();
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -74,12 +75,17 @@ export function Sidebar() {
   return (
     <>
       {/* Mobile top bar */}
-      <div className="lg:hidden sticky top-0 z-30 flex items-center justify-between border-b border-border bg-background px-4 py-3">
+      <div
+        className={
+          "lg:hidden sticky top-0 z-30 flex items-center justify-between border-b border-border bg-background px-4 py-3 " +
+          (leagueCompactChrome ? "max-lg:landscape:hidden" : "")
+        }
+      >
         <div className="flex items-center gap-2">
           <button
             type="button"
             aria-label="Menü öffnen"
-            onClick={() => setMobileOpen(true)}
+            onClick={openMobileNav}
             className="grid h-9 w-9 place-items-center rounded-sm text-muted hover:bg-surface-subtle hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
           >
             <Menu size={18} strokeWidth={1.75} />
@@ -93,7 +99,7 @@ export function Sidebar() {
         <button
           type="button"
           aria-label="Menü schließen"
-          onClick={() => setMobileOpen(false)}
+          onClick={closeMobileNav}
           className="lg:hidden fixed inset-0 z-40 bg-zinc-950/40 backdrop-blur-sm"
         />
       )}
@@ -136,7 +142,7 @@ export function Sidebar() {
           <button
             type="button"
             aria-label="Menü schließen"
-            onClick={() => setMobileOpen(false)}
+            onClick={closeMobileNav}
             className="lg:hidden grid h-8 w-8 place-items-center rounded-xs text-muted hover:text-foreground"
           >
             <X size={18} strokeWidth={1.75} />
@@ -166,7 +172,7 @@ export function Sidebar() {
                     <NavRow
                       item={item}
                       collapsed={collapsed && !mobileOpen}
-                      onNavigate={() => setMobileOpen(false)}
+                      onNavigate={closeMobileNav}
                     />
                   </li>
                 ))}
