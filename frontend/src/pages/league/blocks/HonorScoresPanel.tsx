@@ -1,21 +1,28 @@
+import { Link } from "react-router-dom";
 import type { HonorScoreEntry, HonorScores } from "../../../hooks/useLeague";
+import {
+  resolveHonorScoreNavPath,
+  type LeagueNavContext,
+} from "../../../lib/leagueNavigation";
 
 type Props = {
   honorScores: HonorScores | undefined;
   isPending?: boolean;
   isError?: boolean;
   t: (key: string, fallback?: string) => string;
+  /** When set, each row links to league week + team (or game if round is on the entry). */
+  navigation?: LeagueNavContext;
 };
 
 /** Renders the four honor-score lists (top scores, top team scores, best
  *  individual averages, best team averages) as hairline-separated rows.
  *  Empty groups are skipped. */
-export function HonorScoresPanel({ honorScores, isPending, isError, t }: Props) {
+export function HonorScoresPanel({ honorScores, isPending, isError, t, navigation }: Props) {
   if (isPending) {
     return (
       <aside className="space-y-4">
         <p className="text-label uppercase text-muted">{t("honor_scores", "Bestleistungen")}</p>
-        <div className="h-48 rounded-sm border border-border bg-surface-subtle" />
+        <div className="h-48 rounded-sm border border-border bg-surface-subtle" aria-hidden />
       </aside>
     );
   }
@@ -76,18 +83,58 @@ export function HonorScoresPanel({ honorScores, isPending, isError, t }: Props) 
           </p>
           <ul className="border-t border-border">
             {(group.entries ?? []).map((entry, idx) => (
-              <li
+              <HonorScoreRow
                 key={idx}
-                className="flex items-baseline justify-between border-b border-border py-1.5 text-small"
-              >
-                <span className="text-foreground">{nameOf(entry)}</span>
-                <span className="font-mono text-foreground">{valueOf(entry, group.valueKey)}</span>
-              </li>
+                entry={entry}
+                valueKey={group.valueKey}
+                navigation={navigation}
+              />
             ))}
           </ul>
         </div>
       ))}
     </aside>
+  );
+}
+
+function HonorScoreRow({
+  entry,
+  valueKey,
+  navigation,
+}: {
+  entry: HonorScoreEntry;
+  valueKey: "score" | "average";
+  navigation?: LeagueNavContext;
+}) {
+  const label = nameOf(entry);
+  const value = valueOf(entry, valueKey);
+  const to = navigation ? resolveHonorScoreNavPath(entry, navigation) : null;
+
+  const rowClass =
+    "flex items-baseline justify-between border-b border-border py-1.5 text-small";
+
+  if (!to) {
+    return (
+      <li className={rowClass}>
+        <span className="text-foreground">{label}</span>
+        <span className="font-mono text-foreground">{value}</span>
+      </li>
+    );
+  }
+
+  return (
+    <li>
+      <Link
+        to={to}
+        className={
+          rowClass +
+          " text-foreground hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+        }
+      >
+        <span className="hover:underline hover:underline-offset-2">{label}</span>
+        <span className="font-mono">{value}</span>
+      </Link>
+    </li>
   );
 }
 

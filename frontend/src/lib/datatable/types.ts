@@ -64,6 +64,14 @@ export type TableData = {
   metadata?: Record<string, unknown>;
 };
 
+export type LeagueTableNavigation = {
+  season: string;
+  league: string;
+  /** Latest week for ranking-column / default week links. */
+  defaultWeek: number | string;
+  onNavigate: (path: string) => void;
+};
+
 export type DataTableOptions = {
   disablePositionCircle?: boolean;
   enableSpecialRowStyling?: boolean;
@@ -83,6 +91,8 @@ export type DataTableOptions = {
   stripedColumnGroups?: boolean;
   /** Stripe palette style; `league` uses subtle rainbowPastel[0] tints. */
   columnGroupStripeVariant?: "default" | "league";
+  /** Column-group drill-down for league standings tables (season / week / team views). */
+  leagueNavigation?: LeagueTableNavigation;
 };
 
 export type FlatColumnInfo = {

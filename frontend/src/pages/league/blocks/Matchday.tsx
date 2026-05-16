@@ -46,6 +46,7 @@ export function Matchday({ season, league, week }: Props) {
             isPending={honor.isPending}
             isError={honor.isError}
             t={t}
+            navigation={{ season, league, defaultWeek: week }}
           />
         </div>
       </section>

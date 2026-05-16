@@ -369,6 +369,16 @@
   border-top-color: var(--color-accent);
 }
 
+/* League standings drill-down (column groups 0 / 1 / 2+) */
+.ds-tabulator.has-league-cell-navigation .tabulator-row .tabulator-cell[class*="col-group-"] {
+  cursor: pointer;
+}
+
+.ds-tabulator.has-league-cell-navigation .tabulator-row .tabulator-cell[class*="col-group-"]:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 /* Empty state placeholder for invalid table data */
 .ds-table-empty {
   padding: 24px;

@@ -1,5 +1,7 @@
-import { useEffect } from "react";
+import { useCallback, useEffect, useMemo } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { DataTable } from "../../../lib/datatable/DataTable";
+import { buildLeagueNavPath } from "../../../lib/leagueNavigation";
 import { type HonorScores, useSeasonLeagueStandings } from "../../../hooks/useLeague";
 import { useTranslations } from "../../../hooks/useTranslations";
 import { seedTeamColorsFromTablePayload } from "../../../lib/color-utils";
@@ -54,6 +56,7 @@ export function SeasonLeagueStandings({ season }: Props) {
       {data.leagues.map((leagueData) => (
         <LeagueSection
           key={leagueData.league}
+          season={season}
           league={leagueData.league}
           leagueLong={leagueData.league_long}
           week={leagueData.week}
@@ -67,6 +70,7 @@ export function SeasonLeagueStandings({ season }: Props) {
 }
 
 function LeagueSection({
+  season,
   league,
   leagueLong,
   week,
@@ -74,6 +78,7 @@ function LeagueSection({
   honorScores,
   t,
 }: {
+  season: string;
   league: string;
   leagueLong?: string;
   week: number | string;
@@ -81,12 +86,40 @@ function LeagueSection({
   honorScores?: HonorScores;
   t: (key: string, fallback?: string) => string;
 }) {
+  const navigate = useNavigate();
+  const weekPath = buildLeagueNavPath(
+    { view: "league-week" },
+    { season, league, defaultWeek: week },
+  );
+  const onNavigate = useCallback((path: string) => navigate(path), [navigate]);
+  const tableOptions = useMemo(
+    () => ({
+      ...rankedTeamTableOptions,
+      disableTeamColorUpdate: true,
+      teamColorLeague: league,
+      leagueNavigation: {
+        season,
+        league,
+        defaultWeek: week,
+        onNavigate,
+      },
+    }),
+    [season, league, week, onNavigate],
+  );
+
   return (
     <section>
       <div className="mb-4">
         <p className="text-label uppercase text-muted mb-1.5">{t("league", "Liga")}</p>
         <div className="flex items-baseline justify-between gap-4">
-          <h2 className="text-h2">{leagueLong ?? league}</h2>
+          <h2 className="text-h2">
+            <Link
+              to={weekPath}
+              className="text-foreground hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            >
+              {leagueLong ?? league}
+            </Link>
+          </h2>
           <p className="text-small font-mono text-muted">
             {t("match_day_label", "Spieltag")}{" "}
             <span className="font-semibold text-foreground">{week}</span>
@@ -96,16 +129,13 @@ function LeagueSection({
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
         <div>
-          <DataTable
-            data={standings}
-            options={{
-              ...rankedTeamTableOptions,
-              disableTeamColorUpdate: true,
-              teamColorLeague: league,
-            }}
-          />
+          <DataTable data={standings} options={tableOptions} />
         </div>
-        <HonorScoresPanel honorScores={honorScores} t={t} />
+        <HonorScoresPanel
+          honorScores={honorScores}
+          t={t}
+          navigation={{ season, league, defaultWeek: week }}
+        />
       </div>
     </section>
   );

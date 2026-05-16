@@ -22,6 +22,11 @@ import {
   updateTeamColorMap,
 } from "../color-utils";
 import {
+  groupIndexFromCellElement,
+  resolveLeagueCellNavPath,
+  type LeagueNavContext,
+} from "../leagueNavigation";
+import {
   applyElementStyles,
   flattenColumnMetadata,
   mapCellMetadata,
@@ -85,7 +90,10 @@ export function createDataTable(
   }
 
   const settings: Required<
-    Omit<DataTableOptions, "stripedColumnGroups" | "columnGroupStripeVariant">
+    Omit<
+      DataTableOptions,
+      "stripedColumnGroups" | "columnGroupStripeVariant" | "leagueNavigation"
+    >
   > = {
     disablePositionCircle: false,
     enableSpecialRowStyling: false,
@@ -507,6 +515,7 @@ export function createDataTable(
       "ds-tabulator",
       settings.stripedRows ? "is-striped-rows" : null,
       useStripedColumnGroups ? "is-striped-column-groups" : null,
+      rawOptions.leagueNavigation ? "has-league-cell-navigation" : null,
     ]
       .filter(Boolean)
       .join(" "),
@@ -559,6 +568,24 @@ export function createDataTable(
   };
 
   const tabulator = new Tabulator(container, tabulatorOptions);
+
+  const leagueNavigation = rawOptions.leagueNavigation;
+  if (leagueNavigation) {
+    const navCtx: LeagueNavContext = {
+      season: leagueNavigation.season,
+      league: leagueNavigation.league,
+      defaultWeek: leagueNavigation.defaultWeek,
+    };
+    tabulator.on("cellClick", (_e, cell) => {
+      const field = cell.getField();
+      if (!field) return;
+      const groupIndex = groupIndexFromCellElement(cell.getElement());
+      const rowData = cell.getRow().getData() as RowObject;
+      const team = typeof rowData.team === "string" ? rowData.team : null;
+      const path = resolveLeagueCellNavPath(field, groupIndex, team, data.columns, navCtx);
+      if (path) leagueNavigation.onNavigate(path);
+    });
+  }
 
   // Post-render: highlight class application + hide empty group header rows
   tabulator.on("tableBuilt", () => {
@@ -709,7 +736,9 @@ function isRankPositionColumn(
   field: string,
   groupIndex: number,
   columnIndex: number,
-  settings: Required<Omit<DataTableOptions, "stripedColumnGroups" | "columnGroupStripeVariant">>,
+  settings: Required<
+    Omit<DataTableOptions, "stripedColumnGroups" | "columnGroupStripeVariant" | "leagueNavigation">
+  >,
 ): boolean {
   return (
     field === "pos" ||
@@ -725,7 +754,9 @@ function buildColumnDefinition(
   isHighlighted: boolean,
   groupIndex: number,
   columnIndex: number,
-  settings: Required<Omit<DataTableOptions, "stripedColumnGroups" | "columnGroupStripeVariant">>,
+  settings: Required<
+    Omit<DataTableOptions, "stripedColumnGroups" | "columnGroupStripeVariant" | "leagueNavigation">
+  >,
   isCompactLayout: boolean,
   transformedData: RowObject[],
   formatter: (cell: CellComponent) => string | HTMLElement,

@@ -20,6 +20,9 @@ export type HonorScoreEntry = {
   total_score?: number | string;
   average?: number | string;
   value?: number | string;
+  /** When present, honor link targets game/round detail instead of team week only. */
+  round?: number | string;
+  game?: number | string;
 };
 
 export type HonorScores = {
