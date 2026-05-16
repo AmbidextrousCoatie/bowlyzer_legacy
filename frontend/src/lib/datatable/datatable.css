@@ -30,6 +30,8 @@
 .ds-tabulator .tabulator-header .tabulator-col-group {
   background: transparent;
   border: none;
+  border-right: none !important;
+  border-left: none !important;
   border-bottom: 1px solid var(--color-border) !important;
 }
 
@@ -64,14 +66,29 @@
   border-top: 1px solid var(--color-border);
 }
 
+/* Override Tabulator's built-in .tabulator-row-even zebra; opt in via .is-striped-rows. */
+.tabulator:not(.is-striped-rows) .tabulator-row.tabulator-row-even {
+  background-color: var(--color-surface) !important;
+}
+
+.tabulator.is-striped-rows .tabulator-row.tabulator-row-even {
+  background-color: var(--color-surface-subtle) !important;
+}
+
 .ds-tabulator .tabulator-row:hover {
   background: var(--color-surface-subtle);
 }
 
 .ds-tabulator .tabulator-row .tabulator-cell {
   border: none;
+  border-right: none !important;
+  border-left: none !important;
   padding: 8px 10px;
   font-size: 13px;
+  box-sizing: border-box;
+  display: inline-flex !important;
+  align-items: center !important;
+  line-height: 1.25;
 }
 
 /* Numeric cells use mono + tabular numerals */
@@ -80,7 +97,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Per-row team accent bar (4px colored stripe at left edge) */
+/* Row accent when position clip is disabled (e.g. player tables without rank badge). */
 .ds-tabulator .tabulator-row.tab-row-accent::before {
   content: "";
   position: absolute;
@@ -102,25 +119,75 @@
   background: var(--color-accent-tint);
 }
 
-/* Position circle (rank badge with team color) */
-.tab-position-circle {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  display: flex;
+/* Position column: flush left; same vertical padding as sibling cells. */
+.ds-tabulator .tabulator-row .tabulator-cell.tab-position-cell {
+  padding: 8px 0 !important;
+  padding-left: 0 !important;
+  overflow: visible;
+  text-align: left !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  border-right: none !important;
+  box-shadow: none !important;
+}
+
+/* Grouped header: no divider between # and team inside a frozen group. */
+.ds-tabulator .tabulator-header .tabulator-col-group .tabulator-col-group-cols > .tabulator-col:not(:last-child),
+.ds-tabulator .tabulator-header .tabulator-col.tab-position-col {
+  border-right: none !important;
+  box-shadow: none !important;
+}
+
+.ds-tabulator .tabulator-row .tabulator-cell.tab-position-cell.tabulator-frozen {
+  padding-left: 0 !important;
+}
+
+/* Rank clip — flat left, semicircle right; 75% of cell width. */
+.tab-position-clip {
+  --clip-color: var(--color-accent);
+  box-sizing: border-box;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: 75%;
+  max-width: 75%;
+  min-width: 1.75rem;
+  /* 40px row − 8px top/bottom cell padding */
+  height: 1.5rem;
+  padding: 0 0.5rem 0 0;
+  margin: 0;
+  background-color: var(--clip-color);
   color: #fff;
   font-weight: 600;
   font-size: 11px;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  margin: 0 auto;
+  line-height: 1;
+  border-radius: 0 999px 999px 0;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--clip-color) 70%, black 30%);
+}
+
+.tab-position-clip--initials {
+  min-width: 1.5rem;
+  padding-right: 0.45rem;
+  font-size: 10px;
+  letter-spacing: 0.02em;
+}
+
+.tab-position-clip__value {
+  display: block;
+  min-width: 1ch;
+  padding-left: 0.3rem;
+  text-align: center;
 }
 
 /* Frozen columns: solid surface background so scroll content doesn't bleed through */
 .ds-tabulator .tabulator-row .tabulator-cell.tabulator-frozen {
   background-color: var(--color-surface) !important;
+}
+
+.ds-tabulator.is-striped-rows .tabulator-row.tabulator-row-even .tabulator-cell.tabulator-frozen {
+  background-color: var(--color-surface-subtle) !important;
 }
 
 .ds-tabulator .tabulator-header .tabulator-col.tabulator-frozen,
@@ -129,8 +196,16 @@
 }
 
 .ds-tabulator .tabulator-frozen {
-  box-shadow: inset -1px 0 var(--color-border);
   z-index: 10;
+  border-right: none !important;
+  box-shadow: none;
+}
+
+/* Hairline only after the last frozen-left column (edge of sticky block). */
+.ds-tabulator .tabulator-row .tabulator-cell.tabulator-frozen.tabulator-frozen-left,
+.ds-tabulator .tabulator-header .tabulator-col.tabulator-frozen.tabulator-frozen-left,
+.ds-tabulator .tabulator-header .tabulator-col-group.tabulator-frozen.tabulator-frozen-left {
+  box-shadow: inset -1px 0 var(--color-border);
 }
 
 .ds-tabulator .tabulator-placeholder {

@@ -1,5 +1,7 @@
+import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
+  pickLatestSeason,
   useAvailableLeagues,
   useAvailableRounds,
   useAvailableSeasons,
@@ -24,10 +26,29 @@ export function LeagueStats() {
   const { t } = useTranslations();
 
   const seasonsQuery = useAvailableSeasons();
-  const leaguesQuery = useAvailableLeagues(season || null);
-  const weeksQuery = useAvailableWeeks(season || null, league || null);
-  const teamsQuery = useAvailableTeams(season || null, league || null);
-  const roundsQuery = useAvailableRounds(season || null, league || null, week || null);
+  const seasonList = seasonsQuery.data ?? [];
+  const resolvedSeason =
+    season === "latest"
+      ? seasonsQuery.isSuccess
+        ? pickLatestSeason(seasonList)
+        : null
+      : season;
+
+  // Resolve "latest" (default on /liga) to a concrete season in the URL.
+  useEffect(() => {
+    if (!seasonsQuery.isSuccess) return;
+    if (season !== "latest" || seasonList.length === 0) return;
+    const latest = pickLatestSeason(seasonList);
+    if (!latest) return;
+    const next = new URLSearchParams(searchParams);
+    next.set("season", latest);
+    setSearchParams(next, { replace: true });
+  }, [seasonsQuery.isSuccess, seasonsQuery.data, season, searchParams, setSearchParams]);
+
+  const leaguesQuery = useAvailableLeagues(resolvedSeason);
+  const weeksQuery = useAvailableWeeks(resolvedSeason, league || null);
+  const teamsQuery = useAvailableTeams(resolvedSeason, league || null);
+  const roundsQuery = useAvailableRounds(resolvedSeason, league || null, week || null);
 
   function setParam(key: string, value: string, drop: string[] = []) {
     const next = new URLSearchParams(searchParams);
@@ -38,13 +59,13 @@ export function LeagueStats() {
   }
 
   // Visibility precedence (matches legacy block shouldRender contracts).
-  const showSeasonStandings = !!season && !league;
-  const showLeagueSeasonOverview = !!league && !!season && !week && !team;
-  const showMatchday = !!season && !!league && !!week && !team && !round;
-  const showTeamPerformance = !!league && !!season && !!team && !week;
-  const showTeamDetails = !!season && !!league && !!week && !!team && !round;
-  const showGameOverview = !!season && !!league && !!week && !!round && !team;
-  const showGameTeamDetails = !!season && !!league && !!week && !!team && !!round;
+  const showSeasonStandings = !!resolvedSeason && !league;
+  const showLeagueSeasonOverview = !!league && !!resolvedSeason && !week && !team;
+  const showMatchday = !!resolvedSeason && !!league && !!week && !team && !round;
+  const showTeamPerformance = !!league && !!resolvedSeason && !!team && !week;
+  const showTeamDetails = !!resolvedSeason && !!league && !!week && !!team && !round;
+  const showGameOverview = !!resolvedSeason && !!league && !!week && !!round && !team;
+  const showGameTeamDetails = !!resolvedSeason && !!league && !!week && !!team && !!round;
 
   return (
     <div className="mx-auto max-w-[1280px] px-8 pt-12 pb-24">
@@ -55,7 +76,8 @@ export function LeagueStats() {
         <h1 className="text-h1">
           {t("league", "Liga")} ·{" "}
           <span className="text-muted font-normal">
-            {t("season", "Saison")} <span className="font-mono">{seasonDisplay(season)}</span>
+            {t("season", "Saison")}{" "}
+            <span className="font-mono">{seasonDisplay(resolvedSeason ?? season)}</span>
           </span>
         </h1>
       </header>
@@ -85,16 +107,32 @@ export function LeagueStats() {
       />
 
       <div className="mt-10 space-y-12">
-        {showSeasonStandings && <SeasonLeagueStandings season={season} />}
-        {showLeagueSeasonOverview && <LeagueSeasonOverview season={season} league={league} />}
-        {showMatchday && <Matchday season={season} league={league} week={week} />}
-        {showTeamPerformance && <TeamPerformance season={season} league={league} team={team} />}
-        {showTeamDetails && <TeamDetails season={season} league={league} week={week} team={team} />}
-        {showGameOverview && (
-          <GameOverview season={season} league={league} week={week} round={round} />
+        {showSeasonStandings && resolvedSeason && (
+          <SeasonLeagueStandings season={resolvedSeason} />
         )}
-        {showGameTeamDetails && (
-          <GameTeamDetails season={season} league={league} week={week} team={team} round={round} />
+        {showLeagueSeasonOverview && resolvedSeason && (
+          <LeagueSeasonOverview season={resolvedSeason} league={league} />
+        )}
+        {showMatchday && resolvedSeason && (
+          <Matchday season={resolvedSeason} league={league} week={week} />
+        )}
+        {showTeamPerformance && resolvedSeason && (
+          <TeamPerformance season={resolvedSeason} league={league} team={team} />
+        )}
+        {showTeamDetails && resolvedSeason && (
+          <TeamDetails season={resolvedSeason} league={league} week={week} team={team} />
+        )}
+        {showGameOverview && resolvedSeason && (
+          <GameOverview season={resolvedSeason} league={league} week={week} round={round} />
+        )}
+        {showGameTeamDetails && resolvedSeason && (
+          <GameTeamDetails
+            season={resolvedSeason}
+            league={league}
+            week={week}
+            team={team}
+            round={round}
+          />
         )}
       </div>
     </div>

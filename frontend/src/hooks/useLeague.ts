@@ -39,6 +39,12 @@ export type SeasonLeagueStandings = {
   }>;
 };
 
+/** Picks the newest season label (matches legacy league-stats-app.js). */
+export function pickLatestSeason(seasons: string[]): string | null {
+  if (seasons.length === 0) return null;
+  return seasons.reduce((a, b) => (String(a) > String(b) ? a : b));
+}
+
 export function useAvailableSeasons() {
   return useQuery({
     queryKey: ["league", "seasons"],

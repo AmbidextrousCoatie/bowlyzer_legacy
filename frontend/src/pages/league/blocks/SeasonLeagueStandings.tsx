@@ -3,6 +3,7 @@ import { DataTable } from "../../../lib/datatable/DataTable";
 import { type HonorScores, useSeasonLeagueStandings } from "../../../hooks/useLeague";
 import { useTranslations } from "../../../hooks/useTranslations";
 import { clearTeamColor, getPaletteColor, setTeamColor } from "../../../lib/color-utils";
+import { rankedTeamTableOptions } from "../leagueTableOptions";
 import { HonorScoresPanel } from "./HonorScoresPanel";
 
 type Props = {
@@ -102,9 +103,7 @@ function LeagueSection({
           <DataTable
             data={standings}
             options={{
-              disablePositionCircle: false,
-              enableSpecialRowStyling: true,
-              tooltips: true,
+              ...rankedTeamTableOptions,
               disableTeamColorUpdate: true,
             }}
           />

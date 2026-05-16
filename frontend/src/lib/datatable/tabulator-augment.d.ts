@@ -9,9 +9,11 @@ import "tabulator-tables";
 declare module "tabulator-tables" {
   interface ColumnDefinition {
     headerClass?: string;
+    vertAlign?: "top" | "middle" | "bottom";
   }
 
   interface Options {
     cssClass?: string;
+    columnDefaults?: Partial<ColumnDefinition>;
   }
 }

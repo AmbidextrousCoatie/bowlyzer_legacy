@@ -72,6 +72,10 @@ export type DataTableOptions = {
   /** When rendering multiple tables in a row, prevents the first table from
    *  resetting the global team color map. */
   disableTeamColorUpdate?: boolean;
+  /** Zebra row backgrounds. Default on; disable for short tables (e.g. standings). */
+  stripedRows?: boolean;
+  /** Alternating column-group shading. When omitted, follows payload `config.stripedColGroups`. */
+  stripedColumnGroups?: boolean;
 };
 
 export type FlatColumnInfo = {

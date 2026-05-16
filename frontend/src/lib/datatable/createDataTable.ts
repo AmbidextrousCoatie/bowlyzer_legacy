@@ -80,13 +80,14 @@ export function createDataTable(
     return null;
   }
 
-  const settings: Required<DataTableOptions> = {
+  const settings: Required<Omit<DataTableOptions, "stripedColumnGroups">> = {
     disablePositionCircle: false,
     enableSpecialRowStyling: false,
     tooltips: true,
     teamField: null,
     enableHeatMap: false,
     disableTeamColorUpdate: false,
+    stripedRows: true,
     ...rawOptions,
   };
 
@@ -107,7 +108,10 @@ export function createDataTable(
 
   const tableConfig = data.config ?? {};
   const isCompactLayout = tableConfig.compact === true;
-  const useStripedGroups = tableConfig.stripedColGroups === true;
+  const useStripedColumnGroups =
+    rawOptions.stripedColumnGroups !== undefined
+      ? rawOptions.stripedColumnGroups
+      : tableConfig.stripedColGroups === true;
 
   if (container.style.width === "") {
     container.style.width = "100%";
@@ -246,7 +250,7 @@ export function createDataTable(
   // Detect group structure: if every group title is empty, render flat.
   const hasGroupTitles = data.columns.some((g) => g.title && g.title.trim() !== "");
 
-  if (useStripedGroups && hasGroupTitles) {
+  if (useStripedColumnGroups && hasGroupTitles) {
     assignGroupStripeCss(data.columns);
     injectStripeCss(data.columns.length, {
       palette: DEFAULT_STRIPE_PALETTE,
@@ -271,7 +275,7 @@ export function createDataTable(
       const rowIdx = rowData.__rowIndex;
       const field = info.field;
 
-      if (useStripedGroups && hasGroupTitles) {
+      if (useStripedColumnGroups && hasGroupTitles) {
         element.classList.add("col-group-" + info.groupIndex);
       }
 
@@ -322,17 +326,16 @@ export function createDataTable(
           let color =
             playerColors[normalized] || teamColors[normalized] || getTeamColor(normalized);
           if (!color || color === "#888") color = hashColor(normalized);
-          return positionCircle(displayValue, color, true);
+          pinPositionCell(element);
+          return positionClip(displayValue, color, true);
         }
       }
 
-      // position columns → colored circle with rank
-      const isPositionColumn =
-        field === "team_position" ||
-        field === "opponent_position" ||
-        (!settings.disablePositionCircle && contextGroupIndex === 0 && contextColumnIndex === 0);
-
-      if (isPositionColumn && !settings.disablePositionCircle) {
+      // position columns → team-colored clip badge (flat left, half-circle right)
+      if (
+        isRankPositionColumn(field, contextGroupIndex, contextColumnIndex, settings) &&
+        !settings.disablePositionCircle
+      ) {
         const teamName = resolvePositionTeamName(
           field,
           rowData,
@@ -346,7 +349,8 @@ export function createDataTable(
           const normalized = teamName.trim();
           const playerColors = getPlayerColorMap();
           const color = playerColors[normalized] || getTeamColor(normalized);
-          return positionCircle(displayValue, color, false);
+          pinPositionCell(element);
+          return positionClip(displayValue, color, false);
         }
       }
 
@@ -413,7 +417,7 @@ export function createDataTable(
               isCompactLayout,
               transformedData,
               makeFormatter(column, info, isHighlighted, info.groupIndex, info.columnIndex),
-              useStripedGroups ? groupIndex : null,
+              useStripedColumnGroups ? groupIndex : null,
             );
             const colFrozen = column.frozen === "left" || column.frozen === "right" ? column.frozen : null;
             if (hasPerColumnFrozen && colFrozen) {
@@ -459,13 +463,22 @@ export function createDataTable(
   const tabulatorOptions: Options = {
     data: transformedData,
     columns: tabulatorColumns,
+    columnDefaults: {
+      vertAlign: "middle",
+    },
     layout: isCompactLayout ? "fitData" : "fitColumns",
     responsiveLayout: false,
     pagination: false,
     movableColumns: false,
     height: "auto",
     rowHeight: 40,
-    cssClass: "ds-tabulator",
+    cssClass: [
+      "ds-tabulator",
+      settings.stripedRows ? "is-striped-rows" : null,
+      useStripedColumnGroups ? "is-striped-column-groups" : null,
+    ]
+      .filter(Boolean)
+      .join(" "),
     columnHeaderVertAlign: "middle",
     ...(initialSort ? { initialSort } : {}),
     rowFormatter: (row: RowComponent) => {
@@ -494,10 +507,17 @@ export function createDataTable(
       if (typeof teamValue === "string" && teamValue.length > 0) {
         const accentColor = getTeamColor(teamValue);
         if (accentColor) {
-          rowElement.classList.add("tab-row-accent");
-          rowElement.style.setProperty("--row-accent-color", accentColor);
-          const overlay = toRgba(accentColor, 0.12);
-          rowElement.style.setProperty("--row-accent-overlay", overlay);
+          // Row wash + left bar only when rank is not shown as a position clip.
+          if (settings.disablePositionCircle) {
+            rowElement.classList.add("tab-row-accent");
+            rowElement.style.setProperty("--row-accent-color", accentColor);
+            const overlay = toRgba(accentColor, 0.12);
+            rowElement.style.setProperty("--row-accent-overlay", overlay);
+          } else {
+            rowElement.classList.remove("tab-row-accent");
+            rowElement.style.removeProperty("--row-accent-color");
+            rowElement.style.removeProperty("--row-accent-overlay");
+          }
         }
       } else {
         rowElement.classList.remove("tab-row-accent");
@@ -511,10 +531,10 @@ export function createDataTable(
 
   // Post-render: highlight class application + hide empty group header rows
   tabulator.on("tableBuilt", () => {
-    runPostRender(container, data, hasGroupTitles, useStripedGroups);
+    runPostRender(container, data, hasGroupTitles, useStripedColumnGroups);
   });
   tabulator.on("dataProcessed", () => {
-    runPostRender(container, data, hasGroupTitles, useStripedGroups);
+    runPostRender(container, data, hasGroupTitles, useStripedColumnGroups);
   });
 
   return {
@@ -563,16 +583,29 @@ function applyCellMeta(element: HTMLElement, meta: CellMetaStyles): void {
   });
 }
 
-function positionCircle(value: string, color: string, important: boolean): HTMLElement {
-  const div = document.createElement("div");
-  div.className = "tab-position-circle";
+function pinPositionCell(cellEl: HTMLElement): void {
+  cellEl.classList.add("tab-position-cell");
+  cellEl.style.setProperty("text-align", "left", "important");
+  cellEl.style.setProperty("align-items", "center", "important");
+  cellEl.style.setProperty("justify-content", "flex-start", "important");
+  cellEl.style.setProperty("padding-top", "8px", "important");
+  cellEl.style.setProperty("padding-bottom", "8px", "important");
+  cellEl.style.setProperty("padding-left", "0", "important");
+  cellEl.style.setProperty("padding-right", "0", "important");
+}
+
+function positionClip(value: string, color: string, important: boolean): HTMLElement {
+  const clip = document.createElement("span");
+  clip.className = important ? "tab-position-clip tab-position-clip--initials" : "tab-position-clip";
+  clip.style.setProperty("--clip-color", color);
   if (important) {
-    div.style.setProperty("background-color", color, "important");
-  } else {
-    div.style.backgroundColor = color;
+    clip.style.setProperty("background-color", color, "important");
   }
-  div.textContent = value;
-  return div;
+  const label = document.createElement("span");
+  label.className = "tab-position-clip__value";
+  label.textContent = value;
+  clip.append(label);
+  return clip;
 }
 
 function hashColor(name: string): string {
@@ -625,13 +658,27 @@ function resolvePositionTeamName(
   return typeof v === "string" ? v : null;
 }
 
+function isRankPositionColumn(
+  field: string,
+  groupIndex: number,
+  columnIndex: number,
+  settings: Required<Omit<DataTableOptions, "stripedColumnGroups">>,
+): boolean {
+  return (
+    field === "pos" ||
+    field === "team_position" ||
+    field === "opponent_position" ||
+    (!settings.disablePositionCircle && groupIndex === 0 && columnIndex === 0)
+  );
+}
+
 function buildColumnDefinition(
   column: ColumnDef,
   info: FlatColumnInfo,
   isHighlighted: boolean,
   groupIndex: number,
-  _columnIndex: number,
-  settings: Required<DataTableOptions>,
+  columnIndex: number,
+  settings: Required<Omit<DataTableOptions, "stripedColumnGroups">>,
   isCompactLayout: boolean,
   transformedData: RowObject[],
   formatter: (cell: CellComponent) => string | HTMLElement,
@@ -652,16 +699,23 @@ function buildColumnDefinition(
   if (isHighlighted) cssClasses.push("tab-col-highlighted");
   if (column.cssClass) cssClasses.push(column.cssClass);
   if (stripeGroupIndex !== null) cssClasses.push("col-group-" + stripeGroupIndex);
+  if (isRankPositionColumn(info.field, groupIndex, columnIndex, settings)) {
+    cssClasses.push("tab-position-col");
+  }
 
   const headerClasses: string[] = [];
   if (column.headerClass) headerClasses.push(column.headerClass);
   if (stripeGroupIndex !== null) headerClasses.push("col-group-" + stripeGroupIndex);
+  if (isRankPositionColumn(info.field, groupIndex, columnIndex, settings)) {
+    headerClasses.push("tab-position-col");
+  }
 
   const def: ColumnDefinition = {
     title: column.title ?? "",
     field: info.field,
     hozAlign: headerAlign,
     headerHozAlign: headerAlign,
+    vertAlign: "middle",
     headerSort: column.sortable !== false,
     sorter:
       column.sortable === false
@@ -690,7 +744,6 @@ function buildColumnDefinition(
     def.widthGrow = isTeamColumn ? 3 : isTextColumn ? 2 : 1;
   }
 
-  void groupIndex;
   return def;
 }
 
@@ -703,7 +756,11 @@ function extractTeamsForColorMap(data: TableData, columnOrder: FlatColumnInfo[])
   let teams: string[] = [];
   if (isVsVs) {
     teams = data.data
-      .map((row) => (Array.isArray(row) ? row[0] : null))
+      .map((row) => {
+        if (Array.isArray(row)) return typeof row[1] === "string" ? row[1] : null;
+        const r = row as Record<string, unknown>;
+        return typeof r.team === "string" ? r.team : null;
+      })
       .filter((t): t is string => typeof t === "string" && t.length > 0);
   } else {
     teams = data.data
@@ -724,7 +781,7 @@ function runPostRender(
   container: HTMLElement,
   data: TableData,
   hasGroupTitles: boolean,
-  useStripedGroups: boolean,
+  useStripedColumnGroups: boolean,
 ): void {
   // Two RAFs to let Tabulator finish DOM mounting of headers
   requestAnimationFrame(() => {
@@ -734,7 +791,7 @@ function runPostRender(
       container.style.setProperty("--highlight-header-weight", HIGHLIGHT_STYLES.headerFontWeight);
       container.style.setProperty("--highlight-cell-weight", HIGHLIGHT_STYLES.cellFontWeight);
 
-      if (useStripedGroups) {
+      if (useStripedColumnGroups) {
         container.querySelectorAll<HTMLElement>(".tabulator-col-group").forEach((el, idx) => {
           el.classList.add("col-group-" + idx);
         });
@@ -788,6 +845,19 @@ function runPostRender(
             }
           });
       }
+
+      container.querySelectorAll<HTMLElement>(".tab-position-cell, .tab-position-col").forEach((el) => {
+        el.style.setProperty("border-right", "none", "important");
+        el.style.setProperty("box-shadow", "none", "important");
+      });
+      container
+        .querySelectorAll<HTMLElement>(
+          ".tabulator-header .tabulator-col-group .tabulator-col-group-cols > .tabulator-col:first-child",
+        )
+        .forEach((col) => {
+          col.style.setProperty("border-right", "none", "important");
+          col.style.setProperty("box-shadow", "none", "important");
+        });
     });
   });
 }

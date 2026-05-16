@@ -206,6 +206,8 @@ function assignLeafColumnCss(columns: LooseColumn[], groupIndex: number): void {
   });
 }
 
+const STRIPE_SCOPE = ".ds-tabulator.is-striped-column-groups";
+
 export function generateStripeCss(
   groupCount: number,
   options: {
@@ -222,9 +224,9 @@ export function generateStripeCss(
     const color = palette[i % palette.length];
     const headerBg = toRgba(color, headerAlpha);
     const cellBg = toRgba(color, cellAlpha);
-    css += `.tabulator-cell.col-group-${i}:not(.tabulator-frozen) { background-color: ${cellBg} !important; }\n`;
-    css += `.tabulator-col.col-group-${i}:not(.tabulator-frozen) { background-color: ${headerBg} !important; }\n`;
-    css += `.tabulator-col-group.col-group-${i}:not(.tabulator-frozen) { background-color: ${headerBg} !important; }\n`;
+    css += `${STRIPE_SCOPE} .tabulator-cell.col-group-${i}:not(.tabulator-frozen) { background-color: ${cellBg} !important; }\n`;
+    css += `${STRIPE_SCOPE} .tabulator-col.col-group-${i}:not(.tabulator-frozen) { background-color: ${headerBg} !important; }\n`;
+    css += `${STRIPE_SCOPE} .tabulator-col-group.col-group-${i}:not(.tabulator-frozen) { background-color: ${headerBg} !important; }\n`;
   }
   return css;
 }

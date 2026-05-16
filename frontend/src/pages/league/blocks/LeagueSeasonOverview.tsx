@@ -15,6 +15,7 @@ import {
   useTeamVsTeamComparison,
 } from "../../../hooks/useLeague";
 import { useTranslations } from "../../../hooks/useTranslations";
+import { teamVsTeamTableOptions } from "../leagueTableOptions";
 
 type Props = {
   season: string;
@@ -146,15 +147,7 @@ export function LeagueSeasonOverview({ season, league }: Props) {
         eyebrow={t("team_vs_team_comparison", "Vergleichsmatrix")}
         title={t("team_vs_team", "Mannschaft vs. Mannschaft")}
       >
-        <DataTableSection
-          query={teamVsTeam}
-          options={{
-            disablePositionCircle: false,
-            enableHeatMap: true,
-            teamField: "team",
-            tooltips: true,
-          }}
-        />
+        <DataTableSection query={teamVsTeam} options={teamVsTeamTableOptions} />
       </Section>
 
       {/* 5 · Individual averages */}
