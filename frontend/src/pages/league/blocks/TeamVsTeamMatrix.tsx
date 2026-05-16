@@ -1,12 +1,7 @@
-﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { SegmentedControl } from "../../../components/SegmentedControl";
 import { DataTable } from "../../../lib/datatable/DataTable";
-import type { DataTableHandle } from "../../../lib/datatable/createDataTable";
-import {
-  applyTeamVsTeamMetricFilter,
-  extractTeamVsTeamColumnFields,
-  type TeamVsTeamMetric,
-} from "../../../lib/datatable/teamVsTeamFilter";
+import type { TeamVsTeamMetric } from "../../../lib/datatable/teamVsTeamFilter";
 import type { DataTableOptions, TableData } from "../../../lib/datatable/types";
 import { ensureTeamColors, extractTeamNamesFromTablePayload } from "../../../lib/color-utils";
 import { useTranslations } from "../../../hooks/useTranslations";
@@ -27,12 +22,6 @@ type Props = {
 export function TeamVsTeamMatrix({ query, options = teamVsTeamTableOptions }: Props) {
   const { t } = useTranslations();
   const [metric, setMetric] = useState<TeamVsTeamMetric>("points");
-  const tableRef = useRef<DataTableHandle | null>(null);
-
-  const columnFields = useMemo(
-    () => (query.data ? extractTeamVsTeamColumnFields(query.data) : null),
-    [query.data],
-  );
 
   useEffect(() => {
     if (!query.data) return;
@@ -40,24 +29,10 @@ export function TeamVsTeamMatrix({ query, options = teamVsTeamTableOptions }: Pr
     if (teams.length > 0) ensureTeamColors(teams, options.teamColorLeague);
   }, [query.data, options.teamColorLeague]);
 
-  const applyFilter = useCallback(
-    (handle: DataTableHandle | null, m: TeamVsTeamMetric) => {
-      if (!handle || !columnFields) return;
-      applyTeamVsTeamMetricFilter(handle.tabulator, columnFields, m);
-    },
-    [columnFields],
+  const tableOptions = useMemo(
+    () => ({ ...options, teamVsTeamMetric: metric }),
+    [options, metric],
   );
-
-  const handleTableReady = useCallback(
-    (handle: DataTableHandle) => {
-      tableRef.current = handle;
-    },
-    [],
-  );
-
-  useEffect(() => {
-    applyFilter(tableRef.current, metric);
-  }, [metric, applyFilter]);
 
   const metricOptions = useMemo(
     () => [
@@ -69,7 +44,7 @@ export function TeamVsTeamMatrix({ query, options = teamVsTeamTableOptions }: Pr
   );
 
   if (query.isPending) {
-    return <div className="h-48 rounded-sm border border-border bg-surface-subtle" />;
+    return <div className="h-48 rounded-sm border border-border bg-surface-subtle" aria-hidden />;
   }
   if (query.isError) {
     return (
@@ -101,8 +76,7 @@ export function TeamVsTeamMatrix({ query, options = teamVsTeamTableOptions }: Pr
           ariaLabel={t("team_vs_team_metric_filter", "Matrix anzeigen")}
         />
       </div>
-      <DataTable data={query.data} options={options} onReady={handleTableReady} />
+      <DataTable data={query.data} options={tableOptions} />
     </div>
   );
 }
-

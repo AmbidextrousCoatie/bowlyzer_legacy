@@ -32,6 +32,7 @@ import {
   mapCellMetadata,
   parseColumnWidth,
 } from "./flatten";
+import { filterTableColumnsForMetric } from "./teamVsTeamFilter";
 import type {
   CellMetaStyles,
   ColumnDef,
@@ -92,7 +93,7 @@ export function createDataTable(
   const settings: Required<
     Omit<
       DataTableOptions,
-      "stripedColumnGroups" | "columnGroupStripeVariant" | "leagueNavigation"
+      "stripedColumnGroups" | "columnGroupStripeVariant" | "leagueNavigation" | "teamVsTeamMetric"
     >
   > = {
     disablePositionCircle: false,
@@ -140,7 +141,14 @@ export function createDataTable(
     container.style.width = "100%";
   }
 
-  const columnOrder = flattenColumnMetadata(data.columns);
+  const teamVsTeamMetric = rawOptions.teamVsTeamMetric;
+  const columnsForBuild =
+    teamVsTeamMetric !== undefined
+      ? filterTableColumnsForMetric(data.columns, teamVsTeamMetric)
+      : data.columns;
+
+  const fullColumnOrder = flattenColumnMetadata(data.columns);
+  const columnOrder = flattenColumnMetadata(columnsForBuild);
   if (!columnOrder.length) {
     console.warn("[DataTable] No column definitions");
     container.innerHTML = `<div class="ds-table-empty">${
@@ -152,6 +160,12 @@ export function createDataTable(
   const columnLookup: Record<string, FlatColumnInfo> = {};
   columnOrder.forEach((info) => {
     columnLookup[`${info.groupIndex}-${info.columnIndex}`] = info;
+  });
+
+  /** Backend rows are arrays in full column order; map field → index for safe lookups when columns are filtered. */
+  const arrayIndexByField = new Map<string, number>();
+  fullColumnOrder.forEach((info, idx) => {
+    arrayIndexByField.set(info.field, idx);
   });
 
   const teamFieldGuess = data.columns?.[0]?.columns?.[1]?.field ?? null;
@@ -173,7 +187,7 @@ export function createDataTable(
     data.data = data.data.map((row) => {
       if (Array.isArray(row)) {
         return row.map((cell, idx) => {
-          const info = columnOrder[idx];
+          const info = fullColumnOrder[idx];
           if (info && decimalPlacesMap[info.field] !== undefined) {
             return formatDecimal(cell, decimalPlacesMap[info.field]);
           }
@@ -193,7 +207,7 @@ export function createDataTable(
     });
   }
 
-  const cellMetadataMap = mapCellMetadata(data.cell_metadata ?? {}, columnOrder);
+  const cellMetadataMap = mapCellMetadata(data.cell_metadata ?? {}, fullColumnOrder);
   const rowMetadataMap: Record<number, NonNullable<TableData["row_metadata"]>[number]> = {};
   (data.row_metadata ?? []).forEach((meta, idx) => {
     rowMetadataMap[idx] = meta ?? {};
@@ -205,6 +219,27 @@ export function createDataTable(
   // Heatmap: bucket fields by data type, compute global min/max per bucket.
   const heatmapRanges: Record<string, { min: number; max: number }> = {};
   if (settings.enableHeatMap && data.data && data.data.length > 0) {
+    const meta = data.metadata ?? {};
+    const scoreRange = meta.score_range as { min: number; max: number } | undefined;
+    const pointsRange = meta.points_range as { min: number; max: number } | undefined;
+    if (
+      isTeamVsTeamComparisonTable(data) &&
+      scoreRange &&
+      pointsRange &&
+      Number.isFinite(scoreRange.min) &&
+      Number.isFinite(scoreRange.max) &&
+      Number.isFinite(pointsRange.min) &&
+      Number.isFinite(pointsRange.max)
+    ) {
+      columnOrder.forEach((info) => {
+        const lower = info.field.toLowerCase();
+        if (lower.includes("points")) {
+          heatmapRanges[info.field] = { min: pointsRange.min, max: pointsRange.max };
+        } else if (lower.includes("score")) {
+          heatmapRanges[info.field] = { min: scoreRange.min, max: scoreRange.max };
+        }
+      });
+    } else {
     const typeFields: Record<"score" | "points", string[]> = { score: [], points: [] };
     columnOrder.forEach((info) => {
       const lower = info.field.toLowerCase();
@@ -227,8 +262,8 @@ export function createDataTable(
         data.data.forEach((row) => {
           let v: unknown = null;
           if (isArrayFormat) {
-            const colIdx = columnOrder.findIndex((co) => co.field === field);
-            if (colIdx >= 0 && Array.isArray(row) && colIdx < row.length) {
+            const colIdx = arrayIndexByField.get(field);
+            if (colIdx !== undefined && Array.isArray(row) && colIdx < row.length) {
               v = row[colIdx];
             }
           } else if (typeof row === "object" && row !== null) {
@@ -248,6 +283,7 @@ export function createDataTable(
         }
       }
     });
+    }
   }
 
   // Transform rows into objects keyed by field, with __rowIndex / __rowMeta
@@ -255,8 +291,11 @@ export function createDataTable(
   const transformedData: RowObject[] = data.data.map((row, rowIndex) => {
     const obj: RowObject = { __rowIndex: rowIndex };
     if (isArrayFormat) {
-      columnOrder.forEach((info, colIdx) => {
-        obj[info.field] = (row as unknown[])[colIdx];
+      columnOrder.forEach((info) => {
+        const colIdx = arrayIndexByField.get(info.field);
+        if (colIdx !== undefined) {
+          obj[info.field] = (row as unknown[])[colIdx];
+        }
       });
     } else {
       const r = row as Record<string, unknown>;
@@ -271,11 +310,11 @@ export function createDataTable(
   });
 
   // Detect group structure: if every group title is empty, render flat.
-  const hasGroupTitles = data.columns.some((g) => g.title && g.title.trim() !== "");
+  const hasGroupTitles = columnsForBuild.some((g) => g.title && g.title.trim() !== "");
 
   if (useStripedColumnGroups && hasGroupTitles) {
-    assignGroupStripeCss(data.columns);
-    injectStripeCss(data.columns.length, {
+    assignGroupStripeCss(columnsForBuild);
+    injectStripeCss(columnsForBuild.length, {
       variant: columnGroupStripeVariant,
       palette: DEFAULT_STRIPE_PALETTE,
       headerAlpha: isCompactLayout ? 0.3 : 0.2,
@@ -390,7 +429,7 @@ export function createDataTable(
   let tabulatorColumns: ColumnDefinition[] = [];
 
   if (!hasGroupTitles) {
-    data.columns.forEach((group, groupIndex) => {
+    columnsForBuild.forEach((group, groupIndex) => {
       if (!Array.isArray(group.columns)) return;
       const groupFrozen = group.frozen === "left" || group.frozen === "right" ? group.frozen : null;
       const hasPerColumnFrozen = (group.columns ?? []).some(
@@ -421,7 +460,7 @@ export function createDataTable(
       });
     });
   } else {
-    tabulatorColumns = data.columns
+    tabulatorColumns = columnsForBuild
       .map((group, groupIndex) => {
         if (!Array.isArray(group.columns)) return null;
         const groupFrozen =
@@ -737,7 +776,10 @@ function isRankPositionColumn(
   groupIndex: number,
   columnIndex: number,
   settings: Required<
-    Omit<DataTableOptions, "stripedColumnGroups" | "columnGroupStripeVariant" | "leagueNavigation">
+    Omit<
+      DataTableOptions,
+      "stripedColumnGroups" | "columnGroupStripeVariant" | "leagueNavigation" | "teamVsTeamMetric"
+    >
   >,
 ): boolean {
   return (
@@ -755,7 +797,10 @@ function buildColumnDefinition(
   groupIndex: number,
   columnIndex: number,
   settings: Required<
-    Omit<DataTableOptions, "stripedColumnGroups" | "columnGroupStripeVariant" | "leagueNavigation">
+    Omit<
+      DataTableOptions,
+      "stripedColumnGroups" | "columnGroupStripeVariant" | "leagueNavigation" | "teamVsTeamMetric"
+    >
   >,
   isCompactLayout: boolean,
   transformedData: RowObject[],

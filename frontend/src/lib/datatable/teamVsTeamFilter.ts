@@ -3,6 +3,30 @@ import type { ColumnGroup, TableData } from "./types";
 
 export type TeamVsTeamMetric = "points" | "score" | "both";
 
+/** Whether a matrix field belongs in the current Punkte / Pins / Beides view. */
+export function shouldShowTeamVsTeamField(field: string, metric: TeamVsTeamMetric): boolean {
+  if (metric === "both") return true;
+  const lower = field.toLowerCase();
+  if (lower.includes("points")) return metric === "points";
+  if (lower.includes("score")) return metric === "score";
+  return true;
+}
+
+/** Filter column groups so Tabulator only mounts visible metric columns (reliable vs hide/show). */
+export function filterTableColumnsForMetric(
+  columns: ColumnGroup[],
+  metric: TeamVsTeamMetric,
+): ColumnGroup[] {
+  if (metric === "both") return columns;
+  return columns.map((group) => {
+    if (!Array.isArray(group.columns)) return group;
+    return {
+      ...group,
+      columns: group.columns.filter((col) => shouldShowTeamVsTeamField(col.field ?? "", metric)),
+    };
+  });
+}
+
 export type TeamVsTeamColumnFields = {
   pointsFields: string[];
   scoreFields: string[];

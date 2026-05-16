@@ -93,6 +93,8 @@ export type DataTableOptions = {
   columnGroupStripeVariant?: "default" | "league";
   /** Column-group drill-down for league standings tables (season / week / team views). */
   leagueNavigation?: LeagueTableNavigation;
+  /** Team-vs-team matrix: rebuild with only Punkte / Pins / Beides columns. */
+  teamVsTeamMetric?: "points" | "score" | "both";
 };
 
 export type FlatColumnInfo = {
