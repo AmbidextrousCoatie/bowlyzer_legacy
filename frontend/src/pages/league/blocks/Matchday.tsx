@@ -7,6 +7,7 @@ import {
 } from "../../../hooks/useLeague";
 import { useTranslations } from "../../../hooks/useTranslations";
 import { teamVsTeamTableOptions } from "../leagueTableOptions";
+import { TeamVsTeamMatrix } from "./TeamVsTeamMatrix";
 import { HonorScoresPanel } from "./HonorScoresPanel";
 
 type Props = {
@@ -39,6 +40,7 @@ export function Matchday({ season, league, week }: Props) {
               disablePositionCircle: false,
               enableSpecialRowStyling: true,
               tooltips: true,
+              teamColorLeague: league,
             }}
           />
           <HonorScoresPanel
@@ -57,7 +59,10 @@ export function Matchday({ season, league, week }: Props) {
           </p>
           <h2 className="text-h2">{t("team_vs_team", "Mannschaft vs. Mannschaft")}</h2>
         </div>
-        <DataTableQuery query={teamVsTeam} options={teamVsTeamTableOptions} />
+        <TeamVsTeamMatrix
+          query={teamVsTeam}
+          options={{ teamColorLeague: league, ...teamVsTeamTableOptions }}
+        />
       </section>
 
       <section>

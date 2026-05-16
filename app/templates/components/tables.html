@@ -1,4 +1,4 @@
-<link href="{{ static_url('vendor/tabulator/css/tabulator_semanticui.min.css') }}" rel="stylesheet">
+﻿<link href="{{ static_url('vendor/tabulator/css/tabulator_semanticui.min.css') }}" rel="stylesheet">
 <script src="{{ static_url('js/theme/color-utils.js') }}"></script>
 <script type="text/javascript" src="{{ static_url('vendor/tabulator/js/tabulator.min.js') }}"></script>
 
@@ -120,8 +120,13 @@ function flattenColumnMetadata(columnGroups = []) {
 
 /**
  * League standings rank column (field "pos"): badge color by displayed rank (1-based),
- * independent of teamColorMap — avoids duplicate swatches when names collide or map order drifts.
+ * independent of teamColorMap â€” avoids duplicate swatches when names collide or map order drifts.
  */
+function isTeamVsTeamComparisonTable(data) {
+    const title = data && data.title ? String(data.title) : '';
+    return title.includes('Team vs Team Comparison') || title.includes('Team vs Team Vergleichsmatrix');
+}
+
 function positionRankBadgeColor(field, rawValue, formattedValue) {
     if (field !== 'pos') {
         return null;
@@ -579,7 +584,9 @@ function createTableTabulator(tableId, data, options = {}) {
                                             (!settings.disablePositionCircle && groupIndex === 0 && columnIndex === 0);
                     
                     if (isPositionColumn && !settings.disablePositionCircle) {
-                        const rankSwatch = positionRankBadgeColor(field, value, formattedValue);
+                        const rankSwatch = !isTeamVsTeamComparisonTable(data)
+                            ? positionRankBadgeColor(field, value, formattedValue)
+                            : null;
                         if (rankSwatch) {
                             return `<div class="tab-position-circle" style="background-color: ${rankSwatch};">${formattedValue ?? ''}</div>`;
                         }
@@ -820,7 +827,9 @@ function createTableTabulator(tableId, data, options = {}) {
                     
                     if (isPositionColumn && !settings.disablePositionCircle) {
                         // This formatter branch has no formattedValue (unlike flat column path); use raw cell value.
-                        const rankSwatch = positionRankBadgeColor(field, value, value);
+                        const rankSwatch = !isTeamVsTeamComparisonTable(data)
+                            ? positionRankBadgeColor(field, value, value)
+                            : null;
                         if (rankSwatch) {
                             return `<div class="tab-position-circle" style="background-color: ${rankSwatch};">${value ?? ''}</div>`;
                         }
@@ -1022,8 +1031,13 @@ function createTableTabulator(tableId, data, options = {}) {
         let teams = [];
         if (data.data && data.data.length > 0) {
             // Check if this is a team vs team comparison table (has "Team vs Team Comparison" in title)
-            if (data.title && (data.title.includes('Team vs Team Comparison') || data.title.includes('Team vs Team Vergleichsmatrix'))) {
-                teams = data.data.map(row => row[0]).filter(team => team && typeof team === 'string');
+            if (isTeamVsTeamComparisonTable(data)) {
+                const teamIdx = window.ColorUtils && typeof window.ColorUtils.leagueTableTeamColumnIndex === 'function'
+                    ? window.ColorUtils.leagueTableTeamColumnIndex(data)
+                    : 1;
+                teams = data.data
+                    .map(row => (Array.isArray(row) && teamIdx >= 0 && teamIdx < row.length ? row[teamIdx] : null))
+                    .filter(team => team && typeof team === 'string');
             } else {
                 // Standard tables with team names in second column (index 1)
                 teams = data.data.map(row => row[1]).filter(team => team && typeof team === 'string');
@@ -1635,7 +1649,7 @@ function createTableBootstrap3(tableId, data, options = {}) {
                     sortIcon.style.height = '12px';
                     sortIcon.style.display = 'inline-block';
                     sortIcon.style.opacity = '0.5';
-                    sortIcon.innerHTML = '↕';  // Default sort icon
+                    sortIcon.innerHTML = 'â†•';  // Default sort icon
                     headerContent.appendChild(sortIcon);
                     
                     th.appendChild(headerContent);
@@ -1656,12 +1670,12 @@ function createTableBootstrap3(tableId, data, options = {}) {
                         
                         // Update sort icons
                         document.querySelectorAll('th span:last-child').forEach(icon => {
-                            icon.innerHTML = '↕';
+                            icon.innerHTML = 'â†•';
                             icon.style.opacity = '0.5';
                         });
                         
                         if (sortState[columnId]) {
-                            sortIcon.innerHTML = sortState[columnId] === 'asc' ? '↑' : '↓';
+                            sortIcon.innerHTML = sortState[columnId] === 'asc' ? 'â†‘' : 'â†“';
                             sortIcon.style.opacity = '1';
                         }
                         

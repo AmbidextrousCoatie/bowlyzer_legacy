@@ -14,11 +14,12 @@ export function lineChartOption(
   opts: {
     invertYAxis?: boolean;
     yAxisRange?: "auto" | "exact" | null;
+    league?: string | null;
   } = {},
 ): EChartsOption {
-  const { invertYAxis = false, yAxisRange = null } = opts;
+  const { invertYAxis = false, yAxisRange = null, league = null } = opts;
   const teamOrder = order ?? Object.keys(data);
-  updateTeamColorMap(teamOrder);
+  updateTeamColorMap(teamOrder, league);
 
   let yMin: number | undefined;
   let yMax: number | undefined;
@@ -41,8 +42,8 @@ export function lineChartOption(
     name: team,
     type: "line" as const,
     data: data[team] ?? [],
-    lineStyle: { color: getTeamColor(team), width: 2 },
-    itemStyle: { color: getTeamColor(team) },
+    lineStyle: { color: getTeamColor(team, { league }), width: 2 },
+    itemStyle: { color: getTeamColor(team, { league }) },
     smooth: false,
   }));
 
@@ -95,6 +96,7 @@ export function scatterMultiAxisOption(
     minCircleSize?: number;
     maxCircleSize?: number;
     hideNaValues?: boolean;
+    league?: string | null;
   } = {},
 ): EChartsOption {
   const {
@@ -104,10 +106,11 @@ export function scatterMultiAxisOption(
     minCircleSize = 7,
     maxCircleSize = 45,
     hideNaValues = true,
+    league = null,
   } = opts;
 
   const teams = order ?? Object.keys(data);
-  updateTeamColorMap(teams);
+  updateTeamColorMap(teams, league);
 
   // Compute global value bounds if not given
   let valueMin = minValue;
@@ -179,7 +182,7 @@ export function scatterMultiAxisOption(
       type: "scatter",
       data: seriesData,
       symbolSize: (d: number[]) => d[2] || minCircleSize,
-      itemStyle: { color: getTeamColor(team) },
+      itemStyle: { color: getTeamColor(team, { league }) },
     });
   });
 

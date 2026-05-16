@@ -15,6 +15,10 @@ import {
   getTeamColorMap,
   injectStripeCss,
   toRgba,
+  ensureTeamColors,
+  extractTeamNamesFromTablePayload,
+  isTeamVsTeamComparisonTable,
+  seedTeamColorsFromTablePayload,
   updateTeamColorMap,
 } from "../color-utils";
 import {
@@ -85,8 +89,10 @@ export function createDataTable(
     enableSpecialRowStyling: false,
     tooltips: true,
     teamField: null,
+    teamColorLeague: null,
     enableHeatMap: false,
     disableTeamColorUpdate: false,
+    seedTeamColorsFromTable: false,
     stripedRows: true,
     ...rawOptions,
   };
@@ -324,7 +330,9 @@ export function createDataTable(
           const playerColors = getPlayerColorMap();
           const teamColors = getTeamColorMap();
           let color =
-            playerColors[normalized] || teamColors[normalized] || getTeamColor(normalized);
+            playerColors[normalized] ||
+            teamColors[normalized] ||
+            getTeamColor(normalized, { league: settings.teamColorLeague });
           if (!color || color === "#888") color = hashColor(normalized);
           pinPositionCell(element);
           return positionClip(displayValue, color, true);
@@ -348,7 +356,8 @@ export function createDataTable(
         if (teamName) {
           const normalized = teamName.trim();
           const playerColors = getPlayerColorMap();
-          const color = playerColors[normalized] || getTeamColor(normalized);
+          const color =
+            playerColors[normalized] || getTeamColor(normalized, { league: settings.teamColorLeague });
           pinPositionCell(element);
           return positionClip(displayValue, color, false);
         }
@@ -453,11 +462,19 @@ export function createDataTable(
       ]
     : undefined;
 
-  // Update team color map from data so colors propagate to charts even on
-  // direct navigation. Skip if caller is rendering multiple tables manually.
+  // Team colors keyed by name — never by rank index in the # column.
   if (!settings.disableTeamColorUpdate) {
-    const teams = extractTeamsForColorMap(data, columnOrder);
-    if (teams.length > 0) updateTeamColorMap(teams);
+    const teams = extractTeamNamesFromTablePayload(data);
+    if (teams.length > 0) {
+      const league = settings.teamColorLeague;
+      if (isTeamVsTeamComparisonTable(data)) {
+        ensureTeamColors(teams, league);
+      } else if (settings.seedTeamColorsFromTable) {
+        seedTeamColorsFromTablePayload(data, league);
+      } else {
+        updateTeamColorMap(teams, league);
+      }
+    }
   }
 
   const tabulatorOptions: Options = {
@@ -505,7 +522,7 @@ export function createDataTable(
 
       const teamValue = teamField ? rowData[teamField] : null;
       if (typeof teamValue === "string" && teamValue.length > 0) {
-        const accentColor = getTeamColor(teamValue);
+        const accentColor = getTeamColor(teamValue, { league: settings.teamColorLeague });
         if (accentColor) {
           // Row wash + left bar only when rank is not shown as a position clip.
           if (settings.disablePositionCircle) {
@@ -745,36 +762,6 @@ function buildColumnDefinition(
   }
 
   return def;
-}
-
-function extractTeamsForColorMap(data: TableData, columnOrder: FlatColumnInfo[]): string[] {
-  if (!data.data || data.data.length === 0) return [];
-  const isVsVs =
-    !!data.title &&
-    (data.title.includes("Team vs Team Comparison") ||
-      data.title.includes("Team vs Team Vergleichsmatrix"));
-  let teams: string[] = [];
-  if (isVsVs) {
-    teams = data.data
-      .map((row) => {
-        if (Array.isArray(row)) return typeof row[1] === "string" ? row[1] : null;
-        const r = row as Record<string, unknown>;
-        return typeof r.team === "string" ? r.team : null;
-      })
-      .filter((t): t is string => typeof t === "string" && t.length > 0);
-  } else {
-    teams = data.data
-      .map((row) => (Array.isArray(row) ? row[1] : null))
-      .filter((t): t is string => typeof t === "string" && t.length > 0);
-    const opponentIdx = columnOrder.findIndex((ci) => ci.field === "opponent_name");
-    if (opponentIdx >= 0) {
-      const opponents = data.data
-        .map((row) => (Array.isArray(row) ? row[opponentIdx] : null))
-        .filter((t): t is string => typeof t === "string" && t.length > 0);
-      teams = [...teams, ...opponents];
-    }
-  }
-  return [...new Set(teams)];
 }
 
 function runPostRender(

@@ -1,4 +1,5 @@
-import { useState } from "react";
+﻿import { useState } from "react";
+import { SegmentedControl } from "../../../components/SegmentedControl";
 import { DataTable } from "../../../lib/datatable/DataTable";
 import {
   type TeamDetailsView,
@@ -33,7 +34,7 @@ export function TeamDetails({ season, league, week, team }: Props) {
         <div className="mb-4 flex items-baseline justify-between gap-4 flex-wrap">
           <div>
             <p className="text-label uppercase text-muted mb-1.5">
-              {team} · {t("week", "Spieltag")} {week}
+              {team} Â· {t("week", "Spieltag")} {week}
             </p>
             <h2 className="text-h2">{t("score_sheet_for_team", "Spielprotokoll")}</h2>
           </div>
@@ -76,36 +77,6 @@ export function TeamDetails({ season, league, week, team }: Props) {
   );
 }
 
-function SegmentedControl<T extends string>({
-  value,
-  onChange,
-  options,
-}: {
-  value: T;
-  onChange: (v: T) => void;
-  options: Array<{ value: T; label: string }>;
-}) {
-  return (
-    <div role="group" className="inline-flex rounded-sm border border-border bg-surface p-[3px]">
-      {options.map((opt) => (
-        <button
-          key={opt.value}
-          type="button"
-          aria-pressed={value === opt.value}
-          onClick={() => onChange(opt.value)}
-          className={
-            "rounded-xs px-3 py-1 text-caption font-medium transition-colors " +
-            (value === opt.value
-              ? "bg-accent text-accent-foreground"
-              : "text-muted hover:text-foreground")
-          }
-        >
-          {opt.label}
-        </button>
-      ))}
-    </div>
-  );
-}
 
 function DataTableQuery({
   query,

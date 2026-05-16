@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { DataTable } from "../../../lib/datatable/DataTable";
 import { type HonorScores, useSeasonLeagueStandings } from "../../../hooks/useLeague";
 import { useTranslations } from "../../../hooks/useTranslations";
-import { clearTeamColor, getPaletteColor, setTeamColor } from "../../../lib/color-utils";
+import { seedTeamColorsFromTablePayload } from "../../../lib/color-utils";
 import { rankedTeamTableOptions } from "../leagueTableOptions";
 import { HonorScoresPanel } from "./HonorScoresPanel";
 
@@ -21,6 +21,17 @@ type Props = {
 export function SeasonLeagueStandings({ season }: Props) {
   const { t } = useTranslations();
   const { data, isPending, isError, error } = useSeasonLeagueStandings(season);
+
+  // Seed each league in order (legacy renders tables sequentially) so identical team
+  // names in different leagues get independent palette cycles.
+  useEffect(() => {
+    if (!data?.leagues?.length) return;
+    for (const leagueData of data.leagues) {
+      if (leagueData.standings?.data?.length) {
+        seedTeamColorsFromTablePayload(leagueData.standings, leagueData.league);
+      }
+    }
+  }, [data]);
 
   if (isPending) {
     return <SectionSkeleton label={t("status.loading", "Lade Daten…")} />;
@@ -70,21 +81,6 @@ function LeagueSection({
   honorScores?: HonorScores;
   t: (key: string, fallback?: string) => string;
 }) {
-  // Reset and re-assign team colors for *this* league's teams so each league
-  // gets its own color cycle starting at palette index 0.
-  useEffect(() => {
-    if (!standings?.data) return;
-    const teams = new Set<string>();
-    standings.data.forEach((row) => {
-      if (Array.isArray(row) && typeof row[1] === "string" && row[1].trim()) {
-        teams.add(row[1].trim());
-      }
-    });
-    const teamList = [...teams];
-    teamList.forEach((team) => clearTeamColor(team));
-    teamList.forEach((team, idx) => setTeamColor(team, getPaletteColor(idx)));
-  }, [standings]);
-
   return (
     <section>
       <div className="mb-4">
@@ -105,6 +101,7 @@ function LeagueSection({
             options={{
               ...rankedTeamTableOptions,
               disableTeamColorUpdate: true,
+              teamColorLeague: league,
             }}
           />
         </div>

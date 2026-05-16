@@ -9,6 +9,8 @@ type DataTableProps = {
   data: TableData;
   options?: DataTableOptions;
   className?: string;
+  /** Fired when Tabulator has built the table (safe to call column APIs). */
+  onReady?: (handle: DataTableHandle) => void;
 };
 
 /**
@@ -16,15 +18,26 @@ type DataTableProps = {
  * on unmount, and rebuilds whenever the data identity changes. Caller is
  * responsible for memoizing the data + options if rerenders are unwanted.
  */
-export function DataTable({ data, options, className }: DataTableProps) {
+export function DataTable({ data, options, className, onReady }: DataTableProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const handleRef = useRef<DataTableHandle | null>(null);
+  const onReadyRef = useRef(onReady);
+  onReadyRef.current = onReady;
 
   useEffect(() => {
     if (!containerRef.current) return;
-    handleRef.current = createDataTable(containerRef.current, data, options);
+    const handle = createDataTable(containerRef.current, data, options);
+    if (!handle) return;
+    handleRef.current = handle;
+
+    const notifyReady = () => onReadyRef.current?.(handle);
+    handle.tabulator.on("tableBuilt", notifyReady);
+    handle.tabulator.on("dataProcessed", notifyReady);
+
     return () => {
-      handleRef.current?.destroy();
+      handle.tabulator.off("tableBuilt", notifyReady);
+      handle.tabulator.off("dataProcessed", notifyReady);
+      handle.destroy();
       handleRef.current = null;
     };
   }, [data, options]);

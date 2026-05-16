@@ -13,4 +13,6 @@ export const teamVsTeamTableOptions: DataTableOptions = {
   ...rankedTeamTableOptions,
   enableHeatMap: true,
   teamField: "team",
+  /** Matrix seeds team-keyed colors in TeamVsTeamMatrix; avoid row-order overwrite. */
+  disableTeamColorUpdate: true,
 };

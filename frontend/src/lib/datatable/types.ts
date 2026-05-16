@@ -59,6 +59,7 @@ export type TableData = {
   config?: TableConfig;
   default_sort?: DefaultSort;
   title?: string;
+  description?: string;
   /** Free-form payload sent alongside the table (e.g. heatmap ranges). */
   metadata?: Record<string, unknown>;
 };
@@ -68,10 +69,14 @@ export type DataTableOptions = {
   enableSpecialRowStyling?: boolean;
   tooltips?: boolean;
   teamField?: string | null;
+  /** League id/code so colors are scoped when the same team name appears in multiple leagues. */
+  teamColorLeague?: string | null;
   enableHeatMap?: boolean;
   /** When rendering multiple tables in a row, prevents the first table from
    *  resetting the global team color map. */
   disableTeamColorUpdate?: boolean;
+  /** Standings-style tables: assign palette by row order (legacy chart alignment). */
+  seedTeamColorsFromTable?: boolean;
   /** Zebra row backgrounds. Default on; disable for short tables (e.g. standings). */
   stripedRows?: boolean;
   /** Alternating column-group shading. When omitted, follows payload `config.stripedColGroups`. */

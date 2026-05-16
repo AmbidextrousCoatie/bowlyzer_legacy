@@ -1,4 +1,5 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
+import { seedTeamColorsFromTablePayload } from "../../../lib/color-utils";
 import { EChart } from "../../../lib/charts/EChart";
 import {
   buildWeekLabels,
@@ -16,6 +17,7 @@ import {
 } from "../../../hooks/useLeague";
 import { useTranslations } from "../../../hooks/useTranslations";
 import { teamVsTeamTableOptions } from "../leagueTableOptions";
+import { TeamVsTeamMatrix } from "./TeamVsTeamMatrix";
 
 type Props = {
   season: string;
@@ -49,9 +51,9 @@ export function LeagueSeasonOverview({ season, league }: Props) {
       teamPositions.data.data,
       order,
       buildWeekLabels(teamPositions.data.data, weekLabel),
-      { invertYAxis: true, yAxisRange: "exact" },
+      { invertYAxis: true, yAxisRange: "exact", league },
     );
-  }, [teamPositions.data, weekLabel]);
+  }, [teamPositions.data, weekLabel, league]);
 
   const weeklyPointsOption = useMemo(() => {
     if (!teamPoints.data?.data) return null;
@@ -60,9 +62,13 @@ export function LeagueSeasonOverview({ season, league }: Props) {
       teamPoints.data.data,
       order,
       buildWeekLabels(teamPoints.data.data, weekLabel),
-      { tooltipValueLabel: t("points", "Punkte") },
+      { tooltipValueLabel: t("points", "Punkte"), league },
     );
-  }, [teamPoints.data, weekLabel, t]);
+  }, [teamPoints.data, weekLabel, t, league]);
+
+  useEffect(() => {
+    if (standings.data) seedTeamColorsFromTablePayload(standings.data, league);
+  }, [standings.data, league]);
 
   const cumulativePointsOption = useMemo(() => {
     const accumulated = teamPoints.data?.data_accumulated;
@@ -71,8 +77,9 @@ export function LeagueSeasonOverview({ season, league }: Props) {
     return lineChartOption(accumulated, order, buildWeekLabels(accumulated, weekLabel), {
       invertYAxis: false,
       yAxisRange: "auto",
+      league,
     });
-  }, [teamPoints.data, weekLabel]);
+  }, [teamPoints.data, weekLabel, league]);
 
   return (
     <div className="space-y-12">
@@ -87,6 +94,9 @@ export function LeagueSeasonOverview({ season, league }: Props) {
             disablePositionCircle: false,
             enableSpecialRowStyling: true,
             tooltips: true,
+            seedTeamColorsFromTable: true,
+            disableTeamColorUpdate: true,
+            teamColorLeague: league,
           }}
         />
       </Section>
@@ -147,7 +157,10 @@ export function LeagueSeasonOverview({ season, league }: Props) {
         eyebrow={t("team_vs_team_comparison", "Vergleichsmatrix")}
         title={t("team_vs_team", "Mannschaft vs. Mannschaft")}
       >
-        <DataTableSection query={teamVsTeam} options={teamVsTeamTableOptions} />
+        <TeamVsTeamMatrix
+          query={teamVsTeam}
+          options={{ ...teamVsTeamTableOptions, teamColorLeague: league }}
+        />
       </Section>
 
       {/* 5 · Individual averages */}

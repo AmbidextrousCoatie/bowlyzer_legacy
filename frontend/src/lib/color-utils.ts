@@ -345,31 +345,175 @@ export function getPaletteColor(index: number): string {
   return currentPalette[Math.abs(index) % currentPalette.length];
 }
 
-export function updateTeamColorMap(currentTeams: string[] = []): void {
+const TEAM_COLOR_KEY_SEP = "::";
+
+/** Storage key: scoped by league when multiple leagues share team names (e.g. men's / women's). */
+export function teamColorMapKey(teamName: string, league?: string | null): string {
+  const name = String(teamName ?? "").trim();
+  if (!name) return "";
+  if (league) return `${league}${TEAM_COLOR_KEY_SEP}${name}`;
+  return name;
+}
+
+export function clearLeagueTeamColors(league: string): void {
+  const prefix = `${league}${TEAM_COLOR_KEY_SEP}`;
+  for (const key of Object.keys(teamColorMap)) {
+    if (key.startsWith(prefix)) delete teamColorMap[key];
+  }
+}
+
+export function updateTeamColorMap(currentTeams: string[] = [], league?: string | null): void {
   if (!Array.isArray(currentTeams)) return;
-  Object.keys(teamColorMap).forEach((team) => {
-    if (!currentTeams.includes(team)) delete teamColorMap[team];
-  });
+  if (league) {
+    clearLeagueTeamColors(league);
+  } else {
+    Object.keys(teamColorMap).forEach((key) => {
+      if (!key.includes(TEAM_COLOR_KEY_SEP) && !currentTeams.includes(key)) {
+        delete teamColorMap[key];
+      }
+    });
+  }
   let paletteIdx = 0;
   currentTeams.forEach((team) => {
-    if (!teamColorMap[team]) {
-      teamColorMap[team] = getPaletteColor(paletteIdx++);
+    const key = teamColorMapKey(team, league);
+    if (key && !teamColorMap[key]) {
+      teamColorMap[key] = getPaletteColor(paletteIdx++);
     }
   });
 }
 
-export function getTeamColor(teamName: string, fallbackIndex = 0): string {
-  if (teamName && teamColorMap[teamName]) return teamColorMap[teamName];
-  if (teamName && playerColorMap[teamName]) return playerColorMap[teamName];
-  return getPaletteColor(fallbackIndex);
+/** Stable palette slot from team name (when map not seeded yet). */
+function paletteIndexForTeamName(teamName: string): number {
+  let hash = 0;
+  for (let i = 0; i < teamName.length; i++) {
+    hash = teamName.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return Math.abs(hash);
 }
 
-export function setTeamColor(teamName: string, color: string): void {
-  teamColorMap[teamName] = color;
+export function isTeamVsTeamComparisonTable(data: { title?: string }): boolean {
+  const title = data.title ?? "";
+  return (
+    title.includes("Team vs Team Comparison") || title.includes("Team vs Team Vergleichsmatrix")
+  );
 }
 
-export function clearTeamColor(teamName: string): void {
-  delete teamColorMap[teamName];
+type TablePayloadLike = {
+  columns?: Array<{ columns?: Array<{ field?: string }> }>;
+  data?: Array<Record<string, unknown> | unknown[]>;
+};
+
+/** Column index of the team name in a TableData row (flatten order). */
+export function tableTeamColumnIndex(tablePayload: TablePayloadLike): number {
+  const groups = tablePayload.columns;
+  if (!Array.isArray(groups)) return 1;
+  let idx = 0;
+  for (const group of groups) {
+    if (!group?.columns) continue;
+    for (const col of group.columns) {
+      const field = col.field;
+      if (field === "team" || field === "team_name") return idx;
+      idx++;
+    }
+  }
+  return 1;
+}
+
+/** Unique team names in table row order (first occurrence wins). */
+export function extractTeamNamesFromTablePayload(tablePayload: TablePayloadLike): string[] {
+  if (!tablePayload.data?.length) return [];
+  const teamIdx = tableTeamColumnIndex(tablePayload);
+  const teams: string[] = [];
+  const seen = new Set<string>();
+  for (const row of tablePayload.data) {
+    let raw: unknown;
+    if (Array.isArray(row)) {
+      raw = teamIdx >= 0 && teamIdx < row.length ? row[teamIdx] : null;
+    } else {
+      const r = row as Record<string, unknown>;
+      raw = r.team ?? r.team_name ?? null;
+    }
+    if (raw === null || raw === undefined) continue;
+    const name = String(raw).trim();
+    if (!name || seen.has(name)) continue;
+    seen.add(name);
+    teams.push(name);
+  }
+  return teams;
+}
+
+/**
+ * Assign palette colors by team name without removing existing entries.
+ * New teams get the next free palette index (alphabetically sorted for stability).
+ */
+export function ensureTeamColors(teamNames: string[], league?: string | null): void {
+  const sorted = [...new Set(teamNames.map((t) => t.trim()).filter(Boolean))].sort((a, b) =>
+    a.localeCompare(b, undefined, { sensitivity: "base" }),
+  );
+  sorted.forEach((team, idx) => {
+    const key = teamColorMapKey(team, league);
+    if (key && !teamColorMap[key]) {
+      teamColorMap[key] = getPaletteColor(idx);
+    }
+  });
+}
+
+/**
+ * Reassign colors in league-standings row order (position 1 → palette[0], …).
+ * Matches legacy `seedTeamColorsFromLeagueTablePayload` for chart/table alignment.
+ */
+export function seedTeamColorsFromTablePayload(
+  tablePayload: TablePayloadLike,
+  league?: string | null,
+): void {
+  const teams = extractTeamNamesFromTablePayload(tablePayload);
+  if (!teams.length) return;
+  if (league) {
+    clearLeagueTeamColors(league);
+  } else {
+    teams.forEach((t) => {
+      delete teamColorMap[teamColorMapKey(t, null)];
+    });
+  }
+  let paletteIdx = 0;
+  teams.forEach((t) => {
+    const key = teamColorMapKey(t, league);
+    if (key) teamColorMap[key] = getPaletteColor(paletteIdx++);
+  });
+}
+
+export type GetTeamColorOptions = {
+  league?: string | null;
+  fallbackIndex?: number;
+};
+
+export function getTeamColor(
+  teamName: string,
+  optionsOrFallback: number | GetTeamColorOptions = 0,
+): string {
+  const options: GetTeamColorOptions =
+    typeof optionsOrFallback === "number"
+      ? { fallbackIndex: optionsOrFallback }
+      : { fallbackIndex: 0, ...optionsOrFallback };
+
+  const name = teamName?.trim() ?? "";
+  const league = options.league;
+  const key = teamColorMapKey(name, league);
+  if (key && teamColorMap[key]) return teamColorMap[key];
+  if (!league && name && teamColorMap[name]) return teamColorMap[name];
+  if (name && playerColorMap[name]) return playerColorMap[name];
+  if (name) return getPaletteColor(paletteIndexForTeamName(name));
+  return getPaletteColor(options.fallbackIndex ?? 0);
+}
+
+export function setTeamColor(teamName: string, color: string, league?: string | null): void {
+  const key = teamColorMapKey(teamName, league);
+  if (key) teamColorMap[key] = color;
+}
+
+export function clearTeamColor(teamName: string, league?: string | null): void {
+  const key = teamColorMapKey(teamName, league);
+  if (key) delete teamColorMap[key];
 }
 
 export function getTeamColorMap(): Record<string, string> {
