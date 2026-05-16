@@ -274,10 +274,12 @@ export function createDataTable(
       contextGroupIndex: number,
       contextColumnIndex: number,
     ) =>
-    (cell: CellComponent): string | HTMLElement => {
+    (cell: CellComponent): string => {
       const value = cell.getValue();
       const element = cell.getElement();
-      const rowData = cell.getRow().getData() as RowObject;
+      const row = cell.getRow();
+      if (!row) return "";
+      const rowData = row.getData() as RowObject;
       const rowIdx = rowData.__rowIndex;
       const field = info.field;
 
@@ -335,7 +337,7 @@ export function createDataTable(
             getTeamColor(normalized, { league: settings.teamColorLeague });
           if (!color || color === "#888") color = hashColor(normalized);
           pinPositionCell(element);
-          return positionClip(displayValue, color, true);
+          return positionClipHtml(displayValue, color, true);
         }
       }
 
@@ -359,7 +361,7 @@ export function createDataTable(
           const color =
             playerColors[normalized] || getTeamColor(normalized, { league: settings.teamColorLeague });
           pinPositionCell(element);
-          return positionClip(displayValue, color, false);
+          return positionClipHtml(displayValue, color, false);
         }
       }
 
@@ -548,10 +550,10 @@ export function createDataTable(
 
   // Post-render: highlight class application + hide empty group header rows
   tabulator.on("tableBuilt", () => {
-    runPostRender(container, data, hasGroupTitles, useStripedColumnGroups);
+    runPostRender(container, data, hasGroupTitles, useStripedColumnGroups, settings.tooltips);
   });
   tabulator.on("dataProcessed", () => {
-    runPostRender(container, data, hasGroupTitles, useStripedColumnGroups);
+    runPostRender(container, data, hasGroupTitles, useStripedColumnGroups, settings.tooltips);
   });
 
   return {
@@ -562,6 +564,7 @@ export function createDataTable(
       } catch {
         /* swallow — Tabulator throws if container is detached */
       }
+      container.replaceChildren();
     },
   };
 }
@@ -611,18 +614,21 @@ function pinPositionCell(cellEl: HTMLElement): void {
   cellEl.style.setProperty("padding-right", "0", "important");
 }
 
-function positionClip(value: string, color: string, important: boolean): HTMLElement {
-  const clip = document.createElement("span");
-  clip.className = important ? "tab-position-clip tab-position-clip--initials" : "tab-position-clip";
-  clip.style.setProperty("--clip-color", color);
-  if (important) {
-    clip.style.setProperty("background-color", color, "important");
-  }
-  const label = document.createElement("span");
-  label.className = "tab-position-clip__value";
-  label.textContent = value;
-  clip.append(label);
-  return clip;
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+/** HTML badges — avoids Tabulator 6 hover lookup issues with detached DOM nodes (esp. frozen cols). */
+function positionClipHtml(value: string, color: string, initials: boolean): string {
+  const clipClass = initials ? "tab-position-clip tab-position-clip--initials" : "tab-position-clip";
+  const style = initials
+    ? `--clip-color: ${color}; background-color: ${color} !important`
+    : `--clip-color: ${color}`;
+  return `<span class="${clipClass}" style="${style}"><span class="tab-position-clip__value">${escapeHtml(value)}</span></span>`;
 }
 
 function hashColor(name: string): string {
@@ -719,13 +725,8 @@ function buildColumnDefinition(
   if (isRankPositionColumn(info.field, groupIndex, columnIndex, settings)) {
     cssClasses.push("tab-position-col");
   }
-
-  const headerClasses: string[] = [];
-  if (column.headerClass) headerClasses.push(column.headerClass);
-  if (stripeGroupIndex !== null) headerClasses.push("col-group-" + stripeGroupIndex);
-  if (isRankPositionColumn(info.field, groupIndex, columnIndex, settings)) {
-    headerClasses.push("tab-position-col");
-  }
+  // Backend may send header-only classes; Tabulator 6 applies cssClass to headers and cells.
+  if (column.headerClass) cssClasses.push(column.headerClass);
 
   const def: ColumnDefinition = {
     title: column.title ?? "",
@@ -741,13 +742,7 @@ function buildColumnDefinition(
           ? "number"
           : "string",
     formatter,
-    tooltip: settings.tooltips ? true : false,
-    headerTooltip:
-      column.tooltip !== undefined && column.tooltip !== null && column.tooltip !== ""
-        ? column.tooltip
-        : (column.title ?? ""),
     cssClass: cssClasses.join(" ") || undefined,
-    headerClass: headerClasses.join(" ") || undefined,
   };
 
   const minWidth = parseColumnWidth(column.width) ?? 100;
@@ -764,11 +759,49 @@ function buildColumnDefinition(
   return def;
 }
 
+function findColumnMeta(
+  data: TableData,
+  field: string,
+): { tooltip?: string } | null {
+  for (const group of data.columns) {
+    for (const col of group.columns ?? []) {
+      if (col.field === field) {
+        const tooltip =
+          col.tooltip !== undefined && col.tooltip !== null && col.tooltip !== ""
+            ? col.tooltip
+            : undefined;
+        return { tooltip };
+      }
+    }
+  }
+  return null;
+}
+
+/** Native title tooltips — Tabulator column tooltip/headerTooltip breaks hover on 6.3+ with frozen cols. */
+function applyNativeTooltips(container: HTMLElement, data: TableData): void {
+  container.querySelectorAll<HTMLElement>(".tabulator-col[tabulator-field]").forEach((colEl) => {
+    const field = colEl.getAttribute("tabulator-field");
+    if (!field) return;
+    const titleEl = colEl.querySelector(".tabulator-col-title");
+    const titleText = titleEl?.textContent?.trim() ?? "";
+    const tooltipText = findColumnMeta(data, field)?.tooltip ?? titleText;
+    if (!tooltipText) return;
+    colEl.setAttribute("title", tooltipText);
+    titleEl?.setAttribute("title", tooltipText);
+  });
+
+  container.querySelectorAll<HTMLElement>(".tabulator-cell[tabulator-field]").forEach((cellEl) => {
+    const text = cellEl.textContent?.trim() ?? "";
+    if (text) cellEl.setAttribute("title", text);
+  });
+}
+
 function runPostRender(
   container: HTMLElement,
   data: TableData,
   hasGroupTitles: boolean,
   useStripedColumnGroups: boolean,
+  enableTooltips: boolean,
 ): void {
   // Two RAFs to let Tabulator finish DOM mounting of headers
   requestAnimationFrame(() => {
@@ -845,6 +878,10 @@ function runPostRender(
           col.style.setProperty("border-right", "none", "important");
           col.style.setProperty("box-shadow", "none", "important");
         });
+
+      if (enableTooltips) {
+        applyNativeTooltips(container, data);
+      }
     });
   });
 }

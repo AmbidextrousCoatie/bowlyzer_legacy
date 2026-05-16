@@ -34,8 +34,8 @@ importers:
         specifier: ^7.14.2
         version: 7.14.2(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
       tabulator-tables:
-        specifier: ^6.4.0
-        version: 6.4.0
+        specifier: 6.3.0
+        version: 6.3.0
       tailwindcss:
         specifier: ^4.2.4
         version: 4.2.4
@@ -1360,8 +1360,8 @@ packages:
   std-env@4.1.0:
     resolution: {integrity: sha512-Rq7ybcX2RuC55r9oaPVEW7/xu3tj8u4GeBYHBWCychFtzMIr86A7e3PPEBPT37sHStKX3+TiX/Fr/ACmJLVlLQ==}
 
-  tabulator-tables@6.4.0:
-    resolution: {integrity: sha512-Lxh+leFNoBo/Yyr4USs6gxqbfo8anYUaUMmoT91pfVLtoUgl/dE+qV7ahnFrKVMCYYqGG33aIMPR7FzpPBaNYA==}
+  tabulator-tables@6.3.0:
+    resolution: {integrity: sha512-gFiivoa03+NCDJ28Na3UU45nJT7sFXBsFCBtMqXz5OpsNTWrmL5ZJYA4oZtDFaVfarPqUHNgwm2PhL6DR7CQxg==}
 
   tailwindcss@4.2.4:
     resolution: {integrity: sha512-HhKppgO81FQof5m6TEnuBWCZGgfRAWbaeOaGT00KOy/Pf/j6oUihdvBpA7ltCeAvZpFhW3j0PTclkxsd4IXYDA==}
@@ -2514,7 +2514,7 @@ snapshots:
 
   std-env@4.1.0: {}
 
-  tabulator-tables@6.4.0: {}
+  tabulator-tables@6.3.0: {}
 
   tailwindcss@4.2.4: {}
 

@@ -1,5 +1,6 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { createDataTable, type DataTableHandle } from "./createDataTable";
+import { getTableDataKey } from "./tableDataKey";
 import type { DataTableOptions, TableData } from "./types";
 
 import "tabulator-tables/dist/css/tabulator.min.css";
@@ -15,18 +16,26 @@ type DataTableProps = {
 
 /**
  * React wrapper around the Tabulator factory. Mounts on first render, destroys
- * on unmount, and rebuilds whenever the data identity changes. Caller is
- * responsible for memoizing the data + options if rerenders are unwanted.
+ * on unmount, and rebuilds when table payload or options change (by value, not
+ * reference). Callers should still memoize options when possible.
  */
 export function DataTable({ data, options, className, onReady }: DataTableProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const handleRef = useRef<DataTableHandle | null>(null);
   const onReadyRef = useRef(onReady);
   onReadyRef.current = onReady;
+  const dataRef = useRef(data);
+  dataRef.current = data;
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
+  const dataKey = useMemo(() => getTableDataKey(data), [data]);
+  const optionsKey = useMemo(() => JSON.stringify(options ?? {}), [options]);
 
   useEffect(() => {
-    if (!containerRef.current) return;
-    const handle = createDataTable(containerRef.current, data, options);
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handle = createDataTable(container, dataRef.current, optionsRef.current);
     if (!handle) return;
     handleRef.current = handle;
 
@@ -40,7 +49,7 @@ export function DataTable({ data, options, className, onReady }: DataTableProps)
       handle.destroy();
       handleRef.current = null;
     };
-  }, [data, options]);
+  }, [dataKey, optionsKey]);
 
   return <div ref={containerRef} className={className} />;
 }

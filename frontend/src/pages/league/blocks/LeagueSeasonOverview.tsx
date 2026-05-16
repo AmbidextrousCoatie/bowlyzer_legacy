@@ -7,6 +7,7 @@ import {
   scatterMultiAxisOption,
 } from "../../../lib/charts/options";
 import { DataTable } from "../../../lib/datatable/DataTable";
+import type { DataTableOptions } from "../../../lib/datatable/types";
 import {
   useIndividualAverages,
   useLeagueHistory,
@@ -81,6 +82,32 @@ export function LeagueSeasonOverview({ season, league }: Props) {
     });
   }, [teamPoints.data, weekLabel, league]);
 
+  const standingsTableOptions = useMemo<DataTableOptions>(
+    () => ({
+      disablePositionCircle: false,
+      enableSpecialRowStyling: true,
+      tooltips: true,
+      seedTeamColorsFromTable: true,
+      disableTeamColorUpdate: true,
+      teamColorLeague: league,
+    }),
+    [league],
+  );
+
+  const basicTableOptions = useMemo<DataTableOptions>(
+    () => ({
+      disablePositionCircle: true,
+      enableSpecialRowStyling: true,
+      tooltips: true,
+    }),
+    [],
+  );
+
+  const teamVsTeamOptions = useMemo(
+    () => ({ ...teamVsTeamTableOptions, teamColorLeague: league }),
+    [league],
+  );
+
   return (
     <div className="space-y-12">
       {/* 1 · Standings table */}
@@ -88,30 +115,13 @@ export function LeagueSeasonOverview({ season, league }: Props) {
         eyebrow={t("league_standings", "Tabelle")}
         title={t("league_standings_title", `${league} · ${season}`)}
       >
-        <DataTableSection
-          query={standings}
-          options={{
-            disablePositionCircle: false,
-            enableSpecialRowStyling: true,
-            tooltips: true,
-            seedTeamColorsFromTable: true,
-            disableTeamColorUpdate: true,
-            teamColorLeague: league,
-          }}
-        />
+        <DataTableSection query={standings} options={standingsTableOptions} />
       </Section>
 
       {/* 2 · Timetable + Position chart */}
       <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
         <Section eyebrow={t("season_timetable", "Spielplan")} title={t("schedule", "Termine")}>
-          <DataTableSection
-            query={timetable}
-            options={{
-              disablePositionCircle: true,
-              enableSpecialRowStyling: true,
-              tooltips: true,
-            }}
-          />
+          <DataTableSection query={timetable} options={basicTableOptions} />
         </Section>
         <Section
           eyebrow={t("position_in_season_progress", "Tabellenposition")}
@@ -157,10 +167,7 @@ export function LeagueSeasonOverview({ season, league }: Props) {
         eyebrow={t("team_vs_team_comparison", "Vergleichsmatrix")}
         title={t("team_vs_team", "Mannschaft vs. Mannschaft")}
       >
-        <TeamVsTeamMatrix
-          query={teamVsTeam}
-          options={{ ...teamVsTeamTableOptions, teamColorLeague: league }}
-        />
+        <TeamVsTeamMatrix query={teamVsTeam} options={teamVsTeamOptions} />
       </Section>
 
       {/* 5 · Individual averages */}
@@ -168,14 +175,7 @@ export function LeagueSeasonOverview({ season, league }: Props) {
         eyebrow={t("individual_averages", "Einzelschnitte")}
         title={t("best_individual_averages", "Beste Spieler-Schnitte")}
       >
-        <DataTableSection
-          query={individualAverages}
-          options={{
-            disablePositionCircle: true,
-            enableSpecialRowStyling: true,
-            tooltips: true,
-          }}
-        />
+        <DataTableSection query={individualAverages} options={basicTableOptions} />
       </Section>
     </div>
   );
