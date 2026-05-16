@@ -84,7 +84,9 @@ export function createDataTable(
     return null;
   }
 
-  const settings: Required<Omit<DataTableOptions, "stripedColumnGroups">> = {
+  const settings: Required<
+    Omit<DataTableOptions, "stripedColumnGroups" | "columnGroupStripeVariant">
+  > = {
     disablePositionCircle: false,
     enableSpecialRowStyling: false,
     tooltips: true,
@@ -118,6 +120,13 @@ export function createDataTable(
     rawOptions.stripedColumnGroups !== undefined
       ? rawOptions.stripedColumnGroups
       : tableConfig.stripedColGroups === true;
+
+  const columnGroupStripeVariant: "default" | "league" =
+    rawOptions.columnGroupStripeVariant ??
+    (useStripedColumnGroups &&
+    (tableConfig.stripedColGroups === true || rawOptions.stripedColumnGroups === true)
+      ? "league"
+      : "default");
 
   if (container.style.width === "") {
     container.style.width = "100%";
@@ -259,6 +268,7 @@ export function createDataTable(
   if (useStripedColumnGroups && hasGroupTitles) {
     assignGroupStripeCss(data.columns);
     injectStripeCss(data.columns.length, {
+      variant: columnGroupStripeVariant,
       palette: DEFAULT_STRIPE_PALETTE,
       headerAlpha: isCompactLayout ? 0.3 : 0.2,
       cellAlpha: 0.1,
@@ -487,6 +497,8 @@ export function createDataTable(
     },
     layout: isCompactLayout ? "fitData" : "fitColumns",
     responsiveLayout: false,
+    // Tabulator's ResizeTable observer + fitColumns can recurse on hover (containerWidth creeps).
+    autoResize: false,
     pagination: false,
     movableColumns: false,
     height: "auto",
@@ -550,10 +562,22 @@ export function createDataTable(
 
   // Post-render: highlight class application + hide empty group header rows
   tabulator.on("tableBuilt", () => {
-    runPostRender(container, data, hasGroupTitles, useStripedColumnGroups, settings.tooltips);
+    runPostRender(
+      container,
+      data,
+      hasGroupTitles,
+      useStripedColumnGroups,
+      settings.tooltips,
+    );
   });
   tabulator.on("dataProcessed", () => {
-    runPostRender(container, data, hasGroupTitles, useStripedColumnGroups, settings.tooltips);
+    runPostRender(
+      container,
+      data,
+      hasGroupTitles,
+      useStripedColumnGroups,
+      settings.tooltips,
+    );
   });
 
   return {
@@ -685,7 +709,7 @@ function isRankPositionColumn(
   field: string,
   groupIndex: number,
   columnIndex: number,
-  settings: Required<Omit<DataTableOptions, "stripedColumnGroups">>,
+  settings: Required<Omit<DataTableOptions, "stripedColumnGroups" | "columnGroupStripeVariant">>,
 ): boolean {
   return (
     field === "pos" ||
@@ -701,7 +725,7 @@ function buildColumnDefinition(
   isHighlighted: boolean,
   groupIndex: number,
   columnIndex: number,
-  settings: Required<Omit<DataTableOptions, "stripedColumnGroups">>,
+  settings: Required<Omit<DataTableOptions, "stripedColumnGroups" | "columnGroupStripeVariant">>,
   isCompactLayout: boolean,
   transformedData: RowObject[],
   formatter: (cell: CellComponent) => string | HTMLElement,
@@ -796,6 +820,34 @@ function applyNativeTooltips(container: HTMLElement, data: TableData): void {
   });
 }
 
+function ensureTabulatorStripeClasses(
+  container: HTMLElement,
+  useStripedColumnGroups: boolean,
+): HTMLElement {
+  const root = container.classList.contains("tabulator")
+    ? container
+    : (container.querySelector(".tabulator") as HTMLElement | null) ?? container;
+  root.classList.add("ds-tabulator");
+  if (useStripedColumnGroups) {
+    root.classList.add("is-striped-column-groups");
+  }
+  return root;
+}
+
+function stripVerticalColumnDividers(container: HTMLElement): void {
+  container
+    .querySelectorAll<HTMLElement>(
+      ".tab-position-cell, .tab-position-col, .tabulator-cell, .tabulator-col, .tabulator-col-group",
+    )
+    .forEach((el) => {
+      el.style.setProperty("border-right", "none", "important");
+      el.style.setProperty("border-left", "none", "important");
+      if (el.classList.contains("tab-position-cell") || el.classList.contains("tab-position-col")) {
+        el.style.setProperty("box-shadow", "none", "important");
+      }
+    });
+}
+
 function runPostRender(
   container: HTMLElement,
   data: TableData,
@@ -806,16 +858,11 @@ function runPostRender(
   // Two RAFs to let Tabulator finish DOM mounting of headers
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
-      container.style.setProperty("--highlight-header-bg", HIGHLIGHT_STYLES.headerBackgroundColor);
+      const root = ensureTabulatorStripeClasses(container, useStripedColumnGroups);
+      root.style.setProperty("--highlight-header-bg", HIGHLIGHT_STYLES.headerBackgroundColor);
       container.style.setProperty("--highlight-cell-bg", HIGHLIGHT_STYLES.cellBackgroundColor);
       container.style.setProperty("--highlight-header-weight", HIGHLIGHT_STYLES.headerFontWeight);
       container.style.setProperty("--highlight-cell-weight", HIGHLIGHT_STYLES.cellFontWeight);
-
-      if (useStripedColumnGroups) {
-        container.querySelectorAll<HTMLElement>(".tabulator-col-group").forEach((el, idx) => {
-          el.classList.add("col-group-" + idx);
-        });
-      }
 
       const highlightedFields = new Set<string>();
       data.columns.forEach((group) => {
@@ -866,18 +913,7 @@ function runPostRender(
           });
       }
 
-      container.querySelectorAll<HTMLElement>(".tab-position-cell, .tab-position-col").forEach((el) => {
-        el.style.setProperty("border-right", "none", "important");
-        el.style.setProperty("box-shadow", "none", "important");
-      });
-      container
-        .querySelectorAll<HTMLElement>(
-          ".tabulator-header .tabulator-col-group .tabulator-col-group-cols > .tabulator-col:first-child",
-        )
-        .forEach((col) => {
-          col.style.setProperty("border-right", "none", "important");
-          col.style.setProperty("box-shadow", "none", "important");
-        });
+      stripVerticalColumnDividers(container);
 
       if (enableTooltips) {
         applyNativeTooltips(container, data);

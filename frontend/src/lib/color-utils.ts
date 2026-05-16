@@ -81,6 +81,18 @@ export const HEATMAP_PALETTES: Record<HeatmapPaletteId, HeatmapStops> = {
 
 export const DEFAULT_STRIPE_PALETTE: readonly string[] = ["#ffffff", "#1B8CA6"];
 
+/** rainbowPastel[0] — used for subtle league table column-group striping. */
+export const LEAGUE_COLUMN_GROUP_STRIPE_HUE = TEAM_COLOR_PALETTES.rainbowPastel[0];
+
+/** Odd column groups (1, 3, 5…) get accent highlight; even (0, 2, 4…) stay plain. */
+export function isLeagueColumnGroupStripeOdd(groupIndex: number): boolean {
+  return groupIndex % 2 === 1;
+}
+
+export function isLeagueColumnGroupStripePlain(groupIndex: number): boolean {
+  return groupIndex % 2 === 0;
+}
+
 let currentPaletteName: PaletteName = "rainbowPastel";
 let currentPalette: readonly string[] = TEAM_COLOR_PALETTES[currentPaletteName];
 let currentHeatmapPaletteId: HeatmapPaletteId = 6;
@@ -206,7 +218,8 @@ function assignLeafColumnCss(columns: LooseColumn[], groupIndex: number): void {
   });
 }
 
-const STRIPE_SCOPE = ".ds-tabulator.is-striped-column-groups";
+const STRIPE_SCOPE =
+  ".ds-tabulator.is-striped-column-groups, .is-striped-column-groups.tabulator, .is-striped-column-groups.ds-tabulator";
 
 export function generateStripeCss(
   groupCount: number,
@@ -224,11 +237,31 @@ export function generateStripeCss(
     const color = palette[i % palette.length];
     const headerBg = toRgba(color, headerAlpha);
     const cellBg = toRgba(color, cellAlpha);
-    css += `${STRIPE_SCOPE} .tabulator-cell.col-group-${i}:not(.tabulator-frozen) { background-color: ${cellBg} !important; }\n`;
-    css += `${STRIPE_SCOPE} .tabulator-col.col-group-${i}:not(.tabulator-frozen) { background-color: ${headerBg} !important; }\n`;
-    css += `${STRIPE_SCOPE} .tabulator-col-group.col-group-${i}:not(.tabulator-frozen) { background-color: ${headerBg} !important; }\n`;
+    css += stripeGroupRules(i, headerBg, cellBg);
   }
   return css;
+}
+
+/** Injected fallback for even groups only (CSS in datatable.css is primary). */
+export function generateLeagueColumnGroupStripeCss(groupCount: number): string {
+  let css = "";
+  for (let i = 0; i < groupCount; i++) {
+    if (!isLeagueColumnGroupStripeOdd(i)) continue;
+    const { header, cell } = {
+      header: toRgba(LEAGUE_COLUMN_GROUP_STRIPE_HUE, 0.12),
+      cell: toRgba(LEAGUE_COLUMN_GROUP_STRIPE_HUE, 0.09),
+    };
+    css += stripeGroupRules(i, header, cell);
+  }
+  return css;
+}
+
+function stripeGroupRules(groupIndex: number, headerBg: string, cellBg: string): string {
+  return (
+    `${STRIPE_SCOPE} .tabulator-cell.col-group-${groupIndex}:not(.tabulator-frozen) { background-color: ${cellBg} !important; }\n` +
+    `${STRIPE_SCOPE} .tabulator-col.col-group-${groupIndex}:not(.tabulator-frozen) { background-color: ${headerBg} !important; }\n` +
+    `${STRIPE_SCOPE} .tabulator-col-group.col-group-${groupIndex}:not(.tabulator-frozen) { background-color: ${headerBg} !important; }\n`
+  );
 }
 
 export function injectStripeCss(
@@ -237,6 +270,7 @@ export function injectStripeCss(
     palette?: readonly string[];
     headerAlpha?: number;
     cellAlpha?: number;
+    variant?: "default" | "league";
   } = {},
 ): void {
   if (typeof document === "undefined") return;
@@ -247,7 +281,10 @@ export function injectStripeCss(
     styleEl.id = styleId;
     document.head.appendChild(styleEl);
   }
-  styleEl.textContent = generateStripeCss(groupCount, options);
+  styleEl.textContent =
+    options.variant === "league"
+      ? generateLeagueColumnGroupStripeCss(groupCount)
+      : generateStripeCss(groupCount, options);
 }
 
 function rgbToHsl(r: number, g: number, b: number): { h: number; s: number; l: number } {

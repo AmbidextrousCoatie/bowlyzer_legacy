@@ -1,12 +1,13 @@
 import type { DataTableOptions } from "../../lib/datatable/types";
 
-/** Shared styling for league standings and team-vs-team matrix (# clip, no zebra, no col-group stripe). */
+/** Shared styling for league standings and matchday tables (# clip, subtle col-group stripes). */
 export const rankedTeamTableOptions: DataTableOptions = {
   disablePositionCircle: false,
   enableSpecialRowStyling: true,
   tooltips: true,
   stripedRows: false,
-  stripedColumnGroups: false,
+  stripedColumnGroups: true,
+  columnGroupStripeVariant: "league",
 };
 
 export const teamVsTeamTableOptions: DataTableOptions = {

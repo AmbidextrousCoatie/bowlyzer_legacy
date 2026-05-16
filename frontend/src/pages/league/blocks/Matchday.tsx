@@ -6,7 +6,7 @@ import {
   useTeamVsTeamComparison,
 } from "../../../hooks/useLeague";
 import { useTranslations } from "../../../hooks/useTranslations";
-import { teamVsTeamTableOptions } from "../leagueTableOptions";
+import { rankedTeamTableOptions, teamVsTeamTableOptions } from "../leagueTableOptions";
 import { TeamVsTeamMatrix } from "./TeamVsTeamMatrix";
 import { HonorScoresPanel } from "./HonorScoresPanel";
 
@@ -37,9 +37,7 @@ export function Matchday({ season, league, week }: Props) {
           <DataTableQuery
             query={weekTable}
             options={{
-              disablePositionCircle: false,
-              enableSpecialRowStyling: true,
-              tooltips: true,
+              ...rankedTeamTableOptions,
               teamColorLeague: league,
             }}
           />

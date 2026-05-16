@@ -81,6 +81,8 @@ export type DataTableOptions = {
   stripedRows?: boolean;
   /** Alternating column-group shading. When omitted, follows payload `config.stripedColGroups`. */
   stripedColumnGroups?: boolean;
+  /** Stripe palette style; `league` uses subtle rainbowPastel[0] tints. */
+  columnGroupStripeVariant?: "default" | "league";
 };
 
 export type FlatColumnInfo = {

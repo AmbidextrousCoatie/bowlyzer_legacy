@@ -17,7 +17,7 @@ import {
   useTeamVsTeamComparison,
 } from "../../../hooks/useLeague";
 import { useTranslations } from "../../../hooks/useTranslations";
-import { teamVsTeamTableOptions } from "../leagueTableOptions";
+import { rankedTeamTableOptions, teamVsTeamTableOptions } from "../leagueTableOptions";
 import { TeamVsTeamMatrix } from "./TeamVsTeamMatrix";
 
 type Props = {
@@ -84,9 +84,7 @@ export function LeagueSeasonOverview({ season, league }: Props) {
 
   const standingsTableOptions = useMemo<DataTableOptions>(
     () => ({
-      disablePositionCircle: false,
-      enableSpecialRowStyling: true,
-      tooltips: true,
+      ...rankedTeamTableOptions,
       seedTeamColorsFromTable: true,
       disableTeamColorUpdate: true,
       teamColorLeague: league,

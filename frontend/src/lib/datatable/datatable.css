@@ -131,10 +131,18 @@
   box-shadow: none !important;
 }
 
+/* No vertical dividers between columns or column groups (stripe provides separation). */
+.ds-tabulator .tabulator-header .tabulator-col-group,
+.ds-tabulator .tabulator-header .tabulator-col-group .tabulator-col-group-cols > .tabulator-col,
+.ds-tabulator .tabulator-header .tabulator-col,
+.ds-tabulator .tabulator-row .tabulator-cell {
+  border-right: none !important;
+  border-left: none !important;
+}
+
 /* Grouped header: no divider between # and team inside a frozen group. */
 .ds-tabulator .tabulator-header .tabulator-col-group .tabulator-col-group-cols > .tabulator-col:not(:last-child),
 .ds-tabulator .tabulator-header .tabulator-col.tab-position-col {
-  border-right: none !important;
   box-shadow: none !important;
 }
 
@@ -223,8 +231,10 @@
 }
 
 /* Highlighted column groups (data-driven via column.highlighted) */
-.ds-tabulator .tabulator-col-group.tab-group-highlighted,
-.ds-tabulator .tabulator-col-group.tab-group-highlighted .tabulator-col-group-title {
+.ds-tabulator:not(.is-striped-column-groups) .tabulator-col-group.tab-group-highlighted,
+.ds-tabulator:not(.is-striped-column-groups)
+  .tabulator-col-group.tab-group-highlighted
+  .tabulator-col-group-title {
   background-color: var(--highlight-header-bg, rgba(0, 0, 0, 0.05)) !important;
   font-weight: var(--highlight-header-weight, 700) !important;
 }
@@ -233,9 +243,118 @@
   font-weight: var(--highlight-header-weight, 700) !important;
 }
 
-.ds-tabulator .tabulator-cell.tab-col-highlighted {
+.ds-tabulator:not(.is-striped-column-groups) .tabulator-cell.tab-col-highlighted {
   background-color: var(--highlight-cell-bg, rgba(0, 0, 0, 0.03)) !important;
   font-weight: var(--highlight-cell-weight, 600) !important;
+}
+
+.ds-tabulator.is-striped-column-groups .tabulator-cell.tab-col-highlighted:not(.tab-position-cell) {
+  font-weight: var(--highlight-cell-weight, 600) !important;
+}
+
+/* League column-group striping — even groups (0, 2, 4…) plain; odd groups (1, 3, 5…) accent */
+.ds-tabulator.is-striped-column-groups,
+.is-striped-column-groups.tabulator,
+.is-striped-column-groups.ds-tabulator {
+  --colgroup-stripe-hue: #1b8ca6;
+}
+
+/* Even groups (0, 2, 4…): plain surface */
+.ds-tabulator.is-striped-column-groups .tabulator-cell.col-group-0:not(.tabulator-frozen):not(.tab-position-cell),
+.ds-tabulator.is-striped-column-groups .tabulator-cell.col-group-2:not(.tabulator-frozen):not(.tab-position-cell),
+.ds-tabulator.is-striped-column-groups .tabulator-cell.col-group-4:not(.tabulator-frozen):not(.tab-position-cell),
+.ds-tabulator.is-striped-column-groups .tabulator-cell.col-group-6:not(.tabulator-frozen):not(.tab-position-cell),
+.ds-tabulator.is-striped-column-groups .tabulator-cell.col-group-8:not(.tabulator-frozen):not(.tab-position-cell),
+.ds-tabulator.is-striped-column-groups .tabulator-cell.col-group-10:not(.tabulator-frozen):not(.tab-position-cell),
+.ds-tabulator.is-striped-column-groups .tabulator-cell.col-group-12:not(.tabulator-frozen):not(.tab-position-cell),
+.is-striped-column-groups.tabulator .tabulator-cell.col-group-0:not(.tabulator-frozen):not(.tab-position-cell),
+.is-striped-column-groups.tabulator .tabulator-cell.col-group-2:not(.tabulator-frozen):not(.tab-position-cell),
+.is-striped-column-groups.tabulator .tabulator-cell.col-group-4:not(.tabulator-frozen):not(.tab-position-cell),
+.is-striped-column-groups.tabulator .tabulator-cell.col-group-6:not(.tabulator-frozen):not(.tab-position-cell),
+.is-striped-column-groups.tabulator .tabulator-cell.col-group-8:not(.tabulator-frozen):not(.tab-position-cell),
+.is-striped-column-groups.tabulator .tabulator-cell.col-group-10:not(.tabulator-frozen):not(.tab-position-cell),
+.is-striped-column-groups.tabulator .tabulator-cell.col-group-12:not(.tabulator-frozen):not(.tab-position-cell) {
+  background-color: var(--color-surface) !important;
+}
+
+.ds-tabulator.is-striped-column-groups .tabulator-col.col-group-0:not(.tabulator-frozen),
+.ds-tabulator.is-striped-column-groups .tabulator-col.col-group-2:not(.tabulator-frozen),
+.ds-tabulator.is-striped-column-groups .tabulator-col.col-group-4:not(.tabulator-frozen),
+.ds-tabulator.is-striped-column-groups .tabulator-col.col-group-6:not(.tabulator-frozen),
+.ds-tabulator.is-striped-column-groups .tabulator-col.col-group-8:not(.tabulator-frozen),
+.ds-tabulator.is-striped-column-groups .tabulator-col.col-group-10:not(.tabulator-frozen),
+.ds-tabulator.is-striped-column-groups .tabulator-col.col-group-12:not(.tabulator-frozen),
+.ds-tabulator.is-striped-column-groups .tabulator-col-group.col-group-0:not(.tabulator-frozen),
+.ds-tabulator.is-striped-column-groups .tabulator-col-group.col-group-2:not(.tabulator-frozen),
+.ds-tabulator.is-striped-column-groups .tabulator-col-group.col-group-4:not(.tabulator-frozen),
+.ds-tabulator.is-striped-column-groups .tabulator-col-group.col-group-6:not(.tabulator-frozen),
+.ds-tabulator.is-striped-column-groups .tabulator-col-group.col-group-8:not(.tabulator-frozen),
+.ds-tabulator.is-striped-column-groups .tabulator-col-group.col-group-10:not(.tabulator-frozen),
+.ds-tabulator.is-striped-column-groups .tabulator-col-group.col-group-12:not(.tabulator-frozen),
+.is-striped-column-groups.tabulator .tabulator-col.col-group-0:not(.tabulator-frozen),
+.is-striped-column-groups.tabulator .tabulator-col.col-group-2:not(.tabulator-frozen),
+.is-striped-column-groups.tabulator .tabulator-col.col-group-4:not(.tabulator-frozen),
+.is-striped-column-groups.tabulator .tabulator-col.col-group-6:not(.tabulator-frozen),
+.is-striped-column-groups.tabulator .tabulator-col.col-group-8:not(.tabulator-frozen),
+.is-striped-column-groups.tabulator .tabulator-col.col-group-10:not(.tabulator-frozen),
+.is-striped-column-groups.tabulator .tabulator-col.col-group-12:not(.tabulator-frozen),
+.is-striped-column-groups.tabulator .tabulator-col-group.col-group-0:not(.tabulator-frozen),
+.is-striped-column-groups.tabulator .tabulator-col-group.col-group-2:not(.tabulator-frozen),
+.is-striped-column-groups.tabulator .tabulator-col-group.col-group-4:not(.tabulator-frozen),
+.is-striped-column-groups.tabulator .tabulator-col-group.col-group-6:not(.tabulator-frozen),
+.is-striped-column-groups.tabulator .tabulator-col-group.col-group-8:not(.tabulator-frozen),
+.is-striped-column-groups.tabulator .tabulator-col-group.col-group-10:not(.tabulator-frozen),
+.is-striped-column-groups.tabulator .tabulator-col-group.col-group-12:not(.tabulator-frozen) {
+  background-color: var(--color-surface-subtle) !important;
+}
+
+/* Odd groups (1, 3, 5…): accent highlight */
+.ds-tabulator.is-striped-column-groups .tabulator-cell.col-group-1:not(.tabulator-frozen):not(.tab-position-cell),
+.ds-tabulator.is-striped-column-groups .tabulator-cell.col-group-3:not(.tabulator-frozen):not(.tab-position-cell),
+.ds-tabulator.is-striped-column-groups .tabulator-cell.col-group-5:not(.tabulator-frozen):not(.tab-position-cell),
+.ds-tabulator.is-striped-column-groups .tabulator-cell.col-group-7:not(.tabulator-frozen):not(.tab-position-cell),
+.ds-tabulator.is-striped-column-groups .tabulator-cell.col-group-9:not(.tabulator-frozen):not(.tab-position-cell),
+.ds-tabulator.is-striped-column-groups .tabulator-cell.col-group-11:not(.tabulator-frozen):not(.tab-position-cell),
+.ds-tabulator.is-striped-column-groups .tabulator-cell.col-group-13:not(.tabulator-frozen):not(.tab-position-cell),
+.is-striped-column-groups.tabulator .tabulator-cell.col-group-1:not(.tabulator-frozen):not(.tab-position-cell),
+.is-striped-column-groups.tabulator .tabulator-cell.col-group-3:not(.tabulator-frozen):not(.tab-position-cell),
+.is-striped-column-groups.tabulator .tabulator-cell.col-group-5:not(.tabulator-frozen):not(.tab-position-cell),
+.is-striped-column-groups.tabulator .tabulator-cell.col-group-7:not(.tabulator-frozen):not(.tab-position-cell),
+.is-striped-column-groups.tabulator .tabulator-cell.col-group-9:not(.tabulator-frozen):not(.tab-position-cell),
+.is-striped-column-groups.tabulator .tabulator-cell.col-group-11:not(.tabulator-frozen):not(.tab-position-cell),
+.is-striped-column-groups.tabulator .tabulator-cell.col-group-13:not(.tabulator-frozen):not(.tab-position-cell) {
+  background-color: color-mix(in srgb, var(--colgroup-stripe-hue) 9%, var(--color-surface)) !important;
+}
+
+.ds-tabulator.is-striped-column-groups .tabulator-col.col-group-1:not(.tabulator-frozen),
+.ds-tabulator.is-striped-column-groups .tabulator-col.col-group-3:not(.tabulator-frozen),
+.ds-tabulator.is-striped-column-groups .tabulator-col.col-group-5:not(.tabulator-frozen),
+.ds-tabulator.is-striped-column-groups .tabulator-col.col-group-7:not(.tabulator-frozen),
+.ds-tabulator.is-striped-column-groups .tabulator-col.col-group-9:not(.tabulator-frozen),
+.ds-tabulator.is-striped-column-groups .tabulator-col.col-group-11:not(.tabulator-frozen),
+.ds-tabulator.is-striped-column-groups .tabulator-col.col-group-13:not(.tabulator-frozen),
+.ds-tabulator.is-striped-column-groups .tabulator-col-group.col-group-1:not(.tabulator-frozen),
+.ds-tabulator.is-striped-column-groups .tabulator-col-group.col-group-3:not(.tabulator-frozen),
+.ds-tabulator.is-striped-column-groups .tabulator-col-group.col-group-5:not(.tabulator-frozen),
+.ds-tabulator.is-striped-column-groups .tabulator-col-group.col-group-7:not(.tabulator-frozen),
+.ds-tabulator.is-striped-column-groups .tabulator-col-group.col-group-9:not(.tabulator-frozen),
+.ds-tabulator.is-striped-column-groups .tabulator-col-group.col-group-11:not(.tabulator-frozen),
+.ds-tabulator.is-striped-column-groups .tabulator-col-group.col-group-13:not(.tabulator-frozen),
+.is-striped-column-groups.tabulator .tabulator-col.col-group-1:not(.tabulator-frozen),
+.is-striped-column-groups.tabulator .tabulator-col.col-group-3:not(.tabulator-frozen),
+.is-striped-column-groups.tabulator .tabulator-col.col-group-5:not(.tabulator-frozen),
+.is-striped-column-groups.tabulator .tabulator-col.col-group-7:not(.tabulator-frozen),
+.is-striped-column-groups.tabulator .tabulator-col.col-group-9:not(.tabulator-frozen),
+.is-striped-column-groups.tabulator .tabulator-col.col-group-11:not(.tabulator-frozen),
+.is-striped-column-groups.tabulator .tabulator-col.col-group-13:not(.tabulator-frozen),
+.is-striped-column-groups.tabulator .tabulator-col-group.col-group-1:not(.tabulator-frozen),
+.is-striped-column-groups.tabulator .tabulator-col-group.col-group-3:not(.tabulator-frozen),
+.is-striped-column-groups.tabulator .tabulator-col-group.col-group-5:not(.tabulator-frozen),
+.is-striped-column-groups.tabulator .tabulator-col-group.col-group-7:not(.tabulator-frozen),
+.is-striped-column-groups.tabulator .tabulator-col-group.col-group-9:not(.tabulator-frozen),
+.is-striped-column-groups.tabulator .tabulator-col-group.col-group-11:not(.tabulator-frozen),
+.is-striped-column-groups.tabulator .tabulator-col-group.col-group-13:not(.tabulator-frozen) {
+  background-color: color-mix(in srgb, var(--colgroup-stripe-hue) 12%, var(--color-surface-subtle)) !important;
 }
 
 /* Sort indicator color */
