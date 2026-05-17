@@ -478,6 +478,7 @@ function buildAverageOption(
     data: avg.map((v, i) => [i + 1, v == null ? null : Math.max(yMin, Math.min(yMax, v))]),
     showSymbol: false,
     smooth: false,
+    connectNulls: false,
     lineStyle: { width: 2, color: PLAYER_COLOR },
     itemStyle: { color: PLAYER_COLOR },
     markLine: horizontalCutMarkLines.length
@@ -553,7 +554,13 @@ function buildPositionOption(
 
   const finitePositions = positions.filter((v): v is number => v != null && Number.isFinite(v));
   const yMin = 1;
-  const yMax = Math.max(80, finitePositions.length ? Math.max(...finitePositions) + 5 : 80);
+  const maxObservedRank = finitePositions.length ? Math.max(...finitePositions) : 1;
+  const participants = Number(series.participant_count);
+  const rankCap =
+    Number.isFinite(participants) && participants > 0
+      ? Math.max(participants, maxObservedRank)
+      : maxObservedRank;
+  const yMax = Math.max(1, Math.ceil(rankCap));
 
   const cutColor = getSemanticColor("negative");
   const cutMarks = cutValues

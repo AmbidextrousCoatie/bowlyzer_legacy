@@ -1,3 +1,4 @@
+import { CollapsibleSection } from "../../../components/CollapsibleSection";
 import type {
   TournamentBestEfforts,
   TournamentBestEffortsSection,
@@ -16,25 +17,23 @@ export function BestEfforts({ bestEfforts, t }: Props) {
   if (sections.length === 0) return null;
 
   return (
-    <section>
-      <div className="mb-4">
-        <p className="text-label uppercase text-muted mb-1.5">
-          {t("ui.tournament.best_efforts_eyebrow", "Bestleistungen")}
-        </p>
-        <h2 className="text-h2">
-          {t("ui.tournament.best_efforts_top_n", "Bestleistungen (Top {n})").replace(
-            "{n}",
-            String(n),
-          )}
-        </h2>
-      </div>
-
+    <CollapsibleSection
+      eyebrow={t("ui.tournament.best_efforts_eyebrow", "Bestleistungen")}
+      title={t("ui.tournament.best_efforts_top_n", "Bestleistungen (Top {n})").replace(
+        "{n}",
+        String(n),
+      )}
+      defaultOpen={false}
+      id="tournament-best-efforts"
+      expandLabel={t("ui.common.expand_section", "Abschnitt einblenden")}
+      collapseLabel={t("ui.common.collapse_section", "Abschnitt ausblenden")}
+    >
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         {sections.map((section, idx) => (
           <ScopeBlock key={section.scope ?? idx} section={section} t={t} />
         ))}
       </div>
-    </section>
+    </CollapsibleSection>
   );
 }
 

@@ -2,6 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 import { buildUrl, fetchJson } from "../lib/api";
 import type { TableData } from "../lib/datatable/types";
 
+/** List endpoints are backed by server-side CSV revision cache; avoid refetch churn. */
+const TOURNAMENT_LIST_STALE_MS = 10 * 60 * 1000;
+
 export type TournamentRound = {
   round_number?: number | string;
   round_name?: string | null;
@@ -62,6 +65,7 @@ export type TournamentProgressSeries = {
   cut_lines_position?: Array<number | null>;
   cut_line_series?: TournamentCutLineSeries[];
   cut_lines_avg_dynamic?: Record<string, Array<number | null>>;
+  participant_count?: number;
 };
 
 export type TournamentPlayerSummary = {
@@ -114,6 +118,7 @@ export function useTournamentSeasons(tournament?: string | null) {
       fetchJson<string[]>(
         buildUrl("/tournament/get_available_seasons", { tournament: tournament ?? undefined }),
       ),
+    staleTime: TOURNAMENT_LIST_STALE_MS,
   });
 }
 
@@ -123,6 +128,7 @@ export function useTournamentNames(season: string | null) {
     queryFn: () =>
       fetchJson<string[]>(buildUrl("/tournament/get_available_tournaments", { season })),
     enabled: !!season,
+    staleTime: TOURNAMENT_LIST_STALE_MS,
   });
 }
 
@@ -134,6 +140,7 @@ export function useTournamentRounds(season: string | null, tournament: string | 
         buildUrl("/tournament/get_available_rounds", { season, tournament }),
       ),
     enabled: !!season && !!tournament,
+    staleTime: TOURNAMENT_LIST_STALE_MS,
   });
 }
 
@@ -153,6 +160,7 @@ export function useTournamentPlayers(
         }),
       ),
     enabled: !!season && !!tournament,
+    staleTime: TOURNAMENT_LIST_STALE_MS,
   });
 }
 

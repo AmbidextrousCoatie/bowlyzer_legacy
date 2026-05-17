@@ -2,6 +2,7 @@ from pathlib import Path
 
 from flask import Blueprint, jsonify, render_template, request
 
+from app.cache.league_response_cache import league_cache_put, league_cache_try_get
 from app.config.database_config import database_config
 from app.services.tournament_service import TournamentService
 
@@ -58,15 +59,36 @@ def _resolve_default_tournament_source() -> str:
     return database_config.get_default_source()
 
 
-def get_tournament_service() -> TournamentService:
+def _resolved_tournament_database_id() -> str:
     requested_database = _normalize_requested_tournament_database(
         request.args.get("database")
     )
     if requested_database:
-        # Always honor an explicit source. League-only CSVs have no tournaments;
-        # falling back here silently swapped users to synthetic/mythic data.
-        return TournamentService(database=requested_database)
-    return TournamentService(database=_resolve_default_tournament_source())
+        return requested_database
+    return _resolve_default_tournament_source()
+
+
+def get_tournament_service() -> TournamentService:
+    return TournamentService(database=_resolved_tournament_database_id())
+
+
+def _tournament_json_cache_get(endpoint_key: str):
+    return league_cache_try_get(
+        endpoint_key,
+        _resolved_tournament_database_id(),
+        dict(request.args),
+    )
+
+
+def _tournament_json_cache_put(endpoint_key: str, payload) -> None:
+    if payload is None:
+        return
+    league_cache_put(
+        endpoint_key,
+        _resolved_tournament_database_id(),
+        dict(request.args),
+        payload,
+    )
 
 
 @bp.route("/tournament/stats")
@@ -76,15 +98,24 @@ def tournament_stats():
 
 @bp.route("/tournament/get_available_tournaments")
 def get_available_tournaments():
+    cached = _tournament_json_cache_get("get_available_tournaments")
+    if cached is not None:
+        return jsonify(cached)
     season = request.args.get("season")
-    service = get_tournament_service()
-    return jsonify(service.get_tournaments(season=season))
+    payload = get_tournament_service().get_tournaments(season=season)
+    _tournament_json_cache_put("get_available_tournaments", payload)
+    return jsonify(payload)
+
 
 @bp.route("/tournament/get_available_seasons")
 def get_available_seasons():
+    cached = _tournament_json_cache_get("get_available_seasons")
+    if cached is not None:
+        return jsonify(cached)
     tournament = request.args.get("tournament")
-    service = get_tournament_service()
-    return jsonify(service.get_seasons(tournament=tournament))
+    payload = get_tournament_service().get_seasons(tournament=tournament)
+    _tournament_json_cache_put("get_available_seasons", payload)
+    return jsonify(payload)
 
 
 @bp.route("/tournament/get_available_rounds")
@@ -93,8 +124,13 @@ def get_available_rounds():
     tournament = request.args.get("tournament")
     if not season or not tournament:
         return jsonify({"error": "season and tournament are required"}), 400
-    service = get_tournament_service()
-    return jsonify(service.get_rounds(season=season, tournament=tournament))
+    cached = _tournament_json_cache_get("get_available_rounds")
+    if cached is not None:
+        return jsonify(cached)
+    payload = get_tournament_service().get_rounds(season=season, tournament=tournament)
+    _tournament_json_cache_put("get_available_rounds", payload)
+    return jsonify(payload)
+
 
 @bp.route("/tournament/get_available_players")
 def get_available_players():
@@ -103,8 +139,14 @@ def get_available_players():
     round_number = request.args.get("round", type=int)
     if not season or not tournament:
         return jsonify({"error": "season and tournament are required"}), 400
-    service = get_tournament_service()
-    return jsonify(service.get_players(season=season, tournament=tournament, round_number=round_number))
+    cached = _tournament_json_cache_get("get_available_players")
+    if cached is not None:
+        return jsonify(cached)
+    payload = get_tournament_service().get_players(
+        season=season, tournament=tournament, round_number=round_number
+    )
+    _tournament_json_cache_put("get_available_players", payload)
+    return jsonify(payload)
 
 
 @bp.route("/tournament/get_summary_cards")
