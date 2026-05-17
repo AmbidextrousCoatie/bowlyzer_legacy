@@ -1887,6 +1887,48 @@ class LeagueService:
                 title=f"Error loading data for {league} - {season}"
             )
 
+    def _teams_in_standings_order(
+        self, league: str, season: str, week: Optional[int] = None
+    ) -> List[str]:
+        """Teams sorted like ``get_league_table_simple`` (cumulative points, pins tiebreak)."""
+        individual_filters = {
+            Columns.league_name: {"value": league, "operator": "eq"},
+            Columns.season: {"value": season, "operator": "eq"},
+            Columns.computed_data: {"value": False, "operator": "eq"},
+        }
+        individual_data = self.adapter.get_filtered_data(filters=individual_filters)
+        if individual_data is None or individual_data.empty:
+            return []
+
+        team_bonus_filters = {
+            Columns.league_name: {"value": league, "operator": "eq"},
+            Columns.season: {"value": season, "operator": "eq"},
+            Columns.computed_data: {"value": True, "operator": "eq"},
+        }
+        team_bonus_data = self.adapter.get_filtered_data(filters=team_bonus_filters)
+        if team_bonus_data is None:
+            team_bonus_data = pd.DataFrame()
+
+        teams = list(individual_data[Columns.team_name].dropna().astype(str).unique())
+        week_cap: Optional[int] = int(week) if week is not None else None
+
+        totals: Dict[str, tuple] = {}
+        for team in teams:
+            t_ind = individual_data[individual_data[Columns.team_name] == team]
+            if week_cap is not None:
+                t_ind = t_ind[pd.to_numeric(t_ind[Columns.week], errors="coerce") <= week_cap]
+            season_score = int(t_ind[Columns.score].sum()) if not t_ind.empty else 0
+            season_points = float(t_ind[Columns.points].sum()) if not t_ind.empty else 0.0
+            if not team_bonus_data.empty and Columns.team_name in team_bonus_data.columns:
+                t_bonus = team_bonus_data[team_bonus_data[Columns.team_name] == team]
+                if week_cap is not None:
+                    t_bonus = t_bonus[pd.to_numeric(t_bonus[Columns.week], errors="coerce") <= week_cap]
+                if not t_bonus.empty:
+                    season_points += float(t_bonus[Columns.points].sum())
+            totals[team] = (season_points, season_score)
+
+        return sorted(teams, key=lambda t: totals.get(t, (0.0, 0)), reverse=True)
+
     def get_team_positions_simple(self, league_name: str, season: str) -> Dict[str, Any]:
         """Get team positions throughout a season using direct data adapter queries"""
         # Get weekly points from get_team_points_simple
@@ -3589,8 +3631,8 @@ class LeagueService:
     def get_team_vs_team_comparison_table(self, league: str, season: str, week: int = None) -> 'TableData':
         """
         Get team vs team comparison as TableData with heat map.
-        Teams are sorted by average points (across all opponents) before table creation
-        to ensure proper matrix alignment with diagonal cells.
+        Row/column order follows full-season league standings (total points, pins tiebreak),
+        independent of which week's cells are shown — not matrix-specific weekly averages.
         """
         from app.models.table_data import TableData, ColumnGroup, Column
         
@@ -3718,18 +3760,13 @@ class LeagueService:
                             'avg_points': avg_points
                         }
             
-            # ========== DATA EXTENSION: Calculate team averages and sort ==========
-            # Calculate average points for each team (across all opponents)
-            team_avg_points = {}
-            for team in teams:
-                team_points_list = []
-                for opponent in teams:
-                    if team != opponent and opponent in comparison_data[team]:
-                        team_points_list.append(comparison_data[team][opponent]['avg_points'])
-                team_avg_points[team] = sum(team_points_list) / len(team_points_list) if team_points_list else 0
-            
-            # Sort teams by average points (descending) - this determines row/column order
-            sorted_teams = sorted(teams, key=lambda t: team_avg_points[t], reverse=True)
+            # Row/column order = full-season standings (not the selected week's points).
+            standings_order = self._teams_in_standings_order(league, season, week=None)
+            team_set = set(teams)
+            sorted_teams = [t for t in standings_order if t in team_set]
+            for t in teams:
+                if t not in sorted_teams:
+                    sorted_teams.append(t)
             team_positions = {team: pos + 1 for pos, team in enumerate(sorted_teams)}
             
             # ========== CREATE TABLE STRUCTURE ==========

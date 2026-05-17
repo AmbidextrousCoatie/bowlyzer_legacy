@@ -82175,4 +82175,1227 @@ The helper function will mirror the club matrix's leaguePath approach for consis
 
 When the status is ok, the system will link to the league season overview without a specific week, as available_weeks should contain the full set of weeks. If there are missing weeks and the status indicates a warning or error, it will link to the first missing week to highlight the gap. For empty or missing available weeks, it will default to the league season overview without a week parameter. This ensures users land on the most relevant view based on data availability.
 
-When the status is ok, the link defaults to the league season overview without a week parameter. If there are available weeks,</details></think>
+When the status is ok, the link defaults to the league season overview without a week parameter. If there are available weeks, it links to the latest week. For missing weeks, it links to the first missing week to highlight the issue. The `leagueCellPath` function builds the URL using season, league, and optional `league_long` name. It includes a week parameter only when needed, based on cell data.
+
+The final part of the implementation involves building the URL for the league diagnosis path. The logic checks for missing weeks first; if present, it uses the first missing week. If no missing weeks exist but there are available weeks, it selects the latest week. If neither exists, no week parameter is added. The helper function is extracted into a shared file for reuse across components. The `get_week_matrix` API will include `league_long_names` for consistency with the club matrix.
+
+The `leagueDiagnosisPath` helper function constructs URLs for league diagnosis views, including optional week parameters. It supports `season`, `league`, and `league_long` parameters, and adds a `week` parameter only when provided and non-empty. The `get_week_matrix` API will now include `league_long_names` for consistency with the club matrix.
+
+Each cell in the week matrix will be wrapped in a link to `/liga`, using the new helper to build the correct URL. Empty cells without data will not have links.
+
+The helper function ensures that links are built correctly based on available data, prioritizing clarity and usability for users navigating league information.</details></think>
+
+_**Agent (default)**_
+
+Adding league deep links to week-matrix cells (season + league, and first missing week when applicable). Including `league_long_names` in the API response.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\routes\league_routes.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\diagnosis\ClubMatrix.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I'll create a shared diagnosisLinks.ts file and update both pages to use it.
+
+I'll implement the week cell path logic: for incomplete data, link to the first missing week for diagnosis; for complete data, link to season overview. The API and component updates will reflect this behavior.
+
+I'll implement the week matrix cell path logic in the `weekMatrixCellPath` function. For cells with missing weeks, it will link to the first missing week for diagnosis. For cells with available weeks, it will link to the latest available week. If no weeks are available, it will link to the general league diagnosis path. I'll also bump the cache payload version for `get_week_matrix` since the response shape has changed.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\lib\diagnosisLinks.ts</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\routes\league_routes.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\hooks\useLeague.ts</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\diagnosis\LeagueWeekMatrix.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\diagnosis\LeagueWeekMatrix.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\diagnosis\LeagueWeekMatrix.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\diagnosis\ClubMatrix.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\cache\league_response_cache.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\diagnosis\ClubMatrix.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\diagnosis\ClubMatrix.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Consider whether to include the league name in the first column of the table.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd c:\Users\cfell\repos\bowlyzer_legacy\frontend ; pnpm exec tsc -b --pretty false 2>&1 | Select-Object -Last 15</summary>
+
+```bash
+cd c:\Users\cfell\repos\bowlyzer_legacy\frontend ; pnpm exec tsc -b --pretty false 2>&1 | Select-Object -Last 15
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Each Liga-Wochen cell is now a link into league stats:
+
+- **Missing weeks** → `/liga?season=…&league=…&week={first missing}` (first gap, so you land on the matchday that needs data)
+- **Complete (✓)** → `/liga?season=…&league=…&week={latest available}` (highest week present)
+- **`league_long`** is set when the mapping provides a long name (same as Club-Matrix)
+
+Shared helpers live in `frontend/src/lib/diagnosisLinks.ts`; Club-Matrix uses the same path builder.
+
+Restart Flask if the week-matrix cache was warm (payload now includes `league_long_names`), or clear `.cache/league/…` for that endpoint.
+
+---
+
+_**User**_
+
+nice. in the sl view, the teams in the team vs team matrix should be ordered in the order of the overall standings. right now it seams they are ordered based on the performance on the last registeted league week
+
+---
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": true,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy",
+  "pattern": "team.*vs.*team|TeamVsTeam|team_vs_team"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy",
+  "pattern": "team.*vs.*team|TeamVsTeam|team_vs_team",
+  "topFiles": [
+    {
+      "matchCount": 12,
+      "uri": "docs/TEAM_VS_TEAM_COLORED_CIRCLES_FIX.md"
+    },
+    {
+      "matchCount": 3,
+      "uri": ".specstory/history/2026-05-11_12-05-43Z-tournament-data-processing-and-merging.md"
+    },
+    {
+      "matchCount": 11,
+      "uri": "app/services/league_service.py"
+    },
+    {
+      "matchCount": 9,
+      "uri": "frontend\\src\\pages\\league\\blocks\\Matchday.tsx"
+    },
+    {
+      "matchCount": 11,
+      "uri": "app\\services\\league_service.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/templates/league/stats.html"
+    },
+    {
+      "matchCount": 10,
+      "uri": "frontend\\src\\lib\\datatable\\createDataTable.ts"
+    },
+    {
+      "matchCount": 2,
+      "uri": "scripts/warm_league_cache.py"
+    },
+    {
+      "matchCount": 6,
+      "uri": ".specstory/history/2026-05-07_21-35-17Z-data-source-cleanup-and-consolidation.md"
+    },
+    {
+      "matchCount": 8,
+      "uri": ".specstory/history/2026-05-12_08-34-57Z-tournament-configuration-and-leaderboard-adjustments.md"
+    },
+    {
+      "matchCount": 22,
+      "uri": "app/static/js/utils/team-vs-team-utils.js"
+    },
+    {
+      "matchCount": 11,
+      "uri": "tests/application/test_get_team_vs_team_comparison_handler.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "TEAM_STATS_ENHANCEMENT_PLAN.md"
+    },
+    {
+      "matchCount": 3,
+      "uri": "app/services/team_service.py"
+    },
+    {
+      "matchCount": 10,
+      "uri": "app\\routes\\league_routes.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "frontend\\src\\lib\\datatable\\types.ts"
+    },
+    {
+      "matchCount": 6,
+      "uri": "app/services/i18n_service.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "frontend\\src\\lib\\color-utils.ts"
+    },
+    {
+      "matchCount": 9,
+      "uri": "frontend/src/pages/league/blocks/Matchday.tsx"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app/static/js/content-blocks/league-comparison-block.js"
+    }
+  ],
+  "totalFiles": 47,
+  "totalMatches": 323
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\services\league_service.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\league\blocks\TeamVsTeamMatrix.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\league\blocks\Matchday.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+When `week` is provided, the team vs team matrix sorts teams by `team_avg_points`, which is calculated using data filtered to that specific week only.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\services\\league_service.py",
+  "pattern": "get_league_week_table|def get_team_positions"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\services\\league_service.py",
+  "pattern": "get_league_week_table|def get_team_positions",
+  "topFiles": [
+    {
+      "matchCount": 4,
+      "uri": "app\\services\\league_service.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 4
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\league\leagueTableOptions.ts</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\services\league_service.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app",
+  "pattern": "get_league_week_table"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app",
+  "pattern": "get_league_week_table",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "app/services/league_service.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/static/js/content-blocks/route-test-block.js"
+    },
+    {
+      "matchCount": 4,
+      "uri": "app/templates/test/league_tests.html"
+    },
+    {
+      "matchCount": 8,
+      "uri": "app\\routes\\league_routes.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app/static/js/content-blocks/matchday-block.js"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app\\services\\league_service.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/static/js/league/league-data-utils.js"
+    },
+    {
+      "matchCount": 8,
+      "uri": "app/routes/league_routes.py"
+    },
+    {
+      "matchCount": 6,
+      "uri": "app/services/league_service_legacy.py"
+    }
+  ],
+  "totalFiles": 9,
+  "totalMatches": 34
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\services\league_service.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\services\league_service.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The fix involves adjusting the `get_team_vs_team_comparison_table` function to sort teams by their season cumulative standings up to the specified week, rather than just their points from that weeks data. This change aligns the sorting logic with that used in `get_league_table_simple`.
+
+The solution involves using season cumulative standings to sort teams in `get_team_vs_team_comparison_table` when a week is specified. A helper method `_teams_in_standings_order` will be extracted to handle the sorting logic, ensuring consistency with `get_league_table_simple`. The sorting will consider both regular points and bonus points up to the given week, with tiebreakers based on `season_score`.
+
+The user emphasized that the team order in the standings table should reflect cumulative standings up to the specified week. When viewing a specific week, the team vs team comparison should follow the same team ordering as the standings table.
+
+I will implement a helper method `_sorted_teams_by_standings` that sorts teams based on cumulative season standings up to a given week. If no week is specified, it will default to the latest week in the season. This ensures consistency between the standings table and the team vs team comparison table.
+
+The implementation will use a shared private method `_team_standings_order` to determine team ordering based on cumulative season standings through a given week. This approach avoids code duplication between `get_team_vs_team_comparison_table` and `get_league_table_simple`. The method will handle both cases where a specific week is provided and where no week is specified (defaulting to the latest week). Teams will be ordered by points descending, with tiebreakers applied as needed.
+
+The implementation now uses the latest week when no week is specified. The sorting logic in `get_team_vs_team_comparison_table` has been updated to use `self._team_standings_order()` which ensures teams are ordered by cumulative season standings through the specified week. This maintains consistency with the standings table. The team list is filtered to only include teams present in the matrix while preserving the standings order.
+
+The sorting logic in `get_team_vs_team_comparison_table` now correctly orders teams by cumulative season standings through the specified week. Any teams present in the matrix data but missing from the standings order are appended at the end to ensure all teams are included. This maintains consistency with the standings table while preserving the intended team ordering.
+
+The `_team_standings_order` method will be added before `get_team_vs_team_comparison_table`. When no week is specified, the function will use the full season data but still sort teams by cumulative standings. This ensures consistent ordering whether viewing a specific week or the entire season. The standings order applies cumulative points through the specified week, maintaining alignment with the league table display.
+
+When no week is specified, the team vs team comparison should use full season standings rather than cumulative through the latest week. The sorting logic needs to account for all weeks in the season, not just up to the latest week, to match the behavior of the overall league table when viewing the full season.
+
+The `_team_standings_order` method now distinguishes between partial and full season calculations. When a week is specified, it computes cumulative standings up to that week, matching the behavior of the standings table on a specific matchday. When no week is specified, it aggregates all weeks in the season, ensuring consistency with the full-season league table. This refined logic ensures accurate team ordering in both scenarios.
+
+The code extracts individual data for each team, filtering by week if specified. It calculates total points and score per team, handling empty data cases. This data is used to determine team standings order in the league table and team vs team comparison tables.
+
+The sorting logic now correctly uses a tuple key (points, score) for sorting teams by cumulative standings, matching the approach in `get_league_table_simple`. This ensures proper tiebreaking based on points and score. The implementation handles empty data cases and applies week filtering when needed. The final sorted team list preserves the required order for both weekly and full-season views.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\tests\application\test_get_team_vs_team_comparison_handler.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\tests",
+  "pattern": "get_team_vs_team_comparison"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\tests",
+  "pattern": "get_team_vs_team_comparison",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "tests\\application\\test_get_team_vs_team_comparison_handler.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 2
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\cache",
+  "pattern": "get_team_vs_team"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\app\\cache",
+  "pattern": "get_team_vs_team",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\services\league_service.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I'll add `_teams_in_standings_order` right before `get_league_table_simple` or after `get_league_week_table_simple`.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\services\league_service.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\services\league_service.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\cache\league_response_cache.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\app\services\league_service.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Verifying standings sort logic matches `get_league_table_simple`:
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\services\league_service.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy",
+  "pattern": "get_team_vs_team"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy",
+  "pattern": "get_team_vs_team",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": ".\\app\\services\\league_service.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\app\\cache\\league_response_cache.py"
+    },
+    {
+      "matchCount": 4,
+      "uri": ".\\.specstory\\history\\2026-05-16_11-30-21Z-league-view-latest-season-selection.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\frontend\\src\\hooks\\useLeague.ts"
+    },
+    {
+      "matchCount": 6,
+      "uri": ".\\app\\routes\\league_routes.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\.specstory\\history\\2026-05-12_08-34-57Z-tournament-configuration-and-leaderboard-adjustments.md"
+    },
+    {
+      "matchCount": 2,
+      "uri": ".\\scripts\\warm_league_cache.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": ".\\.specstory\\history\\2026-05-06_06-02-50Z-excel-data-processing-pipeline.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\.specstory\\history\\2026-04-28_06-16-30Z-player-stats-overview-table-logic.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\.specstory\\history\\2026-04-26_07-40-49Z-gf-api-data-fetching-for-tournaments.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\app\\static\\js\\utils\\team-vs-team-utils.js"
+    },
+    {
+      "matchCount": 2,
+      "uri": ".\\tests\\application\\test_get_team_vs_team_comparison_handler.py"
+    }
+  ],
+  "totalFiles": 12,
+  "totalMatches": 24
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+There is a test file for the handler.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\services\league_service.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\tests\application\test_get_team_vs_team_comparison_handler.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The DDD handler test operates independently from the league_service.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\tests",
+  "pattern": "team_vs_team|_teams_in_standings"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\tests",
+  "pattern": "team_vs_team|_teams_in_standings",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "tests\\application\\test_get_team_vs_team_comparison_handler.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 2
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: C:\Users\cfell\venvs\league_analyzer\Scripts\python.exe -c "from app.services.league_service import LeagueService; print('import ok')"</summary>
+
+```bash
+C:\Users\cfell\venvs\league_analyzer\Scripts\python.exe -c "from app.services.league_service import LeagueService; print('import ok')"
+```
+
+```
+import ok
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The implementation is finished.
+
+The implementation is complete. The matrix view now correctly computes standings up to the selected week, matching the behavior of `get_league_week_table_simple`. This ensures accurate cumulative standings for the "SL view" or Spieltag view when a specific week is chosen. When no week is selected, full season standings are used.</details></think>
+
+_**Agent (default)**_
+
+The team vs team matrix was sorting rows/columns by **average matrix points for the selected week only**, which can disagree with the standings table when a team had a weak or strong week relative to their season position.
+
+**Change:** Added `_teams_in_standings_order()` in `league_service.py`, using the same cumulative logic as the league table — sum individual points and team bonus points through the selected week, sort by points descending, pins as tiebreaker. `get_team_vs_team_comparison_table()` now uses that order instead of weekly matrix averages.
+
+The response cache key for `get_team_vs_team_comparison` was bumped to `standings-order-v1` so clients don’t keep stale ordering.
+
+After a backend restart (or cache expiry), the matrix on the Spieltag view should align with the standings table above it. If you still see the old order, hard-refresh or wait for the cache to clear.
+
+---
+
+_**User**_
+
+the order should not be based on the week points but the seasons points
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants the team vs team matrix to prioritize season points over week points when determining team order.</details></think>
+
+_**Agent (default)**_
+
+Checking how team order is computed and whether week-scoped data is still affecting it.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\services\league_service.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\services\league_service.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\frontend",
+  "pattern": "team_vs_team|TeamVsTeam|sorted_teams|standings"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\frontend",
+  "pattern": "team_vs_team|TeamVsTeam|sorted_teams|standings",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "frontend\\src\\lib\\leagueNavigation.ts"
+    },
+    {
+      "matchCount": 2,
+      "uri": "frontend\\src\\lib\\color-utils.ts"
+    },
+    {
+      "matchCount": 4,
+      "uri": "frontend/src/pages/league/blocks/TeamVsTeamMatrix.tsx"
+    },
+    {
+      "matchCount": 2,
+      "uri": "frontend\\src\\pages\\league\\leagueTableOptions.ts"
+    },
+    {
+      "matchCount": 9,
+      "uri": "frontend\\src\\lib\\datatable\\teamVsTeamFilter.ts"
+    },
+    {
+      "matchCount": 14,
+      "uri": "frontend\\src\\pages\\league\\blocks\\LeagueSeasonOverview.tsx"
+    },
+    {
+      "matchCount": 3,
+      "uri": "frontend\\src\\lib\\datatable\\createDataTable.ts"
+    },
+    {
+      "matchCount": 2,
+      "uri": "frontend/src/lib/color-utils.ts"
+    },
+    {
+      "matchCount": 7,
+      "uri": "frontend\\src\\pages\\league\\blocks\\SeasonLeagueStandings.tsx"
+    },
+    {
+      "matchCount": 4,
+      "uri": "frontend\\src\\pages\\league\\blocks\\TeamVsTeamMatrix.tsx"
+    },
+    {
+      "matchCount": 5,
+      "uri": "frontend/src/hooks/useLeague.ts"
+    },
+    {
+      "matchCount": 3,
+      "uri": "frontend/src/lib/datatable/createDataTable.ts"
+    },
+    {
+      "matchCount": 2,
+      "uri": "frontend/src/pages/league/leagueTableOptions.ts"
+    },
+    {
+      "matchCount": 14,
+      "uri": "frontend/src/pages/league/blocks/LeagueSeasonOverview.tsx"
+    },
+    {
+      "matchCount": 2,
+      "uri": "frontend/src/lib/datatable/types.ts"
+    },
+    {
+      "matchCount": 2,
+      "uri": "frontend\\src\\lib\\datatable\\types.ts"
+    },
+    {
+      "matchCount": 9,
+      "uri": "frontend/src/lib/datatable/teamVsTeamFilter.ts"
+    },
+    {
+      "matchCount": 6,
+      "uri": "frontend/src/pages/league/blocks/Matchday.tsx"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend\\src\\lib\\datatable\\datatable.css"
+    },
+    {
+      "matchCount": 7,
+      "uri": "frontend/src/pages/league/blocks/SeasonLeagueStandings.tsx"
+    }
+  ],
+  "totalFiles": 22,
+  "totalMatches": 110
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants sorting by full season points rather than cumulative points up to a selected week.
+
+The user wants full season points ordering, not weekly points. The current implementation caps standings at the selected week, but the user needs the complete season standings even in matchday view.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\lib\datatable\createDataTable.ts</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\lib\datatable\createDataTable.ts</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\hooks\useLeague.ts</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The fix involves modifying the `get_team_vs_team_comparison_table` function.</details></think>
