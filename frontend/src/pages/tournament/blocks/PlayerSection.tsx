@@ -3,6 +3,7 @@ import type { EChartsOption } from "echarts";
 import { EChart } from "../../../lib/charts/EChart";
 import { DataTable } from "../../../lib/datatable/DataTable";
 import { getHeatMapColor, getSemanticColor } from "../../../lib/color-utils";
+import { tournamentResultsTableOptions } from "../tournamentTableOptions";
 import type {
   TournamentPlayerBestEfforts,
   TournamentPlayerCardId,
@@ -292,12 +293,7 @@ export function PlayerSection({ data, heatmapEnabled, onToggleHeatmap, onBack, t
         <div ref={tableRef}>
           <DataTable
             data={data.round_table}
-            options={{
-              disablePositionCircle: true,
-              enableSpecialRowStyling: true,
-              tooltips: true,
-              disableTeamColorUpdate: true,
-            }}
+            options={tournamentResultsTableOptions}
           />
         </div>
       </div>

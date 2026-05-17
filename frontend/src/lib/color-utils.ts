@@ -84,6 +84,13 @@ export const DEFAULT_STRIPE_PALETTE: readonly string[] = ["#ffffff", "#1B8CA6"];
 /** rainbowPastel[0] — used for subtle league table column-group striping. */
 export const LEAGUE_COLUMN_GROUP_STRIPE_HUE = TEAM_COLOR_PALETTES.rainbowPastel[0];
 
+/** Tournament cut row accents — rainbowPastel: 2 = inside, 3 = on cut, 6 = outside. */
+export const TOURNAMENT_CUT_ROW_COLORS = {
+  inside: TEAM_COLOR_PALETTES.rainbowPastel[2],
+  on: TEAM_COLOR_PALETTES.rainbowPastel[3],
+  outside: TEAM_COLOR_PALETTES.rainbowPastel[6],
+} as const;
+
 /** Odd column groups (1, 3, 5…) get accent highlight; even (0, 2, 4…) stay plain. */
 export function isLeagueColumnGroupStripeOdd(groupIndex: number): boolean {
   return groupIndex % 2 === 1;
@@ -555,6 +562,42 @@ export function clearTeamColor(teamName: string, league?: string | null): void {
 
 export function getTeamColorMap(): Record<string, string> {
   return teamColorMap;
+}
+
+/**
+ * Team performance view: palette index follows `player_order_by_average` so tables
+ * and scatter charts share the same player colors (legacy initializeLocalColorOrder).
+ */
+export function seedPlayerColorsFromPerformanceOrder(
+  playerOrder: string[],
+  teamName: string,
+  teamAliases: string[] = [],
+): void {
+  const aliasSet = new Set(
+    [teamName, ...teamAliases].map((a) => String(a).trim()).filter(Boolean),
+  );
+  const players = [
+    ...new Set(
+      playerOrder.map((p) => String(p).trim()).filter((p) => p && !aliasSet.has(p)),
+    ),
+  ];
+  if (!players.length) return;
+
+  players.forEach((name, idx) => {
+    const color = getPaletteColor(idx);
+    playerColorMap[name] = color;
+    teamColorMap[name] = color;
+    const leagueKey = teamColorMapKey(name, null);
+    if (leagueKey) teamColorMap[leagueKey] = color;
+  });
+
+  const teamColor = getPaletteColor(players.length);
+  aliasSet.forEach((alias) => {
+    playerColorMap[alias] = teamColor;
+    teamColorMap[alias] = teamColor;
+    const leagueKey = teamColorMapKey(alias, null);
+    if (leagueKey) teamColorMap[leagueKey] = teamColor;
+  });
 }
 
 export function updatePlayerColorMap(currentPlayers: string[] = []): void {

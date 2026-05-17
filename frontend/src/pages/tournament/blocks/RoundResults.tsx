@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { DataTable } from "../../../lib/datatable/DataTable";
 import { getHeatMapColor } from "../../../lib/color-utils";
 import type { TableData } from "../../../lib/datatable/types";
+import { tournamentResultsTableOptions } from "../tournamentTableOptions";
 
 type HeatmapRange = {
   min?: number;
@@ -114,15 +115,7 @@ export function RoundResults({
         </div>
       </div>
       <div ref={containerRef}>
-        <DataTable
-          data={data}
-          options={{
-            disablePositionCircle: false,
-            enableSpecialRowStyling: true,
-            tooltips: true,
-            disableTeamColorUpdate: true,
-          }}
-        />
+        <DataTable data={data} options={tournamentResultsTableOptions} />
       </div>
     </section>
   );

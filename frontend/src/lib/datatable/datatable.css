@@ -108,11 +108,37 @@
   border-radius: 999px;
   background: var(--row-accent-color, transparent);
   opacity: 0.9;
+  z-index: 2;
 }
 
 .ds-tabulator .tabulator-row.tab-row-accent {
   padding-left: 6px;
+  background-color: var(--color-surface);
   background-image: linear-gradient(90deg, var(--row-accent-overlay, transparent), transparent 60%);
+  background-repeat: no-repeat;
+}
+
+/* Cells must be transparent so the row gradient is visible (frozen + col-group stripes paint opaque by default). */
+.ds-tabulator .tabulator-row.tab-row-accent .tabulator-cell:not(.tab-position-cell) {
+  background-color: transparent !important;
+}
+
+.ds-tabulator .tabulator-row.tab-row-accent .tabulator-cell.tabulator-frozen:not(.tab-position-cell) {
+  background-color: transparent !important;
+}
+
+.ds-tabulator.is-striped-column-groups .tabulator-row.tab-row-accent .tabulator-cell[class*="col-group-"]:not(.tab-position-cell) {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+.ds-tabulator .tabulator-row.tab-row-accent:hover {
+  background-color: var(--color-surface-subtle);
+  background-image: linear-gradient(90deg, var(--row-accent-overlay, transparent), transparent 60%);
+}
+
+.ds-tabulator .tabulator-row.tab-row-accent:hover .tabulator-cell:not(.tab-position-cell) {
+  background-color: transparent !important;
 }
 
 .ds-tabulator .tabulator-row.tabulator-selected {

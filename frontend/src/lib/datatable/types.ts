@@ -95,6 +95,11 @@ export type DataTableOptions = {
   leagueNavigation?: LeagueTableNavigation;
   /** Team-vs-team matrix: rebuild with only Punkte / Pins / Beides columns. */
   teamVsTeamMetric?: "points" | "score" | "both";
+  /** Tournament leaderboard: row accent from cut cell metadata (green / yellow), not team colors. */
+  tournamentCutRowStyling?: boolean;
+  /** Team performance tables: seed player/team colors by performance rank order. */
+  playerColorOrder?: string[];
+  performanceTeamName?: string;
 };
 
 export type FlatColumnInfo = {

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { DataTable } from "../../../lib/datatable/DataTable";
 import type { TableData } from "../../../lib/datatable/types";
+import { tournamentLeaderboardTableOptions } from "../tournamentTableOptions";
 
 type Props = {
   data: TableData;
@@ -41,15 +42,7 @@ export function Leaderboard({ data, stageLabel, onPlayerClick, t }: Props) {
         </div>
       </div>
       <div ref={containerRef}>
-        <DataTable
-          data={data}
-          options={{
-            disablePositionCircle: false,
-            enableSpecialRowStyling: true,
-            tooltips: true,
-            disableTeamColorUpdate: true,
-          }}
-        />
+        <DataTable data={data} options={tournamentLeaderboardTableOptions} />
       </div>
     </section>
   );

@@ -3284,7 +3284,7 @@ class LeagueService:
                 ColumnGroup(
                     title=i18n_service.get_text('player'),
                     columns=[
-                        Column(title='', field='player_initials', width='50px', align='center'),
+                        Column(title='#', field='pos', width='50px', align='center', decimal_places=0),
                         Column(title=i18n_service.get_text('player'), field='player_name', width='150px', align="left")
                     ]
                 )
@@ -3326,13 +3326,18 @@ class LeagueService:
             average_dict = performance_data.get('average', {})
             counts_dict = performance_data.get('counts', {})
             
-            # Process individual players first, sorted by avg_per_game descending.
+            # Process individual players in chart/table order (by season average).
+            order_from_analysis = [str(x) for x in analysis_data.get('player_order_by_average', [])]
             player_names = [name for name in data_dict.keys() if name != teamAverageKey]
-            player_names.sort(key=lambda n: (float(average_dict.get(n, 0) or 0), str(n)), reverse=True)
-            for playerName in player_names:
+            if order_from_analysis:
+                order_index = {name: idx for idx, name in enumerate(order_from_analysis)}
+                player_names.sort(key=lambda n: (order_index.get(n, 10**6), n))
+            else:
+                player_names.sort(key=lambda n: (float(average_dict.get(n, 0) or 0), str(n)), reverse=True)
+            for rank, playerName in enumerate(player_names, start=1):
                 playerData = data_dict[playerName]
                 row = {
-                    'player_initials': playerName[0].upper() if playerName else '',
+                    'pos': rank,
                     'player_name': playerName
                 }
 
@@ -3352,7 +3357,7 @@ class LeagueService:
             if teamAverageKey in data_dict:
                 teamData = data_dict[teamAverageKey]
                 row = {
-                    'player_initials': 'T',
+                    'pos': 'T',
                     'player_name': teamAverageKey
                 }
                 
@@ -3435,7 +3440,7 @@ class LeagueService:
                 ColumnGroup(
                     title=i18n_service.get_text('player'),
                     columns=[
-                        Column(title='', field='player_initials', width=ColumnWidths.position, align='center'),
+                        Column(title='#', field='pos', width=ColumnWidths.position, align='center', decimal_places=0),
                         Column(title=i18n_service.get_text('ui.win_percentage.player'), field='player_name', width=ColumnWidths.player, align='left')
                     ]
                 )
@@ -3490,11 +3495,10 @@ class LeagueService:
                     reverse=True
                 )
 
-            for playerName in player_names:
-                
+            for rank, playerName in enumerate(player_names, start=1):
                 playerData = data_dict[playerName]
                 row = {
-                    'player_initials': playerName[0].upper() if playerName else '',
+                    'pos': rank,
                     'player_name': playerName
                 }
                 
@@ -3514,7 +3518,7 @@ class LeagueService:
             if teamKey in data_dict:
                 teamData = data_dict[teamKey]
                 row = {
-                    'player_initials': 'T',
+                    'pos': 'T',
                     'player_name': teamKey
                 }
                 

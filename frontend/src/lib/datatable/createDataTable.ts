@@ -14,6 +14,8 @@ import {
   getTeamColor,
   getTeamColorMap,
   injectStripeCss,
+  TOURNAMENT_CUT_ROW_COLORS,
+  seedPlayerColorsFromPerformanceOrder,
   toRgba,
   ensureTeamColors,
   extractTeamNamesFromTablePayload,
@@ -93,7 +95,13 @@ export function createDataTable(
   const settings: Required<
     Omit<
       DataTableOptions,
-      "stripedColumnGroups" | "columnGroupStripeVariant" | "leagueNavigation" | "teamVsTeamMetric"
+      | "stripedColumnGroups"
+      | "columnGroupStripeVariant"
+      | "leagueNavigation"
+      | "teamVsTeamMetric"
+      | "tournamentCutRowStyling"
+      | "playerColorOrder"
+      | "performanceTeamName"
     >
   > = {
     disablePositionCircle: false,
@@ -107,6 +115,8 @@ export function createDataTable(
     stripedRows: true,
     ...rawOptions,
   };
+
+  const tournamentCutRowStyling = rawOptions.tournamentCutRowStyling === true;
 
   // Defensive copy so we don't mutate caller's data when we apply decimal
   // formatting / cssClass injection below.
@@ -141,6 +151,15 @@ export function createDataTable(
     container.style.width = "100%";
   }
 
+  if (rawOptions.playerColorOrder?.length && rawOptions.performanceTeamName) {
+    const teamLabel = rawOptions.performanceTeamName;
+    seedPlayerColorsFromPerformanceOrder(rawOptions.playerColorOrder, teamLabel, [
+      teamLabel,
+      `${teamLabel} (Team)`,
+      `${teamLabel} (Team Average)`,
+    ]);
+  }
+
   const teamVsTeamMetric = rawOptions.teamVsTeamMetric;
   const columnsForBuild =
     teamVsTeamMetric !== undefined
@@ -156,6 +175,11 @@ export function createDataTable(
     }</div>`;
     return null;
   }
+
+  const rankFieldForCut = tournamentCutRowStyling
+    ? (columnOrder.find((c) => c.field === "rank" || c.field === "pos" || c.field === "overall_rank")
+        ?.field ?? columnOrder[0]?.field ?? "rank")
+    : null;
 
   const columnLookup: Record<string, FlatColumnInfo> = {};
   columnOrder.forEach((info) => {
@@ -353,7 +377,17 @@ export function createDataTable(
 
       const cellMeta = cellMetadataMap[rowIdx]?.[field];
       if (cellMeta) {
-        applyCellMeta(element, cellMeta);
+        if (
+          tournamentCutRowStyling &&
+          rankFieldForCut &&
+          field === rankFieldForCut &&
+          cellMeta.backgroundColor != null
+        ) {
+          const { backgroundColor: _bg, ...rest } = cellMeta;
+          if (Object.keys(rest).length > 0) applyCellMeta(element, rest);
+        } else {
+          applyCellMeta(element, cellMeta);
+        }
       }
 
       if (settings.enableHeatMap && heatmapRanges[field]) {
@@ -401,7 +435,8 @@ export function createDataTable(
       // position columns → team-colored clip badge (flat left, half-circle right)
       if (
         isRankPositionColumn(field, contextGroupIndex, contextColumnIndex, settings) &&
-        !settings.disablePositionCircle
+        !settings.disablePositionCircle &&
+        displayValue !== ""
       ) {
         const teamName = resolvePositionTeamName(
           field,
@@ -414,9 +449,7 @@ export function createDataTable(
         );
         if (teamName) {
           const normalized = teamName.trim();
-          const playerColors = getPlayerColorMap();
-          const color =
-            playerColors[normalized] || getTeamColor(normalized, { league: settings.teamColorLeague });
+          const color = getTeamColor(normalized, { league: settings.teamColorLeague });
           pinPositionCell(element);
           return positionClipHtml(displayValue, color, false);
         }
@@ -554,6 +587,7 @@ export function createDataTable(
       "ds-tabulator",
       settings.stripedRows ? "is-striped-rows" : null,
       useStripedColumnGroups ? "is-striped-column-groups" : null,
+      tournamentCutRowStyling ? "is-tournament-cut-rows" : null,
       rawOptions.leagueNavigation ? "has-league-cell-navigation" : null,
     ]
       .filter(Boolean)
@@ -575,6 +609,15 @@ export function createDataTable(
 
       rowElement.classList.toggle("tab-row-separator-before", separatorBefore);
 
+      if (tournamentCutRowStyling) {
+        const cutMeta =
+          rankFieldForCut != null
+            ? cellMetadataMap[rowData.__rowIndex]?.[rankFieldForCut]
+            : undefined;
+        applyTournamentCutRowAccent(rowElement, cutMeta);
+        return;
+      }
+
       if (!settings.enableSpecialRowStyling) {
         rowElement.classList.remove("tab-row-accent");
         rowElement.style.removeProperty("--row-accent-color");
@@ -588,10 +631,7 @@ export function createDataTable(
         if (accentColor) {
           // Row wash + left bar only when rank is not shown as a position clip.
           if (settings.disablePositionCircle) {
-            rowElement.classList.add("tab-row-accent");
-            rowElement.style.setProperty("--row-accent-color", accentColor);
-            const overlay = toRgba(accentColor, 0.12);
-            rowElement.style.setProperty("--row-accent-overlay", overlay);
+            applyRowAccentWash(rowElement, accentColor);
           } else {
             rowElement.classList.remove("tab-row-accent");
             rowElement.style.removeProperty("--row-accent-color");
@@ -680,6 +720,40 @@ function toFiniteNumber(value: unknown): number | null {
     return Number.isFinite(parsed) ? parsed : null;
   }
   return null;
+}
+
+const TOURNAMENT_CUT_INSIDE = new Set(["#cfead6", "#e6f4ea"]);
+const TOURNAMENT_CUT_ON = new Set(["#ffe8a1"]);
+
+/** Einzeldurchschnitte-style row wash: saturated bar + 12% gradient from the same accent. */
+function applyRowAccentWash(rowElement: HTMLElement, accentColor: string): void {
+  rowElement.classList.remove("tab-row-accent", "tab-row-accent--outside-cut");
+  rowElement.style.removeProperty("--row-accent-color");
+  rowElement.style.removeProperty("--row-accent-overlay");
+  rowElement.classList.add("tab-row-accent");
+  rowElement.style.setProperty("--row-accent-color", accentColor);
+  rowElement.style.setProperty("--row-accent-overlay", toRgba(accentColor, 0.12));
+}
+
+function applyTournamentCutRowAccent(
+  rowElement: HTMLElement,
+  meta: CellMetaStyles | undefined,
+): void {
+  const bg = meta?.backgroundColor;
+  if (bg == null || bg === "") {
+    applyRowAccentWash(rowElement, TOURNAMENT_CUT_ROW_COLORS.outside);
+    return;
+  }
+  const norm = String(bg).trim().toLowerCase();
+  if (TOURNAMENT_CUT_INSIDE.has(norm)) {
+    applyRowAccentWash(rowElement, TOURNAMENT_CUT_ROW_COLORS.inside);
+    return;
+  }
+  if (TOURNAMENT_CUT_ON.has(norm)) {
+    applyRowAccentWash(rowElement, TOURNAMENT_CUT_ROW_COLORS.on);
+    return;
+  }
+  applyRowAccentWash(rowElement, TOURNAMENT_CUT_ROW_COLORS.outside);
 }
 
 function applyCellMeta(element: HTMLElement, meta: CellMetaStyles): void {
@@ -778,7 +852,13 @@ function isRankPositionColumn(
   settings: Required<
     Omit<
       DataTableOptions,
-      "stripedColumnGroups" | "columnGroupStripeVariant" | "leagueNavigation" | "teamVsTeamMetric"
+      | "stripedColumnGroups"
+      | "columnGroupStripeVariant"
+      | "leagueNavigation"
+      | "teamVsTeamMetric"
+      | "tournamentCutRowStyling"
+      | "playerColorOrder"
+      | "performanceTeamName"
     >
   >,
 ): boolean {
@@ -799,7 +879,13 @@ function buildColumnDefinition(
   settings: Required<
     Omit<
       DataTableOptions,
-      "stripedColumnGroups" | "columnGroupStripeVariant" | "leagueNavigation" | "teamVsTeamMetric"
+      | "stripedColumnGroups"
+      | "columnGroupStripeVariant"
+      | "leagueNavigation"
+      | "teamVsTeamMetric"
+      | "tournamentCutRowStyling"
+      | "playerColorOrder"
+      | "performanceTeamName"
     >
   >,
   isCompactLayout: boolean,

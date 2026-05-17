@@ -22,6 +22,12 @@ _ENV_ENABLED = "LEAGUE_CACHE_ENABLED"
 _ENV_DIR = "LEAGUE_CACHE_DIR"
 _ENV_REVISION = "LEAGUE_CACHE_REVISION"
 
+# Bump per endpoint when response shape changes (invalidates disk cache without CSV edits).
+_ENDPOINT_PAYLOAD_VERSION: Dict[str, str] = {
+    "get_team_performance_table": "pos-rank-v2",
+    "get_team_win_percentage_table": "pos-rank-v2",
+}
+
 
 def _repo_root() -> Path:
     return Path(__file__).resolve().parents[2]
@@ -95,6 +101,7 @@ def _payload_hash(
         "lang": lang,
         "i18n_version": i18n_version,
         "query": dict(query_normalized),
+        "endpoint_payload_version": _ENDPOINT_PAYLOAD_VERSION.get(endpoint, ""),
     }
     blob = json.dumps(material, sort_keys=True, ensure_ascii=False).encode("utf-8")
     return hashlib.sha256(blob).hexdigest()[:20]

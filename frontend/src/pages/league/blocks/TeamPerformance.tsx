@@ -5,7 +5,9 @@ import {
   mutedTrendOption,
   scatterMultiAxisOption,
 } from "../../../lib/charts/options";
+import { seedPlayerColorsFromPerformanceOrder } from "../../../lib/color-utils";
 import { DataTable } from "../../../lib/datatable/DataTable";
+import type { DataTableOptions } from "../../../lib/datatable/types";
 import {
   useTeamAnalysis,
   useTeamPerformanceTable,
@@ -32,23 +34,60 @@ export function TeamPerformance({ season, league, team }: Props) {
   const points = useTeamPoints(season, league);
   const positions = useTeamPositions(season, league);
 
+  const playerOrder = analysis.data?.player_order_by_average;
+
+  const teamPerformanceTableOptions = useMemo((): DataTableOptions => {
+    const base: DataTableOptions = {
+      disablePositionCircle: false,
+      enableSpecialRowStyling: true,
+      tooltips: true,
+      disableTeamColorUpdate: true,
+      performanceTeamName: team,
+    };
+    if (playerOrder?.length) {
+      return { ...base, playerColorOrder: playerOrder };
+    }
+    return base;
+  }, [team, playerOrder]);
+
   const scoreBubbleOption = useMemo(() => {
     const perf = analysis.data?.performance_data?.data;
     if (!perf) return null;
-    const order = analysis.data?.player_order_by_average ?? Object.keys(perf);
+    const order = playerOrder ?? Object.keys(perf);
+    if (playerOrder?.length) {
+      seedPlayerColorsFromPerformanceOrder(playerOrder, team, [
+        team,
+        `${team} (Team)`,
+        `${team} (Team Average)`,
+      ]);
+    }
     return scatterMultiAxisOption(perf, order, buildWeekLabels(perf, weekLabel), {
       tooltipValueLabel: t("score", "Score"),
     });
-  }, [analysis.data, weekLabel, t]);
+  }, [analysis.data, playerOrder, team, weekLabel, t]);
 
   const winPercentageBubbleOption = useMemo(() => {
-    const wp = analysis.data?.win_percentage_data;
+    const wpRaw = analysis.data?.win_percentage_data;
+    let wp: Record<string, number[]> | undefined;
+    if (wpRaw && typeof wpRaw === "object" && "data" in wpRaw) {
+      const nested = (wpRaw as { data?: Record<string, number[]> }).data;
+      wp = nested && typeof nested === "object" ? nested : undefined;
+    } else if (wpRaw && typeof wpRaw === "object") {
+      wp = wpRaw as Record<string, number[]>;
+    }
     if (!wp) return null;
-    const order = analysis.data?.player_order_by_average ?? Object.keys(wp);
+    const order = playerOrder ?? Object.keys(wp);
+    if (playerOrder?.length) {
+      seedPlayerColorsFromPerformanceOrder(playerOrder, team, [
+        team,
+        `${team} (Team)`,
+        `${team} (Team Average)`,
+      ]);
+    }
     return scatterMultiAxisOption(wp, order, buildWeekLabels(wp, weekLabel), {
       tooltipValueLabel: t("win_percentage", "Win %"),
     });
-  }, [analysis.data, weekLabel, t]);
+  }, [analysis.data, playerOrder, team, weekLabel, t]);
 
   const pointsTrendOption = useMemo(() => {
     const data = points.data?.data_accumulated ?? points.data?.data;
@@ -81,15 +120,7 @@ export function TeamPerformance({ season, league, team }: Props) {
         eyebrow={t("ui.team_performance.individual", "Spieler")}
         title={t("performance_table", "Leistung pro Spieltag")}
       >
-        <DataTableQuery
-          query={performanceTable}
-          options={{
-            disablePositionCircle: false,
-            enableSpecialRowStyling: true,
-            tooltips: true,
-            disableTeamColorUpdate: true,
-          }}
-        />
+        <DataTableQuery query={performanceTable} options={teamPerformanceTableOptions} />
       </Section>
 
       <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
@@ -150,15 +181,7 @@ export function TeamPerformance({ season, league, team }: Props) {
         eyebrow={t("ui.win_percentage.individual", "Siegquote pro Spieler")}
         title={t("win_pct_table", "Siegquoten-Tabelle")}
       >
-        <DataTableQuery
-          query={winPercentageTable}
-          options={{
-            disablePositionCircle: false,
-            enableSpecialRowStyling: true,
-            tooltips: true,
-            disableTeamColorUpdate: true,
-          }}
-        />
+        <DataTableQuery query={winPercentageTable} options={teamPerformanceTableOptions} />
       </Section>
     </div>
   );
