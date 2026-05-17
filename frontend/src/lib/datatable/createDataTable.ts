@@ -59,6 +59,7 @@ type RowObject = Record<string, unknown> & {
   __rowIndex: number;
   __rowMeta?: {
     styling?: Record<string, string | number>;
+    rowAccentColor?: string;
     separator_before?: boolean;
     kind?: string;
   } | null;
@@ -615,6 +616,12 @@ export function createDataTable(
             ? cellMetadataMap[rowData.__rowIndex]?.[rankFieldForCut]
             : undefined;
         applyTournamentCutRowAccent(rowElement, cutMeta);
+        return;
+      }
+
+      const metaAccent = rowData.__rowMeta?.rowAccentColor;
+      if (typeof metaAccent === "string" && metaAccent.length > 0) {
+        applyRowAccentWash(rowElement, metaAccent);
         return;
       }
 

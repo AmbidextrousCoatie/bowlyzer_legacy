@@ -317,6 +317,67 @@ export function useGameOverview(
   });
 }
 
+export type ClubMatrixRow = {
+  team_number: string;
+  seasons: Record<string, string>;
+};
+
+export type ClubMatrixPayload = {
+  clubs: string[];
+  selected_club: string;
+  only_unnumbered: boolean;
+  matrix: {
+    club: string;
+    seasons: string[];
+    rows: ClubMatrixRow[];
+  };
+  league_long_names: Record<string, string>;
+};
+
+export type WeekMatrixCell = {
+  label: string;
+  status: "ok" | "warn" | "bad" | "critical" | "";
+  missing_weeks?: number[];
+  available_weeks?: number[];
+};
+
+export type WeekMatrixPayload = {
+  matrix: {
+    seasons: string[];
+    rows: Array<{ league: string; seasons: Record<string, WeekMatrixCell> }>;
+    expected_weeks: number;
+  };
+  expected_weeks: number;
+  league_long_names?: Record<string, string>;
+};
+
+const DIAGNOSIS_LIST_STALE_MS = 10 * 60 * 1000;
+
+export function useClubMatrix(club: string | null, onlyUnnumbered: boolean) {
+  return useQuery({
+    queryKey: ["league", "club-matrix", club ?? "", onlyUnnumbered],
+    queryFn: () =>
+      fetchJson<ClubMatrixPayload>(
+        buildUrl("/league/get_club_matrix", {
+          club: club || undefined,
+          only_unnumbered: onlyUnnumbered ? 1 : undefined,
+        }),
+      ),
+    staleTime: DIAGNOSIS_LIST_STALE_MS,
+  });
+}
+
+export function useWeekMatrix(expectedWeeks: number) {
+  return useQuery({
+    queryKey: ["league", "week-matrix", expectedWeeks],
+    queryFn: () =>
+      fetchJson<WeekMatrixPayload>(
+        buildUrl("/league/get_week_matrix", { expected_weeks: expectedWeeks }),
+      ),
+    staleTime: DIAGNOSIS_LIST_STALE_MS,
+  });
+}
+
 export function useGameTeamDetails(
   season: string | null,
   league: string | null,

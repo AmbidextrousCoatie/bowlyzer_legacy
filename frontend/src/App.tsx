@@ -2,6 +2,8 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { MobileNavProvider } from "./context/MobileNavContext";
 import { Sidebar } from "./components/Sidebar";
+import { ClubMatrix } from "./pages/diagnosis/ClubMatrix";
+import { LeagueWeekMatrix } from "./pages/diagnosis/LeagueWeekMatrix";
 import { LeagueStats } from "./pages/league/LeagueStats";
 import { PlayerStats } from "./pages/player/PlayerStats";
 import { TournamentStats } from "./pages/tournament/TournamentStats";
@@ -21,6 +23,8 @@ function App() {
                 <Route path="/turnier" element={<TournamentStats />} />
                 <Route path="/mannschaft" element={<Placeholder title="Mannschaft" />} />
                 <Route path="/spieler" element={<PlayerStats />} />
+                <Route path="/diagnose/club-matrix" element={<ClubMatrix />} />
+                <Route path="/diagnose/liga-wochen" element={<LeagueWeekMatrix />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </main>

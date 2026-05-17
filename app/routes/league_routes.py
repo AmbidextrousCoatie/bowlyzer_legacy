@@ -11,7 +11,11 @@ import inspect
 from app.services.data_dict import DataDict
 from app.config.debug_config import debug_config
 from app.models.table_data import TableData, ColumnGroup, Column
-from app.utils.league_utils import resolve_league_long_name, get_league_division_map
+from app.utils.league_utils import (
+    get_league_division_map,
+    get_league_long_name_map,
+    resolve_league_long_name,
+)
 from app.config.database_config import database_config
 from app.cache.league_response_cache import league_cache_put, league_cache_try_get
 
@@ -91,6 +95,62 @@ def week_matrix():
         )
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@bp.route("/league/get_club_matrix")
+def get_club_matrix():
+    """JSON for React Club Matrix (clubs list + team×season grid)."""
+    try:
+        hit = _league_json_cache_get("get_club_matrix")
+        if hit is not None:
+            return jsonify(hit)
+        league_service = get_league_service()
+        selected_club = (request.args.get("club") or "").strip()
+        only_unnumbered = str(request.args.get("only_unnumbered", "")).strip().lower() in {
+            "1",
+            "true",
+            "on",
+            "yes",
+        }
+        clubs = league_service.get_available_clubs(only_with_unnumbered_team=only_unnumbered)
+        if selected_club and selected_club not in clubs:
+            selected_club = ""
+        matrix = {"club": selected_club, "seasons": [], "rows": []}
+        if selected_club:
+            matrix = league_service.get_club_team_season_matrix(selected_club)
+        payload = {
+            "clubs": clubs,
+            "selected_club": selected_club,
+            "only_unnumbered": only_unnumbered,
+            "matrix": matrix,
+            "league_long_names": get_league_long_name_map(),
+        }
+        _league_json_cache_put("get_club_matrix", payload)
+        return jsonify(payload)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@bp.route("/league/get_week_matrix")
+def get_week_matrix():
+    """JSON for React League Week Matrix."""
+    try:
+        hit = _league_json_cache_get("get_week_matrix")
+        if hit is not None:
+            return jsonify(hit)
+        league_service = get_league_service()
+        expected_weeks = request.args.get("expected_weeks", default=6, type=int)
+        matrix = league_service.get_league_week_matrix(expected_weeks=expected_weeks)
+        payload = {
+            "matrix": matrix,
+            "expected_weeks": expected_weeks,
+            "league_long_names": get_league_long_name_map(),
+        }
+        _league_json_cache_put("get_week_matrix", payload)
+        return jsonify(payload)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 @bp.route('/league/get_available_weeks')
 def get_available_weeks():

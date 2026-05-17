@@ -1,7 +1,11 @@
 import { useMemo } from "react";
 import { DataTable } from "../../../lib/datatable/DataTable";
+import { TEAM_COLOR_PALETTES } from "../../../lib/color-utils";
 import type { RowMetaEntry, TableData } from "../../../lib/datatable/types";
 import type { PlayerSeasonRow } from "../../../hooks/usePlayer";
+
+/** rainbowPastel color 1 (1-based) — season “All Events” summary rows. */
+const SEASON_TOTAL_ROW_ACCENT = TEAM_COLOR_PALETTES.rainbowPastel[0];
 
 type Props = {
   seasons: PlayerSeasonRow[];
@@ -43,7 +47,7 @@ export function SeasonStats({ seasons, selectedPlayerName, t }: Props) {
         data={tableData}
         options={{
           disablePositionCircle: true,
-          enableSpecialRowStyling: true,
+          enableSpecialRowStyling: false,
           tooltips: true,
           disableTeamColorUpdate: true,
         }}
@@ -90,17 +94,10 @@ function buildTableData(
 
   const rowMetadata: RowMetaEntry[] = seasons.map((season): RowMetaEntry => {
     if (season.row_type === "season_total") {
-      const styling: Record<string, string | number> = {
-        fontWeight: "700",
-        backgroundColor: "var(--ds-accent-tint)",
+      return {
+        styling: { fontWeight: "700" },
+        rowAccentColor: SEASON_TOTAL_ROW_ACCENT,
       };
-      return { styling };
-    }
-    if (season.row_type === "competition") {
-      const styling: Record<string, string | number> = {
-        backgroundColor: "var(--ds-surface-subtle)",
-      };
-      return { styling };
     }
     return null;
   });

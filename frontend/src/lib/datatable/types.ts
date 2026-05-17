@@ -34,6 +34,8 @@ export type CellMetadata = Record<string, CellMetaStyles>;
 
 export type RowMetaEntry = {
   styling?: Record<string, string | number>;
+  /** Row wash + left bar (Einzeldurchschnitte-style); independent of enableSpecialRowStyling. */
+  rowAccentColor?: string;
   /** Emitted by the Flask table payloads; aligns semantic separators with legacy/Jinja tables. */
   separator_before?: boolean;
   /** Server field for row role (e.g. summary / team / total). */

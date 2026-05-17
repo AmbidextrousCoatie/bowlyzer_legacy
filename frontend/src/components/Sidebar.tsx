@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import {
   Award,
+  Building2,
+  CalendarRange,
   ChevronsLeft,
   ChevronsRight,
   Menu,
@@ -42,6 +44,13 @@ const NAV_GROUPS: ReadonlyArray<NavGroup> = [
     items: [
       { path: "/mannschaft", label: "Mannschaft", icon: Users },
       { path: "/spieler", label: "Spieler", icon: User },
+    ],
+  },
+  {
+    label: "Diagnose",
+    items: [
+      { path: "/diagnose/club-matrix", label: "Club-Matrix", icon: Building2 },
+      { path: "/diagnose/liga-wochen", label: "Liga-Wochen", icon: CalendarRange },
     ],
   },
 ];
