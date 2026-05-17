@@ -64,6 +64,20 @@ for Bootstrap utility classes.
 - For architecture audits, run parallel agents (frontend TS, backend Python,
   test coverage) and consolidate findings.
 
+## German org hierarchy (bowling)
+
+Real-world structure has three tiers; the app only models the bottom two:
+
+| Tier | Example | In Bowl-A-Lyzer |
+|------|---------|-----------------|
+| **Verein** (association) | BV 68 Regensburg | **Not modeled** — unlikely to be added |
+| **Club** | Donaubowler Regensburg | Club selector on `/mannschaft`, club matrix, `get_club_matrix` |
+| **Team** / Mannschaft | 1, 2, 3 (trailing number on team name) | Full `team_name` (e.g. `Donaubowler Regensburg 2`), team detail + Liga links |
+
+Team strings are split with `_split_club_and_team_number` / `frontend/src/lib/teamUtils.ts`
+(base name + optional number). UI on the Mannschaft page says **Club**, not Verein —
+that page is Club → Team(s), not Verein → Club.
+
 ## Out of scope (for now)
 
 - Pruning chart libraries (Chart.js + ECharts + a sliver of Highcharts coexist
@@ -72,3 +86,4 @@ for Bootstrap utility classes.
 - Moving i18n off the server (`/league/get_translations` keeps working;
   React wraps it in a hook).
 - Any backend API changes.
+- **Verein**-level views or data (see German org hierarchy above).

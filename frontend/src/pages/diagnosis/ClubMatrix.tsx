@@ -2,16 +2,12 @@ import { useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useClubMatrix } from "../../hooks/useLeague";
 import { useTranslations } from "../../hooks/useTranslations";
+import { formatMatrixCellItem, normalizeClubMatrixCell } from "../../lib/clubMatrixCell";
 import { leagueDiagnosisPath } from "../../lib/diagnosisLinks";
 
 function teamLabel(teamNumber: string): string {
   if (teamNumber === "base") return "Basis";
   return teamNumber;
-}
-
-function parseLeagues(cell: string): string[] {
-  if (!cell.trim()) return [];
-  return cell.split(",").map((s) => s.trim()).filter(Boolean);
 }
 
 export function ClubMatrix() {
@@ -136,19 +132,18 @@ export function ClubMatrix() {
                         {teamLabel(row.team_number)}
                       </td>
                       {matrix.seasons.map((season) => {
-                        const cell = row.seasons[season] ?? "";
-                        const leagues = parseLeagues(cell);
+                        const { items } = normalizeClubMatrixCell(row.seasons[season]);
                         return (
                           <td key={season} className="border border-border px-3 py-2 align-top">
-                            {leagues.length > 0 ? (
+                            {items.length > 0 ? (
                               <div className="flex flex-col gap-0.5">
-                                {leagues.map((leagueName) => (
+                                {items.map((item) => (
                                   <Link
-                                    key={leagueName}
-                                    to={leagueDiagnosisPath(season, leagueName, longNames)}
+                                    key={item.league}
+                                    to={leagueDiagnosisPath(season, item.league, longNames)}
                                     className="text-accent hover:text-accent-hover hover:underline"
                                   >
-                                    {leagueName}
+                                    {formatMatrixCellItem(item)}
                                   </Link>
                                 ))}
                               </div>

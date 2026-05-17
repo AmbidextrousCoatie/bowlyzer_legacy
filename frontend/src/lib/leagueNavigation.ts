@@ -47,6 +47,23 @@ export function teamFromHonorEntry(entry: {
 }
 
 /** Bestleistungen → team week view (no player page yet); game when round is known. */
+/** Team stats “Besondere Momente” → matchday team week sheet. */
+export function resolveSpecialMatchNavPath(
+  match: { Season?: string; League?: string; Week?: number | string | null },
+  teamName: string,
+): string | null {
+  const season = match.Season != null ? String(match.Season).trim() : "";
+  const league = match.League != null ? String(match.League).trim() : "";
+  const week = match.Week;
+  if (!season || !league || week === undefined || week === null || String(week) === "") {
+    return null;
+  }
+  return buildLeagueNavPath(
+    { view: "league-week-team", team: teamName, week },
+    { season, league, defaultWeek: week },
+  );
+}
+
 export function resolveHonorScoreNavPath(
   entry: {
     player?: string;

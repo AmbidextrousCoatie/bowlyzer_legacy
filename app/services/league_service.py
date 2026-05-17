@@ -102,6 +102,45 @@ class LeagueService:
         team_number = str(match.group(2) or "").strip()
         return club_name, team_number
 
+    def _club_team_full_name(self, club: str, team_number: str) -> str:
+        club = str(club or "").strip()
+        team_number = str(team_number or "").strip()
+        if not team_number or team_number == "base":
+            return club
+        if team_number.isdigit():
+            return f"{club} {team_number}"
+        return f"{club} {team_number}"
+
+    def _league_team_count(self, league_name: str, season: str) -> int:
+        filters = {
+            Columns.league_name: {"value": league_name, "operator": "eq"},
+            Columns.season: {"value": season, "operator": "eq"},
+            Columns.computed_data: {"value": False, "operator": "eq"},
+        }
+        df = self.adapter.get_filtered_data(filters=filters, columns=[Columns.team_name])
+        if df is None or df.empty:
+            return 0
+        return int(df[Columns.team_name].nunique())
+
+    def _league_final_position(self, team_name: str, league_name: str, season: str) -> int:
+        filters = {
+            Columns.season: {"value": season, "operator": "eq"},
+            Columns.league_name: {"value": league_name, "operator": "eq"},
+        }
+        df = self.adapter.get_filtered_data(
+            columns=[Columns.team_name, Columns.points],
+            filters=filters,
+        )
+        if df is None or df.empty or Columns.team_name not in df.columns:
+            return 0
+        if team_name not in df[Columns.team_name].astype(str).values:
+            return 0
+        team_rank = df.groupby(Columns.team_name)[Columns.points].sum().rank(ascending=False)
+        try:
+            return int(team_rank[team_name])
+        except (KeyError, TypeError, ValueError):
+            return 0
+
     def _get_club_source_dataframe(self) -> pd.DataFrame:
         """Return base dataframe used for club matrix computations."""
         filters = {
@@ -181,8 +220,25 @@ class LeagueService:
         for team_number in sorted(grouped["team_number"].unique(), key=_team_sort_key):
             season_cells = {season: "" for season in seasons}
             sub = grouped[grouped["team_number"] == team_number]
+            full_team_name = self._club_team_full_name(club, str(team_number))
             for row in sub.itertuples(index=False):
-                season_cells[str(getattr(row, Columns.season))] = getattr(row, "leagues")
+                season_key = str(getattr(row, Columns.season))
+                leagues_str = getattr(row, "leagues")
+                items = []
+                for league_name in [p.strip() for p in str(leagues_str).split(",") if p.strip()]:
+                    final_position = self._league_final_position(
+                        full_team_name, league_name, season_key
+                    )
+                    team_count = self._league_team_count(league_name, season_key)
+                    items.append({
+                        "league": league_name,
+                        "final_position": int(final_position) if final_position > 0 else None,
+                        "team_count": int(team_count) if team_count > 0 else None,
+                    })
+                season_cells[season_key] = {
+                    "leagues": leagues_str,
+                    "items": items,
+                }
             team_rows.append({
                 "team_number": team_number,
                 "seasons": season_cells,

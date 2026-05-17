@@ -154,6 +154,28 @@ class I18nService:
             "ui.player.season": {"en": "Season", "de": "Saison"},
             "ui.player.competition": {"en": "Competition", "de": "Wettbewerb"},
             "ui.player.club": {"en": "Club", "de": "Verein"},
+
+            # Namespaced: Team / Mannschaft page (always "Club", not "Verein")
+            "ui.team.club": {"en": "Club", "de": "Club"},
+            "ui.team.page_desc": {
+                "en": "Club overview with all teams — per-team analysis like the legacy team view.",
+                "de": "Club-Übersicht mit allen Mannschaften — Detailanalyse pro Team wie in der bisherigen Mannschaftsansicht.",
+            },
+            "ui.team.select_club": {"en": "Type or select a club…", "de": "Club eingeben oder wählen…"},
+            "ui.team.club_overview": {"en": "Club overview", "de": "Club-Übersicht"},
+            "ui.team.select_club_prompt": {
+                "en": "Select a club to see its teams.",
+                "de": "Wähle einen Club, um seine Mannschaften zu sehen.",
+            },
+            "ui.team.no_teams_for_club": {
+                "en": "No teams found for this club in the current data source.",
+                "de": "Für diesen Club wurden keine Mannschaften in der Datenquelle gefunden.",
+            },
+            "ui.team.club_teams_heading": {"en": "Club teams", "de": "Mannschaften des Clubs"},
+            "ui.team.club_teams_hint": {
+                "en": "Overview — select a team for detailed analysis.",
+                "de": "Übersicht — wähle eine Mannschaft für die Detailanalyse.",
+            },
             "ui.player.games": {"en": "Games", "de": "Spiele"},
             "ui.player.total_pins_col": {"en": "Total Pins", "de": "Pins gesamt"},
             "ui.player.average_col": {"en": "Average", "de": "Durchschnitt"},

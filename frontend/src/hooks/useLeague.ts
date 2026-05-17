@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { buildUrl, fetchJson } from "../lib/api";
+import type { ClubMatrixSeasonCell } from "../lib/clubMatrixCell";
 import type { TableData } from "../lib/datatable/types";
 
 export type Season = string;
@@ -319,7 +320,7 @@ export function useGameOverview(
 
 export type ClubMatrixRow = {
   team_number: string;
-  seasons: Record<string, string>;
+  seasons: Record<string, ClubMatrixSeasonCell>;
 };
 
 export type ClubMatrixPayload = {

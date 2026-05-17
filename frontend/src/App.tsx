@@ -6,6 +6,7 @@ import { ClubMatrix } from "./pages/diagnosis/ClubMatrix";
 import { LeagueWeekMatrix } from "./pages/diagnosis/LeagueWeekMatrix";
 import { LeagueStats } from "./pages/league/LeagueStats";
 import { PlayerStats } from "./pages/player/PlayerStats";
+import { TeamStats } from "./pages/team/TeamStats";
 import { TournamentStats } from "./pages/tournament/TournamentStats";
 import { queryClient } from "./lib/queryClient";
 
@@ -21,7 +22,7 @@ function App() {
                 <Route path="/" element={<Navigate to="/liga" replace />} />
                 <Route path="/liga" element={<LeagueStats />} />
                 <Route path="/turnier" element={<TournamentStats />} />
-                <Route path="/mannschaft" element={<Placeholder title="Mannschaft" />} />
+                <Route path="/mannschaft" element={<TeamStats />} />
                 <Route path="/spieler" element={<PlayerStats />} />
                 <Route path="/diagnose/club-matrix" element={<ClubMatrix />} />
                 <Route path="/diagnose/liga-wochen" element={<LeagueWeekMatrix />} />
@@ -32,18 +33,6 @@ function App() {
         </MobileNavProvider>
       </BrowserRouter>
     </QueryClientProvider>
-  );
-}
-
-function Placeholder({ title }: { title: string }) {
-  return (
-    <div className="mx-auto max-w-[1080px] px-8 pt-12 pb-24">
-      <p className="text-label uppercase text-muted mb-2">Bowl-A-Lyzer</p>
-      <h1 className="text-h1 mb-3">{title}</h1>
-      <p className="text-body text-muted max-w-[64ch]">
-        Diese Ansicht wird noch portiert. Bisher live: <strong>Liga</strong>.
-      </p>
-    </div>
   );
 }
 

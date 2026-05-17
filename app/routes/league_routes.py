@@ -854,6 +854,16 @@ def get_translations():
                     # Namespaced: Team History UI
                     "ui.team_history.title", "ui.team_history.description", "ui.team_history.chart_title",
                     "ui.team_history.loading", "ui.team_history.tooltip.league", "ui.team_history.tooltip.final_position",
+                    "ui.team_history.eyebrow",
+
+                    # Namespaced: Mannschaft / team page
+                    "ui.team.club", "ui.team.page_desc", "ui.team.select_club", "ui.team.club_overview",
+                    "ui.team.select_club_prompt", "ui.team.no_teams_for_club", "ui.team.club_teams_heading",
+                    "ui.team.club_teams_hint", "ui.team.page_title", "ui.team.eyebrow", "ui.team.all_seasons",
+                    "ui.team.club_teams_count", "ui.team.club_seasons_span", "ui.team.club_leagues_count",
+                    "ui.team.latest_season", "ui.team.seasons_with_data", "ui.team.open_team_analysis",
+                    "ui.team.club_matrix_compact",
+                    "ui.league_comparison.eyebrow",
 
                     # Namespaced: Tournament UI
                     "ui.tournament.title", "ui.tournament.season", "ui.tournament.tournament",

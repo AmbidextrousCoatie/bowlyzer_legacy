@@ -28,6 +28,7 @@ _ENDPOINT_PAYLOAD_VERSION: Dict[str, str] = {
     "get_team_win_percentage_table": "pos-rank-v2",
     "get_week_matrix": "league-long-names-v1",
     "get_team_vs_team_comparison": "standings-order-v2",
+    "get_club_matrix": "matrix-pos-v1",
 }
 
 
