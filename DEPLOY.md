@@ -18,7 +18,19 @@ echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
 
 ## Build and run
 
-On the server (or build locally and `docker push`):
+### Recommended: deploy from Windows (`deploy/deploy.ps1`)
+
+Build on your PC, upload the image, restart on the VPS (no build on 1 GB RAM):
+
+```powershell
+Copy-Item deploy\deploy.config.example.ps1 deploy\deploy.config.ps1
+# edit RemoteHost, RemoteUser, RemoteDir
+.\deploy\deploy.ps1
+```
+
+Add `-SyncDatabase` when `database/` CSVs changed. Full details: [`deploy/README.md`](deploy/README.md).
+
+### Alternative: build on the server
 
 ```bash
 git clone <your-repo> bowlyzer && cd bowlyzer

@@ -1,0 +1,17 @@
+# Production compose for VPS: pull-based image (no build on server).
+# Used by deploy/deploy.ps1 — image tag bowlyzer:release after local docker load.
+services:
+  bowlyzer:
+    image: bowlyzer:release
+    ports:
+      - "${BOWLYZER_HOST_PORT:-8080}:8000"
+    environment:
+      FLASK_SECRET_KEY: ${FLASK_SECRET_KEY:-change-me-in-production}
+      GUNICORN_WORKERS: "1"
+      GUNICORN_THREADS: "2"
+      LOG_LEVEL: info
+    volumes:
+      - ./database:/app/database:ro
+    restart: unless-stopped
+    mem_limit: 650m
+    cpus: 1.0
