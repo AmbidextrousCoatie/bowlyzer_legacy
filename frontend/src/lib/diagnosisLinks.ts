@@ -1,5 +1,5 @@
 import { buildUrl } from "./api";
-import type { WeekMatrixCell } from "../hooks/useLeague";
+import type { DataOddity, WeekMatrixCell } from "../hooks/useLeague";
 
 function leaguePathParams(
   season: string,
@@ -51,4 +51,18 @@ export function weekMatrixCellPath(
     return leagueDiagnosisPath(season, leagueShort, longNames, Math.max(...available));
   }
   return leagueDiagnosisPath(season, leagueShort, longNames);
+}
+
+/** Oddity row → Liga view (matchday + team + round when available). */
+export function oddityLigaPath(
+  oddity: DataOddity,
+  longNames: Record<string, string>,
+): string | null {
+  const params = oddity.deep_link?.params;
+  if (!params?.season || !params?.league) return null;
+  const extra: Record<string, string> = {};
+  if (params.week != null && String(params.week) !== "") extra.week = String(params.week);
+  if (params.team) extra.team = params.team;
+  if (params.round != null && String(params.round) !== "") extra.round = String(params.round);
+  return buildUrl("/liga", leaguePathParams(params.season, params.league, longNames, extra));
 }

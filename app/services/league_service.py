@@ -12,6 +12,14 @@ from app.services.statistics_service import StatisticsService
 from app.models.statistics_models import LeagueStatistics, LeagueResults
 from app.models.series_data import SeriesData
 from data_access.schema import Columns
+from data_access.score_utils import (
+    mean_scores,
+    pinfall_display,
+    pinfall_for_total,
+    scores_for_totals,
+    sum_scores,
+    sum_scores_float,
+)
 from itertools import accumulate
 from app.config.debug_config import debug_config
 from app.utils.color_constants import get_theme_color, get_heat_map_color
@@ -327,6 +335,226 @@ class LeagueService:
             "seasons": seasons,
             "rows": rows,
             "expected_weeks": expected_weeks,
+        }
+
+    def _liga_deep_link_params(
+        self,
+        *,
+        season: str,
+        league: str,
+        week: Optional[Union[int, str]] = None,
+        team: Optional[str] = None,
+        round_number: Optional[Union[int, str]] = None,
+    ) -> Dict[str, str]:
+        params: Dict[str, str] = {
+            "season": str(season or "").strip(),
+            "league": str(league or "").strip(),
+        }
+        if week is not None and str(week).strip() != "":
+            params["week"] = str(int(float(week))) if str(week).replace(".", "", 1).isdigit() else str(week).strip()
+        if team and str(team).strip():
+            params["team"] = str(team).strip()
+        if round_number is not None and str(round_number).strip() != "":
+            params["round"] = str(int(float(round_number))) if str(round_number).replace(".", "", 1).isdigit() else str(round_number).strip()
+        return params
+
+    def get_data_oddities(
+        self,
+        types: Optional[List[str]] = None,
+        limit: int = 2000,
+    ) -> Dict[str, Any]:
+        """
+        Scan league input rows for data-quality oddities with Liga deep-link context.
+
+        Supported types: unnumbered_team, low_score
+        """
+        allowed_types = {"unnumbered_team", "low_score"}
+        selected_types = (
+            {t for t in (types or []) if t in allowed_types} or allowed_types
+        )
+        limit = max(1, min(int(limit or 2000), 10_000))
+
+        filters: Dict[str, Dict[str, Any]] = {
+            Columns.computed_data: {"value": False, "operator": "eq"},
+        }
+        adapter_df = getattr(self.adapter, "df", None)
+        if isinstance(adapter_df, pd.DataFrame) and Columns.input_data in adapter_df.columns:
+            filters[Columns.input_data] = {"value": True, "operator": "eq"}
+
+        columns = [
+            Columns.season,
+            Columns.league_name,
+            Columns.week,
+            Columns.round_number,
+            Columns.match_number,
+            Columns.team_name,
+            Columns.team_name_opponent,
+            Columns.player_name,
+            Columns.position,
+            Columns.score,
+        ]
+        df = self.adapter.get_filtered_data(filters=filters, columns=columns)
+        if df is None or df.empty:
+            return {
+                "oddities": [],
+                "summary": {"total": 0, "by_type": {}},
+                "limit": limit,
+                "truncated": False,
+            }
+
+        oddities: List[Dict[str, Any]] = []
+        summary_counts: Dict[str, int] = {key: 0 for key in allowed_types}
+
+        def _append(oddity: Dict[str, Any]) -> bool:
+            if len(oddities) >= limit:
+                return False
+            oddities.append(oddity)
+            summary_counts[oddity["type"]] = summary_counts.get(oddity["type"], 0) + 1
+            return True
+
+        if "unnumbered_team" in selected_types:
+            unnumbered: Dict[str, Dict[str, Any]] = {}
+            team_cols = [c for c in [Columns.team_name, Columns.team_name_opponent] if c in df.columns]
+            for col in team_cols:
+                for _, row in df.iterrows():
+                    team_raw = str(row.get(col) or "").strip()
+                    if not team_raw:
+                        continue
+                    _club, team_number = self._split_club_and_team_number(team_raw)
+                    if team_number:
+                        continue
+                    bucket = unnumbered.get(team_raw)
+                    if bucket is None:
+                        season = str(row.get(Columns.season) or "").strip()
+                        league = str(row.get(Columns.league_name) or "").strip()
+                        week = row.get(Columns.week)
+                        link_params = self._liga_deep_link_params(
+                            season=season,
+                            league=league,
+                            week=week,
+                            team=team_raw,
+                        )
+                        bucket = {
+                            "team": team_raw,
+                            "occurrences": 0,
+                            "season": season,
+                            "league": league,
+                            "week": week,
+                            "deep_link": {"path": "/liga", "params": link_params},
+                        }
+                        unnumbered[team_raw] = bucket
+                    bucket["occurrences"] = int(bucket["occurrences"]) + 1
+
+            for team_raw, bucket in sorted(unnumbered.items(), key=lambda item: item[0].lower()):
+                occ = int(bucket["occurrences"])
+                season = str(bucket.get("season") or "")
+                league = str(bucket.get("league") or "")
+                message = f'Mannschaft ohne Nummer: "{team_raw}"'
+                if season or league:
+                    message += f" ({league or '—'} · {season or '—'}, {occ}×)"
+                else:
+                    message += f" ({occ}×)"
+                if not _append(
+                    {
+                        "id": f"unnumbered_team:{team_raw}",
+                        "type": "unnumbered_team",
+                        "severity": "warn",
+                        "message": message,
+                        "context": {
+                            "team": team_raw,
+                            "occurrences": occ,
+                            "season": season,
+                            "league": league,
+                        },
+                        "deep_link": bucket["deep_link"],
+                    }
+                ):
+                    break
+
+        if "low_score" in selected_types and len(oddities) < limit:
+            player_mask = pd.Series(True, index=df.index)
+            if Columns.player_name in df.columns:
+                players = df[Columns.player_name].fillna("").astype(str).str.strip()
+                player_mask &= players.ne("") & players.ne("Team Total")
+            if Columns.position in df.columns:
+                positions = pd.to_numeric(df[Columns.position], errors="coerce").fillna(0)
+                player_mask &= positions.gt(0)
+
+            scores = pd.to_numeric(df[Columns.score], errors="coerce")
+            low_df = df[player_mask & scores.lt(1)].copy()
+            low_df = low_df.sort_values(
+                by=[Columns.season, Columns.league_name, Columns.week, Columns.player_name],
+                na_position="last",
+            )
+
+            for _, row in low_df.iterrows():
+                season = str(row.get(Columns.season) or "").strip()
+                league = str(row.get(Columns.league_name) or "").strip()
+                team = str(row.get(Columns.team_name) or "").strip()
+                player = str(row.get(Columns.player_name) or "").strip()
+                opponent = str(row.get(Columns.team_name_opponent) or "").strip()
+                week = row.get(Columns.week)
+                round_number = row.get(Columns.round_number)
+                match_number = row.get(Columns.match_number)
+                score_val = float(pd.to_numeric(row.get(Columns.score), errors="coerce"))
+                if score_val < 0:
+                    severity = "critical"
+                elif score_val == 0:
+                    severity = "bad"
+                else:
+                    severity = "warn"
+                week_label = ""
+                if week is not None and str(week).strip() not in {"", "nan"}:
+                    week_label = f" · Spieltag {int(float(week))}" if str(week).replace(".", "", 1).isdigit() else f" · Spieltag {week}"
+                message = f"{player}: Ergebnis {score_val:g}{week_label}"
+                link_params = self._liga_deep_link_params(
+                    season=season,
+                    league=league,
+                    week=week,
+                    team=team,
+                    round_number=round_number,
+                )
+                oddity_id = "|".join(
+                    [
+                        "low_score",
+                        season,
+                        league,
+                        str(week),
+                        str(round_number),
+                        str(match_number),
+                        team,
+                        player,
+                    ]
+                )
+                if not _append(
+                    {
+                        "id": oddity_id,
+                        "type": "low_score",
+                        "severity": severity,
+                        "message": message,
+                        "context": {
+                            "season": season,
+                            "league": league,
+                            "week": week,
+                            "round": round_number,
+                            "match_number": match_number,
+                            "team": team,
+                            "opponent": opponent,
+                            "player": player,
+                            "score": score_val,
+                        },
+                        "deep_link": {"path": "/liga", "params": link_params},
+                    }
+                ):
+                    break
+
+        truncated = len(oddities) >= limit
+        by_type = {key: summary_counts.get(key, 0) for key in sorted(selected_types)}
+        return {
+            "oddities": oddities,
+            "summary": {"total": len(oddities), "by_type": by_type},
+            "limit": limit,
+            "truncated": truncated,
         }
     
     def get_available_rounds(self, season: str, league: str, week: int) -> List[int]:
@@ -669,7 +897,7 @@ class LeagueService:
             for _, row in player_data_sorted.iterrows():
                 try:
                     player_name = str(row[Columns.player_name]) if pd.notna(row[Columns.player_name]) else ""
-                    player_pins = int(row[Columns.score]) if pd.notna(row[Columns.score]) else 0
+                    player_pins = pinfall_display(row[Columns.score])
                     points = float(row[Columns.points]) if pd.notna(row[Columns.points]) else 0.0
                     position = int(row[Columns.position]) if pd.notna(row[Columns.position]) else 0
                     
@@ -682,7 +910,7 @@ class LeagueService:
                         if not opponent_player.empty:
                             try:
                                 if Columns.score in opponent_player.columns:
-                                    opponent_pins = int(opponent_player[Columns.score].iloc[0]) if pd.notna(opponent_player[Columns.score].iloc[0]) else 0
+                                    opponent_pins = pinfall_display(opponent_player[Columns.score].iloc[0])
                                 if Columns.player_name in opponent_player.columns:
                                     opponent_player_name = str(opponent_player[Columns.player_name].iloc[0]) if pd.notna(opponent_player[Columns.player_name].iloc[0]) else ""
                                 if Columns.points in opponent_player.columns:
@@ -700,8 +928,11 @@ class LeagueService:
                     ])
                     
                     total_points += points
-                    total_player_pins += player_pins
-                    total_opponent_pins += opponent_pins
+                    total_player_pins += int(pinfall_for_total(row[Columns.score]))
+                    if not opponent_data.empty and Columns.position in opponent_data.columns:
+                        opp_at_pos = opponent_data[opponent_data[Columns.position] == position]
+                        if not opp_at_pos.empty and Columns.score in opp_at_pos.columns:
+                            total_opponent_pins += int(pinfall_for_total(opp_at_pos[Columns.score].iloc[0]))
                     total_opponent_points += opponent_points
                 except Exception as e:
                     print(f"get_game_team_details_data: Error processing player row: {e}")
@@ -1225,8 +1456,8 @@ class LeagueService:
                 
                 # Calculate totals for this player-position combination
                 total_points = int(player_rows[Columns.points].sum()) if not player_rows.empty else 0
-                total_score = int(player_rows[Columns.score].sum()) if not player_rows.empty else 0
-                average = round(float(player_rows[Columns.score].mean()), 1) if not player_rows.empty and len(player_rows) > 0 else 0
+                total_score = sum_scores(player_rows[Columns.score]) if not player_rows.empty else 0
+                average = mean_scores(player_rows[Columns.score], round_places=1) if not player_rows.empty else 0
                 
                 row.extend([total_points, total_score, average])
                 
@@ -1262,8 +1493,8 @@ class LeagueService:
                     
                     # Calculate totals for this player-position combination
                     total_points = int(player_rows[Columns.points].sum()) if not player_rows.empty else 0
-                    total_score = int(player_rows[Columns.score].sum()) if not player_rows.empty else 0
-                    average = round(float(player_rows[Columns.score].mean()), 1) if not player_rows.empty and len(player_rows) > 0 else 0
+                    total_score = sum_scores(player_rows[Columns.score]) if not player_rows.empty else 0
+                    average = mean_scores(player_rows[Columns.score], round_places=1) if not player_rows.empty else 0
                     
                     row.extend([total_points, total_score, average])
                     
@@ -1294,8 +1525,8 @@ class LeagueService:
                 
                 # Calculate team totals
                 team_row.append(int(team_data[Columns.points].sum()))
-                team_row.append(int(team_data[Columns.score].sum()))
-                team_row.append(round(float(player_data[Columns.score].mean()), 1) if len(player_data) > 0 else 0)
+                team_row.append(sum_scores(team_data[Columns.score]))
+                team_row.append(mean_scores(player_data[Columns.score], round_places=1) if len(player_data) > 0 else 0)
                 
                 # Add metadata for styling
                 row_metadata.append({
@@ -1325,11 +1556,11 @@ class LeagueService:
                 
                 # Calculate opponent totals
                 opponent_row.append("")  # Replace opponent total points with empty string
-                opponent_row.append(int(opponent_data[Columns.score].sum()))
+                opponent_row.append(sum_scores(opponent_data[Columns.score]))
                 
                 # Calculate opponent average based on individual results
                 if not opponent_individual_data.empty:
-                    opponent_average = round(float(opponent_individual_data[Columns.score].mean()), 1)
+                    opponent_average = mean_scores(opponent_individual_data[Columns.score], round_places=1)
                 else:
                     opponent_average = 0
                 
@@ -1571,7 +1802,11 @@ class LeagueService:
         # Process individual averages
         individual_averages_list = []
         if Columns.player_name in league_data_individual.columns and Columns.score in league_data_individual.columns:
-            player_averages = league_data_individual.groupby([Columns.player_name, Columns.team_name])[Columns.score].mean().reset_index()
+            player_averages = (
+                league_data_individual.groupby([Columns.player_name, Columns.team_name])[Columns.score]
+                .apply(lambda s: mean_scores(s))
+                .reset_index(name=Columns.score)
+            )
             player_averages = player_averages.sort_values(Columns.score, ascending=False).head(number_of_individual_averages)
             
             for _, row in player_averages.iterrows():
@@ -1589,7 +1824,11 @@ class LeagueService:
                 league_data_team[Columns.players_per_team] = pd.to_numeric(
                     league_data_team[Columns.players_per_team], errors="coerce"
                 )
-            team_averages = league_data_team.groupby([Columns.team_name, Columns.players_per_team])[Columns.score].mean().reset_index()
+            team_averages = (
+                league_data_team.groupby([Columns.team_name, Columns.players_per_team])[Columns.score]
+                .apply(lambda s: mean_scores(s))
+                .reset_index(name=Columns.score)
+            )
             team_averages = team_averages.sort_values(Columns.score, ascending=False).head(number_of_team_averages)
             
             for _, row in team_averages.iterrows():
@@ -1671,7 +1910,7 @@ class LeagueService:
                     week_data = team_week_data[team_week_data[Columns.week] == week]
                     
                     if not week_data.empty:
-                        averages.append(round(float(week_data[Columns.score].mean()), 2))
+                        averages.append(mean_scores(week_data[Columns.score], round_places=2))
                     else:
                         averages.append(0)
                 
@@ -1798,12 +2037,12 @@ class LeagueService:
                 if not team_individual_data.empty:
                     # Filter individual data up to selected week
                     team_individual_until_week = team_individual_data[team_individual_data[Columns.week] <= week]
-                    team_data[team]['season_score'] = int(team_individual_until_week[Columns.score].sum())
+                    team_data[team]['season_score'] = sum_scores(team_individual_until_week[Columns.score])
                     team_data[team]['season_points'] = float(team_individual_until_week[Columns.points].sum())
                     
                     # Calculate season average based on individual scores
                     if len(team_individual_until_week) > 0:
-                        team_data[team]['season_avg'] = round(float(team_individual_until_week[Columns.score].mean()), 1)
+                        team_data[team]['season_avg'] = mean_scores(team_individual_until_week[Columns.score], round_places=1)
                 
                 # Add team bonus points to season total (up to selected week)
                 if not team_bonus_team_data.empty:
@@ -1816,7 +2055,7 @@ class LeagueService:
                     team_week_bonus = team_bonus_team_data[team_bonus_team_data[Columns.week] == w]
                     
                     if not team_week_individual.empty:
-                        week_score = int(team_week_individual[Columns.score].sum())
+                        week_score = sum_scores(team_week_individual[Columns.score])
                         week_points = float(team_week_individual[Columns.points].sum())
                         week_avg = week_score / len(team_week_individual) if len(team_week_individual) > 0 else 0
                         
@@ -1973,7 +2212,7 @@ class LeagueService:
             t_ind = individual_data[individual_data[Columns.team_name] == team]
             if week_cap is not None:
                 t_ind = t_ind[pd.to_numeric(t_ind[Columns.week], errors="coerce") <= week_cap]
-            season_score = int(t_ind[Columns.score].sum()) if not t_ind.empty else 0
+            season_score = sum_scores(t_ind[Columns.score]) if not t_ind.empty else 0
             season_points = float(t_ind[Columns.points].sum()) if not t_ind.empty else 0.0
             if not team_bonus_data.empty and Columns.team_name in team_bonus_data.columns:
                 t_bonus = team_bonus_data[team_bonus_data[Columns.team_name] == team]
@@ -2253,13 +2492,17 @@ class LeagueService:
                     # Sum score and points for this player across all rounds
                     player_rows = [own_part_map[player][rnd] for rnd in own_part_map[player] if not pd.isnull(own_part_map[player][rnd][Columns.score])]
                     if player_rows:
-                        total_score = sum(int(row[Columns.score]) for row in player_rows if not pd.isnull(row[Columns.score]))
+                        total_score = sum_scores(player_rows[Columns.score])
                         total_points = sum(float(row[Columns.points]) for row in player_rows if not pd.isnull(row[Columns.points]))
                         team_total_row.extend(["", total_score, total_points])
                     else:
                         team_total_row.extend(["", "", ""])
                 # Team total score/points for all rounds
-                team_score_total = team_data[team_data[Columns.computed_data] == True][Columns.score].sum() if not team_data.empty else ""
+                team_score_total = (
+                    sum_scores(team_data[team_data[Columns.computed_data] == True][Columns.score])
+                    if not team_data.empty
+                    else ""
+                )
                 team_points_total = team_data[team_data[Columns.computed_data] == True][Columns.points].sum() if not team_data.empty else ""
                 team_total_row.append(int(team_score_total) if team_score_total != "" else "")
                 team_total_row.append(int(team_points_total) if team_points_total != "" else "")
@@ -2477,7 +2720,7 @@ class LeagueService:
                 
                 if not pdata.empty:
                     # If player played multiple positions, aggregate the data
-                    total_score = int(pdata[Columns.score].sum()) if not pdata.empty else ""
+                    total_score = sum_scores(pdata[Columns.score]) if not pdata.empty else ""
                     total_points = float(pdata[Columns.points].sum()) if not pdata.empty else ""
                     
                     # For position, show all positions played (e.g., "0,1" if played both positions)
@@ -2499,11 +2742,11 @@ class LeagueService:
                 (player_data[Columns.player_id] == player_info['player_id']) | 
                 (player_data[Columns.player_name] == player_info['player_name'])
             ]
-            total_score = int(player_rows[Columns.score].sum()) if not player_rows.empty else 0
+            total_score = sum_scores(player_rows[Columns.score]) if not player_rows.empty else 0
             total_points = float(player_rows[Columns.points].sum()) if not player_rows.empty else 0.0
             summary_row.extend([total_score, total_points, ""])
         # Team total score/points for all rounds
-        team_score_total = int(team_data[Columns.score].sum()) if not team_data.empty else 0
+        team_score_total = sum_scores(team_data[Columns.score]) if not team_data.empty else 0
         team_points_total = float(team_data[Columns.points].sum()) if not team_data.empty else 0.0
         indiv_points_total = float(player_data[Columns.points].sum()) if not player_data.empty else 0.0
         team_total_points_total = indiv_points_total + team_points_total
@@ -2833,9 +3076,10 @@ class LeagueService:
                 # Count all games, even if score is missing (DNP, etc.)
                 player_stats[player_key]['games'] += 1
                 
-                # Only add valid scores to the calculation
-                if pd.notna(score) and isinstance(score, (int, float)):
-                    player_stats[player_key]['scores'].append(score)
+                if pd.notna(score):
+                    num = pd.to_numeric(score, errors="coerce")
+                    if pd.notna(num):
+                        player_stats[player_key]['scores'].append(float(num))
             
     
             
@@ -2845,9 +3089,10 @@ class LeagueService:
                 if stats['games'] > 0:
                     # Handle players with no valid scores (DNP, etc.)
                     if len(stats['scores']) > 0:
-                        average = sum(stats['scores']) / len(stats['scores'])
-                        total_points = sum(stats['scores'])
-                        high_game = max(stats['scores'])
+                        score_series = pd.Series(stats['scores'])
+                        average = mean_scores(score_series, round_places=1)
+                        total_points = sum_scores(score_series)
+                        high_game = int(scores_for_totals(score_series).max())
                     else:
                         # Player has games but no valid scores
                         average = 0.0
@@ -3194,7 +3439,7 @@ class LeagueService:
                     
                     if not week_data.empty:
                         # Calculate average score per game for this player in this week
-                        week_total_score = float(week_data[Columns.score].sum())
+                        week_total_score = sum_scores_float(week_data[Columns.score])
                         week_games = len(week_data)
                         week_avg_score = round(week_total_score / week_games, 2) if week_games > 0 else 0
                         player_week_scores.append(week_avg_score)
@@ -3226,7 +3471,7 @@ class LeagueService:
                 week_data = player_data[player_data[Columns.week] == week]
                 if not week_data.empty:
                     # Calculate team average per person per game for this week
-                    week_total_score = float(week_data[Columns.score].sum())
+                    week_total_score = sum_scores_float(week_data[Columns.score])
                     week_games = len(week_data)
                     week_avg_score = round(week_total_score / week_games, 2) if week_games > 0 else 0
                     team_week_scores.append(week_avg_score)
@@ -3777,7 +4022,7 @@ class LeagueService:
                         ]
                         
                         if not team_vs_opponent.empty:
-                            avg_score = round(team_vs_opponent[Columns.score].mean(), 1)
+                            avg_score = mean_scores(team_vs_opponent[Columns.score], round_places=1)
                             
                             # Calculate total points (individual + team match points)
                             total_points_list = []

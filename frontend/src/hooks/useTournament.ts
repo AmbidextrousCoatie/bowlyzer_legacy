@@ -39,12 +39,26 @@ export type TournamentBestEfforts = {
   n?: number | null;
 };
 
+/** Shared progress-chart overlays (cut line, tournament leader) — same for all players. */
+export type TournamentFieldProgress = {
+  labels?: string[];
+  tournament_leader_avg_series?: Array<number | null>;
+  tournament_lowest_avg_series?: Array<number | null>;
+  round_end_lines?: Array<number | null>;
+  cut_lines_avg?: Array<number | null>;
+  cut_lines_position?: Array<number | null>;
+  cut_line_series?: TournamentCutLineSeries[];
+  cut_lines_avg_dynamic?: Record<string, Array<number | null>>;
+  participant_count?: number;
+};
+
 export type TournamentSection = {
   cards: TournamentSummaryCard[];
   leaderboard: TableData;
   round_results: TableData;
   rounds?: TournamentRound[];
   best_efforts?: TournamentBestEfforts;
+  field_progress?: TournamentFieldProgress;
 };
 
 export type TournamentCutLineSeries = {

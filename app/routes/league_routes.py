@@ -91,6 +91,28 @@ def get_week_matrix():
         return jsonify({"error": str(e)}), 500
 
 
+@bp.route("/league/get_data_oddities")
+def get_data_oddities():
+    """JSON for React data oddities diagnosis (unnumbered teams, low scores, …)."""
+    try:
+        hit = _league_json_cache_get("get_data_oddities")
+        if hit is not None:
+            return jsonify(hit)
+        league_service = get_league_service()
+        types_param = (request.args.get("types") or "").strip()
+        types = [t.strip() for t in types_param.split(",") if t.strip()] if types_param else None
+        limit = request.args.get("limit", default=2000, type=int)
+        result = league_service.get_data_oddities(types=types, limit=limit)
+        payload = {
+            **result,
+            "league_long_names": get_league_long_name_map(),
+        }
+        _league_json_cache_put("get_data_oddities", payload)
+        return jsonify(payload)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @bp.route('/league/get_available_weeks')
 def get_available_weeks():
     try:

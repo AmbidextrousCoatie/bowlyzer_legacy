@@ -198,15 +198,18 @@ def get_tournament_section():
     top_n = request.args.get("n", default=5, type=int)
     if not season or not tournament:
         return jsonify({"error": "season and tournament are required"}), 400
+    cached = _tournament_json_cache_get("get_tournament_section")
+    if cached is not None:
+        return jsonify(cached)
     service = get_tournament_service()
-    return jsonify(
-        service.get_tournament_section(
-            season=season,
-            tournament=tournament,
-            round_number=round_number,
-            top_n=top_n,
-        )
+    payload = service.get_tournament_section(
+        season=season,
+        tournament=tournament,
+        round_number=round_number,
+        top_n=top_n,
     )
+    _tournament_json_cache_put("get_tournament_section", payload)
+    return jsonify(payload)
 
 
 @bp.route("/tournament/get_player_section")
@@ -216,5 +219,10 @@ def get_player_section():
     player = request.args.get("player")
     if not season or not tournament or not player:
         return jsonify({"error": "season, tournament and player are required"}), 400
+    cached = _tournament_json_cache_get("get_player_section")
+    if cached is not None:
+        return jsonify(cached)
     service = get_tournament_service()
-    return jsonify(service.get_player_section(season=season, tournament=tournament, player=player))
+    payload = service.get_player_section(season=season, tournament=tournament, player=player)
+    _tournament_json_cache_put("get_player_section", payload)
+    return jsonify(payload)

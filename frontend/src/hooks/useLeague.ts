@@ -387,6 +387,43 @@ export function useWeekMatrix(expectedWeeks: number) {
   });
 }
 
+export type DataOddityType = "unnumbered_team" | "low_score";
+
+export type DataOddity = {
+  id: string;
+  type: DataOddityType;
+  severity: "warn" | "bad" | "critical";
+  message: string;
+  context: Record<string, string | number | null | undefined>;
+  deep_link?: { path: string; params: Record<string, string> };
+};
+
+export type DataOdditiesPayload = {
+  oddities: DataOddity[];
+  summary: { total: number; by_type: Partial<Record<DataOddityType, number>> };
+  limit: number;
+  truncated: boolean;
+  league_long_names?: Record<string, string>;
+};
+
+export function useDataOddities(types: DataOddityType[]) {
+  const database =
+    typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("database")
+      : null;
+  const typesKey = types.slice().sort().join(",");
+  return useQuery({
+    queryKey: ["league", "data-oddities", database ?? "", typesKey],
+    queryFn: () =>
+      fetchJson<DataOdditiesPayload>(
+        buildUrl("/league/get_data_oddities", {
+          types: types.length > 0 ? types.join(",") : undefined,
+        }),
+      ),
+    staleTime: DIAGNOSIS_LIST_STALE_MS,
+  });
+}
+
 export function useGameTeamDetails(
   season: string | null,
   league: string | null,

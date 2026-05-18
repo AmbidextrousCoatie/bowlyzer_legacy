@@ -8,6 +8,12 @@ from app.models.statistics_models import (
 )
 from data_access.models.raw_data_models import RawTeamData, RawLeagueData, RawPlayerData
 from data_access.schema import Columns
+from data_access.score_utils import (
+    mean_scores,
+    pinfall_for_total,
+    scores_for_totals,
+    sum_scores_float,
+)
 
 class StatisticsService:
     def __init__(self, database: str = None):
@@ -39,7 +45,7 @@ class StatisticsService:
                 team_id=team,
                 team_name=team,
                 week=week,
-                total_score=sum(p.score for p in week_players),
+                total_score=sum(pinfall_for_total(p.score) for p in week_players),
                 points=sum(p.points for p in week_players),
                 number_of_games=len([p.score for p in week_players]),
                 player_scores=player_scores
@@ -48,12 +54,12 @@ class StatisticsService:
         # Calculate season summary
         all_scores = [p.score for p in raw_team_data.players]
         season_summary = TeamSeasonSummary(
-            total_score=sum(all_scores),
+            total_score=sum(pinfall_for_total(s) for s in all_scores),
             total_points=sum(p.points for p in raw_team_data.players),
-            average_score=sum(all_scores) / len(all_scores) if all_scores else 0,
+            average_score=sum(pinfall_for_total(s) for s in all_scores) / len(all_scores) if all_scores else 0,
             games_played=len(raw_team_data.players),
-            best_score=max(all_scores) if all_scores else 0,
-            worst_score=min(all_scores) if all_scores else 0
+            best_score=max(pinfall_for_total(s) for s in all_scores) if all_scores else 0,
+            worst_score=min(pinfall_for_total(s) for s in all_scores) if all_scores else 0
         )
         
         # Get player contributions
@@ -61,8 +67,8 @@ class StatisticsService:
         for player_name in {p.player_name for p in raw_team_data.players}:
             player_data = [p for p in raw_team_data.players if p.player_name == player_name]
             player_contributions[player_name] = {
-                'total_score': sum(p.score for p in player_data),
-                'average_score': sum(p.score for p in player_data) / len(player_data),
+                'total_score': sum(pinfall_for_total(p.score) for p in player_data),
+                'average_score': sum(pinfall_for_total(p.score) for p in player_data) / len(player_data),
                 'games_played': len(player_data)
             }
         
@@ -100,9 +106,9 @@ class StatisticsService:
                 week_players = [p for p in team.players if p.week == week]
                 if week_players:
                     week_data[team.team_name] = [
-                        sum(p.score for p in week_players),  # Total pins
+                        sum(pinfall_for_total(p.score) for p in week_players),  # Total pins
                         sum(p.points for p in week_players),  # Points
-                        sum(p.score for p in week_players) / len(week_players) / len(week_players)  # Average
+                        sum(pinfall_for_total(p.score) for p in week_players) / len(week_players) / len(week_players)  # Average
                     ]
             weekly_summaries[week] = LeagueWeekSummary(data=week_data)
         
@@ -110,9 +116,9 @@ class StatisticsService:
         season_data = {}
         for team in raw_league_data.teams:
             season_data[team.team_name] = [
-                sum(p.score for p in team.players),  # Total pins
+                sum(pinfall_for_total(p.score) for p in team.players),  # Total pins
                 sum(p.points for p in team.players),  # Points
-                sum(p.score for p in team.players) / len(team.players) / len(team.players) # Average
+                sum(pinfall_for_total(p.score) for p in team.players) / len(team.players) / len(team.players) # Average
             ]
         season_summary = LeagueSeasonSummary(data=season_data)
         
@@ -155,19 +161,19 @@ class StatisticsService:
                 player_id=str(week_data[Columns.player_id].iloc[0]),
                 player_name=player,
                 week=week,
-                score=week_data[Columns.score].sum(),
+                score=sum_scores_float(week_data[Columns.score]),
                 points=week_data[Columns.points].sum(),
                 games_played=len(week_data)
             )
         
         # Calculate season summary
         season_summary = PlayerSeasonSummary(
-            total_score=player_data[Columns.score].sum(),
+            total_score=sum_scores_float(player_data[Columns.score]),
             total_points=player_data[Columns.points].sum(),
-            average_score=player_data[Columns.score].mean(),
+            average_score=mean_scores(player_data[Columns.score]),
             games_played=len(player_data),
-            best_score=player_data[Columns.score].max(),
-            worst_score=player_data[Columns.score].min()
+            best_score=float(scores_for_totals(player_data[Columns.score]).max()),
+            worst_score=float(scores_for_totals(player_data[Columns.score]).min()),
         )
         
         # Calculate team contribution
@@ -177,7 +183,7 @@ class StatisticsService:
                 Columns.season: {'value': season, 'operator': 'eq'}
             }
         )
-        team_contribution = (season_summary.total_score / team_data[Columns.score].sum()) * 100
+        team_contribution = (season_summary.total_score / sum_scores_float(team_data[Columns.score])) * 100
         
         return PlayerStatistics(
             name=player,

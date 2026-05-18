@@ -5,6 +5,7 @@ import { DataTable } from "../../../lib/datatable/DataTable";
 import { getHeatMapColor, getSemanticColor } from "../../../lib/color-utils";
 import { tournamentResultsTableOptions } from "../tournamentTableOptions";
 import type {
+  TournamentFieldProgress,
   TournamentPlayerBestEfforts,
   TournamentPlayerCardId,
   TournamentPlayerSection as TournamentPlayerSectionData,
@@ -14,11 +15,21 @@ import type {
 
 type Props = {
   data: TournamentPlayerSectionData;
+  /** Cut line + tournament leader overlays (from section load; same for all players). */
+  fieldProgress?: TournamentFieldProgress;
   heatmapEnabled: boolean;
   onToggleHeatmap: () => void;
   onBack: () => void;
   t: (key: string, fallback?: string) => string;
 };
+
+function mergeProgressSeries(
+  field: TournamentFieldProgress | undefined,
+  player: TournamentProgressSeries | undefined,
+): TournamentProgressSeries | null {
+  if (!field && !player) return null;
+  return { ...(field ?? {}), ...(player ?? {}) };
+}
 
 type CutMode = "dynamic" | "horizontal";
 
@@ -148,13 +159,23 @@ function PlayerMetricTile({
   }
 }
 
-export function PlayerSection({ data, heatmapEnabled, onToggleHeatmap, onBack, t }: Props) {
+export function PlayerSection({
+  data,
+  fieldProgress,
+  heatmapEnabled,
+  onToggleHeatmap,
+  onBack,
+  t,
+}: Props) {
   const [cutMode, setCutMode] = useState<CutMode>("dynamic");
   const tableRef = useRef<HTMLDivElement>(null);
 
   const summary = data.summary ?? {};
   const bestEfforts = data.best_efforts ?? {};
-  const series = data.progress_series ?? null;
+  const series = useMemo(
+    () => mergeProgressSeries(fieldProgress, data.progress_series),
+    [fieldProgress, data.progress_series],
+  );
   const cardLayout =
     data.player_card_layout && data.player_card_layout.length > 0
       ? data.player_card_layout

@@ -2,6 +2,7 @@ import pandas as pd
 import re
 import os
 from data_access.schema import Columns
+from data_access.score_utils import mean_scores, sum_scores, sum_scores_float
 from app.services.data_manager import DataManager
 from app.config.database_config import database_config
 from business_logic.statistics import calculate_score_average_player, calculate_games_count_player
@@ -202,8 +203,8 @@ class PlayerService:
         ]
         
         # Calculate team averages
-        team_avg = team_data[Columns.score].mean()
-        team_total = team_data[Columns.score].sum()
+        team_avg = mean_scores(team_data[Columns.score])
+        team_total = sum_scores_float(team_data[Columns.score])
         
         return {
             'player': {
@@ -283,7 +284,7 @@ class PlayerService:
         if games_df.empty:
             return None
 
-        overall_average = games_df[Columns.score].mean()
+        overall_average = mean_scores(games_df[Columns.score])
 
         def normalize_club(value: Any) -> str:
             label = str(value).strip() if value is not None else ""
@@ -369,12 +370,20 @@ class PlayerService:
             pid_norm = self._normalize_player_id(player_id_value)
             if pid_norm and Columns.player_id in base.columns:
                 base[Columns.player_id] = base[Columns.player_id].astype(str).map(self._normalize_player_id)
-                grouped = base.groupby(Columns.player_id, dropna=False)[Columns.score].mean().sort_values(ascending=False)
+                grouped = (
+                    base.groupby(Columns.player_id, dropna=False)[Columns.score]
+                    .apply(mean_scores)
+                    .sort_values(ascending=False)
+                )
                 if pid_norm not in grouped.index:
                     return None, int(len(grouped))
                 rank_series = grouped.rank(method="min", ascending=False)
                 return int(rank_series[pid_norm]), int(len(grouped))
-            grouped = base.groupby(Columns.player_name, dropna=False)[Columns.score].mean().sort_values(ascending=False)
+            grouped = (
+                base.groupby(Columns.player_name, dropna=False)[Columns.score]
+                .apply(mean_scores)
+                .sort_values(ascending=False)
+            )
             if player_value not in grouped.index:
                 return None, int(len(grouped))
             rank_series = grouped.rank(method="min", ascending=False)
@@ -451,7 +460,11 @@ class PlayerService:
                     totals_by_id = latest.groupby(Columns.player_id, dropna=False)[OVERALL_CUMULATIVE_SCORE_COL].max().sort_values(ascending=False)
                 else:
                     work[Columns.score] = pd.to_numeric(work[Columns.score], errors="coerce").fillna(0)
-                    totals_by_id = work.groupby(Columns.player_id, dropna=False)[Columns.score].sum().sort_values(ascending=False)
+                    totals_by_id = (
+                        work.groupby(Columns.player_id, dropna=False)[Columns.score]
+                        .apply(sum_scores)
+                        .sort_values(ascending=False)
+                    )
                 if pid_norm not in totals_by_id.index:
                     return None, int(len(totals_by_id))
                 rank_series = totals_by_id.rank(method="min", ascending=False)
@@ -469,7 +482,7 @@ class PlayerService:
         for i, (season, data) in enumerate(data_grouped):
             
             total_games = len(data)
-            total_pins = data[Columns.score].sum()
+            total_pins = sum_scores_float(data[Columns.score])
             average = total_pins / total_games
             
             # Calculate deviation from overall average
@@ -529,7 +542,7 @@ class PlayerService:
                     comp_games = len(cdf)
                     if comp_games == 0:
                         continue
-                    comp_pins = cdf[Columns.score].sum()
+                    comp_pins = sum_scores_float(cdf[Columns.score])
                     comp_avg = comp_pins / comp_games
                     comp_best = cdf[cdf[Columns.score] == cdf[Columns.score].max()].iloc[0]
                     comp_worst = cdf[cdf[Columns.score] == cdf[Columns.score].min()].iloc[0]
@@ -580,14 +593,14 @@ class PlayerService:
         
         # Calculate basic stats
         total_games = len(games_df)
-        total_pins = games_df[Columns.score].sum()
+        total_pins = sum_scores_float(games_df[Columns.score])
         avg_score = total_pins / total_games if total_games > 0 else 0
         
         # Find best and worst games
         best_game = games_df[games_df[Columns.score] == games_df[Columns.score].max()].iloc[0]
         worst_game = games_df[games_df[Columns.score] == games_df[Columns.score].min()].iloc[0]
         
-        season_means = data_grouped[Columns.score].mean()
+        season_means = data_grouped[Columns.score].apply(mean_scores)
 
         # Find season with best mean
         best_season = season_means.idxmax()  # Gets the season name

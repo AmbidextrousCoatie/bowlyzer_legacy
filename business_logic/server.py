@@ -3,6 +3,7 @@ import numpy as np
 from data_access.adapters.data_adapter_factory import DataAdapterFactory, DataAdapterSelector   
 from typing import List
 from data_access.schema import Columns, ColumnsExtra
+from data_access.score_utils import mean_scores, sum_scores
 from app.config.debug_config import debug_config
 
 
@@ -566,8 +567,8 @@ class Server:
 
             player_row.update({
                 'Points_Total': float(round(player_games[Columns.points].sum(), 1)),
-                'Score_Total': int(player_games[Columns.score].sum()),
-                'Score_Average': float(round(player_games[Columns.score].mean(), 2)) if not np.isnan(player_games[Columns.score].mean()) else 0
+                'Score_Total': sum_scores(player_games[Columns.score]),
+                'Score_Average': mean_scores(player_games[Columns.score], round_places=2),
             })
             
             rows.append(player_row)
@@ -599,15 +600,15 @@ class Server:
         # Add team totals
         team_row.update({
             'Points_Total': float(round(team_data[Columns.points].sum(), 1)),
-            'Score_Total': int(team_data[Columns.score].sum()),
-            'Score_Average': float(round(player_data[Columns.score].mean(), 2)) if not np.isnan(team_data[Columns.score].mean()) else 0
+            'Score_Total': sum_scores(team_data[Columns.score]),
+            'Score_Average': mean_scores(player_data[Columns.score], round_places=2),
         })
 
         # Add opponent totals
         opponent_row.update({
             'Points_Total': float(round(team_opponent_data[Columns.points].sum(), 1)),
-            'Score_Total': int(team_opponent_data[Columns.score].sum()),
-            'Score_Average': float(round(team_opponent_data[Columns.score].mean(), 2)) if not np.isnan(team_opponent_data[Columns.score].mean()) else 0
+            'Score_Total': sum_scores(team_opponent_data[Columns.score]),
+            'Score_Average': mean_scores(team_opponent_data[Columns.score], round_places=2),
         })
         
         rows.append(team_row)

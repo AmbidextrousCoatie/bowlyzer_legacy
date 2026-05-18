@@ -1,6 +1,7 @@
 import pandas as pd
 from data_access.schema import Columns
 from data_access.pd_dataframes import fetch_data, fetch_column
+from data_access.score_utils import mean_scores, scores_for_totals
 
 
 def query_database(database_df: pd.DataFrame, filters: dict = None, column_name: Columns = None, group_by: Columns = None) -> pd.DataFrame:
@@ -22,14 +23,17 @@ def query_database(database_df: pd.DataFrame, filters: dict = None, column_name:
     return df_filtered
 
 def calculate_score_average(database_df: pd.DataFrame, filters: dict = None, group_by: Columns = None) -> float:
-    return round(fetch_column(database_df, Columns.score, filters, group_by=group_by)[Columns.score].mean(), 2)
+    series = fetch_column(database_df, Columns.score, filters, group_by=group_by)[Columns.score]
+    return mean_scores(series, round_places=2)
 
     
 def calculate_score_min(database_df: pd.DataFrame, filters: dict = None, group_by: Columns = None) -> int:
-    return int(fetch_column(database_df, Columns.score, filters, group_by=group_by)[Columns.score].min())
+    series = scores_for_totals(fetch_column(database_df, Columns.score, filters, group_by=group_by)[Columns.score])
+    return int(series.min()) if not series.empty else 0
 
 def calculate_score_max(database_df: pd.DataFrame, filters: dict = None, group_by: Columns = None) -> int:
-    return int(fetch_column(database_df, Columns.score, filters, group_by=group_by)[Columns.score].max())
+    series = scores_for_totals(fetch_column(database_df, Columns.score, filters, group_by=group_by)[Columns.score])
+    return int(series.max()) if not series.empty else 0
 
 def calculate_games_count(database_df: pd.DataFrame, filters: dict = None, group_by: Columns = None) -> int:
     lala = fetch_column(database_df, Columns.score, filters, group_by=group_by)[Columns.score].size

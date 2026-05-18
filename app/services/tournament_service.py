@@ -12,6 +12,8 @@ from app.utils.color_constants import get_theme_color
 from data_access.adapters.data_adapter_factory import DataAdapterFactory, DataAdapterSelector
 from data_access.schema import Columns
 
+from app.cache.league_response_cache import league_cache_put, league_cache_try_get
+
 # KO-Finale last cluster: best-of-3 pin games vs two-game scratch total (see database/data/tournament_ko_config.json).
 KO_FINALE_SERIES_BO3 = "bo3_pins"
 KO_FINALE_SERIES_SCRATCH_2G = "scratch_total_2g"
@@ -372,12 +374,27 @@ class TournamentService:
     def __init__(self, adapter_type=DataAdapterSelector.PANDAS, database: str = None):
         self.database = database
         self.adapter = DataAdapterFactory.create_adapter(adapter_type, database=database)
+        self._tournament_df_cache: Dict[Tuple[str, str], pd.DataFrame] = {}
+        self._ko_bracket_cache: Dict[Tuple[str, str], Dict[str, Any]] = {}
+        self._field_progress_cache: Dict[Tuple[str, str], Dict[str, Any]] = {}
+
+    def _tournament_cache_key(self, season: Optional[str], tournament: Optional[str]) -> Tuple[str, str]:
+        return (str(season or "").strip(), str(tournament or "").strip())
+
+    def _store_ko_bracket_cache(self, season: str, tournament: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+        self._ko_bracket_cache[self._tournament_cache_key(season, tournament)] = payload
+        return payload
 
     def _get_tournament_df(self, season: Optional[str] = None, tournament: Optional[str] = None) -> pd.DataFrame:
         """
         Load data and apply robust string-based filters.
         This avoids dtype mismatches (e.g., Season 2026 as int in CSV vs "2026" in query).
         """
+        cache_key = self._tournament_cache_key(season, tournament)
+        cached = self._tournament_df_cache.get(cache_key)
+        if cached is not None:
+            return cached
+
         df = self.adapter.get_filtered_data(filters={})
         if df.empty:
             return df
@@ -408,6 +425,7 @@ class TournamentService:
             df[Columns.player_id] = _tournament_df_string_series(df[Columns.player_id])
         if Columns.round_name in df.columns:
             df[Columns.round_name] = _tournament_df_string_series(df[Columns.round_name])
+        self._tournament_df_cache[cache_key] = df
         return df
 
     def get_tournaments(self, season: Optional[str] = None) -> List[str]:
@@ -431,8 +449,14 @@ class TournamentService:
             return []
         return sorted([x for x in df[Columns.player_name].dropna().astype(str).unique().tolist() if x.strip()])
 
-    def get_rounds(self, season: str, tournament: str) -> List[Dict[str, Any]]:
-        df = self._get_tournament_df(season=season, tournament=tournament)
+    def get_rounds(
+        self,
+        season: str,
+        tournament: str,
+        df: Optional[pd.DataFrame] = None,
+    ) -> List[Dict[str, Any]]:
+        if df is None:
+            df = self._get_tournament_df(season=season, tournament=tournament)
         if df.empty:
             return []
         pairs = (
@@ -559,8 +583,16 @@ class TournamentService:
             "best_blocks": self._top_n_blocks(scope_df, n),
         }
 
-    def get_best_efforts(self, season: str, tournament: str, round_number: Optional[int] = None, top_n: int = 5) -> Dict[str, Any]:
-        df = self._get_tournament_df(season=season, tournament=tournament)
+    def get_best_efforts(
+        self,
+        season: str,
+        tournament: str,
+        round_number: Optional[int] = None,
+        top_n: int = 5,
+        df: Optional[pd.DataFrame] = None,
+    ) -> Dict[str, Any]:
+        if df is None:
+            df = self._get_tournament_df(season=season, tournament=tournament)
         if df.empty:
             return {"n": top_n, "sections": []}
 
@@ -589,15 +621,25 @@ class TournamentService:
         sections.append(self._build_best_efforts_scope_payload(df, "Overall", top_n))
         return {"n": top_n, "sections": sections}
 
-    def get_summary_cards(self, season: str, tournament: str, round_number: Optional[int] = None, top_n: int = 5) -> Dict[str, Any]:
-        df = self._get_tournament_df(season=season, tournament=tournament)
+    def get_summary_cards(
+        self,
+        season: str,
+        tournament: str,
+        round_number: Optional[int] = None,
+        top_n: int = 5,
+        df: Optional[pd.DataFrame] = None,
+        ko_bracket: Optional[Dict[str, Any]] = None,
+        rounds: Optional[List[Dict[str, Any]]] = None,
+    ) -> Dict[str, Any]:
+        if df is None:
+            df = self._get_tournament_df(season=season, tournament=tournament)
         if df.empty:
             return {"cards": []}
         scope_df = self._scope_df(df, round_number)
         if scope_df.empty:
             return {"cards": []}
 
-        ko_bracket_pre = self._build_ko_bracket_payload(season, tournament)
+        ko_bracket_pre = ko_bracket or self._build_ko_bracket_payload(season, tournament, df=df)
         ko_fin_rn = self._ko_finale_round_number(df)
         is_ko_finale_view = (
             round_number is not None
@@ -616,9 +658,18 @@ class TournamentService:
         )
 
         participants = int(scope_df[Columns.player_id].nunique()) if Columns.player_id in scope_df.columns else 0
-        rounds = self.get_rounds(season, tournament) if round_number is None else [
-            {"round_number": round_number, "round_name": str(scope_df[Columns.round_name].dropna().iloc[0]) if Columns.round_name in scope_df.columns and not scope_df[Columns.round_name].dropna().empty else f"Round {round_number}"}
-        ]
+        rounds = rounds if rounds is not None else (
+            self.get_rounds(season, tournament, df=df)
+            if round_number is None
+            else [
+                {
+                    "round_number": round_number,
+                    "round_name": str(scope_df[Columns.round_name].dropna().iloc[0])
+                    if Columns.round_name in scope_df.columns and not scope_df[Columns.round_name].dropna().empty
+                    else f"Round {round_number}",
+                }
+            ]
+        )
         latest_round = rounds[-1] if rounds else {"round_number": None, "round_name": ""}
         latest_round_date_subtitle = ""
         if latest_round.get("round_number") is not None and Columns.date in scope_df.columns:
@@ -862,14 +913,22 @@ class TournamentService:
         grouped["rank"] = grouped["total_score"].rank(method="min", ascending=False).astype(int)
         return grouped.sort_values(by=["rank", "player"]).reset_index(drop=True)
 
-    def get_leaderboard_table(self, season: str, tournament: str, round_number: Optional[int] = None) -> TableData:
-        df = self._get_tournament_df(season=season, tournament=tournament)
+    def get_leaderboard_table(
+        self,
+        season: str,
+        tournament: str,
+        round_number: Optional[int] = None,
+        df: Optional[pd.DataFrame] = None,
+        ko_bracket: Optional[Dict[str, Any]] = None,
+    ) -> TableData:
+        if df is None:
+            df = self._get_tournament_df(season=season, tournament=tournament)
         if df.empty:
             return TableData(columns=[], data=[], title=f"{tournament} Leaderboard")
         include_club = self._has_any_club_value(df)
 
         ko_fin_rn = self._ko_finale_round_number(df)
-        ko_bracket = self._build_ko_bracket_payload(season, tournament)
+        ko_bracket = ko_bracket or self._build_ko_bracket_payload(season, tournament, df=df)
         if (
             round_number is not None
             and ko_fin_rn is not None
@@ -1360,8 +1419,10 @@ class TournamentService:
         season: str,
         tournament: str,
         round_number: Optional[int] = None,
+        df: Optional[pd.DataFrame] = None,
     ) -> TableData:
-        df = self._get_tournament_df(season=season, tournament=tournament)
+        if df is None:
+            df = self._get_tournament_df(season=season, tournament=tournament)
         if df.empty:
             return TableData(columns=[], data=[], title=f"{tournament} Round Results")
         include_club = self._has_any_club_value(df)
@@ -1741,17 +1802,22 @@ class TournamentService:
             },
         )
 
-    def get_player_round_table(self, season: str, tournament: str, player: str) -> TableData:
-        df = self._get_tournament_df(season=season, tournament=tournament)
+    def get_player_round_table(
+        self,
+        season: str,
+        tournament: str,
+        player: str,
+        df: Optional[pd.DataFrame] = None,
+    ) -> TableData:
+        if df is None:
+            df = self._get_tournament_df(season=season, tournament=tournament)
         if df.empty:
             return TableData(columns=[], data=[], title=f"{player} - Tournament Progress")
 
-        work = df.copy()
-        work = work[work[Columns.player_name].astype(str).str.strip().eq(str(player).strip())]
+        all_df = df.copy()
+        work = all_df[all_df[Columns.player_name].astype(str).str.strip().eq(str(player).strip())].copy()
         if work.empty:
             return TableData(columns=[], data=[], title=f"{player} - Tournament Progress")
-
-        all_df = self._get_tournament_df(season=season, tournament=tournament).copy()
         all_df[Columns.score] = pd.to_numeric(all_df[Columns.score], errors="coerce").fillna(0)
         all_df[Columns.round_number] = pd.to_numeric(all_df[Columns.round_number], errors="coerce").astype("Int64")
         all_df[Columns.game_number] = pd.to_numeric(all_df[Columns.game_number], errors="coerce").astype("Int64")
@@ -1872,8 +1938,15 @@ class TournamentService:
             },
         )
 
-    def get_player_best_efforts(self, season: str, tournament: str, player: str) -> Dict[str, Any]:
-        df = self._get_tournament_df(season=season, tournament=tournament)
+    def get_player_best_efforts(
+        self,
+        season: str,
+        tournament: str,
+        player: str,
+        df: Optional[pd.DataFrame] = None,
+    ) -> Dict[str, Any]:
+        if df is None:
+            df = self._get_tournament_df(season=season, tournament=tournament)
         empty = {"highest_game": None, "highest_pair": None, "highest_block": None, "handicap_profile": None}
         if df.empty:
             return empty
@@ -1955,17 +2028,34 @@ class TournamentService:
             "handicap_profile": handicap_profile,
         }
 
-    def get_player_progress_series(self, season: str, tournament: str, player: str) -> Dict[str, Any]:
-        df = self._get_tournament_df(season=season, tournament=tournament)
+    def _field_progress_query(self, season: str, tournament: str) -> Dict[str, str]:
+        return {"season": str(season), "tournament": str(tournament)}
+
+    def _field_progress_public(self, field: Dict[str, Any]) -> Dict[str, Any]:
+        """Chart overlay fields shared by every player (omit internal / per-player maps)."""
+        omit = {"player_rank_series", "game_slots", "round_length_map"}
+        return {k: v for k, v in field.items() if k not in omit}
+
+    def _compute_field_progress(
+        self,
+        season: str,
+        tournament: str,
+        df: Optional[pd.DataFrame] = None,
+    ) -> Dict[str, Any]:
+        """Cut-line, tournament leader, and all player ranks — identical for every participant."""
+        if df is None:
+            df = self._get_tournament_df(season=season, tournament=tournament)
         if df.empty:
             return {
                 "labels": [],
-                "avg_series": [],
-                "position_series": [],
-                "round_end_lines": [],
+                "tournament_leader_avg_series": [],
+                "tournament_lowest_avg_series": [],
                 "cut_lines_avg": [],
                 "cut_lines_position": [],
                 "participant_count": 0,
+                "cut_line_series": [],
+                "cut_lines_avg_dynamic": {},
+                "player_rank_series": {},
             }
 
         all_df = df.copy()
@@ -1984,7 +2074,6 @@ class TournamentService:
             .reset_index()
             .sort_values(by=Columns.round_number)
         )
-        # max game index + 1 == number of games in round
         round_lengths: List[RoundLengthRow] = [
             (int(r[Columns.round_number]), str(r.get(Columns.round_name, "")), int(r[Columns.game_number]) + 1)
             for _, r in round_meta.iterrows()
@@ -2006,34 +2095,142 @@ class TournamentService:
         else:
             cut_rounds_sorted = [rn for rn, _, _ in round_lengths]
 
-        player_df = all_df[all_df[Columns.player_name].astype(str).str.strip().eq(str(player).strip())].copy()
-        if player_df.empty or not game_slots:
-            return {
-                "labels": labels,
-                "avg_series": [],
-                "position_series": [],
-                "round_end_lines": [],
-                "cut_lines_avg": [],
-                "cut_lines_position": [],
-                "participant_count": participant_count,
-                "cut_line_series": [],
-                "cut_lines_avg_dynamic": {},
-            }
-
-        avg_series: List[float] = []
-        position_series: List[int] = []
-        game_score_series: List[Optional[int]] = []
+        field_players = sorted(_progress_player_names(all_df))
+        player_rank_series: Dict[str, List[int]] = {name: [] for name in field_players}
         tournament_leader_avg_series: List[Optional[float]] = []
         tournament_lowest_avg_series: List[Optional[float]] = []
-        round_end_lines: List[int] = []
         cut_lines_avg: List[float] = []
         cut_lines_position: List[int] = []
         dynamic_cut_series: Dict[int, List[Optional[float]]] = {rn: [] for rn in cut_rounds_sorted}
+        eligible_cache: Dict[Tuple[int, int], Set[str]] = {}
 
-        cum_player_pins = 0.0
-        cum_player_games = 0
         last_cut_avg: Optional[float] = None
         last_cut_pos: Optional[int] = None
+
+        for rn, g in game_slots:
+            score_rows = _progress_snapshot_rows(all_df, round_lengths, rn, g)
+            rank_map = {name: idx + 1 for idx, (name, _, _, _) in enumerate(score_rows)}
+            default_rank = len(score_rows) + 1 if score_rows else participant_count + 1
+            for name in field_players:
+                prev = player_rank_series[name][-1] if player_rank_series[name] else default_rank
+                player_rank_series[name].append(int(rank_map.get(name, prev)))
+
+            if score_rows:
+                tournament_leader_avg_series.append(round(score_rows[0][2], 2))
+                tournament_lowest_avg_series.append(round(min(r[2] for r in score_rows), 2))
+            else:
+                tournament_leader_avg_series.append(None)
+                tournament_lowest_avg_series.append(None)
+
+            in_cut_span = cfg_span is None or (
+                int(cfg_span["first_round"]) <= rn <= int(cfg_span["through_round"])
+            )
+            cut_avg_game: Optional[float] = last_cut_avg
+            if in_cut_span:
+                key = (rn, g)
+                if key not in eligible_cache:
+                    eligible_cache[key] = _eligible_players_pace_snapshot(
+                        all_df, round_lengths, rn, g
+                    )
+                pace = _pace_cut_from_eligible(
+                    all_df, eligible_cache[key], rn, g, round_lengths, cut_rank
+                )
+                if pace is not None:
+                    last_cut_avg, last_cut_pos = pace
+                    cut_avg_game = last_cut_avg
+
+            for cut_rn in cut_rounds_sorted:
+                dynamic_cut_series[cut_rn].append(cut_avg_game if rn == cut_rn else None)
+
+            length = round_length_map.get(rn, 0)
+            if g == length - 1 and in_cut_span:
+                if last_cut_avg is not None:
+                    cut_lines_avg.append(last_cut_avg)
+                if last_cut_pos is not None:
+                    cut_lines_position.append(last_cut_pos)
+
+        cut_line_series = [
+            {
+                "key": f"round_{rn}",
+                "round_number": rn,
+                "label": round_name_map.get(rn) or f"Round {rn}",
+                "data": dynamic_cut_series[rn],
+            }
+            for rn in cut_rounds_sorted
+        ]
+
+        return {
+            "labels": labels,
+            "tournament_leader_avg_series": tournament_leader_avg_series,
+            "tournament_lowest_avg_series": tournament_lowest_avg_series,
+            "cut_lines_avg": cut_lines_avg,
+            "cut_lines_position": cut_lines_position,
+            "participant_count": participant_count,
+            "cut_line_series": cut_line_series,
+            "cut_lines_avg_dynamic": {
+                f"round_{rn}": dynamic_cut_series[rn] for rn in cut_rounds_sorted
+            },
+            "player_rank_series": player_rank_series,
+            "game_slots": [[int(rn), int(g)] for rn, g in game_slots],
+            "round_length_map": {str(rn): int(length) for rn, length in round_length_map.items()},
+        }
+
+    def get_field_progress(
+        self,
+        season: str,
+        tournament: str,
+        df: Optional[pd.DataFrame] = None,
+    ) -> Dict[str, Any]:
+        cache_key = self._tournament_cache_key(season, tournament)
+        if cache_key in self._field_progress_cache:
+            return self._field_progress_cache[cache_key]
+
+        query = self._field_progress_query(season, tournament)
+        cached = league_cache_try_get(
+            "get_tournament_field_progress", self.database, query
+        )
+        if cached is not None:
+            self._field_progress_cache[cache_key] = cached
+            return cached
+
+        computed = self._compute_field_progress(season, tournament, df=df)
+        self._field_progress_cache[cache_key] = computed
+        league_cache_put(
+            "get_tournament_field_progress", self.database, query, computed
+        )
+        return computed
+
+    def _compute_player_only_progress(
+        self,
+        player: str,
+        df: pd.DataFrame,
+        field: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """Per-player averages and game scores (cheap once field progress exists)."""
+        game_slots = [(int(rn), int(g)) for rn, g in (field.get("game_slots") or [])]
+        round_length_map = {
+            int(rn): int(length) for rn, length in (field.get("round_length_map") or {}).items()
+        }
+
+        player_df = df[df[Columns.player_name].astype(str).str.strip().eq(str(player).strip())].copy()
+        if player_df.empty or not game_slots:
+            rank_map = field.get("player_rank_series") or {}
+            return {
+                "avg_series": [],
+                "position_series": list(rank_map.get(player, [])),
+                "game_score_series": [],
+                "round_end_lines": [],
+            }
+
+        player_df[Columns.score] = pd.to_numeric(player_df[Columns.score], errors="coerce").fillna(0)
+        player_df[Columns.round_number] = pd.to_numeric(player_df[Columns.round_number], errors="coerce").astype("Int64")
+        player_df[Columns.game_number] = pd.to_numeric(player_df[Columns.game_number], errors="coerce").astype("Int64")
+
+        avg_series: List[Optional[float]] = []
+        game_score_series: List[Optional[int]] = []
+        round_end_lines: List[int] = []
+        cum_player_pins = 0.0
+        cum_player_games = 0
         current_rn: Optional[int] = None
         player_game_pins: Dict[int, int] = {}
 
@@ -2046,11 +2243,7 @@ class TournamentService:
                     scratch = pd.to_numeric(grp[Columns.score], errors="coerce").fillna(0)
                     if not (scratch > 0).any():
                         continue
-                    player_game_pins[int(g_idx)] = _arith_round_int(float(grp["__pins"].sum()))
-
-            in_cut_span = cfg_span is None or (
-                int(cfg_span["first_round"]) <= rn <= int(cfg_span["through_round"])
-            )
+                    player_game_pins[int(g_idx)] = _arith_round_int(float(grp[Columns.score].sum()))
 
             game_score_series.append(player_game_pins.get(g))
             if g in player_game_pins:
@@ -2060,74 +2253,36 @@ class TournamentService:
             else:
                 avg_series.append(None)
 
-            score_rows = _progress_snapshot_rows(all_df, round_lengths, rn, g)
-            rank_map = {name: idx + 1 for idx, (name, _, _, _) in enumerate(score_rows)}
-            position_series.append(
-                int(
-                    rank_map.get(
-                        player,
-                        position_series[-1] if position_series else len(score_rows) + 1,
-                    )
-                )
-            )
-
-            if score_rows:
-                tournament_leader_avg_series.append(round(score_rows[0][2], 2))
-                tournament_lowest_avg_series.append(
-                    round(min(r[2] for r in score_rows), 2)
-                )
-            else:
-                tournament_leader_avg_series.append(None)
-                tournament_lowest_avg_series.append(None)
-
-            cut_avg_game: Optional[float] = last_cut_avg
-            if in_cut_span:
-                eligible = _eligible_players_pace_snapshot(all_df, round_lengths, rn, g)
-                pace = _pace_cut_from_eligible(
-                    all_df, eligible, rn, g, round_lengths, cut_rank
-                )
-                if pace is not None:
-                    last_cut_avg, last_cut_pos = pace
-                    cut_avg_game = last_cut_avg
-
-            for cut_rn in cut_rounds_sorted:
-                dynamic_cut_series[cut_rn].append(cut_avg_game if rn == cut_rn else None)
-
             length = round_length_map.get(rn, 0)
             if g == length - 1:
                 round_end_lines.append(len(avg_series))
-                if in_cut_span and last_cut_avg is not None:
-                    cut_lines_avg.append(last_cut_avg)
-                if in_cut_span and last_cut_pos is not None:
-                    cut_lines_position.append(last_cut_pos)
 
-        cut_line_series = []
-        for rn in cut_rounds_sorted:
-            cut_line_series.append(
-                {
-                    "key": f"round_{rn}",
-                    "round_number": rn,
-                    "label": round_name_map.get(rn) or f"Round {rn}",
-                    "data": dynamic_cut_series[rn],
-                }
-            )
+        rank_map = field.get("player_rank_series") or {}
+        position_series = list(rank_map.get(player, []))
 
         return {
-            "labels": labels,
             "avg_series": avg_series,
             "position_series": position_series,
             "game_score_series": game_score_series,
-            "tournament_leader_avg_series": tournament_leader_avg_series,
-            "tournament_lowest_avg_series": tournament_lowest_avg_series,
             "round_end_lines": round_end_lines,
-            "cut_lines_avg": cut_lines_avg,
-            "cut_lines_position": cut_lines_position,
-            "participant_count": participant_count,
-            "cut_line_series": cut_line_series,
-            "cut_lines_avg_dynamic": {
-                f"round_{rn}": dynamic_cut_series[rn] for rn in cut_rounds_sorted
-            },
         }
+
+    def get_player_progress_series(
+        self,
+        season: str,
+        tournament: str,
+        player: str,
+        df: Optional[pd.DataFrame] = None,
+        *,
+        include_field: bool = True,
+    ) -> Dict[str, Any]:
+        if df is None:
+            df = self._get_tournament_df(season=season, tournament=tournament)
+        field = self.get_field_progress(season, tournament, df=df)
+        player_part = self._compute_player_only_progress(player, df, field)
+        if include_field:
+            return {**self._field_progress_public(field), **player_part}
+        return {**player_part, "labels": field.get("labels") or []}
 
     @staticmethod
     def _is_ko_bye_player(name: str) -> bool:
@@ -3103,24 +3258,40 @@ class TournamentService:
             return "b"
         return None
 
-    def _build_ko_bracket_payload(self, season: str, tournament: str) -> Dict[str, Any]:
+    def _build_ko_bracket_payload(
+        self,
+        season: str,
+        tournament: str,
+        df: Optional[pd.DataFrame] = None,
+    ) -> Dict[str, Any]:
         """
         Best-effort KO tree from rows whose round name mentions KO (e.g. KO-Finale).
         Groups consecutive game numbers that share the same opponent pair (BO3 series).
         Walkovers use Club KO_WO and/or placeholder opponent 'Nicht angetreten'.
         """
-        df = self._get_tournament_df(season=season, tournament=tournament)
+        cache_key = self._tournament_cache_key(season, tournament)
+        cached_ko = self._ko_bracket_cache.get(cache_key)
+        if cached_ko is not None:
+            return cached_ko
+        if df is None:
+            df = self._get_tournament_df(season=season, tournament=tournament)
         if df.empty or Columns.round_name not in df.columns or Columns.game_number not in df.columns:
-            return self._ko_bracket_empty_payload(season, tournament)
+            return self._store_ko_bracket_cache(
+                season, tournament, self._ko_bracket_empty_payload(season, tournament)
+            )
         rn = df[Columns.round_name].astype(str).str.strip()
         mask = rn.str.contains("KO", case=False, na=False)
         ko_df = df.loc[mask].copy()
         if ko_df.empty:
-            return self._ko_bracket_empty_payload(season, tournament)
+            return self._store_ko_bracket_cache(
+                season, tournament, self._ko_bracket_empty_payload(season, tournament)
+            )
         ko_df["_gn"] = pd.to_numeric(ko_df[Columns.game_number], errors="coerce")
         ko_df = ko_df.dropna(subset=["_gn"])
         if ko_df.empty:
-            return self._ko_bracket_empty_payload(season, tournament)
+            return self._store_ko_bracket_cache(
+                season, tournament, self._ko_bracket_empty_payload(season, tournament)
+            )
         ko_df["_gn"] = ko_df["_gn"].astype(int)
         ko_df = ko_df.reset_index(drop=False).rename(columns={"index": "_row_order"})
         ko_df = ko_df.sort_values(by=["_gn", "_row_order"], kind="mergesort")
@@ -3164,7 +3335,9 @@ class TournamentService:
             games_blocks.append((int(gn), pair_key, p0, p1))
 
         if not games_blocks:
-            return self._ko_bracket_empty_payload(season, tournament)
+            return self._store_ko_bracket_cache(
+                season, tournament, self._ko_bracket_empty_payload(season, tournament)
+            )
 
         clusters: List[List[tuple]] = []
         cur: List[tuple] = []
@@ -3295,7 +3468,11 @@ class TournamentService:
         matches_out = self._ko_apply_bracket_overrides_json(season, tournament, matches_out)
         placements = self._ko_placements_from_matches(matches_out)
         meta = self._ko_finalist_path_meta(matches_out)
-        return {"matches": matches_out, "placements": placements, **meta, "ko_finale_series": finale_mode}
+        return self._store_ko_bracket_cache(
+            season,
+            tournament,
+            {"matches": matches_out, "placements": placements, **meta, "ko_finale_series": finale_mode},
+        )
 
     @staticmethod
     def _ko_player_in_ko_matches(bracket: Optional[Dict[str, Any]], player: str) -> bool:
@@ -3352,7 +3529,8 @@ class TournamentService:
         top_n: int = 5,
     ) -> Dict[str, Any]:
         df = self._get_tournament_df(season=season, tournament=tournament)
-        ko_bracket = self._build_ko_bracket_payload(season, tournament)
+        ko_bracket = self._build_ko_bracket_payload(season, tournament, df=df)
+        rounds = self.get_rounds(season, tournament, df=df)
         ko_rn = self._ko_finale_round_number(df)
         is_ko_finale = (
             round_number is not None
@@ -3360,7 +3538,9 @@ class TournamentService:
             and int(round_number) == int(ko_rn)
             and bool(ko_bracket.get("matches"))
         )
-        lb_table = self.get_leaderboard_table(season, tournament, round_number)
+        lb_table = self.get_leaderboard_table(
+            season, tournament, round_number, df=df, ko_bracket=ko_bracket
+        )
         lb_scratch = lb_table
         placements = list(ko_bracket.get("placements") or [])
         if (
@@ -3378,11 +3558,23 @@ class TournamentService:
         ko_excl.discard("")
 
         payload: Dict[str, Any] = {
-            "cards": self.get_summary_cards(season, tournament, round_number=round_number, top_n=top_n).get("cards", []),
+            "cards": self.get_summary_cards(
+                season,
+                tournament,
+                round_number=round_number,
+                top_n=top_n,
+                df=df,
+                ko_bracket=ko_bracket,
+                rounds=rounds,
+            ).get("cards", []),
             "leaderboard": lb_table.to_dict(),
-            "round_results": self.get_round_results_table(season, tournament, round_number).to_dict(),
-            "rounds": self.get_rounds(season, tournament),
-            "best_efforts": self.get_best_efforts(season, tournament, round_number=round_number, top_n=top_n),
+            "round_results": self.get_round_results_table(
+                season, tournament, round_number, df=df
+            ).to_dict(),
+            "rounds": rounds,
+            "best_efforts": self.get_best_efforts(
+                season, tournament, round_number=round_number, top_n=top_n, df=df
+            ),
             "ko_bracket": ko_bracket,
             "tournament_gender": self._tournament_gender_key(tournament),
             "is_ko_finale_round": is_ko_finale,
@@ -3401,22 +3593,28 @@ class TournamentService:
             payload["leaderboard_post_qualification"] = self._table_data_exclude_normalized_player_keys(
                 base_pq, ko_excl
             ).to_dict()
-            payload["round_results_ko"] = self.get_round_results_table(season, tournament, ko_rn).to_dict()
+            payload["round_results_ko"] = self.get_round_results_table(
+                season, tournament, ko_rn, df=df
+            ).to_dict()
+        field_progress = self.get_field_progress(season, tournament, df=df)
+        payload["field_progress"] = self._field_progress_public(field_progress)
         return payload
 
     def get_player_section(self, season: str, tournament: str, player: str) -> Dict[str, Any]:
-        ko_bracket = self._build_ko_bracket_payload(season, tournament)
+        df = self._get_tournament_df(season=season, tournament=tournament)
+        ko_bracket = self._build_ko_bracket_payload(season, tournament, df=df)
         ko_place = self._ko_placement_for_player(ko_bracket, player)
 
-        progress = self.get_player_progress_series(season, tournament, player)
+        progress = self.get_player_progress_series(
+            season, tournament, player, df=df, include_field=False
+        )
         pos_series = list(progress.get("position_series") or [])
         if ko_place is not None and pos_series:
             pos_series = pos_series[:]
             pos_series[-1] = ko_place
         progress_out = {**progress, "position_series": pos_series}
 
-        player_df = self._get_tournament_df(season=season, tournament=tournament)
-        player_df = player_df[player_df[Columns.player_name].astype(str).str.strip().eq(str(player).strip())]
+        player_df = df[df[Columns.player_name].astype(str).str.strip().eq(str(player).strip())]
         player_club = None
         if not player_df.empty and Columns.club in player_df.columns:
             club_vals = player_df[Columns.club].dropna().astype(str).tolist()
@@ -3446,8 +3644,8 @@ class TournamentService:
             "player": player,
             "player_club": player_club,
             "player_card_layout": player_card_layout,
-            "round_table": self.get_player_round_table(season, tournament, player).to_dict(),
-            "best_efforts": self.get_player_best_efforts(season, tournament, player),
+            "round_table": self.get_player_round_table(season, tournament, player, df=df).to_dict(),
+            "best_efforts": self.get_player_best_efforts(season, tournament, player, df=df),
             "progress_series": progress_out,
             "summary": {
                 "average": avg_value,

@@ -1,6 +1,7 @@
 from business_logic.statistics import query_database
 from app.services.data_manager import DataManager
 from data_access.schema import Columns, ColumnsExtra
+from data_access.score_utils import mean_scores
 from data_access.adapters.data_adapter import DataAdapter
 from data_access.adapters.data_adapter_factory import DataAdapterFactory, DataAdapterSelector
 import pandas as pd
@@ -185,7 +186,7 @@ class TeamService:
                 #print(f"Sample individual scores: {individual_data[Columns.score].head().tolist()}")
                 
                 # Calculate league averages from individual scores
-                league_avg_score = individual_data[Columns.score].mean()
+                league_avg_score = mean_scores(individual_data[Columns.score])
                 league_avg_points = individual_data[Columns.points].mean()
                 league_std_score = individual_data[Columns.score].std()
                 league_std_points = individual_data[Columns.points].std()
@@ -254,7 +255,7 @@ class TeamService:
                     print(f"No individual data found for {team_name} in {season}")
                     return {}
                 
-                team_avg_score = float(team_individual_data[Columns.score].mean())
+                team_avg_score = mean_scores(team_individual_data[Columns.score])
                 team_avg_points = float(team_individual_data[Columns.points].mean())
                 #print(f"Team individual average score: {team_avg_score}")
                 #print(f"Team individual average points: {team_avg_points}")

@@ -24,11 +24,19 @@ _ENV_REVISION = "LEAGUE_CACHE_REVISION"
 
 # Bump per endpoint when response shape changes (invalidates disk cache without CSV edits).
 _ENDPOINT_PAYLOAD_VERSION: Dict[str, str] = {
-    "get_team_performance_table": "pos-rank-v2",
+    "get_team_performance_table": "abs-pinfall-v1",
     "get_team_win_percentage_table": "pos-rank-v2",
+    "get_team_analysis": "abs-pinfall-v1",
+    "get_individual_averages": "abs-pinfall-v1",
+    "get_game_team_details": "abs-pinfall-v1",
+    "get_team_week_details_table": "abs-pinfall-v1",
+    "get_team_week_head_to_head_table": "abs-pinfall-v1",
     "get_week_matrix": "league-long-names-v1",
     "get_team_vs_team_comparison": "standings-order-v2",
     "get_club_matrix": "matrix-pos-v1",
+    "get_tournament_section": "field-progress-v1",
+    "get_player_section": "field-progress-v1",
+    "get_tournament_field_progress": "field-progress-v1",
 }
 
 

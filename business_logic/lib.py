@@ -3,6 +3,7 @@ from tqdm import tqdm
 import numpy as np
 
 from data_access.schema import Columns
+from data_access.score_utils import mean_scores, pinfall_for_total, sum_scores
 
 
 def fetch_matchday(data, season, league_name, matchday):
@@ -128,8 +129,8 @@ def calculate_point3(df):
                 score_team = team_data[Columns.score].values[position]
                 score_opponent = opponent_data[Columns.score].values[position]
 
-                score_team_total += score_team
-                score_opponent_total += score_opponent
+                score_team_total += pinfall_for_total(score_team)
+                score_opponent_total += pinfall_for_total(score_opponent)
 
                 condition_team = (match_df[Columns.team_name] == team_name) & (match_df[Columns.position] == position)
                 condition_opponent = (match_df[Columns.team_name] == opponent_name) & (match_df[Columns.position] == position)
@@ -360,8 +361,8 @@ def calculate_points(df):
                         print(results_team)
                         print(results_opponent)
                 
-                        score_team = results_team[Columns.score].sum()
-                        score_opponent = results_opponent[Columns.score].sum()  
+                        score_team = sum_scores(results_team[Columns.score])
+                        score_opponent = sum_scores(results_opponent[Columns.score])  
 
                         print(str(score_team) + " : " + str(score_opponent))
                         points_team = 0 
@@ -418,6 +419,6 @@ def calculate_averages(df: pd.DataFrame, league_name=None, season=None, player=N
     if player is not None:
         df = df[df[Columns.player_name] == player]
 
-    result = df.groupby(Columns.player_name)[Columns.score].mean()
+    result = df.groupby(Columns.player_name)[Columns.score].apply(mean_scores)
 
     print(result)

@@ -182,6 +182,7 @@ export function TournamentStats() {
             {playerSectionQuery.isSuccess && playerSectionQuery.data && (
               <PlayerSection
                 data={playerSectionQuery.data}
+                fieldProgress={sectionQuery.data?.field_progress}
                 heatmapEnabled={heatmapEnabled}
                 onToggleHeatmap={() => setHeatmapEnabled((v) => !v)}
                 onBack={clearPlayer}
