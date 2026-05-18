@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { PlayerSearch } from "../../components/PlayerSearch";
 import {
   type TournamentRound,
   usePlayerSectionForTournament,
@@ -269,6 +270,13 @@ type FilterRailProps = {
 
 function FilterRail(props: FilterRailProps) {
   const { t } = props;
+  const playerEntries = useMemo(
+    () => props.players.map((name) => ({ id: name, name })),
+    [props.players],
+  );
+  const playerSearchDisabled =
+    props.playersLoading || !props.season || !props.tournament;
+
   return (
     <div className="sticky top-0 z-10 -mx-8 border-b border-border bg-background/85 px-8 py-3 backdrop-blur">
       <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
@@ -327,19 +335,15 @@ function FilterRail(props: FilterRailProps) {
         )}
 
         <FilterField label={t("ui.tournament.player", "Spieler")}>
-          <SelectControl
+          <PlayerSearch
             value={props.player}
-            disabled={props.playersLoading}
+            players={playerEntries}
+            isLoading={playerSearchDisabled}
+            placeholder={t("ui.tournament.player_search_placeholder", "Spieler suchen…")}
             ariaLabel={t("ui.tournament.player", "Spieler")}
-            onChange={props.onPlayerChange}
-          >
-            <option value="">—</option>
-            {props.players.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </SelectControl>
+            clearAriaLabel={t("ui.tournament.clear_player", "Spieler-Auswahl löschen")}
+            onSelect={(entry) => props.onPlayerChange(entry?.name ?? "")}
+          />
         </FilterField>
       </div>
     </div>

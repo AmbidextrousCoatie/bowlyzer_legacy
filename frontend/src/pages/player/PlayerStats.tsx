@@ -210,6 +210,7 @@ function FilterRail(props: FilterRailProps) {
             isLoading={props.playersLoading}
             placeholder={t("ui.player.type_name_placeholder", "Name eingeben…")}
             ariaLabel={t("ui.player.select_player", "Spieler auswählen")}
+            clearAriaLabel={t("ui.player.clear_player", "Spieler-Auswahl löschen")}
             onSelect={props.onPlayerSelect}
           />
         </FilterField>

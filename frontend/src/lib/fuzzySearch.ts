@@ -29,3 +29,27 @@ export function rankFuzzyStrings(query: string, items: string[], limit = 50): st
     .slice(0, limit)
     .map((row) => row.item);
 }
+
+/** Fuzzy rank arbitrary items by a string label (e.g. player names). */
+export function rankFuzzyBy<T>(
+  query: string,
+  items: T[],
+  getLabel: (item: T) => string,
+  limit = 50,
+): T[] {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return items.slice(0, limit);
+
+  return items
+    .map((item) => ({
+      item,
+      score: fuzzyScore(needle, getLabel(item).toLowerCase()),
+    }))
+    .filter((row) => row.score > 0)
+    .sort(
+      (a, b) =>
+        b.score - a.score || getLabel(a.item).localeCompare(getLabel(b.item)),
+    )
+    .slice(0, limit)
+    .map((row) => row.item);
+}

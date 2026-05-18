@@ -1,5 +1,7 @@
+import { X } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { PlayerSearchEntry } from "../hooks/usePlayer";
+import { rankFuzzyBy } from "../lib/fuzzySearch";
 
 type PlayerSearchProps = {
   value: string;
@@ -7,6 +9,7 @@ type PlayerSearchProps = {
   isLoading?: boolean;
   placeholder?: string;
   ariaLabel?: string;
+  clearAriaLabel?: string;
   onSelect: (entry: PlayerSearchEntry | null) => void;
 };
 
@@ -18,6 +21,7 @@ export function PlayerSearch({
   isLoading,
   placeholder,
   ariaLabel,
+  clearAriaLabel = "Clear",
   onSelect,
 }: PlayerSearchProps) {
   const [draft, setDraft] = useState(value);
@@ -34,18 +38,16 @@ export function PlayerSearch({
   useEffect(() => {
     if (!open) return;
     function onClickOutside(e: MouseEvent) {
-      if (!containerRef.current) return;
-      if (!containerRef.current.contains(e.target as Node)) setOpen(false);
+      if (!containerRef.current?.contains(e.target as Node)) setOpen(false);
     }
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, [open]);
 
-  const matches = useMemo(() => {
-    const term = draft.trim().toLowerCase();
-    if (!term) return players.slice(0, MAX_RESULTS);
-    return players.filter((p) => p.name.toLowerCase().includes(term)).slice(0, MAX_RESULTS);
-  }, [draft, players]);
+  const matches = useMemo(
+    () => rankFuzzyBy(draft, players, (p) => p.name, MAX_RESULTS),
+    [draft, players],
+  );
 
   useEffect(() => {
     setActiveIndex(0);
@@ -94,8 +96,20 @@ export function PlayerSearch({
     if (e.target.value === "") onSelect(null);
   }
 
+  function clear() {
+    setDraft("");
+    onSelect(null);
+    setOpen(false);
+    inputRef.current?.focus();
+  }
+
+  const showClear = !isLoading && draft.trim().length > 0;
+
   return (
-    <div ref={containerRef} className="relative w-full max-w-xs">
+    <div
+      ref={containerRef}
+      className="relative w-full min-w-[min(100%,320px)] max-w-md"
+    >
       <input
         ref={inputRef}
         type="text"
@@ -111,9 +125,22 @@ export function PlayerSearch({
         autoComplete="off"
         spellCheck={false}
         disabled={isLoading}
-        className="h-9 w-full rounded-sm border border-border bg-surface px-2.5 text-small text-foreground hover:border-border-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:opacity-60"
+        className={
+          "h-9 w-full rounded-sm border border-border bg-surface text-small text-foreground hover:border-border-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:opacity-60 " +
+          (showClear ? "pl-2.5 pr-8" : "px-2.5")
+        }
       />
-      {open && matches.length > 0 && (
+      {showClear ? (
+        <button
+          type="button"
+          onClick={clear}
+          aria-label={clearAriaLabel}
+          className="absolute right-1 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-sm text-muted hover:bg-surface-subtle hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+        >
+          <X size={16} strokeWidth={1.75} aria-hidden />
+        </button>
+      ) : null}
+      {open && !isLoading && matches.length > 0 && (
         <ul
           id={listboxId}
           role="listbox"
@@ -138,6 +165,11 @@ export function PlayerSearch({
             </li>
           ))}
         </ul>
+      )}
+      {open && !isLoading && draft.trim() && matches.length === 0 && (
+        <p className="absolute left-0 right-0 z-20 mt-1 rounded-sm border border-border bg-surface px-2.5 py-2 text-small text-muted shadow-2">
+          —
+        </p>
       )}
     </div>
   );

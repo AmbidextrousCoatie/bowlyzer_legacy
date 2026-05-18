@@ -1,3 +1,4 @@
+import { X } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { rankFuzzyStrings } from "../lib/fuzzySearch";
 
@@ -7,6 +8,7 @@ type ClubSearchProps = {
   isLoading?: boolean;
   placeholder?: string;
   ariaLabel?: string;
+  clearAriaLabel?: string;
   onSelect: (club: string | null) => void;
 };
 
@@ -18,6 +20,7 @@ export function ClubSearch({
   isLoading,
   placeholder,
   ariaLabel,
+  clearAriaLabel = "Clear",
   onSelect,
 }: ClubSearchProps) {
   const [draft, setDraft] = useState(value);
@@ -90,8 +93,17 @@ export function ClubSearch({
     if (e.target.value === "") onSelect(null);
   }
 
+  function clear() {
+    setDraft("");
+    onSelect(null);
+    setOpen(false);
+    inputRef.current?.focus();
+  }
+
+  const showClear = !isLoading && draft.trim().length > 0;
+
   return (
-    <div className="relative w-full min-w-[min(100%,320px)] max-w-md">
+    <div ref={containerRef} className="relative w-full min-w-[min(100%,320px)] max-w-md">
       <input
         ref={inputRef}
         type="text"
@@ -107,8 +119,21 @@ export function ClubSearch({
         autoComplete="off"
         spellCheck={false}
         disabled={isLoading}
-        className="h-9 w-full rounded-sm border border-border bg-surface px-2.5 text-small text-foreground hover:border-border-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:opacity-60"
+        className={
+          "h-9 w-full rounded-sm border border-border bg-surface text-small text-foreground hover:border-border-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:opacity-60 " +
+          (showClear ? "pl-2.5 pr-8" : "px-2.5")
+        }
       />
+      {showClear ? (
+        <button
+          type="button"
+          onClick={clear}
+          aria-label={clearAriaLabel}
+          className="absolute right-1 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-sm text-muted hover:bg-surface-subtle hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+        >
+          <X size={16} strokeWidth={1.75} aria-hidden />
+        </button>
+      ) : null}
       {open && !isLoading && matches.length > 0 && (
         <ul
           id={listboxId}

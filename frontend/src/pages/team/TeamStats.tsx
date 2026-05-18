@@ -75,8 +75,11 @@ export function TeamStats() {
   }, [teamSeasonsQuery.isSuccess, teamSeasonsQuery.data, season, team, searchParams, setSearchParams]);
 
   function selectClub(value: string) {
-    const next = new URLSearchParams();
+    const next = new URLSearchParams(searchParams);
     if (value) next.set("club", value);
+    else next.delete("club");
+    next.delete("team");
+    next.delete("season");
     setSearchParams(next, { replace: false });
   }
 
@@ -135,6 +138,7 @@ export function TeamStats() {
               isLoading={clubsQuery.isPending}
               placeholder={t("ui.team.select_club", "Club eingeben oder wählen…")}
               ariaLabel={t("ui.team.select_club", "Club wählen")}
+              clearAriaLabel={t("ui.team.clear_club", "Club-Auswahl löschen")}
               onSelect={(c) => selectClub(c ?? "")}
             />
           </FilterField>

@@ -1,5 +1,8 @@
 .cache/
 .venv/
+deploy/deploy.config.ps1
+deploy/artifacts/
+bowlyzer-image.tar
 __pycache__/
 *.pyc
 .DS_Store
