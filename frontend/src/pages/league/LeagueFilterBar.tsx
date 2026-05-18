@@ -150,13 +150,13 @@ function FilterBarMobile(props: LeagueFilterBarProps) {
       </button>
       <div
         title={`${props.pageName} · ${props.pageHeading}`}
-        className="flex min-w-0 shrink-[1000] items-center gap-1.5 overflow-hidden @[max-width:22rem]:pointer-events-none @[max-width:22rem]:max-w-0 @[max-width:22rem]:opacity-0"
+        className="flex min-w-0 shrink-[1000] items-center gap-1.5 overflow-hidden @max-[22rem]/league-bar:pointer-events-none @max-[22rem]/league-bar:max-w-0 @max-[22rem]/league-bar:opacity-0"
       >
-        <span className="min-w-0 shrink-[2000] truncate text-[11px] font-medium uppercase tracking-wide text-muted @[max-width:30rem]:max-w-0 @[max-width:30rem]:opacity-0">
+        <span className="min-w-0 shrink-[2000] truncate text-[11px] font-medium uppercase tracking-wide text-muted @max-[30rem]/league-bar:max-w-0 @max-[30rem]/league-bar:opacity-0">
           {props.pageName}
         </span>
         <span
-          className="shrink-0 text-muted/50 @[max-width:30rem]:hidden"
+          className="shrink-0 text-muted/50 @max-[30rem]/league-bar:hidden"
           aria-hidden
         >
           ·
