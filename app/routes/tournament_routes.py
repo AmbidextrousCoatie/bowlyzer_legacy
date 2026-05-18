@@ -1,8 +1,10 @@
+import time
 from pathlib import Path
 
 from flask import Blueprint, jsonify, request
 
 from app.cache.league_response_cache import league_cache_put, league_cache_try_get
+from app.utils.tournament_benchmark import tournament_benchmark_enabled
 from app.config.database_config import database_config
 from app.services.tournament_service import TournamentService
 
@@ -198,8 +200,15 @@ def get_tournament_section():
     top_n = request.args.get("n", default=5, type=int)
     if not season or not tournament:
         return jsonify({"error": "season and tournament are required"}), 400
+    wall_t0 = time.perf_counter() if tournament_benchmark_enabled() else None
     cached = _tournament_json_cache_get("get_tournament_section")
     if cached is not None:
+        if wall_t0 is not None:
+            print(
+                f"tournament benchmark: get_section DISK CACHE HIT "
+                f"({time.perf_counter() - wall_t0:.3f}s)",
+                flush=True,
+            )
         return jsonify(cached)
     service = get_tournament_service()
     payload = service.get_tournament_section(
@@ -209,6 +218,12 @@ def get_tournament_section():
         top_n=top_n,
     )
     _tournament_json_cache_put("get_tournament_section", payload)
+    if wall_t0 is not None:
+        print(
+            f"tournament benchmark: get_section MISS (computed + cached to disk) "
+            f"wall={time.perf_counter() - wall_t0:.3f}s",
+            flush=True,
+        )
     return jsonify(payload)
 
 

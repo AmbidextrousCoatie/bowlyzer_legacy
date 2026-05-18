@@ -54,6 +54,8 @@ for Bootstrap utility classes.
   `frontend/AGENTS.md` for the full Vite-Plus contract.
 - **Backend dev server**: started outside Claude Code via `start.sh`. Do not
   start it as a background task.
+- **Tournament perf profiling**: `TOURNAMENT_BENCHMARK=1` on the Flask process
+  + `scripts/benchmark_tournament_section.py` — see `DEPLOY.md` (dev only).
 - **Git/GitHub**: `gh` CLI for PRs, issues, checks.
 
 ## Architecture conventions

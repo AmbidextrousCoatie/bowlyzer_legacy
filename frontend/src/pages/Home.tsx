@@ -21,8 +21,8 @@ export function Home() {
         <h1 className="text-h1 mb-4">Willkommen</h1>
         <p className="text-body text-muted max-w-[72ch] leading-relaxed">
           Diese Seite ist ein Proof of Concept zur Darstellung von Ergebnissen und Statistiken rund
-          um Bowling-Ligen, Turniere und Pokalwettbewerbe. Die Auswertungen findest du in der
-          Navigation — oder starte mit einem der Beispiele unten.
+          um Bowling-Ligen, Turniere und Pokalwettbewerbe. Ich verwende die offiziellen Daten der <a href="https://bowlingbayern.de/BBU" target="_blank" rel="noopener noreferrer">Bayerischen Bowling Union</a> und bin stetig dabei, die Datenbasis zu erweitern. 
+          Die Auswertungen findest du in der Navigation — oder starte mit einem der Beispiele unten.
         </p>
         <p className="mt-4 text-body text-muted max-w-[72ch] leading-relaxed">
           Feedback und Vorschläge gerne per E-Mail an{" "}

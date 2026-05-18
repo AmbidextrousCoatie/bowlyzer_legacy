@@ -1,6 +1,8 @@
 import json
 import math
 import re
+import time
+from collections import defaultdict
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
@@ -13,6 +15,7 @@ from data_access.adapters.data_adapter_factory import DataAdapterFactory, DataAd
 from data_access.schema import Columns
 
 from app.cache.league_response_cache import league_cache_put, league_cache_try_get
+from app.utils.tournament_benchmark import TournamentBenchmark, tournament_benchmark_enabled
 
 # KO-Finale last cluster: best-of-3 pin games vs two-game scratch total (see database/data/tournament_ko_config.json).
 KO_FINALE_SERIES_BO3 = "bo3_pins"
@@ -363,6 +366,130 @@ def _pace_cut_from_eligible(
         if games <= 0:
             continue
         rows.append((name, total_pins / games, total_pins))
+    if len(rows) < cut_rank:
+        return None
+    rows.sort(key=lambda t: (-t[1], -t[2], t[0]))
+    cut_avg = round(rows[cut_rank - 1][1], 2)
+    return cut_avg, cut_rank
+
+
+def _field_progress_prepare_game_pins(all_df: pd.DataFrame) -> Dict[Tuple[int, int], Dict[str, float]]:
+    """(round_number, game_number) -> {player: pin_sum} for bowled games (score > 0)."""
+    played = all_df[pd.to_numeric(all_df[Columns.score], errors="coerce").fillna(0) > 0]
+    if played.empty:
+        return {}
+    tmp = played.copy()
+    tmp["_player"] = tmp[Columns.player_name].astype(str).str.strip()
+    tmp["_rn"] = pd.to_numeric(tmp[Columns.round_number], errors="coerce").astype(int)
+    tmp["_gn"] = pd.to_numeric(tmp[Columns.game_number], errors="coerce").astype(int)
+    out: Dict[Tuple[int, int], Dict[str, float]] = {}
+    grouped = tmp.groupby(["_rn", "_gn", "_player"], dropna=False)["__pins"].sum()
+    for (rn, gn, player), pins in grouped.items():
+        name = str(player).strip()
+        if TournamentService._is_ko_bye_player(name):
+            continue
+        key = (int(rn), int(gn))
+        out.setdefault(key, {})[name] = float(pins)
+    return out
+
+
+def _field_progress_prepare_round_games(all_df: pd.DataFrame) -> Dict[Tuple[str, int], frozenset[int]]:
+    """(player, round_number) -> game indices with score > 0 in that round."""
+    played = all_df[pd.to_numeric(all_df[Columns.score], errors="coerce").fillna(0) > 0]
+    if played.empty:
+        return {}
+    tmp = played.copy()
+    tmp["_player"] = tmp[Columns.player_name].astype(str).str.strip()
+    tmp["_rn"] = pd.to_numeric(tmp[Columns.round_number], errors="coerce").astype(int)
+    tmp["_gn"] = pd.to_numeric(tmp[Columns.game_number], errors="coerce").astype(int)
+    out: Dict[Tuple[str, int], frozenset[int]] = {}
+    for (player, rn), games in tmp.groupby(["_player", "_rn"], dropna=False)["_gn"]:
+        name = str(player).strip()
+        if TournamentService._is_ko_bye_player(name):
+            continue
+        out[(name, int(rn))] = frozenset(int(g) for g in games)
+    return out
+
+
+def _field_progress_cumulative_games(
+    rn: int, through_game: int, round_lengths: List[RoundLengthRow]
+) -> List[Tuple[int, int]]:
+    games: List[Tuple[int, int]] = []
+    for rno, _, length in round_lengths:
+        if rno > rn:
+            break
+        g_end = through_game if rno == rn else length - 1
+        for g in range(g_end + 1):
+            games.append((rno, g))
+    return games
+
+
+def _field_progress_delta_games(
+    prev: Optional[Tuple[int, int]],
+    curr: Tuple[int, int],
+    round_lengths: List[RoundLengthRow],
+) -> List[Tuple[int, int]]:
+    curr_games = _field_progress_cumulative_games(curr[0], curr[1], round_lengths)
+    if prev is None:
+        return curr_games
+    prev_set = set(_field_progress_cumulative_games(prev[0], prev[1], round_lengths))
+    return [g for g in curr_games if g not in prev_set]
+
+
+def _field_progress_snapshot_from_cumulative(
+    cum_pins: Dict[str, float],
+    cum_games: Dict[str, int],
+) -> List[Tuple[str, float, float, int]]:
+    rows: List[Tuple[str, float, float, int]] = []
+    for name, games in cum_games.items():
+        if games <= 0:
+            continue
+        total = float(cum_pins.get(name, 0.0))
+        rows.append((name, total, total / games, games))
+    rows.sort(key=lambda t: (-t[1], -t[2], t[0]))
+    return rows
+
+
+def _field_progress_eligible_at_snapshot(
+    field_players: List[str],
+    rn: int,
+    through_game: int,
+    round_lengths: List[RoundLengthRow],
+    player_round_games: Dict[Tuple[str, int], frozenset[int]],
+) -> Set[str]:
+    eligible: Set[str] = set()
+    for name in field_players:
+        ok = True
+        for prev_rn, _, prev_len in round_lengths:
+            if prev_rn >= rn:
+                break
+            played = player_round_games.get((name, prev_rn), frozenset())
+            if not all(g in played for g in range(prev_len)):
+                ok = False
+                break
+        if not ok:
+            continue
+        played_curr = player_round_games.get((name, rn), frozenset())
+        if all(g in played_curr for g in range(through_game + 1)):
+            eligible.add(name)
+    return eligible
+
+
+def _pace_cut_from_cumulative(
+    eligible: Set[str],
+    cum_pins: Dict[str, float],
+    cum_games: Dict[str, int],
+    cut_rank: int,
+) -> Optional[Tuple[float, int]]:
+    if cut_rank < 1 or len(eligible) < cut_rank:
+        return None
+    rows: List[Tuple[str, float, float]] = []
+    for name in eligible:
+        games = cum_games.get(name, 0)
+        if games <= 0:
+            continue
+        total = float(cum_pins.get(name, 0.0))
+        rows.append((name, total / games, total))
     if len(rows) < cut_rank:
         return None
     rows.sort(key=lambda t: (-t[1], -t[2], t[0]))
@@ -2043,6 +2170,7 @@ class TournamentService:
         df: Optional[pd.DataFrame] = None,
     ) -> Dict[str, Any]:
         """Cut-line, tournament leader, and all player ranks — identical for every participant."""
+        _fp_t0 = time.perf_counter() if tournament_benchmark_enabled() else None
         if df is None:
             df = self._get_tournament_df(season=season, tournament=tournament)
         if df.empty:
@@ -2102,13 +2230,25 @@ class TournamentService:
         cut_lines_avg: List[float] = []
         cut_lines_position: List[int] = []
         dynamic_cut_series: Dict[int, List[Optional[float]]] = {rn: [] for rn in cut_rounds_sorted}
-        eligible_cache: Dict[Tuple[int, int], Set[str]] = {}
+
+        per_game_pins = _field_progress_prepare_game_pins(all_df)
+        player_round_games = _field_progress_prepare_round_games(all_df)
+        cum_pins: Dict[str, float] = defaultdict(float)
+        cum_games: Dict[str, int] = defaultdict(int)
 
         last_cut_avg: Optional[float] = None
         last_cut_pos: Optional[int] = None
 
+        _fp_loop_t0 = time.perf_counter() if tournament_benchmark_enabled() else None
+        prev_slot: Optional[Tuple[int, int]] = None
         for rn, g in game_slots:
-            score_rows = _progress_snapshot_rows(all_df, round_lengths, rn, g)
+            for rno, gg in _field_progress_delta_games(prev_slot, (rn, g), round_lengths):
+                for player, pins in per_game_pins.get((rno, gg), {}).items():
+                    cum_pins[player] += pins
+                    cum_games[player] += 1
+            prev_slot = (rn, g)
+
+            score_rows = _field_progress_snapshot_from_cumulative(cum_pins, cum_games)
             rank_map = {name: idx + 1 for idx, (name, _, _, _) in enumerate(score_rows)}
             default_rank = len(score_rows) + 1 if score_rows else participant_count + 1
             for name in field_players:
@@ -2127,14 +2267,10 @@ class TournamentService:
             )
             cut_avg_game: Optional[float] = last_cut_avg
             if in_cut_span:
-                key = (rn, g)
-                if key not in eligible_cache:
-                    eligible_cache[key] = _eligible_players_pace_snapshot(
-                        all_df, round_lengths, rn, g
-                    )
-                pace = _pace_cut_from_eligible(
-                    all_df, eligible_cache[key], rn, g, round_lengths, cut_rank
+                eligible = _field_progress_eligible_at_snapshot(
+                    field_players, rn, g, round_lengths, player_round_games
                 )
+                pace = _pace_cut_from_cumulative(eligible, cum_pins, cum_games, cut_rank)
                 if pace is not None:
                     last_cut_avg, last_cut_pos = pace
                     cut_avg_game = last_cut_avg
@@ -2148,6 +2284,15 @@ class TournamentService:
                     cut_lines_avg.append(last_cut_avg)
                 if last_cut_pos is not None:
                     cut_lines_position.append(last_cut_pos)
+
+        if _fp_t0 is not None and _fp_loop_t0 is not None:
+            loop_sec = time.perf_counter() - _fp_loop_t0
+            setup_sec = _fp_loop_t0 - _fp_t0
+            print(
+                f"  field_progress detail: participants={participant_count} "
+                f"game_slots={len(game_slots)} setup={setup_sec:.3f}s loop={loop_sec:.3f}s",
+                flush=True,
+            )
 
         cut_line_series = [
             {
@@ -2183,6 +2328,8 @@ class TournamentService:
     ) -> Dict[str, Any]:
         cache_key = self._tournament_cache_key(season, tournament)
         if cache_key in self._field_progress_cache:
+            if tournament_benchmark_enabled():
+                print("  field_progress: in-request cache HIT", flush=True)
             return self._field_progress_cache[cache_key]
 
         query = self._field_progress_query(season, tournament)
@@ -2190,9 +2337,13 @@ class TournamentService:
             "get_tournament_field_progress", self.database, query
         )
         if cached is not None:
+            if tournament_benchmark_enabled():
+                print("  field_progress: disk cache HIT", flush=True)
             self._field_progress_cache[cache_key] = cached
             return cached
 
+        if tournament_benchmark_enabled():
+            print("  field_progress: computing (_compute_field_progress)", flush=True)
         computed = self._compute_field_progress(season, tournament, df=df)
         self._field_progress_cache[cache_key] = computed
         league_cache_put(
@@ -3528,9 +3679,24 @@ class TournamentService:
         round_number: Optional[int] = None,
         top_n: int = 5,
     ) -> Dict[str, Any]:
-        df = self._get_tournament_df(season=season, tournament=tournament)
-        ko_bracket = self._build_ko_bracket_payload(season, tournament, df=df)
-        rounds = self.get_rounds(season, tournament, df=df)
+        bench = TournamentBenchmark(
+            "get_tournament_section",
+            context={
+                "season": season,
+                "tournament": tournament,
+                "round": round_number,
+                "database": self.database,
+            },
+        )
+        with bench.step("load_df"):
+            df = self._get_tournament_df(season=season, tournament=tournament)
+            if tournament_benchmark_enabled():
+                bench.context["rows"] = len(df)
+
+        with bench.step("ko_bracket"):
+            ko_bracket = self._build_ko_bracket_payload(season, tournament, df=df)
+        with bench.step("rounds"):
+            rounds = self.get_rounds(season, tournament, df=df)
         ko_rn = self._ko_finale_round_number(df)
         is_ko_finale = (
             round_number is not None
@@ -3538,9 +3704,10 @@ class TournamentService:
             and int(round_number) == int(ko_rn)
             and bool(ko_bracket.get("matches"))
         )
-        lb_table = self.get_leaderboard_table(
-            season, tournament, round_number, df=df, ko_bracket=ko_bracket
-        )
+        with bench.step("leaderboard"):
+            lb_table = self.get_leaderboard_table(
+                season, tournament, round_number, df=df, ko_bracket=ko_bracket
+            )
         lb_scratch = lb_table
         placements = list(ko_bracket.get("placements") or [])
         if (
@@ -3550,15 +3717,18 @@ class TournamentService:
             and placements
             and bool(lb_table.data)
         ):
-            lb_table = self._integrate_ko_into_total_leaderboard(lb_table, ko_bracket, df, season, tournament)
+            with bench.step("leaderboard_ko_integrate"):
+                lb_table = self._integrate_ko_into_total_leaderboard(
+                    lb_table, ko_bracket, df, season, tournament
+                )
 
         ko_excl = {
             self._ko_norm_name(self._ko_strip_no_show_suffix(str(p.get("player", "") or ""))) for p in placements
         }
         ko_excl.discard("")
 
-        payload: Dict[str, Any] = {
-            "cards": self.get_summary_cards(
+        with bench.step("summary_cards"):
+            cards = self.get_summary_cards(
                 season,
                 tournament,
                 round_number=round_number,
@@ -3566,20 +3736,28 @@ class TournamentService:
                 df=df,
                 ko_bracket=ko_bracket,
                 rounds=rounds,
-            ).get("cards", []),
+            ).get("cards", [])
+
+        payload: Dict[str, Any] = {
+            "cards": cards,
             "leaderboard": lb_table.to_dict(),
-            "round_results": self.get_round_results_table(
-                season, tournament, round_number, df=df
-            ).to_dict(),
             "rounds": rounds,
-            "best_efforts": self.get_best_efforts(
-                season, tournament, round_number=round_number, top_n=top_n, df=df
-            ),
             "ko_bracket": ko_bracket,
             "tournament_gender": self._tournament_gender_key(tournament),
             "is_ko_finale_round": is_ko_finale,
             "ko_finale_round_number": ko_rn,
         }
+
+        with bench.step("round_results"):
+            payload["round_results"] = self.get_round_results_table(
+                season, tournament, round_number, df=df
+            ).to_dict()
+
+        with bench.step("best_efforts"):
+            payload["best_efforts"] = self.get_best_efforts(
+                season, tournament, round_number=round_number, top_n=top_n, df=df
+            )
+
         cfg_cut = self._ko_qualifying_cut_pair(season, tournament)
         if (
             round_number is None
@@ -3588,16 +3766,22 @@ class TournamentService:
             and ko_bracket.get("matches")
             and bool(lb_scratch.data)
         ):
-            _, crank = cfg_cut
-            base_pq = self._table_data_keep_rows_min_place(lb_scratch, crank + 1)
-            payload["leaderboard_post_qualification"] = self._table_data_exclude_normalized_player_keys(
-                base_pq, ko_excl
-            ).to_dict()
-            payload["round_results_ko"] = self.get_round_results_table(
-                season, tournament, ko_rn, df=df
-            ).to_dict()
-        field_progress = self.get_field_progress(season, tournament, df=df)
+            with bench.step("leaderboard_post_qualification"):
+                _, crank = cfg_cut
+                base_pq = self._table_data_keep_rows_min_place(lb_scratch, crank + 1)
+                payload["leaderboard_post_qualification"] = (
+                    self._table_data_exclude_normalized_player_keys(base_pq, ko_excl).to_dict()
+                )
+            with bench.step("round_results_ko"):
+                payload["round_results_ko"] = self.get_round_results_table(
+                    season, tournament, ko_rn, df=df
+                ).to_dict()
+
+        with bench.step("field_progress"):
+            field_progress = self.get_field_progress(season, tournament, df=df)
         payload["field_progress"] = self._field_progress_public(field_progress)
+
+        bench.report()
         return payload
 
     def get_player_section(self, season: str, tournament: str, player: str) -> Dict[str, Any]:
