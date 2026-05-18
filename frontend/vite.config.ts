@@ -16,6 +16,10 @@ export default defineConfig({
       "/player": BACKEND,
       "/team": BACKEND,
       "/tournament": BACKEND,
+      "/switch-database": BACKEND,
+      "/get-data-sources-info": BACKEND,
+      "/home": BACKEND,
+      "/set-season": BACKEND,
     },
   },
 });

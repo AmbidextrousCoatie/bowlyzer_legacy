@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, jsonify
+from flask import Blueprint, request, jsonify
 from app.services.team_service import TeamService
 from app.config.database_config import database_config
 from app.utils.json_safe import json_safe
@@ -9,10 +9,6 @@ def get_team_service():
     """Helper function to get TeamService with database parameter"""
     database = request.args.get('database') or database_config.get_default_source()
     return TeamService(database=database)
-
-@bp.route('/team/stats')
-def stats():
-    return render_template('team/stats.html')
 
 @bp.route('/team/get_teams')
 def get_teams():

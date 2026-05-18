@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, jsonify, request
+from flask import Blueprint, jsonify, request
 from app.services.league_service import LeagueService
 from data_access.schema import Columns, ColumnsExtra
 from app.services.i18n_service import i18n_service, Language
@@ -35,67 +35,6 @@ def get_league_service():
     database = request.args.get('database') or database_config.get_default_source()
     debug_config.log_service('LeagueService', 'create', f"database={database}")
     return LeagueService(database=database)
-
-@bp.route('/league/funsies')
-def funsies():
-    return render_template('funsies.html')
-
-@bp.route('/league/stats')
-def stats():
-    try:
-        params = dict(request.args)
-        debug_config.log_route('league.stats', params)
-        
-        league_service = get_league_service()
-        weeks = league_service.get_weeks()
-        return render_template('league/stats.html', 
-                            season=league_service.get_seasons(),
-                            league=league_service.get_leagues(),
-                            week=weeks)
-    except Exception as e:
-        debug_config.log_route('league.stats', params, f"ERROR: {str(e)}")
-        return jsonify({"error": str(e)}), 500
-
-@bp.route('/league/club_matrix')
-def club_matrix():
-    """Minimal legacy page: club -> team vs season matrix (cell = league)."""
-    try:
-        league_service = get_league_service()
-        selected_club = (request.args.get("club") or "").strip()
-        only_unnumbered = str(request.args.get("only_unnumbered", "")).strip().lower() in {"1", "true", "on", "yes"}
-        clubs = league_service.get_available_clubs(only_with_unnumbered_team=only_unnumbered)
-        if selected_club and selected_club not in clubs:
-            selected_club = ""
-        matrix = {"club": selected_club, "seasons": [], "rows": []}
-        if selected_club:
-            matrix = league_service.get_club_team_season_matrix(selected_club)
-        return render_template(
-            "league/club_matrix.html",
-            clubs=clubs,
-            selected_club=selected_club,
-            only_unnumbered=only_unnumbered,
-            matrix=matrix,
-            league_divisions=get_league_division_map(),
-            resolve_league_long_name=resolve_league_long_name,
-        )
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@bp.route('/league/week_matrix')
-def week_matrix():
-    """Diagnosis page: league x season matrix of missing match weeks."""
-    try:
-        league_service = get_league_service()
-        expected_weeks = request.args.get("expected_weeks", default=6, type=int)
-        matrix = league_service.get_league_week_matrix(expected_weeks=expected_weeks)
-        return render_template(
-            "league/week_matrix.html",
-            matrix=matrix,
-            expected_weeks=expected_weeks,
-        )
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
 
 @bp.route("/league/get_club_matrix")
 def get_club_matrix():

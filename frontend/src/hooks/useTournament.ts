@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { buildUrl, fetchJson } from "../lib/api";
+import { buildTournamentUrl, fetchJson } from "../lib/api";
 import type { TableData } from "../lib/datatable/types";
 
 /** List endpoints are backed by server-side CSV revision cache; avoid refetch churn. */
@@ -116,7 +116,9 @@ export function useTournamentSeasons(tournament?: string | null) {
     queryKey: ["tournament", "seasons", tournament ?? ""],
     queryFn: () =>
       fetchJson<string[]>(
-        buildUrl("/tournament/get_available_seasons", { tournament: tournament ?? undefined }),
+        buildTournamentUrl("/tournament/get_available_seasons", {
+          tournament: tournament ?? undefined,
+        }),
       ),
     staleTime: TOURNAMENT_LIST_STALE_MS,
   });
@@ -126,7 +128,7 @@ export function useTournamentNames(season: string | null) {
   return useQuery({
     queryKey: ["tournament", "tournaments", season],
     queryFn: () =>
-      fetchJson<string[]>(buildUrl("/tournament/get_available_tournaments", { season })),
+      fetchJson<string[]>(buildTournamentUrl("/tournament/get_available_tournaments", { season })),
     enabled: !!season,
     staleTime: TOURNAMENT_LIST_STALE_MS,
   });
@@ -137,7 +139,7 @@ export function useTournamentRounds(season: string | null, tournament: string | 
     queryKey: ["tournament", "rounds", season, tournament],
     queryFn: () =>
       fetchJson<TournamentRound[]>(
-        buildUrl("/tournament/get_available_rounds", { season, tournament }),
+        buildTournamentUrl("/tournament/get_available_rounds", { season, tournament }),
       ),
     enabled: !!season && !!tournament,
     staleTime: TOURNAMENT_LIST_STALE_MS,
@@ -153,7 +155,7 @@ export function useTournamentPlayers(
     queryKey: ["tournament", "players", season, tournament, round ?? ""],
     queryFn: () =>
       fetchJson<string[]>(
-        buildUrl("/tournament/get_available_players", {
+        buildTournamentUrl("/tournament/get_available_players", {
           season,
           tournament,
           round: round || undefined,
@@ -173,7 +175,7 @@ export function useTournamentSection(
     queryKey: ["tournament", "section", season, tournament, round ?? ""],
     queryFn: () =>
       fetchJson<TournamentSection>(
-        buildUrl("/tournament/get_section", {
+        buildTournamentUrl("/tournament/get_section", {
           season,
           tournament,
           round: round || undefined,
@@ -193,8 +195,13 @@ export function usePlayerSectionForTournament(
     queryKey: ["tournament", "player-section", season, tournament, player],
     queryFn: () =>
       fetchJson<TournamentPlayerSection>(
-        buildUrl("/tournament/get_player_section", { season, tournament, player }),
+        buildTournamentUrl("/tournament/get_player_section", {
+          season: season!,
+          tournament: tournament!,
+          player: player!,
+        }),
       ),
-    enabled: !!season && !!tournament && !!player,
+    enabled: Boolean(season && tournament && player),
+    retry: 1,
   });
 }

@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, jsonify, request
+from flask import Blueprint, jsonify, request
 from app.services.player_service import PlayerService
 from app.config.database_config import database_config
 from app.utils.json_safe import json_safe
@@ -28,10 +28,6 @@ def get_player_service():
     else:
         database = database_config.get_default_source()
     return PlayerService(database=database)
-
-@bp.route('/stats')
-def stats():
-    return render_template('player/content.html')
 
 @bp.route('/search')
 def search_players():

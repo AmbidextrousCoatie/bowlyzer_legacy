@@ -8,6 +8,8 @@ import { LeagueStats } from "./pages/league/LeagueStats";
 import { PlayerStats } from "./pages/player/PlayerStats";
 import { TeamStats } from "./pages/team/TeamStats";
 import { TournamentStats } from "./pages/tournament/TournamentStats";
+import { Home } from "./pages/Home";
+import { Impressum } from "./pages/Impressum";
 import { queryClient } from "./lib/queryClient";
 
 function App() {
@@ -19,13 +21,14 @@ function App() {
             <Sidebar />
             <main className="flex-1 min-w-0">
               <Routes>
-                <Route path="/" element={<Navigate to="/liga" replace />} />
+                <Route path="/" element={<Home />} />
                 <Route path="/liga" element={<LeagueStats />} />
                 <Route path="/turnier" element={<TournamentStats />} />
                 <Route path="/mannschaft" element={<TeamStats />} />
                 <Route path="/spieler" element={<PlayerStats />} />
                 <Route path="/diagnose/club-matrix" element={<ClubMatrix />} />
                 <Route path="/diagnose/liga-wochen" element={<LeagueWeekMatrix />} />
+                <Route path="/impressum" element={<Impressum />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </main>

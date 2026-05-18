@@ -10,6 +10,7 @@ import {
   useTournamentSection,
 } from "../../hooks/useTournament";
 import { useTranslations } from "../../hooks/useTranslations";
+import { resolveTournamentPlayerName } from "../../lib/tournamentPlayer";
 import { BestEfforts } from "./blocks/BestEfforts";
 import { Leaderboard } from "./blocks/Leaderboard";
 import { PlayerSection } from "./blocks/PlayerSection";
@@ -31,11 +32,18 @@ export function TournamentStats() {
   const roundsQuery = useTournamentRounds(season || null, tournament || null);
   const playersQuery = useTournamentPlayers(season || null, tournament || null, round || null);
 
+  const roster = playersQuery.data ?? [];
+  const resolvedPlayer = useMemo(() => {
+    if (!player) return "";
+    if (!playersQuery.isSuccess || roster.length === 0) return player;
+    return resolveTournamentPlayerName(player, roster) ?? player;
+  }, [player, playersQuery.isSuccess, roster]);
+
   const sectionQuery = useTournamentSection(season || null, tournament || null, round || null);
   const playerSectionQuery = usePlayerSectionForTournament(
     season || null,
     tournament || null,
-    player || null,
+    resolvedPlayer || null,
   );
 
   // Backfill defaults: if season missing, pick first available; if tournament
@@ -61,7 +69,6 @@ export function TournamentStats() {
       const next = new URLSearchParams(searchParams);
       next.set("tournament", list[0]);
       next.delete("round");
-      next.delete("player");
       setSearchParams(next, { replace: true });
     }
   }, [
@@ -84,15 +91,13 @@ export function TournamentStats() {
     }
   }, [roundsQuery.isSuccess, roundsQuery.data, round, searchParams, setSearchParams]);
 
-  // If player isn't in the current tournament's player list, clear it.
+  // Normalize deep-link player names to the roster spelling (do not strip unknown players).
   useEffect(() => {
-    if (!playersQuery.isSuccess) return;
-    if (!player) return;
-    const list = playersQuery.data ?? [];
-    const lower = player.toLowerCase();
-    if (!list.some((p) => p.toLowerCase() === lower)) {
+    if (!playersQuery.isSuccess || !player) return;
+    const canonical = resolveTournamentPlayerName(player, playersQuery.data ?? []);
+    if (canonical && canonical !== player) {
       const next = new URLSearchParams(searchParams);
-      next.delete("player");
+      next.set("player", canonical);
       setSearchParams(next, { replace: true });
     }
   }, [playersQuery.isSuccess, playersQuery.data, player, searchParams, setSearchParams]);
@@ -121,7 +126,7 @@ export function TournamentStats() {
     return `${t("ui.tournament.round", "Runde")} ${round}`;
   }, [round, sectionQuery.data, t]);
 
-  const playerMode = !!player;
+  const playerMode = !!resolvedPlayer;
 
   return (
     <div className="mx-auto max-w-[1280px] px-8 pt-12 pb-24">
@@ -150,8 +155,8 @@ export function TournamentStats() {
         round={round}
         rounds={roundsQuery.data ?? []}
         roundsLoading={roundsQuery.isPending}
-        player={player}
-        players={playersQuery.data ?? []}
+        player={resolvedPlayer}
+        players={roster}
         playersLoading={playersQuery.isPending}
         playerMode={playerMode}
         onSeasonChange={(v) => setParam("season", v, ["tournament", "round", "player"])}
@@ -183,6 +188,17 @@ export function TournamentStats() {
                 t={t}
               />
             )}
+            {playerSectionQuery.isSuccess &&
+              !playerSectionQuery.isFetching &&
+              resolvedPlayer &&
+              !playerSectionQuery.data && (
+                <p className="text-small text-muted">
+                  {t(
+                    "ui.tournament.no_player_data",
+                    "Keine Spielerdaten für diese Auswahl.",
+                  )}
+                </p>
+              )}
           </>
         ) : (
           <>

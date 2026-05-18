@@ -5,8 +5,10 @@ import {
   CalendarRange,
   ChevronsLeft,
   ChevronsRight,
+  Home as HomeIcon,
   Menu,
   Search,
+  FileText,
   Settings,
   SunMoon,
   Trophy,
@@ -14,8 +16,11 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import { Link, NavLink, useSearchParams } from "react-router-dom";
+import { DatabaseSelector } from "./DatabaseSelector";
 import { useMobileNav } from "../context/MobileNavContext";
+
+const DIAGNOSIS_GROUP_LABEL = "Diagnose";
 
 type Theme = "light" | "dark";
 type Lang = "de" | "en";
@@ -32,6 +37,10 @@ type NavGroup = {
 };
 
 const NAV_GROUPS: ReadonlyArray<NavGroup> = [
+  {
+    label: "Start",
+    items: [{ path: "/", label: "Übersicht", icon: HomeIcon }],
+  },
   {
     label: "Spielbetrieb",
     items: [
@@ -71,6 +80,8 @@ export function Sidebar() {
   });
   const [lang, setLang] = useState<Lang>("de");
   const { mobileOpen, openMobileNav, closeMobileNav, leagueCompactChrome } = useMobileNav();
+  const [searchParams] = useSearchParams();
+  const querySuffix = searchParams.toString() ? `?${searchParams.toString()}` : "";
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -180,15 +191,40 @@ export function Sidebar() {
                   <li key={item.path}>
                     <NavRow
                       item={item}
+                      to={`${item.path}${querySuffix}`}
                       collapsed={collapsed && !mobileOpen}
                       onNavigate={closeMobileNav}
                     />
                   </li>
                 ))}
+                {group.label === DIAGNOSIS_GROUP_LABEL && (
+                  <li className="mt-2 pt-2 border-t border-border">
+                    <DatabaseSelector
+                      variant="sidebar"
+                      collapsed={collapsed && !mobileOpen}
+                    />
+                  </li>
+                )}
               </ul>
             </div>
           ))}
         </nav>
+
+        <div className={"px-2 pb-2 " + (collapsed && !mobileOpen ? "lg:px-1" : "")}>
+          <NavLink
+            to={`/impressum${querySuffix}`}
+            onClick={closeMobileNav}
+            title={collapsed && !mobileOpen ? "Impressum" : undefined}
+            className={({ isActive }) =>
+              "flex h-9 items-center gap-2.5 rounded-sm px-2 text-small transition-colors hover:bg-surface-subtle focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring " +
+              (isActive ? "bg-accent-tint text-foreground" : "text-muted hover:text-foreground") +
+              (collapsed && !mobileOpen ? " lg:justify-center lg:px-0" : "")
+            }
+          >
+            <FileText size={16} strokeWidth={1.75} />
+            <span className={collapsed && !mobileOpen ? "lg:hidden" : ""}>Impressum</span>
+          </NavLink>
+        </div>
 
         {/* Footer micro-controls */}
         <div
@@ -227,12 +263,15 @@ export function Sidebar() {
 
 function Brand() {
   return (
-    <div className="flex items-center gap-2">
+    <Link
+      to="/"
+      className="flex items-center gap-2 rounded-sm hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+    >
       <div className="grid h-7 w-7 place-items-center rounded-xs bg-accent text-accent-foreground font-mono text-caption font-semibold">
         BL
       </div>
       <span className="text-body font-semibold tracking-tight text-foreground">Bowl-A-Lyzer</span>
-    </div>
+    </Link>
   );
 }
 
@@ -265,17 +304,19 @@ function SearchTrigger({ collapsed }: { collapsed: boolean }) {
 
 function NavRow({
   item,
+  to,
   collapsed,
   onNavigate,
 }: {
   item: NavItem;
+  to: string;
   collapsed: boolean;
   onNavigate: () => void;
 }) {
   const Icon = item.icon;
   return (
     <NavLink
-      to={item.path}
+      to={to}
       onClick={onNavigate}
       title={collapsed ? item.label : undefined}
       className={({ isActive }) =>

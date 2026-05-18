@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, session, redirect, url_for, request, jsonify
+from flask import Blueprint, session, redirect, request, jsonify
 from data_access.pd_dataframes import fetch_column
 from app.services.data_manager import DataManager
 from app.config.database_config import database_config
@@ -6,38 +6,23 @@ import datetime
 
 bp = Blueprint('main', __name__)
 
-@bp.route('/')
-def index():
-    return render_template('index.html')
+
+@bp.route('/home/stats')
+def home_stats():
+    """Aggregate counts for the React landing page."""
+    try:
+        database = request.args.get('database')
+        from app.services.home_service import get_home_stats
+
+        return jsonify(get_home_stats(database))
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 @bp.route('/set-season/<season>')
 def set_season(season):
     session['selected_season'] = season
-    return redirect(request.referrer or url_for('main.index'))
-
-@bp.route('/overall/<analysis>')
-def overall_stats(analysis):
-    season = session.get('selected_season', 'all')
-    return render_template('overall.html', analysis=analysis, season=season)
-
-@bp.route('/league/<analysis>')
-def league_stats(analysis):
-    season = session.get('selected_season', 'all')
-    return render_template('league/stats.html', analysis=analysis, season=season)
-
-# NOTE: Do not register `/team/<variable>` here — it shadows `/team/get_teams` and other
-# team blueprint JSON routes on some Werkzeug/Flask orderings. Use `team.stats` (/team/stats).
-
-@bp.route('/player/<analysis>')
-def player_stats(analysis):
-    season = session.get('selected_season', 'all')
-    return render_template('player/content.html', analysis=analysis, season=season)
-
-@bp.route('/impressum')
-def impressum():
-    """Impressum page - German legal requirement"""
-    return render_template('impressum.html')
+    return redirect(request.referrer or '/liga')
 
 @bp.route('/switch-database', methods=['POST'])
 def switch_database():
@@ -239,21 +224,6 @@ def data_source_changed():
             'current_display_name': 'Simulated Data',
             'message': f'Server error: {str(e)}'
         }, 500
-
-@bp.route('/test')
-def test():
-    """Test page for API routes"""
-    return render_template('test_new.html')
-
-@bp.route('/test-tabulator')
-def test_tabulator():
-    """Test page for Tabulator highlighting"""
-    return render_template('test_tabulator.html')
-
-@bp.route('/database-test')
-def database_test():
-    """Test page for database switching functionality"""
-    return render_template('database_test.html')
 
 @bp.route('/debug-session')
 def debug_session():

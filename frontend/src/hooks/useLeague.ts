@@ -355,8 +355,12 @@ export type WeekMatrixPayload = {
 const DIAGNOSIS_LIST_STALE_MS = 10 * 60 * 1000;
 
 export function useClubMatrix(club: string | null, onlyUnnumbered: boolean) {
+  const database =
+    typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("database")
+      : null;
   return useQuery({
-    queryKey: ["league", "club-matrix", club ?? "", onlyUnnumbered],
+    queryKey: ["league", "club-matrix", database ?? "", club ?? "", onlyUnnumbered],
     queryFn: () =>
       fetchJson<ClubMatrixPayload>(
         buildUrl("/league/get_club_matrix", {
@@ -369,8 +373,12 @@ export function useClubMatrix(club: string | null, onlyUnnumbered: boolean) {
 }
 
 export function useWeekMatrix(expectedWeeks: number) {
+  const database =
+    typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("database")
+      : null;
   return useQuery({
-    queryKey: ["league", "week-matrix", expectedWeeks],
+    queryKey: ["league", "week-matrix", database ?? "", expectedWeeks],
     queryFn: () =>
       fetchJson<WeekMatrixPayload>(
         buildUrl("/league/get_week_matrix", { expected_weeks: expectedWeeks }),

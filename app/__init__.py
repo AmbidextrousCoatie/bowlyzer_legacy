@@ -1,76 +1,48 @@
-from flask import Flask, request, send_from_directory
+from flask import Flask, request
 import os
-import time
+
+from app.spa import register_spa
+
+_API_PATH_PREFIXES = (
+    "/league/",
+    "/player/",
+    "/team/",
+    "/tournament/",
+    "/switch-database",
+    "/get-data-sources-info",
+    "/home/",
+    "/data-source-changed",
+    "/set-season/",
+)
+
 
 def create_app():
-    # Get absolute paths for templates and static files
-    app_dir = os.path.dirname(os.path.abspath(__file__))
-    template_folder = os.path.join(app_dir, 'templates')
-    static_folder = os.path.join(app_dir, 'static')
-    
-    app = Flask(__name__,
-                template_folder=template_folder,
-                static_folder=static_folder)
-    app.secret_key = 'your-secret-key-here'
-    
-    # Configure session for production
-    app.config['SESSION_TYPE'] = 'filesystem'  # Use filesystem for production
-    app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 hour session lifetime
-    app.config['SESSION_FILE_THRESHOLD'] = 500  # Number of sessions before cleanup
-    
-    # Add middleware to ensure DataManager loads fresh data from session
+    app = Flask(__name__)
+    app.secret_key = os.environ.get("FLASK_SECRET_KEY", "change-me-in-production")
+    app.config["SESSION_TYPE"] = "filesystem"
+    app.config["PERMANENT_SESSION_LIFETIME"] = 3600
+    app.config["SESSION_FILE_THRESHOLD"] = 500
+
     @app.before_request
     def ensure_fresh_data():
-        """Ensure DataManager loads fresh data from session on every request"""
+        """Reload DataManager from session on API requests only (skip static SPA assets)."""
+        path = request.path
+        if not any(path.startswith(prefix) for prefix in _API_PATH_PREFIXES):
+            return
         try:
-            from app.services.data_manager import DataManager  # noqa: F401
-            # Create a DataManager instance to ensure it loads from session
-            # This is crucial for production with multiple worker processes
+            from app.services.data_manager import DataManager
+
             data_manager = DataManager()
-            # Force reload from session to ensure consistency
             data_manager.force_reload_from_session()
         except Exception as e:
-            # Log error but don't break the request
             print(f"Warning: Could not ensure fresh data: {e}")
-    
-    # Custom static file handler with cache-busting
-    @app.route('/static/<path:filename>')
-    def custom_static(filename):
-        """Serve static files with cache-busting headers"""
-        response = send_from_directory(app.static_folder, filename)
-        
-        # Add cache-busting headers for JavaScript and CSS files
-        if filename.endswith(('.js', '.css')):
-            # Set cache headers to prevent caching
-            response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-            response.headers['Pragma'] = 'no-cache'
-            response.headers['Expires'] = '0'
-            
-            # Add ETag based on file modification time for conditional requests
-            file_path = os.path.join(app.static_folder, filename)
-            if os.path.exists(file_path):
-                mtime = os.path.getmtime(file_path)
-                response.set_etag(f'"{int(mtime)}"')
-        
-        return response
-    
-    # Template helper for cache busting
-    @app.context_processor
-    def inject_cache_buster():
-        """Inject cache busting helper and app defaults into templates"""
-        from app.utils.cache_buster import get_static_url
-        from app.config.database_config import database_config
-        return dict(
-            static_url=get_static_url,
-            default_database=database_config.get_default_source(),
-        )
-    
-    from app.routes import main, player_routes, league_routes, league_routes_legacy, team_routes, tournament_routes
-    # Register team API blueprint before main so `/team/get_*` is never shadowed by `/team/<analysis>`-style routes.
+
+    from app.routes import main, player_routes, league_routes, team_routes, tournament_routes
+
     app.register_blueprint(team_routes.bp)
     app.register_blueprint(main.bp)
     app.register_blueprint(player_routes.bp)
     app.register_blueprint(league_routes.bp)
-    app.register_blueprint(league_routes_legacy.bp_legacy)
     app.register_blueprint(tournament_routes.bp)
-    return app 
+    register_spa(app)
+    return app

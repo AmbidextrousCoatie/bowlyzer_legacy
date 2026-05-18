@@ -189,7 +189,7 @@ function competitionCellHtml(args: CompetitionCellArgs): string {
         : "");
     if (teamForLink) qs.set("team", teamForLink);
   }
-  if (args.database) qs.set("database", args.database);
+  if (args.database && !args.isTournament) qs.set("database", args.database);
   const targetPath = args.isTournament ? "/turnier" : "/liga";
   return `<a href="${targetPath}?${qs.toString()}">${escapeHtml(label)}</a>`;
 }

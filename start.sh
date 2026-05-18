@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Start backend (Flask API on :5000, same default as `python wsgi.py`) and frontend (Vite on :5173) together.
+# Dev: Flask API (:5000) + Vite HMR (:5173). Production: see DEPLOY.md (single Gunicorn + SPA dist).
 # Stops cleanly on SIGINT (Ctrl+C) or SIGTERM by signalling each child's
 # process group (so descendants like the actual flask/node processes die too).
 

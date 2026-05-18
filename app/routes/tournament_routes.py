@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from flask import Blueprint, jsonify, render_template, request
+from flask import Blueprint, jsonify, request
 
 from app.cache.league_response_cache import league_cache_put, league_cache_try_get
 from app.config.database_config import database_config
@@ -12,6 +12,15 @@ bp = Blueprint("tournament", __name__)
 # Removed from ``database_config``; old bookmarks still send these IDs.
 _LEGACY_SYNTHETIC_TOURNAMENT_IDS = frozenset(
     {"db_tournament_geek_2026", "db_tournament_myth_2024_2026"}
+)
+
+_TOURNAMENT_DATABASE_IDS = frozenset(
+    {
+        *_LEGACY_SYNTHETIC_TOURNAMENT_IDS,
+        "db_tournament_sbm_2026_gf",
+        "db_tournament_nbm_2026_gf",
+        "db_tournament_regions_2026_gf",
+    }
 )
 
 # Real GF / club tournament CSVs only (never synthetic demo datasets).
@@ -27,8 +36,11 @@ def _normalize_requested_tournament_database(requested: str | None) -> str | Non
     if not requested:
         return None
     if requested in _LEGACY_SYNTHETIC_TOURNAMENT_IDS:
-        return "db_tournament_regions_2026_gf"
-    return requested
+        return _REGIONAL_TOURNAMENT_SOURCE
+    if requested in _TOURNAMENT_DATABASE_IDS:
+        return requested
+    # Global league ?database= (e.g. db_real_merged from sidebar) must not apply here.
+    return None
 
 
 def _resolve_default_tournament_source() -> str:
@@ -89,11 +101,6 @@ def _tournament_json_cache_put(endpoint_key: str, payload) -> None:
         dict(request.args),
         payload,
     )
-
-
-@bp.route("/tournament/stats")
-def tournament_stats():
-    return render_template("tournament/stats.html")
 
 
 @bp.route("/tournament/get_available_tournaments")

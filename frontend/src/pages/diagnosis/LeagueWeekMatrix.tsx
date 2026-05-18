@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useWeekMatrix, type WeekMatrixCell } from "../../hooks/useLeague";
 import { useTranslations } from "../../hooks/useTranslations";
+import { DiagnosisToolbar } from "../../components/DiagnosisToolbar";
 import { weekMatrixCellPath } from "../../lib/diagnosisLinks";
 
 const STATUS_BG: Record<string, string> = {
@@ -40,7 +41,7 @@ export function LeagueWeekMatrix() {
         </p>
       </header>
 
-      <div className="mb-4 flex flex-wrap items-end gap-4 rounded-sm border border-border bg-surface p-4 lg:p-5">
+      <DiagnosisToolbar>
         <label className="flex flex-col gap-1.5">
           <span className="text-label text-muted">
             {t("ui.diagnosis.expected_weeks", "Erwartete Spieltage")}
@@ -54,7 +55,7 @@ export function LeagueWeekMatrix() {
             className="h-9 w-24 rounded-sm border border-border bg-surface-subtle px-2.5 font-mono text-small"
           />
         </label>
-      </div>
+      </DiagnosisToolbar>
 
       {query.isError && (
         <p className="text-small text-danger-fg">

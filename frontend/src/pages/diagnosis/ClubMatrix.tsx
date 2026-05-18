@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { useClubMatrix } from "../../hooks/useLeague";
 import { useTranslations } from "../../hooks/useTranslations";
 import { formatMatrixCellItem, normalizeClubMatrixCell } from "../../lib/clubMatrixCell";
+import { DiagnosisToolbar } from "../../components/DiagnosisToolbar";
 import { leagueDiagnosisPath } from "../../lib/diagnosisLinks";
 
 function teamLabel(teamNumber: string): string {
@@ -46,8 +47,7 @@ export function ClubMatrix() {
         </p>
       </header>
 
-      <div className="rounded-sm border border-border bg-surface p-4 lg:p-5">
-        <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end">
+      <DiagnosisToolbar>
           <label className="flex min-w-[min(100%,280px)] flex-1 flex-col gap-1.5">
             <span className="text-label text-muted">{t("ui.player.club", "Verein")}</span>
             <select
@@ -87,8 +87,7 @@ export function ClubMatrix() {
               "Nur Vereine mit unnummeriertem Team",
             )}
           </label>
-        </div>
-      </div>
+      </DiagnosisToolbar>
 
       {query.isError && (
         <p className="mt-4 text-small text-danger-fg">
