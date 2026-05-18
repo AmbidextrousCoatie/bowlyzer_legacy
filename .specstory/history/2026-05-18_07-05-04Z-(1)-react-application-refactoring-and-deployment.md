@@ -2439,3 +2439,2570 @@ docker compose logs -f bowlyzer
 Before first deploy, run locally once: `cd frontend && pnpm build`, then `uv sync` (for gunicorn) and smoke-test `http://127.0.0.1:8000/liga` after `uv run gunicorn -c deploy/gunicorn.conf.py wsgi:app`.
 
 If you want, I can add a GitHub Actions workflow to build/push the image so the VPS never runs `pnpm build`.
+
+---
+
+_**User**_
+
+okay, so we covered porting the last bits of the legacy content, we can skip the funsies. 
+check the current state of the repo, then remove already covered parts on the list you gave and reproduce it showing what is left for the mogration towards docker plan. document this in a separate planning documents
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants me to check the current state of the repository after the migration work is completed.</details></think>
+
+_**Agent (default)**_
+
+Checking the repo state and drafting a planning document with only the remaining migration items.
+
+
+_**Agent (default)**_
+
+Glob pattern "**/*" matches every file and is not allowed. Use a more specific glob or no glob.
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **1** result in **1** directory</summary>
+
+Directory: **** (1 file)
+
+| File |
+|------|
+| `Dockerfile` |
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **1** result in **1** directory</summary>
+
+Directory: **** (1 file)
+
+| File |
+|------|
+| `DEPLOY.md` |
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "frontend/src/**/*",
+  "pattern": "switch-database|get-data-sources|DatabaseSelector|database"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "pattern": "switch-database|get-data-sources|DatabaseSelector|database",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "frontend/src/components/Sidebar.tsx"
+    },
+    {
+      "matchCount": 2,
+      "uri": "frontend/src/hooks/useHome.ts"
+    },
+    {
+      "matchCount": 4,
+      "uri": "frontend/src/pages/Home.tsx"
+    },
+    {
+      "matchCount": 9,
+      "uri": "frontend/src/hooks/useLeague.ts"
+    },
+    {
+      "matchCount": 5,
+      "uri": "frontend/src/pages/player/blocks/SeasonStats.tsx"
+    },
+    {
+      "matchCount": 6,
+      "uri": "frontend/src/lib/homeExamples.ts"
+    },
+    {
+      "matchCount": 4,
+      "uri": "frontend/src/lib/api.ts"
+    },
+    {
+      "matchCount": 3,
+      "uri": "frontend/src/hooks/useDatabase.ts"
+    }
+  ],
+  "totalFiles": 8,
+  "totalMatches": 53
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Glob pattern "**/*" matches every file and is not allowed. Use a more specific glob or no glob.
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\App.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\components\DatabaseSelector.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **0** results in **1** directory</summary>
+
+Directory: **** (0 files)
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/*.py",
+  "pattern": "league_service_legacy"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "pattern": "league_service_legacy",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/*.py",
+  "pattern": "render_template"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "pattern": "render_template",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **0** results in **1** directory</summary>
+
+Directory: **** (0 files)
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Good progress has been made since the last conversation.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\spa.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\DEPLOY.md</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **43** results in **1** directory</summary>
+
+Directory: **** (43 files)
+
+| File |
+|------|
+| `docs/archive/PHASE_2_COMPLETION_SUMMARY.md` |
+| `docs/CONTENT_REFRESH_DEBUGGING.md` |
+| `docs/README.md` |
+| `docs/DATABASE_SWITCHING_FIX.md` |
+| `docs/TEAM_VS_TEAM_TABLE_FIXES.md` |
+| `docs/archive/PHASE_3_FILTER_FIX.md` |
+| `docs/SEASON_ONLY_VIEW_IMPLEMENTATION.md` |
+| `docs/TEAM_API_500_ERRORS_FIX.md` |
+| `docs/LEAGUE_PHASE2_COMPLETION.md` |
+| `docs/FILTER_COMBINATIONS_MATRIX.md` |
+| `docs/TRIGGER_GROUP_DETECTION_FIX.md` |
+| `docs/CONVERSATION_SUMMARY.md` |
+| `docs/TOURNAMENT_IMPLEMENTATION_PLAN.md` |
+| `docs/WEEKS_AND_CONTENT_FIXES.md` |
+| `docs/BUTTON_SYSTEM_MIGRATION_SUMMARY.md` |
+| `docs/archive/CLUTCH_BLOCK_FIX.md` |
+| `docs/archive/CONTENT_BLOCKS_FIXES.md` |
+| `docs/DATA_TYPE_NORMALIZATION_ASSESSMENT.md` |
+| `docs/architecture_analysis.md` |
+| `docs/FRONTEND_REFACTORING_PLAN.md` |
+| `docs/BUTTON_CONSTRAINT_FIXES.md` |
+| `docs/TEAM_DROPDOWN_FIX.md` |
+| `docs/CLEANUP_SUMMARY.md` |
+| `docs/CENTRALIZED_BUTTON_SYSTEM.md` |
+| `docs/GF_PIPELINE_SPRINT1_RUNBOOK.md` |
+| `docs/archive/CONTENT_BLOCKS_EMPTY_ISSUE.md` |
+| `docs/ENHANCED_LISTENER_SYSTEM.md` |
+| `docs/RESPONSIVE_DATA_SPECIFICATION.md` |
+| `docs/archive/CHART_CANVAS_FIX.md` |
+| `docs/TEAM_VS_TEAM_COLORED_CIRCLES_FIX.md` |
+| `docs/BUTTON_POPULATION_FIXES.md` |
+| `docs/BUTTON_SYSTEM_FIXES.md` |
+| `docs/LANGUAGE_SELECTOR_IMPLEMENTATION.md` |
+| `docs/LEAGUE_SERVICE_I18N_IMPLEMENTATION.md` |
+| `docs/LEAGUE_STATS_REFACTORING_PLAN.md` |
+| `docs/PHASE_3_COMPLETE.md` |
+| `docs/archive/PHASE_1_COMPLETION_SUMMARY.md` |
+| `docs/TEAM_VS_TEAM_DESCRIPTION_I18N.md` |
+| `docs/DATABASE_SWITCHING_GUIDE.md` |
+| `docs/LEAGUE_SELECTION_FIXES.md` |
+| `docs/archive/PHASE_3_COMPLETION_SUMMARY.md` |
+| `docs/TABLE_VISUALIZATION_OWNERSHIP.md` |
+| `docs/GF_DATA_PIPELINE_IMPLEMENTATION_PLAN.md` |
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Glob pattern "**/*" matches every file and is not allowed. Use a more specific glob or no glob.
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\src\pages\Impressum.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\docker-compose.yml</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **1** result in **1** directory</summary>
+
+Directory: **** (1 file)
+
+| File |
+|------|
+| `app/services/league_service_legacy.py` |
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "app/**/*.py",
+  "pattern": "/home/"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "pattern": "/home/",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "app/__init__.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/routes/main.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/spa.py"
+    }
+  ],
+  "totalFiles": 3,
+  "totalMatches": 3
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\frontend\vite.config.ts</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **0** results in **1** directory</summary>
+
+Directory: **** (0 files)
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\CLAUDE.md</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I have a good picture. Let me create a planning document that outlines the next steps.
+
+The repository is now structured with the legacy frontend removed and a single-page application served via Flask. Docker setup includes Dockerfile, docker-compose, and gunicorn configuration. The deployment documentation (DEPLOY.md) is updated, and database selection is implemented in React. The home page, impressum with contact details, and data oddities diagnosis page are functional. Legacy URL redirects and wsgi.py cleanup are complete. Remaining work is organized into phases for Docker migration.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\uv.lock",
+  "pattern": "gunicorn"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repos\\bowlyzer_legacy\\uv.lock",
+  "pattern": "gunicorn",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\Dockerfile</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/*.py",
+  "pattern": "league_service_legacy"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "pattern": "league_service_legacy",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\pyproject.toml</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **0** results in **1** directory</summary>
+
+Directory: **** (0 files)
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I will create `docs/planning/DOCKER_MIGRATION_PLAN.md` as a separate planning document.
+
+I will create `docs/planning/DOCKER_MIGRATION_PLAN.md` as a separate planning document with the specified structure, including status snapshot, completed work, out-of-scope items, work organized by phase, and reference to DEPLOY.md, while marking "Legacy frontend separation" as complete.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "app/routes/main.py",
+  "pattern": "@test|/test|debug-session"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "pattern": "@test|/test|debug-session",
+  "topFiles": [
+    {
+      "matchCount": 3,
+      "uri": "app/routes/main.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 3
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\app\routes\main.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Debug and test routes should be reviewed for removal in production environments, as they pose security risks and should be disabled before going live.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\docs\planning\DOCKER_MIGRATION_PLAN.md</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Checked the repo and added a planning doc that drops completed items and lists only what’s left for Docker go-live.
+
+**New file:** [`docs/planning/DOCKER_MIGRATION_PLAN.md`](docs/planning/DOCKER_MIGRATION_PLAN.md)  
+**Runbook (unchanged):** [`DEPLOY.md`](DEPLOY.md)
+
+### Already done (removed from backlog)
+
+- Legacy Jinja/JS removed; Flask is API-only  
+- SPA serving + legacy URL redirects (`app/spa.py`)  
+- React covers Home, all stat pages, diagnosis (incl. data oddities), Impressum with `SITE_CONTACT`  
+- `DatabaseSelector` wired to `/get-data-sources-info`  
+- Docker scaffold (`Dockerfile`, `compose`, Gunicorn config)  
+- **Funsies** — explicitly out of scope per your note  
+
+### Still open (summary)
+
+| Phase | What’s left |
+|-------|-------------|
+| **A — Pre-deploy (P0)** | Regenerate `uv.lock` (gunicorn in `pyproject.toml` but not in lockfile), verify `docker compose build` + smoke test, `.env.example` + real `FLASK_SECRET_KEY`, legal check on Impressum |
+| **B — First VPS (P0)** | Server setup, prefer CI/local image build, deploy, smoke tests, TLS via Caddy/nginx |
+| **C — Hygiene (P1)** | CI image push, lock down `/debug-session` and test routes, delete `league_service_legacy.py`, memory check on 1 GB, update stale `CLAUDE.md` |
+| **D — Optional (P2)** | In-container nginx, automated deploy, data-refresh playbook, archive old `docs/` |
+
+The planning doc has a mermaid sequence, risk table, and a clear “definition of done” checklist. I can tackle Phase A next (lockfile + `.env.example` + docker build verify) if you want.
+
+---
+
+_**User**_
+
+okay, so we will work on a windows machine, but the prod env will be a ubuntu machine. any issues with that?
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Developing on Windows while deploying to Ubuntu can cause compatibility issues due to differences in file systems, path separators, and system libraries between the two operating systems.
+
+Cross-platform development between Windows and Ubuntu can lead to issues with line endings, path separators, and case sensitivity. While Docker builds Linux images by default, shell scripts may need adjustment for CRLF vs LF line endings. Python typically handles path separators well, but hardcoded paths could cause problems. Case sensitivity differences between Windows and Linux should also be considered. Tools like uv, pnpm, and vp generally work across platforms without issues.</details></think>
+
+_**Agent (default)**_
+
+Checking the repo for common Windows→Linux deployment pitfalls.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/*.{py,sh,yml,yaml,Dockerfile}",
+  "pattern": "\\\\\\\\|C:\\\\\\\\|win32|platform\\.system|os\\.path\\.join"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "pattern": "\\\\\\\\|C:\\\\\\\\|win32|platform\\.system|os\\.path\\.join",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "database/config.py"
+    },
+    {
+      "matchCount": 28,
+      "uri": "frontend/pnpm-lock.yaml"
+    }
+  ],
+  "totalFiles": 2,
+  "totalMatches": 62
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+File not found
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **0** results in **1** directory</summary>
+
+Directory: **** (0 files)
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\start.sh</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\Dockerfile</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+No fundamental blocker — this stack is a normal **dev on Windows, run on Ubuntu** setup. Docker is doing most of the cross-platform work for production.
+
+## What is fine
+
+| Area | Why it’s OK |
+|------|-------------|
+| **Production image** | `Dockerfile` uses Linux bases (`bookworm-slim`). `docker compose build` on Windows still produces a **Linux** image (Docker Desktop/WSL2 VM). That image runs the same on Ubuntu. |
+| **Python app** | Paths use `os.path` / `pathlib`; no Windows-only runtime deps in `pyproject.toml`. |
+| **React build** | `pnpm build` output is static files — OS doesn’t matter once they’re in the image. |
+| **API + SPA** | Same-origin Flask + `frontend/dist` — no OS-specific serving logic. |
+
+So: **build and test the Docker image on Windows, deploy that image (or rebuild the same `Dockerfile`) on Ubuntu** — that’s the intended path.
+
+## Things to watch (real, but manageable)
+
+1. **Don’t run production natively on Windows**  
+   Use the container on Ubuntu. Avoid `uv run gunicorn` directly on Windows as your prod model.
+
+2. **Local dev vs prod**  
+   - **Dev:** `start.sh` needs **Git Bash or WSL**, not plain PowerShell (`&&` / bash job control).  
+   - **Prod:** only Docker + `DEPLOY.md` on Ubuntu.
+
+3. **Line endings (`CRLF` vs `LF`)**  
+   There’s no `.gitattributes` yet. `start.sh` with Windows CRLF can break on Linux (`/bin/bash^M`).  
+   - Fix: add `.gitattributes` with `*.sh text eol=lf`, or develop scripts in WSL.  
+   - Docker `COPY` usually tolerates this for Python; shell scripts on the **host** are the risk.
+
+4. **Case-sensitive paths (Linux)**  
+   Windows ignores case; Ubuntu does not. Bad imports like `from Components.Foo` vs `components/Foo` can pass locally and fail in the image. CI/Linux Docker build catches this.
+
+5. **Architecture**  
+   If the VPS is `amd64` and your PC is **ARM** (some Windows laptops), set explicitly when building to push to the server:  
+   `docker buildx build --platform linux/amd64 ...`  
+   Same if it’s the other way around — match the VPS arch.
+
+6. **`uv.lock` / `pnpm-lock.yaml`**  
+   Lockfiles are OS-agnostic. Run `uv lock` on either OS; verify with `docker compose build` before deploy.
+
+7. **File permissions**  
+   Rare issue for this app. CSV bind-mount `./database:/app/database:ro` behaves the same on Ubuntu.
+
+## Practical workflow on Windows
+
+```text
+Daily dev:  WSL or Git Bash → ./start.sh  (or two terminals: uv + pnpm)
+Pre-deploy: docker compose build && docker compose up
+On VPS:     git pull / docker pull → docker compose up -d   (Ubuntu)
+```
+
+**Bottom line:** Windows for development is fine. Treat **the Docker image on Linux** as the source of truth for production; use WSL/Git Bash for shell scripts; run at least one full `docker compose build` before each release. Optional hardening: add `.gitattributes` for `*.sh` and document `linux/amd64` in the migration plan if your VPS arch is known.
+
+---
+
+_**User**_
+
+root@ubuntu:~# uname -m
+x86_64
+
+shall i work in the remote host for a more seamless workflow? i am not shy of using hter terminal
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Developing directly on the Ubuntu VPS remote host may offer a more seamless workflow compared to using Windows.
+
+Working directly on the Ubuntu VPS offers advantages like consistent OS behavior and native Docker builds, but the 1GB RAM limit may strain performance for development tools like Vite HMR, Flask, pandas, and Docker builds. Editing remotely requires either VS Code Remote SSH or terminal-based editors like vim, which might not align with everyone's preferences.</details></think>
+
+_**Agent (default)**_
+
+Short answer: **use the Ubuntu host for deploy, build, and smoke tests** — not necessarily for all day-to-day coding on a **1 GB** box.
+
+## Your VPS is `x86_64`
+
+That matches default Docker images (`linux/amd64`). No `buildx` platform tricks needed when you build on that machine.
+
+## Remote Ubuntu vs Windows — tradeoffs
+
+| Approach | Best for | Caveat on 1 GB VPS |
+|----------|----------|---------------------|
+| **Edit on Windows, deploy on VPS** | Daily feature work, Cursor, fast UI | Run `docker compose build` on VPS (or CI); dev via WSL/`start.sh` locally |
+| **SSH + terminal on VPS** | “Does it run here?” parity, ops, first deploy | **Heavy**: Vite + Flask + `pnpm install` + Docker build together will swap/thrash |
+| **VS Code / Cursor Remote-SSH** | Linux filesystem + your editor | Same RAM limits; better than pure vim if you want IDE |
+
+## Recommendation
+
+**Don’t move full dev onto prod VPS** if that’s the same 1 GB machine you’ll serve users from.
+
+Use a split workflow:
+
+1. **Windows (or WSL on Windows)** — edit, `pnpm dev`, `uv run pytest`, git.
+2. **Ubuntu VPS** — `git pull`, `docker compose build`, `up`, logs, firewall, Caddy.
+3. **Optional:** **Remote-SSH** into the VPS only when debugging production-like issues (not for every `pnpm dev` session).
+
+That gives you Linux parity where it matters (the container and host shell) without fighting 1 GB RAM during frontend HMR + pandas.
+
+## When remote-only *does* make sense
+
+- The VPS is **dev-only** for now (nothing public yet).
+- You’re fine with **no hot reload** (edit in `nano`/`vim`, rebuild/restart).
+- You added **swap** and accept slower builds.
+
+Then: clone on the server, install Docker + `git`, use SSH from Windows — totally workable.
+
+```bash
+# On VPS (ops / verify path)
+git clone … && cd bowlyzer
+export FLASK_SECRET_KEY=…
+docker compose build && docker compose up -d
+docker compose logs -f
+```
+
+## If you want “seamless” without living on the VPS
+
+- **WSL2 (Ubuntu)** on Windows: same `x86_64` userland, `./start.sh`, Docker Desktop → Linux containers — closest to prod without touching the VPS until deploy.
+- **Cursor/VS Code Remote-SSH**: edit files on Ubuntu, run terminals there, but still avoid running Vite + Docker build + Gunicorn all at once on 1 GB.
+
+**Bottom line:** You don’t need to be shy of the terminal on the VPS — use it for **deploy and validation**. Keep coding where you have RAM and the IDE; let Docker on `x86_64` Ubuntu be the production truth. If the box is still empty/dev-only and you prefer one environment, SSH dev on Ubuntu is fine — just expect to lean on swap and skip running dev servers and Docker builds simultaneously.
+
+---
+
+_**User**_
+
+okay, the walk me through the process step by step
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user seeks a step-by-step guide for deploying an application developed on Windows to a Ubuntu x86_64 VPS.</details></think>
+
+_**Agent (default)**_
+
+Pulling the current deploy config so the walkthrough matches the repo.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\DEPLOY.md</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\docker-compose.yml</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\docs\planning\DOCKER_MIGRATION_PLAN.md</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **0** results in **1** directory</summary>
+
+Directory: **** (0 files)
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I'll write a comprehensive step-by-step walkthrough covering the key aspects of the topic.</details></think>
+
+_**Agent (default)**_
+
+Here’s an end-to-end walkthrough: **code on Windows**, **run in Docker on Ubuntu `x86_64`**. Do it in order the first time; later you mostly repeat **Part 4–6**.
+
+---
+
+## Part 0 — What you’re building
+
+```text
+Browser → Ubuntu :8080 → Docker → Gunicorn :8000
+                              ├── /liga, /, …     → React (built into image)
+                              └── /league/get_* … → Flask JSON API
+```
+
+One container. No Node on the server at runtime. `database/` is mounted from the host so you can update CSVs without rebuilding.
+
+---
+
+## Part 1 — One-time setup on Windows
+
+### 1.1 Install tools
+
+| Tool | Purpose |
+|------|---------|
+| **Git** | Clone / push |
+| **WSL2** (Ubuntu) or **Git Bash** | Run `start.sh`, Linux-like shell |
+| **uv** | Python deps / tests |
+| **Node + pnpm** (or **Vite+ `vp`**) | Frontend dev & build |
+| **Docker Desktop** | Optional: test production image locally before VPS |
+
+### 1.2 Clone and dev smoke test (optional but useful)
+
+In WSL or Git Bash:
+
+```bash
+cd ~
+git clone <your-repo-url> bowlyzer
+cd bowlyzer
+
+# Python
+uv lock          # important: refreshes lockfile (includes gunicorn)
+uv sync
+uv run pytest -q
+
+# Frontend (from repo root)
+cd frontend
+pnpm install
+pnpm run build   # proves production build works
+cd ..
+```
+
+Daily dev (not production):
+
+```bash
+./start.sh
+# → http://localhost:5173  (UI)  proxies API to :5000
+```
+
+### 1.3 SSH access to the VPS
+
+On Windows (PowerShell):
+
+```powershell
+ssh-keygen -t ed25519 -C "you@bowlyzer"
+type $env:USERPROFILE\.ssh\id_ed25519.pub
+```
+
+On the VPS (as root or your user):
+
+```bash
+mkdir -p ~/.ssh && chmod 700 ~/.ssh
+nano ~/.ssh/authorized_keys   # paste public key
+chmod 600 ~/.ssh/authorized_keys
+```
+
+Test:
+
+```powershell
+ssh root@<VPS_IP>
+```
+
+---
+
+## Part 2 — One-time setup on Ubuntu VPS
+
+SSH in: `ssh root@<VPS_IP>`
+
+### 2.1 System packages
+
+```bash
+apt update && apt upgrade -y
+apt install -y git curl ca-certificates
+```
+
+### 2.2 Docker
+
+```bash
+curl -fsSL https://get.docker.com | sh
+docker --version
+docker compose version
+```
+
+### 2.3 Swap (strongly recommended on 1 GB)
+
+Build pulls Node + compiles frontend; swap avoids OOM kills:
+
+```bash
+fallocate -l 4G /swapfile
+chmod 600 /swapfile
+mkswap /swapfile
+swapon /swapfile
+echo '/swapfile none swap sw 0 0' >> /etc/fstab
+free -h
+```
+
+### 2.4 Firewall (basic)
+
+```bash
+ufw allow OpenSSH
+ufw allow 8080/tcp    # or 80/443 later if using Caddy
+ufw enable
+ufw status
+```
+
+---
+
+## Part 3 — Get the code onto the VPS
+
+**Option A — Git (best if repo is on GitHub/GitLab)**
+
+On VPS:
+
+```bash
+cd /opt   # or /home/youruser
+git clone <your-repo-url> bowlyzer
+cd bowlyzer
+```
+
+Private repo: deploy key or `git clone https://<token>@github.com/...`
+
+**Option B — Push from Windows**
+
+On Windows, after commits:
+
+```bash
+git push origin main
+```
+
+On VPS:
+
+```bash
+cd /opt/bowlyzer && git pull
+```
+
+---
+
+## Part 4 — First deploy on the VPS
+
+Still on the VPS, in the repo root (`/opt/bowlyzer` or similar).
+
+### 4.1 Production secret
+
+```bash
+cd /opt/bowlyzer
+openssl rand -hex 32
+```
+
+Copy the output. Create `.env` (never commit this):
+
+```bash
+cat > .env << 'EOF'
+FLASK_SECRET_KEY=paste-the-hex-here
+BOWLYZER_HOST_PORT=8080
+EOF
+chmod 600 .env
+```
+
+Docker Compose reads `FLASK_SECRET_KEY` from the environment / `.env` automatically.
+
+### 4.2 Build the image (first time: slow, 10–30+ min on 1 GB)
+
+```bash
+docker compose build
+```
+
+Watch for errors. Common fixes:
+
+- **Out of memory** → confirm swap is on (`free -h`)
+- **`uv sync --frozen` fails** → on Windows run `uv lock`, commit `uv.lock`, `git pull` on VPS, rebuild
+
+### 4.3 Start the stack
+
+```bash
+docker compose up -d
+docker compose ps
+docker compose logs -f bowlyzer
+```
+
+Wait until logs show Gunicorn listening and healthcheck passes (`healthy` in `docker compose ps`).
+
+### 4.4 Smoke test in the browser
+
+From your PC (replace IP):
+
+| URL | Expect |
+|-----|--------|
+| `http://<VPS_IP>:8080/` | Home page |
+| `http://<VPS_IP>:8080/liga` | Liga stats |
+| `http://<VPS_IP>:8080/impressum` | Impressum |
+| `http://<VPS_IP>:8080/league/stats` | Redirects to `/liga` |
+
+In the UI: change **Datenquelle** — URL should get `?database=…` and data should load.
+
+Quick API check on the server:
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:8080/liga
+curl -s "http://127.0.0.1:8080/home/stats" | head -c 200
+```
+
+---
+
+## Part 5 — Make it public (pick one)
+
+### 5A — Simple: port 8080 only
+
+Already done if `BOWLYZER_HOST_PORT=8080` and UFW allows `8080/tcp`.
+
+Share: `http://<VPS_IP>:8080`
+
+### 5B — Recommended: domain + HTTPS (Caddy)
+
+Point DNS `A` record → VPS IP.
+
+On VPS:
+
+```bash
+apt install -y caddy
+nano /etc/caddy/Caddyfile
+```
+
+```caddy
+bowlyzer.yourdomain.de {
+    reverse_proxy 127.0.0.1:8080
+}
+```
+
+```bash
+systemctl reload caddy
+ufw allow 80/tcp
+ufw allow 443/tcp
+```
+
+Caddy obtains TLS automatically. Users visit `https://bowlyzer.yourdomain.de`.
+
+---
+
+## Part 6 — Day-to-day workflow (Windows → VPS)
+
+### Change code on Windows
+
+```bash
+# WSL / dev terminal
+cd ~/bowlyzer
+# edit in Cursor…
+uv run pytest -q
+cd frontend && pnpm run build && cd ..   # optional sanity check
+git add -A && git commit -m "…" && git push
+```
+
+### Update production on VPS
+
+```bash
+ssh root@<VPS_IP>
+cd /opt/bowlyzer
+git pull
+docker compose build      # needed when frontend or Python deps change
+docker compose up -d
+docker compose logs -f --tail=50 bowlyzer
+```
+
+**Data-only update** (new CSVs, no code change):
+
+```bash
+# Copy/rsync CSVs into /opt/bowlyzer/database/ on the VPS, then:
+docker compose restart bowlyzer
+```
+
+No rebuild required — `database/` is bind-mounted.
+
+---
+
+## Part 7 — Optional: test Docker on Windows first
+
+Before touching the VPS:
+
+```powershell
+cd C:\Users\cfell\repos\bowlyzer_legacy
+# ensure uv.lock is committed after: uv lock
+docker compose build
+docker compose up -d
+# browser: http://localhost:8080/liga
+docker compose down
+```
+
+Same `x86_64` image logic as the VPS (Docker Desktop Linux VM).
+
+---
+
+## Part 8 — Troubleshooting cheatsheet
+
+| Symptom | Check |
+|---------|--------|
+| Can’t SSH | `ufw status`, provider firewall (Hetzner/DigitalOcean panel) |
+| Connection refused on 8080 | `docker compose ps`, `ufw allow 8080` |
+| Container exits / `unhealthy` | `docker compose logs bowlyzer` |
+| Blank page / 503 SPA | Build failed; `docker compose build` logs, `frontend/dist` in image |
+| API 500 | Logs; test `curl http://127.0.0.1:8080/home/stats` on VPS |
+| OOM during build | `free -h`, enable swap, build when idle |
+| Slow / killed build | Normal on 1 GB; use swap, don’t run other heavy jobs |
+
+Useful commands:
+
+```bash
+docker compose ps
+docker compose logs -f bowlyzer
+docker stats
+docker compose down && docker compose up -d --build
+```
+
+---
+
+## Checklist (first go-live)
+
+- [ ] `uv lock` committed (gunicorn in lockfile)
+- [ ] VPS: Docker + swap + firewall
+- [ ] Repo cloned to `/opt/bowlyzer`
+- [ ] `.env` with real `FLASK_SECRET_KEY`
+- [ ] `docker compose build && docker compose up -d`
+- [ ] Browser smoke tests (Home, Liga, DB switch, Impressum)
+- [ ] DNS + Caddy (if using a domain)
+- [ ] Impressum / contact details reviewed (`frontend/src/lib/siteContact.ts`)
+
+---
+
+**Suggested path for you:** finish **Part 1.2** (`uv lock` + local `pnpm build`) on Windows once, then do **Parts 2–4** on the VPS in a single SSH session. After that, routine deploys are just `git pull` + `docker compose up -d --build`.
+
+If you tell me your repo host (GitHub URL or “private”) and domain (or “IP only”), I can narrow Part 3 and 5 to exact commands for your case.
+
+---
+
+_**User**_
+
+PS C:\Users\cfell\repos\bowlyzer_deploy> uv lock
+error: No `pyproject.toml` found in current directory or any parent directory
+PS C:\Users\cfell\repos\bowlyzer_deploy>
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user attempted to run `uv lock` in the `bowlyzer_deploy` directory, which lacks a `pyproject.toml` file.</details></think>
+
+_**Agent (default)**_
+
+`uv lock` only works in a directory that contains **`pyproject.toml`** (and usually `uv.lock`).  
+
+You're in:
+
+```text
+C:\Users\cfell\repos\bowlyzer_deploy
+```
+
+That folder is **not** the app repo (or it's empty / deploy-only), so `uv` correctly reports: no `pyproject.toml`.
+
+## Fix
+
+Use the **actual project root** — from earlier work that's likely:
+
+```powershell
+cd C:\Users\cfell\repos\bowlyzer_legacy
+dir pyproject.toml    # should exist
+uv lock
+uv sync
+```
+
+If your clone has another name, find it:
+
+```powershell
+Get-ChildItem C:\Users\cfell\repos -Recurse -Filter pyproject.toml -Depth 2
+```
+
+Then `cd` into the folder that lists `pyproject.toml`.
+
+## What is `bowlyzer_deploy`?
+
+| If it's… | What to do |
+|----------|------------|
+| Empty / only for notes | Clone or copy the real repo there, or stop using this folder for `uv` |
+| Meant to be production checkout on VPS | On the **server**, clone the Git repo that has `pyproject.toml`, `Dockerfile`, `frontend/`, etc. |
+| A copy without Python project files | Re-clone: `git clone <repo-url> bowlyzer_legacy` |
+
+For **Docker deploy on the VPS**, you don't need `uv` on Windows in a separate deploy folder — you need the **full repo** (`pyproject.toml`, `uv.lock`, `Dockerfile`, `app/`, `frontend/`, `database/`, …) either:
+
+- cloned on the VPS (`git clone` → `docker compose build`), or  
+- the same full repo on Windows if you test Docker locally.
+
+## Minimal check
+
+In PowerShell:
+
+```powershell
+cd C:\Users\cfell\repos\bowlyzer_legacy
+Test-Path pyproject.toml
+Test-Path Dockerfile
+Test-Path frontend\package.json
+```
+
+All should be `True`. Then:
+
+```powershell
+uv lock
+uv sync
+```
+
+If `bowlyzer_deploy` was intentional, say what you put in it (git clone, zip, only compose files?) and we can align it with the deploy walkthrough.
+
+---
+
+_**User**_
+
+PS C:\Users\cfell\repos\bowlyzer_deploy> uv lock
+Using CPython 3.12.8 interpreter at: C:\Users\cfell\AppData\Local\Programs\Python\Python312\python.exe
+Resolved 29 packages in 2.39s
+Added gunicorn v26.0.0
+PS C:\Users\cfell\repos\bowlyzer_deploy> uv sync
+Using CPython 3.12.8 interpreter at: C:\Users\cfell\AppData\Local\Programs\Python\Python312\python.exe
+Creating virtual environment at: .venv
+Resolved 29 packages in 1ms
+Prepared 28 packages in 12.23s
+Installed 28 packages in 698ms
+ + blinker==1.9.0
+ + certifi==2026.4.22
+ + charset-normalizer==3.4.7
+ + click==8.3.3
+ + colorama==0.4.6
+ + et-xmlfile==2.0.0
+ + flask==3.1.3
+ + gunicorn==26.0.0
+ + idna==3.13
+ + iniconfig==2.3.0
+ + itsdangerous==2.2.0
+ + jinja2==3.1.6
+ + markupsafe==3.0.3
+ + numpy==2.4.4
+ + openpyxl==3.1.5
+ + packaging==26.2
+ + pandas==3.0.2
+ + pluggy==1.6.0
+ + pygments==2.20.0
+ + pytest==9.0.3
+ + python-dateutil==2.9.0.post0
+ + requests==2.33.1
+ + ruff==0.15.12
+ + six==1.17.0
+ + tqdm==4.67.3
+ + tzdata==2026.2
+ + urllib3==2.6.3
+ + werkzeug==3.1.8
+PS C:\Users\cfell\repos\bowlyzer_deploy> uv run pytest -q
+ImportError while loading conftest 'C:\Users\cfell\repos\bowlyzer_deploy\tests\conftest.py'.
+tests\conftest.py:18: in <module>
+    from domain.value_objects import (
+E   ModuleNotFoundError: No module named 'domain'
+
+---
+
+_**Agent (default)**_
+
+Investigating the test setup and missing `domain` module.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_deploy\tests\conftest.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **17** results in **1** directory</summary>
+
+Directory: **c:\Users\cfell\repos\bowlyzer_legacy** (17 files)
+
+| File |
+|------|
+| `../tests/domain/test_value_objects_game_result.py` |
+| `../tests/domain/test_entities_league.py` |
+| `../tests/domain/test_value_objects_score.py` |
+| `../tests/domain/test_entities_team.py` |
+| `../tests/domain/test_entities_game_result.py` |
+| `../tests/domain/test_domain_services_statistics_calculator.py` |
+| `../tests/domain/test_value_objects_points.py` |
+| `../tests/domain/test_value_objects_season.py` |
+| `../tests/domain/test_domain_services_standings_calculator.py` |
+| `../tests/domain/test_entities_match.py` |
+| `../tests/domain/test_entities_player.py` |
+| `../tests/domain/__init__.py` |
+| `../tests/domain/test_entities_position_comparison.py` |
+| `../tests/domain/test_entities_match_scoring.py` |
+| `../tests/domain/test_value_objects_handicap.py` |
+| `../tests/domain/test_entities_game.py` |
+| `../tests/domain/test_domain_services_handicap_calculator.py` |
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **17** results in **1** directory</summary>
+
+Directory: **c:\Users\cfell\repos\bowlyzer_deploy** (17 files)
+
+| File |
+|------|
+| `../..\bowlyzer_deploy\tests\domain\test_value_objects_season.py` |
+| `../..\bowlyzer_deploy\tests\domain\test_value_objects_score.py` |
+| `../..\bowlyzer_deploy\tests\domain\test_value_objects_handicap.py` |
+| `../..\bowlyzer_deploy\tests\domain\test_value_objects_points.py` |
+| `../..\bowlyzer_deploy\tests\domain\test_entities_team.py` |
+| `../..\bowlyzer_deploy\tests\domain\test_value_objects_game_result.py` |
+| `../..\bowlyzer_deploy\tests\domain\test_entities_match_scoring.py` |
+| `../..\bowlyzer_deploy\tests\domain\test_entities_player.py` |
+| `../..\bowlyzer_deploy\tests\domain\test_entities_position_comparison.py` |
+| `../..\bowlyzer_deploy\tests\domain\test_entities_game_result.py` |
+| `../..\bowlyzer_deploy\tests\domain\test_entities_league.py` |
+| `../..\bowlyzer_deploy\tests\domain\test_entities_match.py` |
+| `../..\bowlyzer_deploy\tests\domain\test_domain_services_statistics_calculator.py` |
+| `../..\bowlyzer_deploy\tests\domain\test_entities_game.py` |
+| `../..\bowlyzer_deploy\tests\domain\test_domain_services_handicap_calculator.py` |
+| `../..\bowlyzer_deploy\tests\domain\test_domain_services_standings_calculator.py` |
+| `../..\bowlyzer_deploy\tests\domain\__init__.py` |
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\pyproject.toml</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Glob pattern "**/*" matches every file and is not allowed. Use a more specific glob or no glob.
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **17** results in **1** directory</summary>
+
+Directory: **c:\Users\cfell\repos\bowlyzer_legacy** (17 files)
+
+| File |
+|------|
+| `../tests/domain/test_entities_league.py` |
+| `../tests/domain/test_entities_match_scoring.py` |
+| `../tests/domain/test_entities_team.py` |
+| `../tests/domain/test_entities_game_result.py` |
+| `../tests/domain/test_value_objects_handicap.py` |
+| `../tests/domain/__init__.py` |
+| `../tests/domain/test_value_objects_score.py` |
+| `../tests/domain/test_value_objects_game_result.py` |
+| `../tests/domain/test_domain_services_statistics_calculator.py` |
+| `../tests/domain/test_entities_player.py` |
+| `../tests/domain/test_value_objects_season.py` |
+| `../tests/domain/test_entities_position_comparison.py` |
+| `../tests/domain/test_entities_match.py` |
+| `../tests/domain/test_domain_services_standings_calculator.py` |
+| `../tests/domain/test_domain_services_handicap_calculator.py` |
+| `../tests/domain/test_entities_game.py` |
+| `../tests/domain/test_value_objects_points.py` |
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\tests\conftest.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The repository lacks a top-level `domain/` package; only `tests/domain/` exists.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/*.py",
+  "pattern": "class Score"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "pattern": "class Score",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **0** results in **1** directory</summary>
+
+Directory: **** (0 files)
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\.gitignore</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Interesting - there is no `domain` package in bowlyzer_legacy, and no `class Score` was found.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\tests\domain\test_value_objects_score.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **61** results in **1** directory</summary>
+
+Directory: **c:\Users\cfell\repos\bowlyzer_legacy** (61 files)
+
+| File |
+|------|
+| `../tests/application/test_create_team_handler.py` |
+| `../tests/domain/test_entities_game_result.py` |
+| `../tests/domain/test_entities_league.py` |
+| `../tests/domain/test_value_objects_game_result.py` |
+| `../tests/domain/test_domain_services_standings_calculator.py` |
+| `../tests/application/test_get_match_overview_handler.py` |
+| `../tests/integration/test_api_routes.py` |
+| `../tests/application/test_create_game_handler.py` |
+| `../tests/application/test_get_team_week_details_handler.py` |
+| `../tests/domain/test_value_objects_points.py` |
+| `../tests/infrastructure/__init__.py` |
+| `../tests/app/test_individual_averages_pinfall.py` |
+| `../tests/domain/__init__.py` |
+| `../tests/application/test_update_team_handler.py` |
+| `../tests/domain/test_domain_services_handicap_calculator.py` |
+| `../tests/infrastructure/conftest.py` |
+| `../tests/domain/test_entities_team.py` |
+| `../tests/domain/test_value_objects_handicap.py` |
+| `../tests/infrastructure/test_repositories_csv/test_position_comparison_repository.py` |
+| `../tests/infrastructure/test_repositories_csv/test_scoring_system_repository.py` |
+| `../tests/test_league_response_cache.py` |
+| `../tests/infrastructure/test_repositories_csv/test_club_repository.py` |
+| `../tests/application/test_get_league_standings_handler.py` |
+| `../tests/__init__.py` |
+| `../tests/domain/test_entities_position_comparison.py` |
+| `../tests/infrastructure/test_repositories_csv/test_player_repository.py` |
+| `../tests/application/test_update_game_handler.py` |
+| `../tests/conftest.py` |
+| `../tests/application/test_query_validators.py` |
+| `../tests/application/test_get_team_vs_team_comparison_handler.py` |
+| `../tests/application/test_delete_game_handler.py` |
+| `../tests/application/__init__.py` |
+| `../tests/domain/test_value_objects_score.py` |
+| `../tests/infrastructure/test_repositories_csv/test_match_scoring_repository.py` |
+| `../tests/infrastructure/test_repositories_csv/test_game_result_repository.py` |
+| `../tests/domain/test_entities_match_scoring.py` |
+| `../tests/integration/__init__.py` |
+| `../tests/application/test_delete_team_handler.py` |
+| `../tests/infrastructure/test_repositories_csv/__init__.py` |
+| `../tests/application/test_get_team_statistics_handler.py` |
+| `../tests/data_access/test_pd_dataframes.py` |
+| `../tests/infrastructure/test_repositories_csv/test_league_season_repository.py` |
+| `../tests/infrastructure/test_repositories_csv/test_event_repository.py` |
+| `../tests/data_access/test_data_adapter_pandas_dummy_data.py` |
+| `../tests/database/test_generator.py` |
+| `../tests/domain/test_entities_game.py` |
+| `../tests/domain/test_entities_player.py` |
+| `../tests/infrastructure/test_repositories_csv/test_team_season_repository.py` |
+| `../tests/infrastructure/test_repositories_csv/test_match_repository.py` |
+| `../tests/data_access/test_data_adapter_pandas_imported_data.py` |
+| `../tests/domain/test_domain_services_statistics_calculator.py` |
+| `../tests/domain/test_entities_match.py` |
+| `../tests/app/test_league_data_oddities.py` |
+| `../tests/infrastructure/test_repositories_csv/test_league_repository.py` |
+| `../tests/data_access/test_score_utils.py` |
+| `../tests/infrastructure/test_repositories_csv/test_game_repository.py` |
+| `../tests/infrastructure/test_repositories_csv/test_club_player_repository.py` |
+| `../tests/application/test_get_league_history_handler.py` |
+| `../tests/domain/test_value_objects_season.py` |
+| `../tests/data_access/test_series_data.py` |
+| `../tests/infrastructure/test_repositories_csv/test_team_repository.py` |
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "tests/**",
+  "pattern": "conftest"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "pattern": "conftest",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "tests/README.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tests/domain/test_domain_services_handicap_calculator.py"
+    }
+  ],
+  "totalFiles": 2,
+  "totalMatches": 2
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The repository contains comprehensive DDD tests covering domain, application, and infrastructure layers, yet the actual domain source code is absent.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: Test-Path "C:\Users\cfell\repos\bowlyzer_legacy\domain"; Test-Path "C:\Users\cfell\repos\bowlyzer_deploy\domain"; Get-ChildItem "C:\Users\cfell\repos\bowlyzer_legacy" -Directory | Select-Object -ExpandProperty Name</summary>
+
+```bash
+Test-Path "C:\Users\cfell\repos\bowlyzer_legacy\domain"; Test-Path "C:\Users\cfell\repos\bowlyzer_deploy\domain"; Get-ChildItem "C:\Users\cfell\repos\bowlyzer_legacy" -Directory | Select-Object -ExpandProperty Name
+```
+
+```
+False
+False
+.cache
+.pytest_cache
+.specstory
+.vscode
+app
+business_logic
+database
+data_access
+deploy
+designsystem
+docs
+frontend
+pipeline
+scripts
+tests
+__pycache__
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\tests\README.md</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Confirmed: There is no `domain/` package located at the repository's root directory.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **0** results in **1** directory</summary>
+
+Directory: **** (0 files)
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **1** result in **1** directory</summary>
+
+Directory: **** (1 file)
+
+| File |
+|------|
+| `pyproject.toml` |
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "pyproject.toml",
+  "pattern": "pytest|testpaths"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "pattern": "pytest|testpaths",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "pyproject.toml"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 1
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Without a pytest configuration, pytest collects all tests, causing conftest.py to fail during import before any tests execute.
+
+Running `uv run pytest tests/app tests/data_access -q` causes conftest.py to fail during import before any tests execute because pytest loads conftest.py from the tests/ directory for any test under tests/. This behavior cannot be overridden by specifying individual test files or directories; pytest will always load conftest.py from the root directory downward. The user must either move or rename the conftest.py file temporarily or adjust their test structure to avoid loading the problematic conftest.py.
+
+To resolve the issue, the `conftest.py` file should be modified to avoid importing the `domain` package. Alternatively, the `domain` package can be added to the project. 
+
+For immediate relief, users can run `uv run pytest --noconftest tests/data_access tests/app -q` to bypass the `conftest.py` file entirely. However, this approach disables all fixture definitions from `conftest.py`.
+
+Another option is to run pytest from a subdirectory where the problematic `conftest.py` does not apply, but note that `conftest.py` in the tests/ directory still affects all subdirectories. Using `--ignore` flags won't prevent `conftest.py` from loading.
+
+Therefore, the best long-term solution is to modify `conftest.py` to remove the dependency on the `domain` package.</details></think>
+
+_**Agent (default)**_
+
+`uv lock` and `uv sync` **succeeded** — gunicorn is in the lockfile now. That’s what matters for Docker.
+
+The pytest error is **not** caused by `bowlyzer_deploy` vs Windows. The repo has tests for a **`domain/` package that isn’t in the tree**.
+
+## What went wrong
+
+`tests/conftest.py` does:
+
+```python
+from domain.value_objects import ...
+```
+
+There is **no** top-level `domain/` folder (checked in both `bowlyzer_legacy` and `bowlyzer_deploy`). Only `tests/domain/` exists — those are tests for code that was never committed (or was removed). Pytest always loads `tests/conftest.py` for any run under `tests/`, so the whole suite fails at import time.
+
+That does **not** block Docker deploy. The running app uses `app/`, `business_logic/`, `data_access/` — not `domain`.
+
+## What to do now
+
+### 1. Commit the lockfile (important for VPS)
+
+```powershell
+cd C:\Users\cfell\repos\bowlyzer_deploy
+git status
+git add uv.lock pyproject.toml
+git commit -m "Lock gunicorn for production Docker image"
+git push
+```
+
+The VPS needs this `uv.lock` for `docker compose build` (`uv sync --frozen`).
+
+### 2. Run only app-relevant tests (workaround)
+
+```powershell
+uv run pytest --noconftest tests/app tests/data_access tests/test_league_response_cache.py -q
+```
+
+`--noconftest` skips the broken root `conftest.py`. If anything still fails, paste the output — those tests target the Flask/data layer you actually ship.
+
+### 3. Or skip pytest and validate via Docker (fine for first deploy)
+
+```powershell
+docker compose build
+docker compose up -d
+# http://localhost:8080/liga
+```
+
+Production image build does **not** run pytest.
+
+## Summary
+
+| Step | Status |
+|------|--------|
+| `uv lock` / `uv sync` | OK |
+| Full `pytest` | Expected fail — missing `domain/` sources |
+| Docker deploy | OK to proceed after committing `uv.lock` |
+
+## Optional later fix
+
+Split or guard `tests/conftest.py` so it only loads when `domain` exists, or add/remove the v2 DDD tests. Not required for go-live.
+
+**Next step on VPS:** `git pull` → create `.env` with `FLASK_SECRET_KEY` → `docker compose build` → `docker compose up -d`.
+
+If `pytest --noconftest …` fails, send the traceback and we can fix those tests.
+
+---
+
+_**User**_
+
+there is no (changed) pyprojeect.toml
+is that a problem? 
+PS C:\Users\cfell\repos\bowlyzer_deploy> git status
+On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+        modified:   uv.lock
+
+PS C:\Users\cfell\repos\bowlyzer_deploy>
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user is asking whether there is an issue with pyproject.</details></think>
+
+_**Agent (default)**_
+
+No — that’s **not** a problem.
+
+`uv lock` only rewrites **`uv.lock`** when `pyproject.toml` already lists the dependency and didn’t change. Gunicorn was already in `pyproject.toml` on `main`; lock just resolved and pinned it (e.g. `gunicorn==26.0.0` and its deps).
+
+## What to commit
+
+| File | Needed? |
+|------|--------|
+| **`uv.lock`** | Yes — Docker uses `uv sync --frozen` |
+| **`pyproject.toml`** | Only if you added/changed deps there |
+
+Staged change:
+
+```text
+modified: uv.lock
+```
+
+That’s enough. Commit and push:
+
+```powershell
+git commit -m "Update uv.lock for gunicorn production dependency"
+git push
+```
+
+On the VPS after `git pull`, `docker compose build` will pick up the new lockfile.
+
+**Quick check (optional):**
+
+```powershell
+Select-String -Path pyproject.toml -Pattern gunicorn
+```
+
+You should see `gunicorn>=23.0` (or similar). If that’s there, you’re set.
+
+---
+
+_**User**_
+
+i'll install docker on my machine, you can fix hte test suite issues in the meantime:
+- no domain
+and this:
+PS C:\Users\cfell\repos\bowlyzer_deploy> uv run pytest --noconftest tests/app tests/data_access tests/test_league_response_cache.py -q
+
+======================================================= ERRORS ========================================================
+___________________________ ERROR collecting tests/app/test_individual_averages_pinfall.py ____________________________
+ImportError while importing test module 'C:\Users\cfell\repos\bowlyzer_deploy\tests\app\test_individual_averages_pinfall.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+..\..\AppData\Local\Programs\Python\Python312\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\app\test_individual_averages_pinfall.py:5: in <module>
+    from data_access.score_utils import mean_scores, pinfall_for_total, sum_scores
+E   ModuleNotFoundError: No module named 'data_access'
+_______________________________ ERROR collecting tests/app/test_league_data_oddities.py _______________________________
+ImportError while importing test module 'C:\Users\cfell\repos\bowlyzer_deploy\tests\app\test_league_data_oddities.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+..\..\AppData\Local\Programs\Python\Python312\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\app\test_league_data_oddities.py:5: in <module>
+    from app.services.league_service import LeagueService
+E   ModuleNotFoundError: No module named 'app'
+______________________ ERROR collecting tests/data_access/test_data_adapter_pandas_dummy_data.py ______________________
+ImportError while importing test module 'C:\Users\cfell\repos\bowlyzer_deploy\tests\data_access\test_data_adapter_pandas_dummy_data.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+..\..\AppData\Local\Programs\Python\Python312\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\data_access\test_data_adapter_pandas_dummy_data.py:3: in <module>
+    from data_access.adapters.data_adapter import DataAdapter
+E   ModuleNotFoundError: No module named 'data_access'
+____________________ ERROR collecting tests/data_access/test_data_adapter_pandas_imported_data.py _____________________
+ImportError while importing test module 'C:\Users\cfell\repos\bowlyzer_deploy\tests\data_access\test_data_adapter_pandas_imported_data.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+..\..\AppData\Local\Programs\Python\Python312\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\data_access\test_data_adapter_pandas_imported_data.py:4: in <module>
+    from data_access.adapters.data_adapter import DataAdapter
+E   ModuleNotFoundError: No module named 'data_access'
+______________________________ ERROR collecting tests/data_access/test_pd_dataframes.py _______________________________
+ImportError while importing test module 'C:\Users\cfell\repos\bowlyzer_deploy\tests\data_access\test_pd_dataframes.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+..\..\AppData\Local\Programs\Python\Python312\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\data_access\test_pd_dataframes.py:3: in <module>
+    from data_access.pd_dataframes import fetch_column
+E   ModuleNotFoundError: No module named 'data_access'
+_______________________________ ERROR collecting tests/data_access/test_score_utils.py ________________________________
+ImportError while importing test module 'C:\Users\cfell\repos\bowlyzer_deploy\tests\data_access\test_score_utils.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+..\..\AppData\Local\Programs\Python\Python312\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\data_access\test_score_utils.py:5: in <module>
+    from data_access.score_utils import mean_scores, pinfall_display, pinfall_for_total, sum_scores
+E   ModuleNotFoundError: No module named 'data_access'
+_______________________________ ERROR collecting tests/data_access/test_series_data.py ________________________________
+ImportError while importing test module 'C:\Users\cfell\repos\bowlyzer_deploy\tests\data_access\test_series_data.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+..\..\AppData\Local\Programs\Python\Python312\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\data_access\test_series_data.py:3: in <module>
+    from data_access.schema import Columns
+E   ModuleNotFoundError: No module named 'data_access'
+________________________________ ERROR collecting tests/test_league_response_cache.py _________________________________
+ImportError while importing test module 'C:\Users\cfell\repos\bowlyzer_deploy\tests\test_league_response_cache.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+..\..\AppData\Local\Programs\Python\Python312\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_league_response_cache.py:3: in <module>
+    from app.cache.league_response_cache import (
+E   ModuleNotFoundError: No module named 'app'
+=============================================== short test summary info ===============================================
+ERROR tests/app/test_individual_averages_pinfall.py
+ERROR tests/app/test_league_data_oddities.py
+ERROR tests/data_access/test_data_adapter_pandas_dummy_data.py
+ERROR tests/data_access/test_data_adapter_pandas_imported_data.py
+ERROR tests/data_access/test_pd_dataframes.py
+ERROR tests/data_access/test_score_utils.py
+ERROR tests/data_access/test_series_data.py
+ERROR tests/test_league_response_cache.py
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Interrupted: 8 errors during collection !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+8 errors in 4.43s
+PS C:\Users\cfell\repos\bowlyzer_deploy> docker
+docker : Die Benennung "docker" wurde nicht als Name eines Cmdlet, einer Funktion, einer Skriptdatei oder eines
+ausführbaren Programms erkannt. Überprüfen Sie die Schreibweise des Namens, oder ob der Pfad korrekt ist (sofern
+enthalten), und wiederholen Sie den Vorgang.
+In Zeile:1 Zeichen:1
++ docker
++ ~~~~~~
+    + CategoryInfo          : ObjectNotFound: (docker:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants me to resolve issues in the test suite.
+
+The user needs help resolving test suite issues in the bowlyzer_legacy workspace located at c:\Users\cfell\repos\bowlyzer_legacy. The main problems are missing domain package imports and ModuleNotFoundError for `app` and `data_access` modules when running pytest with --noconftest. The conftest.py file previously added the project root to sys.path, enabling these imports, but this is no longer happening. The solution requires fixing the conftest.py configuration and updating domain-related tests to properly handle imports without relying on the path modification. The user is currently working in bowlyzer_deploy, which appears to be a clone of the same repository, but fixes must be applied to the legacy workspace.</details></think>
+
+_**Agent (default)**_
+
+Fixing the test suite: adding project-root path configuration and isolating or skipping tests that depend on the missing `domain` package.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\tests\conftest.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "tests/**/*.py",
+  "pattern": "from tests\\.conftest|tests\\.conftest"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "pattern": "from tests\\.conftest|tests\\.conftest",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "tests/domain/test_domain_services_handicap_calculator.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 1
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\pyproject.toml</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I'll replace tests/conftest.py with a minimal path setup only.
+
+Move domain fixtures to tests/domain/conftest.py using pytest.importorskip or domain checks to skip collection. For domain tests in directories like tests/domain, tests/application, tests/infrastructure, and tests/integration, add pytest.ini_options in pyproject.toml with pythonpath = ["."] to ensure proper import paths.
+
+Configure testpaths to run shippable tests by default while including tests root files, and set up domain-specific test configuration using either pytest.skip conditions or markers in pyproject.toml and conftest.py files.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **2** results in **1** directory</summary>
+
+Directory: **c:\Users\cfell\repos\bowlyzer_legacy** (2 files)
+
+| File |
+|------|
+| `../tests/infrastructure/conftest.py` |
+| `../tests/conftest.py` |
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\tests\domain\test_domain_services_handicap_calculator.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\tests\application\test_create_team_handler.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I'll replace tests/conftest.py with a path-only setup.
+
+Move domain fixtures to tests/domain/conftest.py using importorskip for future compatibility. Add pyproject.toml pytest configuration to ignore domain, application, infrastructure, and integration test paths. Update tests/README.md briefly.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\tests\infrastructure\conftest.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **1** result in **1** directory</summary>
+
+Directory: **c:\Users\cfell\repos\bowlyzer_legacy** (1 file)
+
+| File |
+|------|
+| `../tests/database/test_generator.py` |
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I'll implement tests/conftest.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repos\bowlyzer_legacy\tests\database\test_generator.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\tests\conftest.py</summary>
+
+Status: **loading**
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repos\bowlyzer_legacy\tests\domain\conftest.py</summary>
+
+Status: **loading**
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>

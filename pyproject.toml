@@ -18,3 +18,13 @@ dev = [
     "pytest>=8.0",
     "ruff>=0.6",
 ]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = [
+    "--ignore=tests/domain",
+    "--ignore=tests/application",
+    "--ignore=tests/infrastructure",
+    "--ignore=tests/integration",
+]

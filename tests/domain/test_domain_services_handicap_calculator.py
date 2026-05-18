@@ -12,7 +12,7 @@ from domain.value_objects import (
     Score, Points, GameResult, HandicapSettings, HandicapCalculationMethod,
     Handicap
 )
-from tests.conftest import create_game_results
+from tests.domain.conftest import create_game_results
 
 
 class TestHandicapCalculator:
