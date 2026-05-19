@@ -70,6 +70,7 @@ Production compose uses **`mem_limit: 650m`** (fits ~848 MiB VPS). App listens o
 | Wrong image name after build | `docker images` — project must be `bowlyzer_deploy-bowlyzer:latest` (repo folder name) |
 | Site 502 | `ssh root@vps 'docker compose -f ~/bowlyzer/docker-compose.prod.yml logs --tail 30'` |
 | OOM restart | `docker stats`; ensure `flaskapp` is not running |
+| Remote step: `set: invalid option`, `/root/bowlyzer\\r`, `unknown docker command` | Windows CRLF in the piped script; `deploy.ps1` now strips CR. Re-run deploy (e.g. `-SkipBuild` if image is current). |
 
 ## Files (gitignored locally)
 

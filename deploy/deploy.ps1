@@ -150,6 +150,7 @@ if ($SyncDatabase) {
 }
 
 Write-Host "==> remote: load image and restart container"
+# Bash on Linux chokes on Windows CRLF in the here-string (wrong paths, bogus flags, "set: invalid option").
 $remoteScript = @"
 set -e
 cd '$RemoteDir'
@@ -158,7 +159,7 @@ docker compose -f docker-compose.prod.yml up -d --remove-orphans
 docker compose -f docker-compose.prod.yml ps
 echo -n 'health /liga: '
 curl -sf -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8080/liga || echo 'curl failed'
-"@
+"@ -replace "`r`n", "`n" -replace "`r", ""
 
 $remoteScript | ssh $Remote "bash -s"
 if ($LASTEXITCODE -ne 0) { throw "remote deploy failed" }
