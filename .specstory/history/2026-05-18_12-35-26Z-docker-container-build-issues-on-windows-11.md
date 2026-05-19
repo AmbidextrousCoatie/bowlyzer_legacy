@@ -18813,6 +18813,12 @@ print('card', cut['value'])
 "
 
 ```
+
+```
+rows 0
+card Christian Feller
+
+```
 </details>
 </tool-use>
 
@@ -18863,5 +18869,501 @@ Status: **completed**
 
 <tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
 <summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The overall leaderboard shows zero results for these tournaments, which is unusual.
+
+User confirmed the table coloring is correct and likely viewing with a round filter applied to round 2 of Bayerische.
+
+The fix involves adding a function `_cut_line_player_for_round` that retrieves the cut position and identifies the cut player based on cumulative rank or snapshot data. The `get_summary_cards` function will then be refactored to utilize the target round parameter.
+
+The code now consolidates cut line card building into a single method `_build_cut_line_card` that accepts a target round and uses cumulative rank data. This replaces the previous approach of using `stage_rank` at config round 1 only, and ensures the correct round is selected when `round_number` is None by prioritizing the latest qualifying round. The `get_summary_cards` function will leverage this new method for consistent behavior across all rounds.
+
+If the target round is None, the function returns None. Otherwise, it determines whether to include club data and resolves the cut position for the specified round. It attempts to display the cut score from CSV data and identifies the cut player based on cumulative snapshot or rank ladder data.
+
+If a cut score and latest snapshot are available, the cut player is determined from the cumulative snapshot. If that fails and a cut position is present, the player is identified from the rank map. If no player is found, the function returns None.</details></think>
+
+_**Agent (default)**_
+
+Identifying the issue: tournaments without CSV `Cut Line` values fall back to `_ko_cut_line_card_from_config_rank`, which always uses round 1 and `stage_rank` instead of the selected round's cumulative cut player.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\services\tournament_service.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\services\tournament_service.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I'll add `_build_cut_line_card` that:
+
+I'll add `_build_cut_line_card` that:
+1. Takes target_round explicitly
+2. Tries CSV path with snapshot player
+3. Falls back to player at cut_pos on cumulative ladder through target_round (same as table shading)
+4. Builds subtitle from that player's cumulative pins
+
+Also add helper `_games_upto_round` as method or reuse inline from get_summary_cards - I'll pass games count computed in _build_cut_line_card.
+
+Replace get_summary_cards cut block with logic to determine card_round based on round_number or latest qualifying round number.
+
+If card_round is None and latest_round has a round_number, set card_round to that round number. Then build a cut line card using the target round, falling back to the latest round if needed.
+
+Implement _build_cut_line_card by first checking if the DataFrame is empty or missing required columns, then returning 0 games if so.
+
+The function `_build_cut_line_card` takes a DataFrame, season, tournament, and target round to determine the cut player and score. It first checks for a CSV export path and falls back to cumulative ladder data if needed. It also handles cases where the DataFrame is empty or lacks required columns by returning zero games. A helper function `_games_upto_round` is used to compute game counts up to the target round. The logic determines the card round based on round numbers or latest qualifying rounds, defaulting to the latest round if necessary.
+
+The code filters the DataFrame for the target round and checks if it contains game numbers. It then identifies the maximum game number and retrieves the corresponding row. If cut line values exist, it processes them to determine the cut line card details.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\app\services\tournament_service.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\app\services\tournament_service.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\app\cache\league_response_cache.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\app\test_gesamt_cut_shading.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\app\test_gesamt_cut_shading.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd c:\Users\cfell\repositories\bowlyzer_deploy; .\.venv\Scripts\python.exe -m pytest tests/app/test_gesamt_cut_shading.py -q</summary>
+
+```bash
+cd c:\Users\cfell\repositories\bowlyzer_deploy; .\.venv\Scripts\python.exe -m pytest tests/app/test_gesamt_cut_shading.py -q
+```
+
+```
+......                                                                   [100%]
+6 passed in 4.93s
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+The Cut-Line card was out of sync with the table because it used a different code path.
+
+### What was wrong
+For tournaments **without** a populated `Cut Line` column in the CSV (e.g. Bayerische Meisterschaft), the card fell back to `_ko_cut_line_card_from_config_rank`, which always looked at **round 1** and picked the player by **`stage_rank`** there. The leaderboard instead shades by **cumulative scratch rank through the selected round** — so round 2 could show the wrong name on the card while the table was right.
+
+### Fix
+New `_build_cut_line_card()` drives the summary card and:
+
+1. Uses the **active round** (filter or latest qualifying stage on Gesamt).
+2. Resolves the on-cut player from the **same cumulative rank map** as row shading when the CSV has no cut line.
+3. Still prefers the CSV cut-line pin total when present.
+
+Cache revision bumped to `gesamt-cut-v6`. After a refresh, the Cut-Line card should name the same player as the yellow row in the `#` column for that round.
+
+---
+
+_**User**_
+
+#30 [frontend-build 7/7] RUN pnpm run build
+#30 1.018
+#30 1.018 > frontend@0.0.0 build /app/frontend
+#30 1.018 > tsc -b && vp build
+#30 1.018
+#30 4.357 src/pages/tournament/blocks/KoBracket.tsx(153,10): error TS18048: 'matches' is possibly 'undefined'.
+#30 4.357 src/pages/tournament/blocks/KoBracket.tsx(346,3): error TS6133: 'bracket' is declared but its value is never read.
+#30 4.913  ELIFECYCLE  Command failed with exit code 2.
+#30 ERROR: process "/bin/sh -c pnpm run build" did not complete successfully: exit code: 2
+------
+ > [frontend-build 7/7] RUN pnpm run build:
+1.018
+1.018 > frontend@0.0.0 build /app/frontend
+1.018 > tsc -b && vp build
+1.018
+4.357 src/pages/tournament/blocks/KoBracket.tsx(153,10): error TS18048: 'matches' is possibly 'undefined'.
+4.357 src/pages/tournament/blocks/KoBracket.tsx(346,3): error TS6133: 'bracket' is declared but its value is never read.
+4.913  ELIFECYCLE  Command failed with exit code 2.
+------
+[+] build 0/1
+ - Image bowlyzer_deploy-bowlyzer Building                                                                                                                                                11.8s
+Dockerfile:11
+
+--------------------
+
+   9 |     COPY frontend/ ./
+
+  10 |     ENV NODE_OPTIONS=--max-old-space-size=768
+
+  11 | >>> RUN pnpm run build
+
+  12 |
+
+  13 |     # --- Python dependencies ---
+
+--------------------
+
+failed to solve: process "/bin/sh -c pnpm run build" did not complete successfully: exit code: 2
+
+
+
+View build details: docker-desktop://dashboard/build/default/default/vm8whifbk1g139d9cvf06jzzt
+
+
+What's next:
+    Debug this Compose error with Gordon → docker ai "help me fix this compose error"
+docker compose build failed with exit code 1
+In C:\Users\cfell\repositories\bowlyzer_deploy\deploy\deploy.ps1:106 Zeichen:32
++ ... DE -ne 0) { throw "docker compose build failed with exit code $LASTEX ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (docker compose ...ith exit code 1:String) [], RuntimeException
+    + FullyQualifiedErrorId : docker compose build failed with exit code 1
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user encounters Docker build failures caused by TypeScript errors in the KoBracket project.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\pages\tournament\blocks\KoBracket.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\pages\tournament\blocks\KoBracket.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I need to check the ColumnProps type for matchesit's likely optional.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\pages\tournament\blocks\KoBracket.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\pages\tournament\blocks\KoBracket.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src\\pages\\tournament\\blocks\\KoBracket.tsx",
+  "pattern": "resolveMatchBorder"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src\\pages\\tournament\\blocks\\KoBracket.tsx",
+  "pattern": "resolveMatchBorder",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "frontend\\src\\pages\\tournament\\blocks\\KoBracket.tsx"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 2
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+For fix 1: Change ColumnProps matches to `KoBracketMatch[]` non-optional since callers always pass tiers.qf etc., which are arrays.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\pages\tournament\blocks\KoBracket.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\pages\tournament\blocks\KoBracket.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\pages\tournament\blocks\KoBracket.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\pages\tournament\blocks\KoBracket.tsx</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src\\hooks\\useTournament.ts",
+  "pattern": "export type KoBracketMatch"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src\\hooks\\useTournament.ts",
+  "pattern": "export type KoBracketMatch",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "frontend\\src\\hooks\\useTournament.ts"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 1
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src\\pages\\tournament\\blocks\\KoBracket.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src\\pages\\tournament\\blocks\\KoBracket.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
 
 </details></tool-use>

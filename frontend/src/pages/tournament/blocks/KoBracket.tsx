@@ -1,6 +1,6 @@
 import { useMemo, type CSSProperties } from "react";
 import { Trophy } from "lucide-react";
-import type { KoBracketPayload } from "../../../hooks/useTournament";
+import type { KoBracketMatch, KoBracketPayload } from "../../../hooks/useTournament";
 import {
   bracketLaneColors,
   focusPlayerWonMatch,
@@ -123,7 +123,7 @@ export function KoBracket({ bracket, onPlayerClick, t }: Props) {
 
 type ColumnProps = {
   tier: "qf" | "sf" | "final";
-  matches: KoBracketPayload["matches"];
+  matches: KoBracketMatch[];
   bracket: KoBracketPayload;
   colors: ReturnType<typeof bracketLaneColors>;
   focusKey: string;
@@ -190,7 +190,7 @@ function MatchCard({
   t,
 }: MatchCardProps) {
   const pathLane = matchOnFinalistPath(match, bracket);
-  const borderStyle = resolveMatchBorder(match, bracket, colors, focusKey, pathLane);
+  const borderStyle = resolveMatchBorder(match, colors, focusKey, pathLane);
   const pinLine = formatPinGamesLine(match.pin_games);
   const seriesRaw = formatSeriesScore(match, scratchMode);
   const isFinal = match.key === "F" || match.phase === "final";
@@ -342,8 +342,7 @@ function PlayerRow({
 }
 
 function resolveMatchBorder(
-  match: NonNullable<KoBracketPayload["matches"]>[number],
-  bracket: KoBracketPayload,
+  match: KoBracketMatch,
   colors: ReturnType<typeof bracketLaneColors>,
   focusKey: string,
   pathLane: ReturnType<typeof matchOnFinalistPath>,
