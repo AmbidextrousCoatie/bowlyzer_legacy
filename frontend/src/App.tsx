@@ -1,6 +1,7 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { MobileNavProvider } from "./context/MobileNavContext";
+import { NavigationQuerySanitizer } from "./components/NavigationQuerySanitizer";
 import { Sidebar } from "./components/Sidebar";
 import { ClubMatrix } from "./pages/diagnosis/ClubMatrix";
 import { LeagueWeekMatrix } from "./pages/diagnosis/LeagueWeekMatrix";
@@ -17,6 +18,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
+        <NavigationQuerySanitizer />
         <MobileNavProvider>
           <div className="flex min-h-screen flex-col bg-background lg:flex-row">
             <Sidebar />

@@ -52,6 +52,49 @@ export type TournamentFieldProgress = {
   participant_count?: number;
 };
 
+export type KoBracketSide = {
+  name?: string | null;
+  id?: string | null;
+  games_won?: number;
+  highlight?: boolean;
+};
+
+export type KoBracketMatch = {
+  key: string;
+  label?: string;
+  phase?: string;
+  side_a: KoBracketSide;
+  side_b: KoBracketSide;
+  pin_games?: number[][];
+  walkover?: boolean;
+  winner?: "a" | "b" | null;
+  scratch_total_a?: number;
+  scratch_total_b?: number;
+  scratch_series?: boolean;
+  scratch_final?: boolean;
+  inferred?: boolean;
+  first_game_number?: number;
+};
+
+export type KoBracketPlacement = {
+  place?: number;
+  player?: string;
+};
+
+export type KoBracketPayload = {
+  matches?: KoBracketMatch[];
+  placements?: KoBracketPlacement[];
+  finalist_a?: string | null;
+  finalist_b?: string | null;
+  path_keys_a?: string[];
+  path_keys_b?: string[];
+  palette_index_a?: number;
+  palette_index_b?: number;
+  focus_palette_index?: number;
+  focus_player?: string;
+  ko_finale_series?: string;
+};
+
 export type TournamentSection = {
   cards: TournamentSummaryCard[];
   leaderboard: TableData;
@@ -59,6 +102,9 @@ export type TournamentSection = {
   rounds?: TournamentRound[];
   best_efforts?: TournamentBestEfforts;
   field_progress?: TournamentFieldProgress;
+  ko_bracket?: KoBracketPayload;
+  is_ko_finale_round?: boolean;
+  ko_finale_round_number?: number | null;
 };
 
 export type TournamentCutLineSeries = {
@@ -123,6 +169,7 @@ export type TournamentPlayerSection = {
   best_efforts?: TournamentPlayerBestEfforts;
   progress_series?: TournamentProgressSeries;
   summary?: TournamentPlayerSummary;
+  ko_bracket?: KoBracketPayload;
 };
 
 export function useTournamentSeasons(tournament?: string | null) {

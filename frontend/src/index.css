@@ -187,3 +187,47 @@ body {
     transition-duration: 0ms !important;
   }
 }
+
+/* Knockout bracket (tournament finale round) */
+.ko-bracket-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.ko-bracket-grid {
+  display: flex;
+  align-items: stretch;
+  gap: 0.5rem;
+  width: max-content;
+  min-width: 100%;
+  margin-inline: auto;
+}
+
+.ko-bracket-grid--full {
+  min-width: min(100%, 52rem);
+}
+
+.ko-bracket-grid--sf {
+  min-width: min(100%, 36rem);
+}
+
+.ko-bracket-grid--final {
+  min-width: min(100%, 16rem);
+  justify-content: center;
+}
+
+.ko-bracket-column {
+  flex: 1 1 12rem;
+  min-width: 11rem;
+  max-width: 18rem;
+}
+
+.ko-bracket-match--final {
+  border-color: var(--color-accent) !important;
+}
+
+.ko-bracket-wires {
+  flex: 0 0 2rem;
+  min-height: 12rem;
+  align-self: center;
+}

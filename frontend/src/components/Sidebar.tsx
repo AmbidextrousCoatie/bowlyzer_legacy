@@ -20,6 +20,7 @@ import {
 import { Link, NavLink, useSearchParams } from "react-router-dom";
 import { DatabaseSelector } from "./DatabaseSelector";
 import { useMobileNav } from "../context/MobileNavContext";
+import { querySuffixForPath } from "../lib/navigationQuery";
 
 const DIAGNOSIS_GROUP_LABEL = "Diagnose";
 
@@ -83,7 +84,6 @@ export function Sidebar() {
   const [lang, setLang] = useState<Lang>("de");
   const { mobileOpen, openMobileNav, closeMobileNav, leagueCompactChrome } = useMobileNav();
   const [searchParams] = useSearchParams();
-  const querySuffix = searchParams.toString() ? `?${searchParams.toString()}` : "";
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -193,7 +193,7 @@ export function Sidebar() {
                   <li key={item.path}>
                     <NavRow
                       item={item}
-                      to={`${item.path}${querySuffix}`}
+                      to={`${item.path}${querySuffixForPath(item.path, searchParams)}`}
                       collapsed={collapsed && !mobileOpen}
                       onNavigate={closeMobileNav}
                     />
@@ -214,7 +214,7 @@ export function Sidebar() {
 
         <div className={"px-2 pb-2 " + (collapsed && !mobileOpen ? "lg:px-1" : "")}>
           <NavLink
-            to={`/impressum${querySuffix}`}
+            to={`/impressum${querySuffixForPath("/impressum", searchParams)}`}
             onClick={closeMobileNav}
             title={collapsed && !mobileOpen ? "Impressum" : undefined}
             className={({ isActive }) =>

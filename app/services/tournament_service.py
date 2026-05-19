@@ -1040,6 +1040,132 @@ class TournamentService:
         grouped["rank"] = grouped["total_score"].rank(method="min", ascending=False).astype(int)
         return grouped.sort_values(by=["rank", "player"]).reset_index(drop=True)
 
+    def _latest_qualifying_round_number(self, df: pd.DataFrame) -> Optional[int]:
+        """Last pre-KO stage (or last stage when there is no KO round)."""
+        if df.empty or Columns.round_number not in df.columns:
+            return None
+        work = df.copy()
+        work[Columns.round_number] = pd.to_numeric(work[Columns.round_number], errors="coerce")
+        round_numbers = sorted({int(x) for x in work[Columns.round_number].dropna().unique().tolist()})
+        if not round_numbers:
+            return None
+        ko_fin_rn = self._ko_finale_round_number(df)
+        qualifying = [r for r in round_numbers if ko_fin_rn is None or int(r) != int(ko_fin_rn)]
+        return max(qualifying) if qualifying else max(round_numbers)
+
+    def _leaderboard_group_keys(self, df: pd.DataFrame, *, include_club: bool) -> Tuple[List[Any], str]:
+        """Group-by keys for tournament leaderboard rows (must match across rank map + Gesamt shading)."""
+        id_col = Columns.player_id if Columns.player_id in df.columns else "__player_id_missing__"
+        group_keys: List[Any] = [Columns.player_name, id_col]
+        if include_club:
+            group_keys.append(Columns.club)
+        return group_keys, id_col
+
+    @staticmethod
+    def _leaderboard_row_key(row: Any, group_keys: List[Any]) -> Tuple[Any, ...]:
+        return tuple(row[gk] for gk in group_keys)
+
+    def _leaderboard_rank_map_at_round(
+        self,
+        df: pd.DataFrame,
+        round_number: int,
+        *,
+        include_club: bool,
+    ) -> Dict[Tuple[Any, ...], int]:
+        """
+        Per-player # rank at the end of ``round_number``, matching the single-stage
+        leaderboard ladder (used for cut-line row shading on Gesamtwertung).
+        """
+        work = df.copy()
+        work[Columns.score] = pd.to_numeric(work[Columns.score], errors="coerce").fillna(0)
+        work[Columns.round_number] = pd.to_numeric(work[Columns.round_number], errors="coerce")
+        scoped = work[work[Columns.round_number].eq(float(round_number))].copy()
+        if scoped.empty:
+            return {}
+
+        group_keys, id_col = self._leaderboard_group_keys(work, include_club=include_club)
+        if id_col == "__player_id_missing__":
+            work[id_col] = work[Columns.player_name].astype(str)
+            scoped[id_col] = scoped[Columns.player_name].astype(str)
+
+        round_scores = (
+            scoped.groupby(group_keys, dropna=False)[Columns.score]
+            .sum()
+            .reset_index(name="round_score")
+        )
+        use_hc = self._tournament_df_has_meaningful_handicap(df) and Columns.handicap in scoped.columns
+        if use_hc:
+            scoped_net = scoped.assign(
+                _rn=scoped[Columns.score]
+                + pd.to_numeric(scoped[Columns.handicap], errors="coerce").fillna(0)
+            )
+            rn_df = scoped_net.groupby(group_keys, dropna=False)["_rn"].sum().reset_index(name="round_net")
+            leaderboard = round_scores.merge(rn_df, on=group_keys, how="left")
+            leaderboard["round_net"] = (
+                pd.to_numeric(leaderboard["round_net"], errors="coerce").fillna(0).astype(int)
+            )
+            leaderboard = leaderboard.sort_values(
+                by=["round_net", Columns.player_name], ascending=[False, True]
+            ).reset_index(drop=True)
+            leaderboard["rank"] = leaderboard["round_net"].rank(method="min", ascending=False).astype(int)
+        else:
+            leaderboard = round_scores.sort_values(
+                by=["round_score", Columns.player_name], ascending=[False, True]
+            ).reset_index(drop=True)
+            leaderboard["rank"] = leaderboard["round_score"].rank(method="min", ascending=False).astype(int)
+
+        out: Dict[Tuple[Any, ...], int] = {}
+        for _, row in leaderboard.iterrows():
+            key: Tuple[Any, ...] = tuple(row[gk] for gk in group_keys)
+            out[key] = int(row["rank"])
+        return out
+
+    def _leaderboard_rank_map_qualifying_total_pins(
+        self,
+        df: pd.DataFrame,
+        *,
+        include_club: bool,
+        through_round: Optional[int] = None,
+    ) -> Dict[Tuple[Any, ...], int]:
+        """Cumulative scratch-pin rank through ``through_round`` (overall-total / cut ladder)."""
+        if df.empty:
+            return {}
+        work = df.copy()
+        work[Columns.score] = pd.to_numeric(work[Columns.score], errors="coerce").fillna(0)
+        if through_round is not None and Columns.round_number in work.columns:
+            work[Columns.round_number] = pd.to_numeric(work[Columns.round_number], errors="coerce")
+            work = work[work[Columns.round_number].le(float(through_round))].copy()
+        if work.empty:
+            return {}
+        group_keys, id_col = self._leaderboard_group_keys(work, include_club=include_club)
+        if id_col == "__player_id_missing__":
+            work[id_col] = work[Columns.player_name].astype(str)
+        totals = (
+            work.groupby(group_keys, dropna=False)[Columns.score]
+            .sum()
+            .reset_index(name="total_pins")
+        )
+        totals = totals.sort_values(
+            by=["total_pins", Columns.player_name], ascending=[False, True]
+        ).reset_index(drop=True)
+        totals["rank"] = totals["total_pins"].rank(method="min", ascending=False).astype(int)
+        out: Dict[Tuple[Any, ...], int] = {}
+        for _, row in totals.iterrows():
+            out[self._leaderboard_row_key(row, group_keys)] = int(row["rank"])
+        return out
+
+    @staticmethod
+    def _cut_row_style_for_rank(rank_val: int, cut_pos: Optional[int]) -> Dict[str, Any]:
+        if cut_pos is None or rank_val <= 0:
+            return {}
+        if rank_val == 1:
+            return {"backgroundColor": "#cfead6", "fontWeight": "700"}
+        if rank_val < cut_pos:
+            return {"backgroundColor": "#e6f4ea"}
+        if rank_val == cut_pos:
+            return {"backgroundColor": "#ffe8a1", "fontWeight": "700"}
+        return {}
+
     def get_leaderboard_table(
         self,
         season: str,
@@ -1267,14 +1393,7 @@ class TournamentService:
 
                 cut_pos = _cut_position_for_round(df, int(round_number))
                 rank_val = int(row.get("rank", 0))
-                style: Dict[str, Any] = {}
-                if cut_pos is not None and rank_val > 0:
-                    if rank_val == 1:
-                        style = {"backgroundColor": "#cfead6", "fontWeight": "700"}
-                    elif rank_val < cut_pos:
-                        style = {"backgroundColor": "#e6f4ea"}
-                    elif rank_val == cut_pos:
-                        style = {"backgroundColor": "#ffe8a1", "fontWeight": "700"}
+                style = self._cut_row_style_for_rank(rank_val, cut_pos)
                 row_metadata.append({"styling": {}})
                 if style:
                     cell_metadata[f"{row_idx}:0"] = style
@@ -1311,7 +1430,7 @@ class TournamentService:
         work[Columns.score] = pd.to_numeric(work[Columns.score], errors="coerce").fillna(0)
         work[Columns.round_number] = pd.to_numeric(work[Columns.round_number], errors="coerce").astype("Int64")
 
-        id_col = Columns.player_id if Columns.player_id in work.columns else "__player_id_missing__"
+        group_keys, id_col = self._leaderboard_group_keys(work, include_club=include_club)
         if id_col == "__player_id_missing__":
             work[id_col] = work[Columns.player_name].astype(str)
 
@@ -1380,8 +1499,8 @@ class TournamentService:
                 by=["avg_net", Columns.player_name], ascending=[False, True]
             ).reset_index(drop=True)
             pivot["rank"] = pivot["avg_net"].rank(method="min", ascending=False).astype(int)
-            for kt, sub in work.groupby([Columns.player_name, id_col, Columns.club], dropna=False):
-                hc_label_by_key[kt] = _aggregate_handicap_leaderboard_label(sub)
+            for kt, sub in work.groupby(group_keys, dropna=False):
+                hc_label_by_key[kt if isinstance(kt, tuple) else (kt,)] = _aggregate_handicap_leaderboard_label(sub)
         else:
             pivot["total_avg"] = (pivot["total_score"] / pivot["games_played"]).round(1)
             pivot = pivot.sort_values(
@@ -1479,14 +1598,29 @@ class TournamentService:
         data = []
         row_metadata = []
         cell_metadata: Dict[str, Dict[str, Any]] = {}
-        # One cut line (ko_qualifying_cut_rank): green strictly better than cut, yellow on cut.
-        # Rank for shading matches the # column basis: net ladder when scratch+net, else scratch.
-        cut_line_rank = self._gesamt_leaderboard_cut_line_rank(season, tournament)
+        # Gesamtwertung cut shading: cut rank from CSV at end of qualifying; row colors by
+        # cumulative scratch pins through qualifying (overall total), not single-stage results.
+        latest_qual_rn = self._latest_qualifying_round_number(df)
+        cut_pos_gesamt: Optional[int] = None
+        if latest_qual_rn is not None:
+            cut_pos_gesamt = self._resolved_cut_position_for_round(
+                df, int(latest_qual_rn), season, tournament
+            )
+        qual_round_cols = [
+            r
+            for r in round_numbers
+            if latest_qual_rn is None or int(r) <= int(latest_qual_rn)
+        ]
+        if qual_round_cols:
+            pivot["_cut_total_pins"] = pivot[qual_round_cols].sum(axis=1)
+        else:
+            pivot["_cut_total_pins"] = 0
+        pivot["_cut_shade_rank"] = pivot["_cut_total_pins"].rank(method="min", ascending=False).astype(int)
 
         for row_idx, (_, row) in enumerate(pivot.iterrows()):
+            rank_key = self._leaderboard_row_key(row, group_keys)
             if use_scratch_net:
-                key_t = (row[Columns.player_name], row[id_col], row[Columns.club])
-                hc_lbl = hc_label_by_key.get(key_t, "—")
+                hc_lbl = hc_label_by_key.get(rank_key, "—")
                 entry = [int(row["rank"]), str(row.get(Columns.player_name, "")), hc_lbl]
                 if include_club:
                     entry.append(str(row.get(Columns.club, "")))
@@ -1497,7 +1631,7 @@ class TournamentService:
                 entry.append(int(row.get("total_net", 0)))
                 entry.append(float(row.get("avg_net", 0.0)))
                 scratch_for_cut = int(row.get("scratch_rank", 0))
-                row_metadata.append({"styling": {}, "scratch_rank": scratch_for_cut})
+                row_meta: Dict[str, Any] = {"styling": {}, "scratch_rank": scratch_for_cut}
             else:
                 entry = [int(row["rank"]), str(row.get(Columns.player_name, ""))]
                 if include_club:
@@ -1506,20 +1640,14 @@ class TournamentService:
                     entry.append(int(row.get(rn, 0)))
                 entry.append(int(row.get("total_score", 0)))
                 entry.append(float(row.get("total_avg", 0.0)))
-                row_metadata.append({"styling": {}})
+                row_meta = {"styling": {}}
 
-            display_rank = int(row.get("rank", 0))
-            rank_for_cut_shading = display_rank
-            style: Dict[str, Any] = {}
-            if cut_line_rank is not None and rank_for_cut_shading > 0:
-                if rank_for_cut_shading < cut_line_rank:
-                    style = {"backgroundColor": "#cfead6"}
-                elif rank_for_cut_shading == cut_line_rank:
-                    style = {"backgroundColor": "#ffe8a1", "fontWeight": "700"}
-            if display_rank == 1:
-                style = {**style, "fontWeight": "700"}
+            rank_for_cut_shading = int(row["_cut_shade_rank"])
+            row_meta["cut_shade_rank"] = rank_for_cut_shading
+            style = self._cut_row_style_for_rank(rank_for_cut_shading, cut_pos_gesamt)
             if style:
                 cell_metadata[f"{row_idx}:0"] = style
+            row_metadata.append(row_meta)
 
             data.append(entry)
 
@@ -2996,10 +3124,11 @@ class TournamentService:
                 scores = pd.to_numeric(snap[score_col], errors="coerce")
                 exact = ranks[scores.eq(cut_score)].dropna()
                 if not exact.empty:
-                    return int(exact.max())
+                    # Lowest stage rank at the cut score = on-cut position (last qualifier).
+                    return int(exact.min())
                 ge = ranks[scores.ge(cut_score)].dropna()
                 if not ge.empty:
-                    return int(ge.max())
+                    return int(ge.min())
                 return None
 
             if Columns.score in snap.columns and Columns.player_name in snap.columns:
@@ -3279,9 +3408,8 @@ class TournamentService:
         Gesamt leaderboard: show KO bracket places (1, 2, 3/3, 5/5) in the # column for finalists;
         everyone else keeps the pre-KO # column (scratch rank in scratch-only mode, net rank when
         scratch+net layout is active). Sort: last column average desc (scratch avg or net avg), then # asc.
-        Cut-line # column shading uses ``ko_qualifying_cut_rank`` vs the **# column ladder before KO**
-        (net rank when scratch+net layout, scratch rank otherwise): ranks better than the cut are green;
-        the cut rank row is yellow.
+        Cut-line # column shading matches the latest qualifying stage (same as Gesamtwertung
+        before KO reordering): green inside cut, yellow on cut, red outside.
         """
         placements = list(bracket.get("placements") or [])
         if not placements or not table.data:
@@ -3294,7 +3422,14 @@ class TournamentService:
             if k:
                 ko_by_key[k] = int(p.get("place", 0))
 
-        cut_line_rank = self._gesamt_leaderboard_cut_line_rank(season, tournament)
+        latest_qual_rn = self._latest_qualifying_round_number(df)
+        cut_pos: Optional[int] = None
+        if latest_qual_rn is not None:
+            cut_pos = self._resolved_cut_position_for_round(
+                df, int(latest_qual_rn), season, tournament
+            )
+
+        has_rm = bool(table.row_metadata) and len(table.row_metadata) == len(table.data)
 
         augmented: List[Dict[str, Any]] = []
         for row_idx, row in enumerate(table.data):
@@ -3305,11 +3440,14 @@ class TournamentService:
             pk = self._ko_norm_name(self._ko_strip_no_show_suffix(pname))
             display_pos = int(ko_by_key.get(pk, pre_ko_rank))
             total_avg = float(row[-1])
+            shade_r = pre_ko_rank
+            if has_rm:
+                shade_r = int(table.row_metadata[row_idx].get("cut_shade_rank") or pre_ko_rank)
             augmented.append(
                 {
                     "row": list(row),
                     "display_pos": display_pos,
-                    "shade_r": pre_ko_rank,
+                    "shade_r": shade_r,
                     "total_avg": total_avg,
                     "old_idx": row_idx,
                 }
@@ -3323,7 +3461,6 @@ class TournamentService:
         new_data: List[List[Any]] = []
         new_rm: List[Dict[str, Any]] = []
         new_cm: Dict[str, Dict[str, Any]] = {}
-        has_rm = bool(table.row_metadata) and len(table.row_metadata) == len(table.data)
 
         for new_i, item in enumerate(augmented):
             r = item["row"]
@@ -3332,14 +3469,11 @@ class TournamentService:
 
             shade_r = int(item["shade_r"])
             display_pos = int(item["display_pos"])
-            style: Dict[str, Any] = {}
-            if cut_line_rank is not None and shade_r > 0:
-                if shade_r < cut_line_rank:
-                    style = {"backgroundColor": "#cfead6"}
-                elif shade_r == cut_line_rank:
-                    style = {"backgroundColor": "#ffe8a1", "fontWeight": "700"}
-            if display_pos == 1:
+            style = self._cut_row_style_for_rank(shade_r, cut_pos)
+            if display_pos == 1 and style:
                 style = {**style, "fontWeight": "700"}
+            elif display_pos == 1:
+                style = {"fontWeight": "700"}
             if has_rm:
                 new_rm.append(dict(table.row_metadata[item["old_idx"]]))
             else:

@@ -13,6 +13,7 @@ import {
 import { useTranslations } from "../../hooks/useTranslations";
 import { resolveTournamentPlayerName } from "../../lib/tournamentPlayer";
 import { BestEfforts } from "./blocks/BestEfforts";
+import { KoBracket } from "./blocks/KoBracket";
 import { Leaderboard } from "./blocks/Leaderboard";
 import { PlayerSection } from "./blocks/PlayerSection";
 import { RoundResults } from "./blocks/RoundResults";
@@ -129,6 +130,14 @@ export function TournamentStats() {
 
   const playerMode = !!resolvedPlayer;
 
+  const showKoBracket = useMemo(() => {
+    const data = sectionQuery.data;
+    if (!data?.ko_bracket?.matches?.length) return false;
+    if (data.is_ko_finale_round) return true;
+    if (!round && data.ko_finale_round_number != null) return true;
+    return false;
+  }, [sectionQuery.data, round]);
+
   return (
     <div className="mx-auto max-w-[1280px] px-8 pt-12 pb-24">
       <header className="mb-8">
@@ -187,6 +196,7 @@ export function TournamentStats() {
                 heatmapEnabled={heatmapEnabled}
                 onToggleHeatmap={() => setHeatmapEnabled((v) => !v)}
                 onBack={clearPlayer}
+                onPlayerClick={selectPlayer}
                 t={t}
               />
             )}
@@ -222,6 +232,13 @@ export function TournamentStats() {
                   t={t}
                 />
                 <BestEfforts bestEfforts={sectionQuery.data.best_efforts} t={t} />
+                {showKoBracket && sectionQuery.data.ko_bracket ? (
+                  <KoBracket
+                    bracket={sectionQuery.data.ko_bracket}
+                    onPlayerClick={selectPlayer}
+                    t={t}
+                  />
+                ) : null}
                 <Leaderboard
                   data={sectionQuery.data.leaderboard}
                   stageLabel={stageLabel}

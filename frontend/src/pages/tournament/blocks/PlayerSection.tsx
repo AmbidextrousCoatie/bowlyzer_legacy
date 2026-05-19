@@ -4,6 +4,7 @@ import { EChart } from "../../../lib/charts/EChart";
 import { DataTable } from "../../../lib/datatable/DataTable";
 import { getHeatMapColor, getSemanticColor } from "../../../lib/color-utils";
 import { tournamentResultsTableOptions } from "../tournamentTableOptions";
+import { KoBracket } from "./KoBracket";
 import type {
   TournamentFieldProgress,
   TournamentPlayerBestEfforts,
@@ -20,6 +21,7 @@ type Props = {
   heatmapEnabled: boolean;
   onToggleHeatmap: () => void;
   onBack: () => void;
+  onPlayerClick?: (player: string) => void;
   t: (key: string, fallback?: string) => string;
 };
 
@@ -165,6 +167,7 @@ export function PlayerSection({
   heatmapEnabled,
   onToggleHeatmap,
   onBack,
+  onPlayerClick,
   t,
 }: Props) {
   const [cutMode, setCutMode] = useState<CutMode>("dynamic");
@@ -253,6 +256,12 @@ export function PlayerSection({
           ))}
         </div>
       ))}
+
+      {data.ko_bracket?.matches?.length ? (
+        <div className="mt-12">
+          <KoBracket bracket={data.ko_bracket} onPlayerClick={onPlayerClick} t={t} />
+        </div>
+      ) : null}
 
       <div className="mt-12 grid grid-cols-1 gap-8 lg:grid-cols-2">
         <div>
