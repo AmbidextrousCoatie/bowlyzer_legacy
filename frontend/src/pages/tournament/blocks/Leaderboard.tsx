@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { DataTable } from "../../../lib/datatable/DataTable";
 import type { TableData } from "../../../lib/datatable/types";
 import { tournamentLeaderboardTableOptions } from "../tournamentTableOptions";
@@ -12,6 +12,14 @@ type Props = {
 
 export function Leaderboard({ data, stageLabel, onPlayerClick, t }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const tableOptions = useMemo(
+    () => ({
+      ...tournamentLeaderboardTableOptions,
+      tournamentCutRowStyling:
+        data.metadata?.kind !== "ko_placements" && data.metadata?.suppress_cut_styling !== true,
+    }),
+    [data.metadata],
+  );
 
   useEffect(() => {
     if (!onPlayerClick) return;
@@ -33,16 +41,22 @@ export function Leaderboard({ data, stageLabel, onPlayerClick, t }: Props) {
   return (
     <section>
       <div className="mb-4">
-        <p className="text-label uppercase text-muted mb-1.5">
-          {t("ui.tournament.leaderboard", "Rangliste")}
-        </p>
-        <div className="flex items-baseline justify-between gap-4">
-          <h2 className="text-h2">{t("ui.tournament.leaderboard", "Rangliste")}</h2>
-          {stageLabel ? <p className="text-small text-muted">{stageLabel}</p> : null}
-        </div>
+        {stageLabel ? (
+          <>
+            <p className="text-label uppercase text-muted mb-1.5">
+              {t("ui.tournament.leaderboard", "Gesamtwertung")}
+            </p>
+            <h2 className="text-h2">
+              {t("ui.tournament.leaderboard_after", "nach")}{" "}
+              <span className="font-semibold">{stageLabel}</span>
+            </h2>
+          </>
+        ) : (
+          <h2 className="text-h2">{t("ui.tournament.leaderboard", "Gesamtwertung")}</h2>
+        )}
       </div>
       <div ref={containerRef}>
-        <DataTable data={data} options={tournamentLeaderboardTableOptions} />
+        <DataTable data={data} options={tableOptions} />
       </div>
     </section>
   );

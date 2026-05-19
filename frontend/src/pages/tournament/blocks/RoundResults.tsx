@@ -90,14 +90,17 @@ export function RoundResults({
   return (
     <section>
       <div className="mb-4">
-        <p className="text-label uppercase text-muted mb-1.5">
-          {t("ui.tournament.round_results", "Rundenergebnisse")}
-        </p>
         <div className="flex flex-wrap items-baseline justify-between gap-4">
-          <h2 className="text-h2">
-            {t("ui.tournament.round_results", "Rundenergebnisse")}
-            {stageLabel ? <span className="text-muted font-normal"> — {stageLabel}</span> : null}
-          </h2>
+          <div>
+            <p className="text-label uppercase text-muted mb-1.5">
+              {t("ui.tournament.round_results", "Rundenergebnisse")}
+            </p>
+            {stageLabel ? (
+              <h2 className="text-h2 font-semibold">{stageLabel}</h2>
+            ) : (
+              <h2 className="text-h2">{t("ui.tournament.round_results", "Rundenergebnisse")}</h2>
+            )}
+          </div>
           <button
             type="button"
             onClick={onToggleHeatmap}

@@ -19,7 +19,7 @@ import { TeamPerformance } from "./blocks/TeamPerformance";
 import { LeagueFilterBar } from "./LeagueFilterBar";
 
 export function LeagueStats() {
-  const { setLeagueCompactChrome } = useMobileNav();
+  const { setCompactPageChrome } = useMobileNav();
   const [searchParams, setSearchParams] = useSearchParams();
   const season = searchParams.get("season") ?? "latest";
   const league = searchParams.get("league") ?? "";
@@ -29,9 +29,9 @@ export function LeagueStats() {
   const { t } = useTranslations();
 
   useEffect(() => {
-    setLeagueCompactChrome(true);
-    return () => setLeagueCompactChrome(false);
-  }, [setLeagueCompactChrome]);
+    setCompactPageChrome(true);
+    return () => setCompactPageChrome(false);
+  }, [setCompactPageChrome]);
 
   const seasonsQuery = useAvailableSeasons();
   const seasonList = seasonsQuery.data ?? [];

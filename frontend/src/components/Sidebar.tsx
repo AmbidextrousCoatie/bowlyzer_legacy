@@ -82,7 +82,7 @@ export function Sidebar() {
     return (localStorage.getItem("ds:theme") as Theme) ?? "light";
   });
   const [lang, setLang] = useState<Lang>("de");
-  const { mobileOpen, openMobileNav, closeMobileNav, leagueCompactChrome } = useMobileNav();
+  const { mobileOpen, openMobileNav, closeMobileNav, compactPageChrome } = useMobileNav();
   const [searchParams] = useSearchParams();
 
   useEffect(() => {
@@ -100,7 +100,7 @@ export function Sidebar() {
       <div
         className={
           "lg:hidden sticky top-0 z-30 flex items-center justify-between border-b border-border bg-background px-4 py-3 " +
-          (leagueCompactChrome ? "max-lg:landscape:hidden" : "")
+          (compactPageChrome ? "max-lg:landscape:hidden" : "")
         }
       >
         <div className="flex items-center gap-2">

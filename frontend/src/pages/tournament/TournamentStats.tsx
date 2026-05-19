@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { PlayerSearch } from "../../components/PlayerSearch";
+import { useMobileNav } from "../../context/MobileNavContext";
 import {
-  type TournamentRound,
   usePlayerSectionForTournament,
   useTournamentNames,
   useTournamentPlayers,
@@ -18,11 +17,18 @@ import { Leaderboard } from "./blocks/Leaderboard";
 import { PlayerSection } from "./blocks/PlayerSection";
 import { RoundResults } from "./blocks/RoundResults";
 import { SummaryCards } from "./blocks/SummaryCards";
+import { TournamentFilterBar } from "./TournamentFilterBar";
 
 export function TournamentStats() {
   const { t } = useTranslations();
+  const { setCompactPageChrome } = useMobileNav();
   const [searchParams, setSearchParams] = useSearchParams();
   const [heatmapEnabled, setHeatmapEnabled] = useState(false);
+
+  useEffect(() => {
+    setCompactPageChrome(true);
+    return () => setCompactPageChrome(false);
+  }, [setCompactPageChrome]);
 
   const season = searchParams.get("season") ?? "";
   const tournament = searchParams.get("tournament") ?? "";
@@ -122,11 +128,16 @@ export function TournamentStats() {
 
   const stageLabel = useMemo(() => {
     if (!round) return null;
-    const list = sectionQuery.data?.rounds ?? [];
+    const list = roundsQuery.data ?? sectionQuery.data?.rounds ?? [];
     const found = list.find((r) => String(r.round_number) === round);
     if (found?.round_name) return found.round_name;
     return `${t("ui.tournament.round", "Runde")} ${round}`;
-  }, [round, sectionQuery.data, t]);
+  }, [round, roundsQuery.data, sectionQuery.data?.rounds, t]);
+
+  const overviewStageLabel = useMemo(() => {
+    if (!round) return t("ui.tournament.overall_standings", "Gesamtstand");
+    return stageLabel ?? `${t("ui.tournament.round", "Runde")} ${round}`;
+  }, [round, stageLabel, t]);
 
   const playerMode = !!resolvedPlayer;
 
@@ -139,8 +150,8 @@ export function TournamentStats() {
   }, [sectionQuery.data, round]);
 
   return (
-    <div className="mx-auto max-w-[1280px] px-8 pt-12 pb-24">
-      <header className="mb-8">
+    <div className="mx-auto max-w-[1280px] px-4 pt-8 pb-24 max-lg:landscape:pt-2 lg:px-8 lg:pt-12">
+      <header className="mb-6 max-lg:landscape:hidden lg:mb-8">
         <p className="text-label uppercase text-muted mb-2">
           {t("ui.tournament.title", "Bowl-A-Lyzer")}
         </p>
@@ -155,7 +166,8 @@ export function TournamentStats() {
         </h1>
       </header>
 
-      <FilterRail
+      <TournamentFilterBar
+        pageHeading={buildTournamentPageHeading(tournament, season)}
         season={season}
         seasons={seasonsQuery.data ?? []}
         seasonsLoading={seasonsQuery.isPending}
@@ -176,7 +188,7 @@ export function TournamentStats() {
         t={t}
       />
 
-      <div className="mt-10 space-y-12">
+      <div className="mt-6 space-y-12 lg:mt-10">
         {playerMode ? (
           <>
             {playerSectionQuery.isPending && <LoadingSection t={t} />}
@@ -228,6 +240,7 @@ export function TournamentStats() {
               <>
                 <SummaryCards
                   cards={sectionQuery.data.cards ?? []}
+                  overviewStageLabel={overviewStageLabel}
                   onPlayerClick={selectPlayer}
                   t={t}
                 />
@@ -264,142 +277,11 @@ export function TournamentStats() {
   );
 }
 
-type FilterRailProps = {
-  season: string;
-  seasons: string[];
-  seasonsLoading: boolean;
-  tournament: string;
-  tournaments: string[];
-  tournamentsLoading: boolean;
-  round: string;
-  rounds: TournamentRound[];
-  roundsLoading: boolean;
-  player: string;
-  players: string[];
-  playersLoading: boolean;
-  playerMode: boolean;
-  onSeasonChange: (v: string) => void;
-  onTournamentChange: (v: string) => void;
-  onRoundChange: (v: string) => void;
-  onPlayerChange: (v: string) => void;
-  t: (key: string, fallback?: string) => string;
-};
-
-function FilterRail(props: FilterRailProps) {
-  const { t } = props;
-  const playerEntries = useMemo(
-    () => props.players.map((name) => ({ id: name, name })),
-    [props.players],
-  );
-  const playerSearchDisabled =
-    props.playersLoading || !props.season || !props.tournament;
-
-  return (
-    <div className="sticky top-0 z-10 -mx-8 border-b border-border bg-background/85 px-8 py-3 backdrop-blur">
-      <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
-        <FilterField label={t("ui.tournament.season", "Saison")}>
-          <SelectControl
-            value={props.season}
-            disabled={props.seasonsLoading}
-            ariaLabel={t("ui.tournament.season", "Saison")}
-            onChange={props.onSeasonChange}
-          >
-            <option value="">—</option>
-            {props.seasons.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </SelectControl>
-        </FilterField>
-
-        <FilterField label={t("ui.tournament.tournament", "Turnier")}>
-          <SelectControl
-            value={props.tournament}
-            disabled={props.tournamentsLoading}
-            ariaLabel={t("ui.tournament.tournament", "Turnier")}
-            onChange={props.onTournamentChange}
-          >
-            <option value="">—</option>
-            {props.tournaments.map((tn) => (
-              <option key={tn} value={tn}>
-                {tn}
-              </option>
-            ))}
-          </SelectControl>
-        </FilterField>
-
-        {!props.playerMode && (
-          <FilterField label={t("ui.tournament.round", "Runde")}>
-            <SelectControl
-              value={props.round}
-              disabled={props.roundsLoading}
-              ariaLabel={t("ui.tournament.round", "Runde")}
-              onChange={props.onRoundChange}
-            >
-              <option value="">{t("ui.tournament.all_latest", "Gesamt")}</option>
-              {props.rounds.map((r) => (
-                <option
-                  key={String(r.round_number)}
-                  value={String(r.round_number)}
-                  title={r.round_name ? String(r.round_name) : undefined}
-                >
-                  {r.round_number}
-                </option>
-              ))}
-            </SelectControl>
-          </FilterField>
-        )}
-
-        <FilterField label={t("ui.tournament.player", "Spieler")}>
-          <PlayerSearch
-            value={props.player}
-            players={playerEntries}
-            isLoading={playerSearchDisabled}
-            placeholder={t("ui.tournament.player_search_placeholder", "Spieler suchen…")}
-            ariaLabel={t("ui.tournament.player", "Spieler")}
-            clearAriaLabel={t("ui.tournament.clear_player", "Spieler-Auswahl löschen")}
-            onSelect={(entry) => props.onPlayerChange(entry?.name ?? "")}
-          />
-        </FilterField>
-      </div>
-    </div>
-  );
-}
-
-function FilterField({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="flex flex-col gap-1.5">
-      <span className="text-label uppercase text-muted">{label}</span>
-      {children}
-    </label>
-  );
-}
-
-function SelectControl({
-  value,
-  onChange,
-  disabled,
-  ariaLabel,
-  children,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  disabled?: boolean;
-  ariaLabel: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <select
-      aria-label={ariaLabel}
-      value={value}
-      disabled={disabled}
-      onChange={(e) => onChange(e.target.value)}
-      className="h-9 min-w-[160px] rounded-sm border border-border bg-surface px-2.5 text-small text-foreground hover:border-border-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:opacity-60"
-    >
-      {children}
-    </select>
-  );
+function buildTournamentPageHeading(tournament: string, season: string): string {
+  if (tournament && season) return `${tournament} · ${season}`;
+  if (tournament) return tournament;
+  if (season) return season;
+  return "";
 }
 
 function LoadingSection({ t }: { t: (key: string, fallback?: string) => string }) {

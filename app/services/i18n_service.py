@@ -222,6 +222,7 @@ class I18nService:
             "ui.tournament.player": {"en": "Player", "de": "Spieler"},
             "ui.tournament.player_placeholder": {"en": "Type to filter players...", "de": "Tippen, um Spieler zu filtern..."},
             "ui.tournament.leaderboard": {"en": "Leaderboard", "de": "Gesamtwertung"},
+            "ui.tournament.leaderboard_after": {"en": "after", "de": "nach"},
             "ui.tournament.ko_placements_title": {
                 "en": "Knockout final standings",
                 "de": "K.O.-Endplatzierungen",
@@ -280,6 +281,7 @@ class I18nService:
             "ui.tournament.tournament_leader": {"en": "Tournament Leader", "de": "Turnierführender"},
             "ui.tournament.round_boundary": {"en": "Round Boundary", "de": "Rundengrenze"},
             "ui.tournament.all_latest": {"en": "Total", "de": "Gesamt"},
+            "ui.tournament.overall_standings": {"en": "Overall standings", "de": "Gesamtstand"},
             "ui.tournament.total_results": {"en": "Total Results", "de": "Gesamtergebnisse"},
             "ui.tournament.stage_results": {"en": "Stage Results", "de": "Rundenergebnisse"},
             "ui.tournament.handicap_heading": {"en": "Handicap", "de": "Handicap"},

@@ -16,13 +16,15 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
+import math
 import re
 import sys
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
-from typing import Dict, Iterable, List, Tuple
+from typing import Dict, Iterable, List, Optional, Tuple
 
 from openpyxl import load_workbook
 
@@ -35,6 +37,7 @@ GF_COMBINED_POSTPROCESSED = (
     ROOT / "database" / "input" / "gf_tables_export" / "gf_tournaments_2026__combined_postprocessed.csv"
 )
 DEFAULT_OUTPUT = ROOT / "database" / "data" / "tournament_bayerische_meisterschaft_2026_postprocessed.csv"
+KO_CONFIG_PATH = ROOT / "database" / "data" / "tournament_ko_config.json"
 
 POSTPROCESSED_HEADERS = [
     "Season",
@@ -87,6 +90,27 @@ def _as_int(value: object, default: int = 0) -> int:
         return default
 
 
+def _as_float(value: object) -> Optional[float]:
+    if value is None:
+        return None
+    text = str(value).strip()
+    if not text:
+        return None
+    try:
+        parsed = float(text)
+    except (TypeError, ValueError):
+        return None
+    return parsed if math.isfinite(parsed) else None
+
+
+def _as_int_score(value: object) -> Optional[int]:
+    """Scratch pins from a game cell; None when the cell is blank (not bowled)."""
+    parsed = _as_float(value)
+    if parsed is None:
+        return None
+    return int(round(parsed))
+
+
 def _season_label(year: int) -> str:
     # Keep same style used by SBM/NBM GF exports, e.g. 2026 -> 25/26.
     prev_yy = (year - 1) % 100
@@ -133,13 +157,13 @@ def _read_optionen_meta(workbook_path: Path) -> TournamentMeta:
     return TournamentMeta(season=season, event_name=event_name, location=location, dates=dates)
 
 
-def _iter_round_rows(workbook_path: Path, sheet_name: str) -> Iterable[Tuple[str, str, List[int]]]:
+def _iter_round_rows(workbook_path: Path, sheet_name: str) -> Iterable[Tuple[str, str, List[Optional[int]]]]:
     wb = load_workbook(workbook_path, data_only=True)
     if sheet_name not in wb.sheetnames:
         return []
 
     ws = wb[sheet_name]
-    rows: List[Tuple[str, str, List[int]]] = []
+    rows: List[Tuple[str, str, List[Optional[int]]]] = []
     row_idx = 6
     consecutive_empty = 0
     # Some sheets contain visual spacer rows in the middle; only stop after
@@ -157,7 +181,7 @@ def _iter_round_rows(workbook_path: Path, sheet_name: str) -> Iterable[Tuple[str
             continue
         consecutive_empty = 0
         if name and pid > 0:
-            games = [_as_int(ws.cell(row=row_idx, column=col).value) for col in range(3, 9)]
+            games = [_as_int_score(ws.cell(row=row_idx, column=col).value) for col in range(3, 9)]
             rows.append((name, str(pid), games))
         row_idx += 1
     return rows
@@ -175,6 +199,8 @@ def _build_round_rows(meta: TournamentMeta, workbook_path: Path) -> Tuple[List[D
         for player_name, player_id, game_scores in source_rows:
             player_id_by_name[player_name.strip().casefold()] = str(player_id)
             for game_idx, score in enumerate(game_scores):
+                if score is None:
+                    continue
                 rows.append(
                     {
                         "Season": meta.season,
@@ -208,14 +234,32 @@ def _is_number(value: object) -> bool:
         return False
 
 
-def _parse_ko_games(ws, start_row: int, active_section: str = "") -> Tuple[List[Tuple[int, int]], int]:
+def _load_ko_finale_series(season: str, event_name: str) -> str:
+    """Read ko_finale_series from tournament_ko_config.json (defaults to bo3_pins)."""
+    if not KO_CONFIG_PATH.is_file():
+        return "bo3_pins"
+    try:
+        data = json.loads(KO_CONFIG_PATH.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return "bo3_pins"
+    block = data.get(f"{season}||{event_name}") or {}
+    return str(block.get("ko_finale_series") or "bo3_pins")
+
+
+def _parse_ko_games(
+    ws,
+    start_row: int,
+    active_section: str = "",
+    ko_finale_series: str = "bo3_pins",
+) -> Tuple[List[Tuple[int, int]], int]:
     """
-    Parse up to 3 best-of rows beginning at start_row.
+    Parse KO pin rows beginning at start_row.
     Returns (list of (left,right) played games, next_row_after_match_block).
 
-    Rows are pin scores. Skip match-total lines where both sides exceed a single-game scratch cap
-    (e.g. two-game combined totals). In *finale*, skip tiny pairs like 2:1 that are "games won" summaries,
-    not pinfall.
+    bo3_pins: up to three single-game rows per match; skip impossible singles (>300 either side).
+    scratch_total_2g: at most two single-game rows; skip two-game scratch totals (often <300 per side,
+    e.g. 295) by matching running sums within the match block.
+    In *finale*, skip tiny pairs like 2:1 that are "games won" summaries, not pinfall.
     """
     games: List[Tuple[int, int]] = []
     row = start_row
@@ -243,10 +287,20 @@ def _parse_ko_games(ws, start_row: int, active_section: str = "") -> Tuple[List[
             if left_num == 0 and right_num == 0:
                 row += 1
                 continue
-            # Two-game / match scratch totals on one row (both sides above single-game max).
-            if left_num > 300 and right_num > 300:
+            # Single-game scratch cap (either side); catches match totals for bo3 as well.
+            if left_num > 300 or right_num > 300:
                 row += 1
                 continue
+            if ko_finale_series == "scratch_total_2g":
+                if len(games) >= 2:
+                    row += 1
+                    continue
+                if games:
+                    sum_left = sum(g[0] for g in games)
+                    sum_right = sum(g[1] for g in games)
+                    if left_num == sum_left or right_num == sum_right:
+                        row += 1
+                        continue
             # Finale sometimes lists leg wins (e.g. 2:1) as a separate row — not pinfall.
             if sec == "finale" and left_num <= 10 and right_num <= 10:
                 row += 1
@@ -310,6 +364,7 @@ def _extract_ko_rows(
     round_number = 3
     round_name = "KO-Finale"
     round_date = meta.dates.get(2, "")
+    ko_finale_series = _load_ko_finale_series(meta.season, meta.event_name)
 
     section_labels = {"viertelfinale", "halbfinale", "finale"}
     ko_rows: List[Dict[str, str]] = []
@@ -342,7 +397,7 @@ def _extract_ko_rows(
                 and "vorrunde platz" not in left_lower
                 and "sieger" not in left_lower
             ):
-                games, next_row = _parse_ko_games(ws, row, active_section)
+                games, next_row = _parse_ko_games(ws, row, active_section, ko_finale_series)
                 left_id = player_id_by_name.get(left_name.strip().casefold(), "")
                 right_id = player_id_by_name.get(right_name.strip().casefold(), "")
                 if _is_walkover_opponent(right_name):
@@ -423,6 +478,8 @@ def _extract_ko_rows(
                     game_number += 1
                 else:
                     for left_score, right_score in games:
+                        if left_score <= 0 or right_score <= 0:
+                            continue
                         ko_rows.append(
                             {
                                 "Season": meta.season,

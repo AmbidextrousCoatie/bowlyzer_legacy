@@ -2,22 +2,25 @@ import type { TournamentSummaryCard } from "../../../hooks/useTournament";
 
 type Props = {
   cards: TournamentSummaryCard[];
+  /** Active stage name or overall label (not the tournament's latest round). */
+  overviewStageLabel: string;
   onPlayerClick: (player: string) => void;
   t: (key: string, fallback?: string) => string;
 };
 
-export function SummaryCards({ cards, onPlayerClick, t }: Props) {
+export function SummaryCards({ cards, overviewStageLabel, onPlayerClick, t }: Props) {
   if (!cards || cards.length === 0) {
     return null;
   }
 
   const tournamentCard = cards.find((c) => normalizeTitle(c.title) === "tournament");
-  const currentRoundCard = cards.find((c) => normalizeTitle(c.title) === "current round");
-  const innerCards = cards.filter((c) => c !== tournamentCard && c !== currentRoundCard);
+  const innerCards = cards.filter(
+    (c) =>
+      c !== tournamentCard && normalizeTitle(c.title) !== "current round",
+  );
 
   const titlePrimary = tournamentCard?.value ?? t("ui.tournament.tournament", "Turnier");
   const titleSubtitle = tournamentCard?.subtitle ?? "";
-  const roundText = currentRoundCard?.value ?? "";
 
   return (
     <section>
@@ -32,12 +35,7 @@ export function SummaryCards({ cards, onPlayerClick, t }: Props) {
               <span className="text-muted font-normal"> — {String(titleSubtitle)}</span>
             ) : null}
           </h2>
-          {roundText ? (
-            <p className="text-small text-muted">
-              {t("ui.tournament.round", "Runde")}{" "}
-              <span className="font-mono font-semibold text-foreground">{String(roundText)}</span>
-            </p>
-          ) : null}
+          <p className="text-small font-semibold text-foreground">{overviewStageLabel}</p>
         </div>
       </div>
 

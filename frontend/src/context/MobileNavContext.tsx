@@ -4,16 +4,16 @@ type MobileNavContextValue = {
   mobileOpen: boolean;
   openMobileNav: () => void;
   closeMobileNav: () => void;
-  /** Liga page merges menu + filters in landscape; hide the global mobile top bar. */
-  leagueCompactChrome: boolean;
-  setLeagueCompactChrome: (active: boolean) => void;
+  /** Liga/Turnier pages merge menu + filters in landscape; hide the global mobile top bar. */
+  compactPageChrome: boolean;
+  setCompactPageChrome: (active: boolean) => void;
 };
 
 const MobileNavContext = createContext<MobileNavContextValue | null>(null);
 
 export function MobileNavProvider({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [leagueCompactChrome, setLeagueCompactChrome] = useState(false);
+  const [compactPageChrome, setCompactPageChrome] = useState(false);
 
   const openMobileNav = useCallback(() => setMobileOpen(true), []);
   const closeMobileNav = useCallback(() => setMobileOpen(false), []);
@@ -23,10 +23,10 @@ export function MobileNavProvider({ children }: { children: React.ReactNode }) {
       mobileOpen,
       openMobileNav,
       closeMobileNav,
-      leagueCompactChrome,
-      setLeagueCompactChrome,
+      compactPageChrome,
+      setCompactPageChrome,
     }),
-    [mobileOpen, openMobileNav, closeMobileNav, leagueCompactChrome],
+    [mobileOpen, openMobileNav, closeMobileNav, compactPageChrome],
   );
 
   return <MobileNavContext.Provider value={value}>{children}</MobileNavContext.Provider>;

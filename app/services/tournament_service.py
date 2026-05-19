@@ -1333,10 +1333,16 @@ class TournamentService:
             row_metadata = []
             cell_metadata: Dict[str, Dict[str, Any]] = {}
             default_sort_field = "round_net" if use_hc_round else "total_score"
-            cut_pos = _cut_position_for_round(df, int(round_number))
-            cut_shade_ranks = self._leaderboard_rank_map_qualifying_total_pins(
-                df, include_club=include_club, through_round=int(round_number)
+            is_ko_finale_round_lb = (
+                ko_fin_rn is not None and int(round_number) == int(ko_fin_rn)
             )
+            cut_pos: Optional[int] = None
+            cut_shade_ranks: Dict[Tuple[Any, ...], int] = {}
+            if not is_ko_finale_round_lb:
+                cut_pos = _cut_position_for_round(df, int(round_number))
+                cut_shade_ranks = self._leaderboard_rank_map_qualifying_total_pins(
+                    df, include_club=include_club, through_round=int(round_number)
+                )
 
             for row_idx, (_, row) in enumerate(leaderboard.iterrows()):
                 entry = [int(row["rank"]), str(row.get(Columns.player_name, ""))]
@@ -1369,12 +1375,21 @@ class TournamentService:
                     )
                 data.append(entry)
 
-                rank_key = self._leaderboard_row_key(row, group_keys)
-                rank_for_cut = int(cut_shade_ranks.get(rank_key, row.get("rank", 0)))
-                style = self._cut_row_style_for_rank(rank_for_cut, cut_pos)
-                row_metadata.append({"styling": {}, "cut_shade_rank": rank_for_cut})
-                if style:
-                    cell_metadata[f"{row_idx}:0"] = style
+                if is_ko_finale_round_lb:
+                    row_metadata.append({"styling": {}})
+                else:
+                    rank_key = self._leaderboard_row_key(row, group_keys)
+                    rank_for_cut = int(cut_shade_ranks.get(rank_key, row.get("rank", 0)))
+                    style = self._cut_row_style_for_rank(rank_for_cut, cut_pos)
+                    row_metadata.append({"styling": {}, "cut_shade_rank": rank_for_cut})
+                    if style:
+                        cell_metadata[f"{row_idx}:0"] = style
+
+            lb_metadata: Dict[str, Any] = {}
+            if use_hc_round:
+                lb_metadata["leaderboard_mode"] = "single_round_net"
+            if is_ko_finale_round_lb:
+                lb_metadata["suppress_cut_styling"] = True
 
             return TableData(
                 columns=[
@@ -1392,7 +1407,7 @@ class TournamentService:
                 default_sort={"field": default_sort_field, "dir": "desc"},
                 row_metadata=row_metadata,
                 cell_metadata=cell_metadata,
-                metadata={"leaderboard_mode": "single_round_net"} if use_hc_round else {},
+                metadata=lb_metadata,
                 config={
                     "stickyHeader": True,
                     "striped": True,
@@ -1663,6 +1678,9 @@ class TournamentService:
         work = df.copy()
         if round_number is not None:
             work = work[pd.to_numeric(work[Columns.round_number], errors="coerce").eq(float(round_number))]
+        if Columns.club in work.columns:
+            # KO_WO rows are bracket walkover markers from the Bayerische importer, not pinfall.
+            work = work[work[Columns.club].astype(str).str.strip() != "KO_WO"].copy()
         if work.empty:
             return TableData(columns=[], data=[], title=f"{tournament} Round Results")
         work[Columns.score] = pd.to_numeric(work[Columns.score], errors="coerce").fillna(0).astype(int)
@@ -1898,6 +1916,11 @@ class TournamentService:
 
             columns = col_groups
 
+            played_cells = {
+                (str(r[Columns.player_name]), int(r[Columns.game_number]))
+                for _, r in per_game.iterrows()
+            }
+
             data = []
             for _, row in pivot.iterrows():
                 entry = [int(row.get("overall_rank", 0)), str(row.get(Columns.player_name, ""))]
@@ -1906,8 +1929,12 @@ class TournamentService:
                     entry.append(hcp_lbl_map.get(pkt, "—"))
                 if include_club:
                     entry.append(str(row.get(Columns.club, "")))
+                pname = str(row.get(Columns.player_name, ""))
                 for g in game_numbers:
-                    entry.append(int(row.get(g, 0)))
+                    if (pname, g) in played_cells:
+                        entry.append(int(row.get(g, 0)))
+                    else:
+                        entry.append("")
                 if not use_hc_rr:
                     h_lbl, h_tot = _handicap_per_game_label_and_scratch_plus_total(row, game_numbers)
                     entry.append(h_lbl)
@@ -3502,7 +3529,7 @@ class TournamentService:
             columns=grouped_columns,
             data=rows,
             title=f"{tournament} — {stage_lbl}".strip(" —"),
-            metadata={"kind": "ko_placements"},
+            metadata={"kind": "ko_placements", "suppress_cut_styling": True},
             default_sort={"field": "place", "dir": "asc"},
             config={
                 "stickyHeader": True,
