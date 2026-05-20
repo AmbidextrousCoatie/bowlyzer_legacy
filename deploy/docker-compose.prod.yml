@@ -1,8 +1,11 @@
 # Production compose for VPS: pull-based image (no build on server).
 # Used by deploy/deploy.ps1 — image tag bowlyzer:release after local docker load.
+# Run compose as Linux user "bowlyzer" (docker group), not root — see deploy/vps/setup-bowlyzer-user.sh.
 services:
   bowlyzer:
     image: bowlyzer:release
+    # Reinforce non-root even if image USER is overridden.
+    user: "1000:1000"
     ports:
       - "${BOWLYZER_HOST_PORT:-8080}:8000"
     environment:
@@ -10,6 +13,7 @@ services:
       GUNICORN_WORKERS: "1"
       GUNICORN_THREADS: "2"
       LOG_LEVEL: info
+    # Host ./database must be readable by UID/GID 1000 (image user). Deploy script chmods a+rX before up.
     volumes:
       - ./database:/app/database:ro
     restart: unless-stopped

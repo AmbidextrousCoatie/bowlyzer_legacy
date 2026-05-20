@@ -43,6 +43,8 @@ Default URL: `http://<server-ip>:8080` (host port from `BOWLYZER_HOST_PORT`, def
 
 CSV data under `database/` is bind-mounted read-only so you can refresh data without rebuilding.
 
+**Disk / non-root:** On small VPS disks, remove stale `bowlyzer-image.tar.gz` (or `.tar`) after deploy if present; use Linux user `bowlyzer` (not root) for SSH and compose. See [`docs/VPS_DISK_AND_USER.md`](docs/VPS_DISK_AND_USER.md).
+
 ## Expose to the public internet
 
 ### Option A — map host port 80 (simple)

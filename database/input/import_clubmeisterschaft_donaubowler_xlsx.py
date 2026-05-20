@@ -1,7 +1,9 @@
 """
-Import Clubmeisterschaft Donaubowler (Clubpokal) XLSX into tournament postprocessed CSV.
+Import Clubmeisterschaft Donaubowler XLSX into tournament postprocessed CSV.
 
-Workbook layout (Clubpokal DB 2026 style):
+(Clubpokal is a separate team KO competition over multiple months — not this importer.)
+
+Workbook layout (Clubmeisterschaft 2026 export):
 - Col A: rank (ignored for import)
 - Col B: player name
 - Cols C onward: repeating blocks of 6 columns per set — 4 scratch games, handicap (sheet), total (sheet).
@@ -347,7 +349,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--input-dir",
         type=str,
         default=str(DEFAULT_INPUT_DIR),
-        help="Directory containing Clubpokal workbook(s).",
+        help="Directory containing Clubmeisterschaft workbook(s).",
     )
     p.add_argument(
         "--output",

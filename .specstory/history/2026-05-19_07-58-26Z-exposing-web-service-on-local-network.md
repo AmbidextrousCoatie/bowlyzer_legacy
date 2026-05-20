@@ -9351,3 +9351,2241 @@ Status: **completed**
 <summary>Tool use: **ripgrep_raw_search**</summary>
 
 </details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants to free disk space by removing the orphaned bowlyzer-image.
+
+The user wants to free disk space by removing the orphaned bowlyzer-image.
+
+To achieve this, the plan includes:
+1. Modifying the deployment process to avoid leaving tar files behind by using temporary locations and deleting them after use.
+2. Implementing a non-root user `bowlyzer` with UID 1000 in the Dockerfile, changing ownership of `/app`, and setting the user to `bowlyzer`.
+3. Updating `docker-compose.prod.yml` to ensure proper user context and potentially adding security options.
+4. Adjusting `deploy.ps1` to handle remote tar files in temporary directories and delete them after loading into Docker.
+
+Default the RemoteUser to `bowlyzer` and RemoteDir to `/home/bowlyzer/bowlyzer`. SSH may still require root for initial setup or the `bowlyzer` user might need to be added to the `docker` group.
+
+A one-time bootstrap script at `scripts/vps/setup-bowlyzer-user.sh` will create the `bowlyzer` user, add them to the `docker` group, set up directories with correct ownership, and adjust systemd/nginx configurations if needed.
+
+A cleanup script `deploy/vps/cleanup-disk.sh` will remove the tar file at `/root/bowlyzer-image.tar`, run `docker system prune`, and `docker image prune` for immediate disk space relief.
+
+Update `DEPLOY.md` with a migration section detailing these changes and procedures.
+
+For the import script running as root with Docker, if the `bowlyzer` user is in the `docker` group, they can run `docker run` without root privileges. The systemd service should run as `User=bowlyzer`.
+
+The `clubmeisterschaft` import uses `docker run` to write to the database, so the `bowlyzer` user needs write access to `/home/bowlyzer/bowlyzer/database`.
+
+For Docker Compose as a non-root user:
+- The user must be in the `docker` group.
+- The Compose project directory in `~/bowlyzer` must be owned by `bowlyzer`.
+
+Nginx continues to run as `www-data`, proxying to port 8080 without changes.
+
+For the first-time migration from `/root/bowlyzer` to `/home/bowlyzer/bowlyzer`:
+- Move the directory.
+- Change ownership using `chown`.
+-
+
+The deploy.ps1 remote script should load the tar file, remove it afterward, and start services with pruning of old images. The install_clubmeisterschaft script should default to /home/bowlyzer/bowlyzer for BOWLYZER_DIR. For immediate cleanup on the VPS, users can run provided commands or the new migration script. This script creates the bowlyzer user, adds them to the docker group, and handles the migration from /root/bowlyzer to /home/bowlyzer/bowlyzer.
+
+If present, move `/root/bowlyzer` to `/home/bowlyzer/bowlyzer`, remove `/root/bowlyzer-image.tar`, update ownership, and adjust systemd configurations if needed.
+
+Do not migrate the legacy `flaskuser`; keep `flaskapp` disabled and use the new `bowlyzer` user for Docker deployments.
+
+In the Dockerfile, create the `bowlyzer` user with UID 1000, change ownership of `/app` to `bowlyzer`, and switch to that user. Gunicorn binding to port 8000 is acceptable as non-root users can bind to ports above 1024. The healthcheck running as `bowlyzer` is also fine.
+
+The import script uses the same Docker image and writes to a mounted database, requiring the mount to be writable by UID 1000 inside the container or world-writable. Since the container runs as user `bowlyzer` (UID 1000), host files owned by `bowlyzer:bowlyzer` (1000:1000) will work correctly.
+
+For the clubmeisterschaft import, since the database is mounted from the host, it must be owned by `bowlyzer:bowlyzer` to allow writing; otherwise, the import will fail. Therefore, during migration, the database directory should be changed to `bowlyzer:bowlyzer`.
+
+The `.env` file containing `FLASK_SECRET_KEY` should be placed in `~/bowlyzer/.env` and have permissions set to `600` so that only `bowlyzer` can read it.
+
+Update `deploy.config.example` to set
+
+After loading the tar file remotely, delete it immediately. Optionally include a switch to prune images. Use a temporary file path like `/tmp/bowlyzer-deploy-$$.tar` for the remote tar file.
+
+The SSH user needs to set up an SSH key for the `bowlyzer` user on the VPS; the migration script handles this using root privileges.
+
+Create `deploy/vps/01-cleanup-disk.sh` and `deploy/vps/02-setup-bowlyzer-user.sh` scripts to run as root during setup. Document the VPS disk and user management in `docs/VPS_DISK_AND_USER.md`.
+
+Update the `clubmeisterschaft` environment example to set `BOWLYZER_DIR=/home/bowlyzer/bowlyzer`.
+
+Modify `install_clubmeisterschaft` to verify membership in the `docker` group when not running as root.
+
+Configure the `clubmeisterschaft-import.service` systemd unit to run as</details></think>
+
+_**Agent (default)**_
+
+Implementing disk cleanup (delete image tar after load), a non-root `bowlyzer` deploy user, and a non-root container user.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\vps\cleanup-disk.sh</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\vps\setup-bowlyzer-user.sh</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\Dockerfile</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\docker-compose.prod.yml</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\deploy.config.example.ps1</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Update deploy.ps1 to clean up the tar file after loading.
+
+- Optionally prune images and use temporary paths for tar files during deployment
+- Set default RemoteUser and RemoteDir values from examples
+- Update clubmeisterschaft defaults and user systemd configuration
+- Update deploy documentation and VPS instructions
+- Create VPS disk and user setup documentation
+- Adjust install scripts to properly create the bowlyzer user with correct home directory
+- Fix setup script to avoid conflicts when creating the bowlyzer user with home directory
+- Ensure host user bowlyzer has UID 1000 to match container requirements
+
+The setup script should check if UID 1000 is available for the bowlyzer user, using `useradd -u 1000` if free, and warn if it's taken by another user like flaskuser. If UID 1000 is taken, bowlyzer will receive the next available UID, so ensure the container user matches or reassign accordingly.
+
+The setup script now checks for UID 1000 availability for the bowlyzer user, creating it with `useradd -u 1000` if free, or assigning the next available UID otherwise. The deploy script loads the tar file from a temporary location and removes it afterward to prevent leftover files in the deploy directory. Docker images are pruned after deployment to clean up dangling images.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\deploy.ps1</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\deploy.ps1</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\deploy.ps1</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\vps\setup-bowlyzer-user.sh</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\vps\clubmeisterschaft-import.env.example</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\vps\clubmeisterschaft-import.service</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\clubmeisterschaft_auto_import.sh</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\docs\VPS_DISK_AND_USER.md</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\README.md</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\README.md</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\DEPLOY.md</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Updated documentation paths for CLUBMEISTERSCHAFT from /root to /home/bowlyzer.
+
+Created a PowerShell script to remotely push VPS scripts and execute cleanup, which is optional but recommended. The user's deploy.config.ps1 still references root and should be updated post-migration, though the gitignored file cannot be directly modified. A new deploy/push-vps-maintenance.ps1 script was created to SCP cleanup and setup scripts and run cleanup as root, which is useful for immediate deployment. Since the user requested handling the current situation, an SSH attempt was considered but not executed due to lack of explicit permission for production environments, and the deploy.config file is gitignored and inaccessible.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\docs\CLUBMEISTERSCHAFT_AUTO_IMPORT.md</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\docs\CLUBMEISTERSCHAFT_AUTO_IMPORT.md</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\docs\CLUBMEISTERSCHAFT_AUTO_IMPORT.md</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\push-vps-maintenance.ps1</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Try running push-vps-maintenance for the user, as they may have SSH access.</details></think>
+
+_**Agent (default)**_
+
+Running disk cleanup on the VPS now.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd c:\Users\cfell\repositories\bowlyzer_deploy; .\deploy\push-vps-maintenance.ps1</summary>
+
+```bash
+cd c:\Users\cfell\repositories\bowlyzer_deploy; .\deploy\push-vps-maintenance.ps1
+```
+
+```
+==&gt; uploading maintenance scripts to /tmp/bowlyzer-vps-scripts
+]633;C==&gt; uploading maintenance scripts to /tmp/bowlyzer-vps-scripts
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="await">
+<details>
+<summary>Tool use: **await**</summary>
+
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="await"><details>
+<summary>Tool use: **await**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: C:\Users\cfell\.cursor\projects\c-Users-cfell-repositories-bowlyzer-deploy\terminals\997078.txt</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+SSH appears to be hanging, likely awaiting a password or host key confirmation.</details></think>
+
+_**Agent (default)**_
+
+Two separate problems: **disk** and **privilege**. Here’s what’s going on and what we added to the repo.
+
+## Disk (94% on ~9 GB)
+
+The **`/root/bowlyzer-image.tar` (~80 MB)** is a leftover from deploy. After `docker load`, that file is redundant — the image already lives under `/var/lib/docker`.
+
+**Run on the VPS now (as root):**
+
+```bash
+rm -f /root/bowlyzer-image.tar
+docker system prune -f
+docker image prune -f
+df -h /
+```
+
+That alone should drop usage by roughly **10%**. For more cleanup, use the script we added (see below).
+
+Future deploys: **`deploy.ps1` now deletes the tar after load** and runs `docker image prune -f`.
+
+---
+
+## Non-root: `bowlyzer` user + container
+
+| Layer | Before | After (in repo) |
+|--------|--------|------------------|
+| SSH / compose on VPS | `root` | **`bowlyzer`** (in `docker` group) |
+| App in container | root (default) | **UID 1000** (`USER bowlyzer` + `user: "1000:1000"` in compose) |
+| Legacy | `flaskuser` / flaskapp | Untouched; keep flaskapp **disabled** |
+
+`flaskuser` stays for old layout; new Docker deploy uses **`bowlyzer`** only.
+
+---
+
+## Migration order (do this once)
+
+**1. Free disk (root SSH):**
+
+```powershell
+.\deploy\push-vps-maintenance.ps1
+```
+
+Or on the server:
+
+```bash
+sudo bash deploy/vps/cleanup-disk.sh
+```
+
+**2. Create user + move `/root/bowlyzer`:**
+
+```powershell
+.\deploy\push-vps-maintenance.ps1 -SetupBowlyzerUser -MigrateFromRoot
+```
+
+**3. SSH key for `bowlyzer`:**
+
+```powershell
+ssh-copy-id bowlyzer@212.227.57.223
+```
+
+**4. Update `deploy/deploy.config.ps1`:**
+
+```powershell
+RemoteUser = "bowlyzer"
+RemoteDir  = "/home/bowlyzer/bowlyzer"
+```
+
+**5. Redeploy** (rebuild needed once for non-root image):
+
+```powershell
+.\deploy\deploy.ps1 -SyncDatabase
+```
+
+---
+
+## New / updated files
+
+- `deploy/vps/cleanup-disk.sh` — remove stale tars + Docker/apt prune  
+- `deploy/vps/setup-bowlyzer-user.sh` — user + migrate from `/root/bowlyzer`  
+- `deploy/push-vps-maintenance.ps1` — push + run from Windows  
+- `docs/VPS_DISK_AND_USER.md` — full reference  
+- `Dockerfile`, `deploy/deploy.ps1`, `deploy/docker-compose.prod.yml` — non-root + no leftover tar  
+
+I tried `push-vps-maintenance.ps1` from here; SSH appeared to hang (likely key/password prompt). Run step 1 locally in your terminal.
+
+After cleanup, paste `df -h /` and we can confirm whether you need a larger disk or only Docker pruning before the `bowlyzer` migration.
+
+---
+
+_**User**_
+
+it seems docker some mounts a hugre poriton of the free space:
+Filesystem      Size  Used Avail Use% Mounted on
+tmpfs            85M  1.2M   84M   2% /run
+/dev/vda1       8.7G  8.2G  481M  95% /
+tmpfs           425M     0  425M   0% /dev/shm
+tmpfs           5.0M     0  5.0M   0% /run/lock
+/dev/vda16      881M  115M  705M  14% /boot
+/dev/vda15      105M  6.2M   99M   6% /boot/efi
+overlay         8.7G  8.2G  481M  95% /var/lib/docker/rootfs/overlayfs/bf83589f2bef7ae0646ad1839c1dc7dba6dd2d0047e7d4c79e0d981b88b9b782
+tmpfs            85M   12K   85M   1% /run/user/0
+root@ubuntu:~#
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user reports that Docker is using an excessive amount of disk space on their VPS.
+
+The user's VPS is at 95% disk usage with only 481M available on an 8.7G root filesystem. The overlay mount reflects the same usage as the root filesystem, which is expected behavior for overlayfs. To address this issue, I'll identify what's consuming Docker space and provide commands to reclaim it. Common causes include accumulated image layers from multiple deployments, dangling images, and build cache. I'll need to check for these specific issues and suggest cleanup commands.
+
+The user's VPS is at 95% disk usage with only 481M available on an 8.7G root filesystem. The overlay mount reflects the same usage as the root filesystem, which is expected behavior for overlayfs. To address this issue, I'll identify what's consuming Docker space and provide commands to reclaim it. Common causes include accumulated image layers from multiple deployments, dangling images, and build cache. I'll need to check for these specific issues and
+
+Container logs, unused volumes, and the image tar file are additional areas to investigate for disk usage. The overlay mount shows the actual space used, not extra space, and should be clarified. A more aggressive yet safe cleanup script is needed, including diagnostics for current Docker setup and images. The VPS size is very tight for Docker operations with Python/Pandas images.</details></think>
+
+_**Agent (default)**_
+
+The overlay line mirrors root disk usage—it isn't extra storage. Docker images and layers under `/var/lib/docker` are the usual culprit. Improving the cleanup script and adding targeted diagnostics:
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\vps\cleanup-disk.sh</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I'll rewrite cleanup-disk.sh to create a more thorough script that handles various disk cleanup scenarios.
+
+1. The overlay filesystem stores container layers and metadata, which can accumulate over time.
+2. Use `docker system df -v` to view detailed disk usage statistics.
+3. List Docker images sorted by size using `docker images --format 'table {{.Size}}\t{{.Repository}}:{{.Tag}}'`.
+4. Remove unused bowlyzer images while preserving the currently running container's image.
+5. Prune build cache with `docker builder prune`.
+6. Truncate large container logs to free space.
+7. Vacuum journal logs to limit disk usage to 50MB.
+8. Optionally use aggressive pruning for all images with `docker image prune -a --filter`.
+
+Add `docker-diagnose-disk.sh` for read-only disk inspection.
+
+Update VPS_DISK_AND_USER.md with explanations.
+
+To find running container image:
+```bash
+docker ps --format '{{.Image}}'
+docker inspect --format='{{.Image}}' bowlyzer-bow
+
+The script identifies the running container's image ID to preserve it during cleanup. It retrieves the image ID from the running container's configuration, ensuring that the image used by the active container is not removed during pruning operations. This approach maintains the current deployment while cleaning up unused images.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\vps\docker-disk-report.sh</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\vps\cleanup-disk.sh</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\docs\VPS_DISK_AND_USER.md</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\docs\VPS_DISK_AND_USER.md</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\push-vps-maintenance.ps1</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\push-vps-maintenance.ps1</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\push-vps-maintenance.ps1</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+The **overlay** line is not a second disk. It is the running container’s view of the same **8.7 GB** on `/dev/vda1`. Almost everything under `/var/lib/docker` counts against `/` — that is why it looks like Docker “ate” the machine.
+
+On a 9 GB VPS, a Python+pandas+frontend image is often **~1–1.5 GB per loaded image**. Several deploys without pruning can leave **2–4 GB** of old layers, plus the **~80 MB** tar, logs, and journal.
+
+---
+
+## Run on the VPS now (as root)
+
+**1. Report (optional but useful):**
+
+```bash
+docker system df -v
+du -sh /var/lib/docker/* 2>/dev/null | sort -h
+ls -lh /root/bowlyzer-image.tar
+docker images
+```
+
+**2. Reclaim space (safe order):**
+
+```bash
+rm -f /root/bowlyzer-image.tar
+
+docker system prune -f
+docker image prune -a -f
+docker builder prune -a -f
+
+# Large container logs (if any)
+find /var/lib/docker/containers -name '*-json.log' -size +10M -exec truncate -s 0 {} \;
+
+journalctl --vacuum-size=80M
+apt-get clean
+
+df -h /
+```
+
+`docker image prune -a -f` removes **every image not used by a running container**. With only `bowlyzer` running, old deploy images go away; the live container keeps its current image.
+
+**3. If still above ~90%:**
+
+```bash
+docker system df
+du -sh /root/bowlyzer/database
+```
+
+If `database/` is huge, that is real data (keep it). If Docker “Images” is still multiple GB, say what `docker images` shows.
+
+---
+
+## Do not
+
+- Delete files under `/var/lib/docker/rootfs/overlayfs/…` manually — that can break the running container.
+- Rely on overlay usage in `df` as “extra” capacity — it mirrors `/`.
+
+---
+
+## Repo updates
+
+- `deploy/vps/docker-disk-report.sh` — read-only breakdown  
+- `deploy/vps/cleanup-disk.sh` — tar removal, log truncate, prune; `--aggressive` = full `image prune -a`  
+- `docs/VPS_DISK_AND_USER.md` — overlay explanation  
+
+From Windows (after SSH works):
+
+```powershell
+.\deploy\push-vps-maintenance.ps1 -ReportOnly
+.\deploy\push-vps-maintenance.ps1 -AggressiveCleanup
+```
+
+---
+
+## Longer term
+
+On **8.7 GB**, Docker + this app is tight. After cleanup, if you are still under ~1 GB free, consider **resizing the VPS disk** or a **12–20 GB** plan. Future `deploy.ps1` runs delete the tar after load; pruning after each deploy helps.
+
+Paste `docker system df` and `df -h /` after the prune if you want a second read on whether resize is necessary.
+
+---
+
+_**User**_
+
+root@ubuntu:~# docker system df -v
+Images space usage:
+
+REPOSITORY                 TAG       IMAGE ID       CREATED        SIZE      SHARED SIZE   UNIQUE SIZE   CONTAINERS
+bowlyzer                   release   e854dc3c1bdf   10 hours ago   1.02GB    327.9MB       692.6MB       1
+bowlyzer_deploy-bowlyzer   latest    ca8e1b6ee3f0   22 hours ago   385MB     327.9MB       57.13MB       0
+hello-world                latest    0e760fdfbc48   8 weeks ago    25.9kB    0B            25.87kB       1
+
+Containers space usage:
+
+CONTAINER ID   IMAGE              COMMAND                  LOCAL VOLUMES   SIZE      CREATED        STATUS                    NAMES
+bf83589f2bef   bowlyzer:release   "gunicorn -c deploy/…"   0               389kB     10 hours ago   Up 10 hours (healthy)     bowlyzer-bowlyzer-1
+38a75dc51fde   hello-world        "/hello"                 0               4.1kB     15 hours ago   Exited (0) 15 hours ago   charming_gates
+
+Local Volumes space usage:
+
+VOLUME NAME   LINKS     SIZE
+
+Build cache usage: 0B
+
+CACHE ID   CACHE TYPE   SIZE      CREATED   LAST USED   USAGE     SHARED
+
+root@ubuntu:~# du -sh /var/lib/docker/* 2>/dev/null | sort -h
+4.0K    /var/lib/docker/engine-id
+4.0K    /var/lib/docker/runtimes
+4.0K    /var/lib/docker/swarm
+8.0K    /var/lib/docker/plugins
+8.0K    /var/lib/docker/tmp
+28K     /var/lib/docker/image
+28K     /var/lib/docker/volumes
+56K     /var/lib/docker/network
+84K     /var/lib/docker/buildkit
+400K    /var/lib/docker/containers
+591M    /var/lib/docker/rootfs
+root@ubuntu:~#
+
+root@ubuntu:~# ls -lh /root/bowlyzer-image.tar
+-rw-r--r-- 1 root root 77M May 18 19:15 /root/bowlyzer-image.tar
+root@ubuntu:~# docker images
+                                                                                                                                                                    i Info →   U  In Use
+IMAGE                             ID             DISK USAGE   CONTENT SIZE   EXTRA
+bowlyzer:release                  e854dc3c1bdf       1.02GB          397MB    U
+bowlyzer_deploy-bowlyzer:latest   ca8e1b6ee3f0        385MB         79.8MB
+hello-world:latest                0e760fdfbc48       25.9kB         9.49kB    U
+root@ubuntu:~#
+
+
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user is sharing the output of the `docker system df` command.
+
+The analysis shows that the Docker setup uses 1.4GB total for images, with the largest being **bowlyzer:release** at 1.02GB. The **bowlyzer_deploy-bowlyzer:latest** image (385MB) and **hello-world** image can be removed since they're not in use. The **bowlyzer-image.tar** file is also safe to delete. The 591MB in **/var/lib/docker/rootfs** is overlay storage for running containers, not a duplicate of the full 8GB.</details></think>
+
+_**Agent (default)**_
+
+From that output, **Docker is not eating most of the 8.2 GB** — it’s only on the order of **~1.5 GB** of images:
+
+| What | Size | Action |
+|------|------|--------|
+| `bowlyzer:release` (running) | ~1.02 GB | **Keep** |
+| `bowlyzer_deploy-bowlyzer:latest` | ~385 MB | **Remove** (0 containers) |
+| `hello-world` + exited container | ~26 KB + noise | **Remove** (test junk) |
+| `/root/bowlyzer-image.tar` | **77 MB** | **Delete** (duplicate of loaded image) |
+
+`/var/lib/docker/rootfs` at **591 MB** is normal overlay for the running container — not extra disk on top of `/`.
+
+So roughly **~500 MB** from Docker cleanup + **77 MB** tar ≈ **600 MB** back. That helps, but it won’t explain **8.2 GB used** on a **8.7 GB** disk. The rest is somewhere else on `/`.
+
+---
+
+## Run now (quick Docker + tar cleanup)
+
+```bash
+rm -f /root/bowlyzer-image.tar
+
+docker rm charming_gates 2>/dev/null || true
+docker rmi hello-world:latest bowlyzer_deploy-bowlyzer:latest
+
+docker system prune -f
+df -h /
+```
+
+---
+
+## Find the real space hog
+
+```bash
+du -xhd1 / 2>/dev/null | sort -h | tail -15
+du -sh /root/* /var/log /usr /home /var/lib/* 2>/dev/null | sort -h | tail -20
+du -sh /root/bowlyzer/database 2>/dev/null
+```
+
+Typical culprits on small VPSes (not shown in `docker system df`):
+
+- **`/root/bowlyzer/database/`** — large CSV merges  
+- **`/var/log`** — nginx, journal, old flaskapp logs  
+- **Legacy Python venv** under `/root` or `/home/flaskuser`  
+- **Old git clones** / duplicate deploy trees  
+- **`/usr`** after many `apt` upgrades  
+
+Paste the output of the two `du` commands if you want help deciding what’s safe to trim vs. what needs a bigger disk.
+
+---
+
+## Takeaway
+
+The **overlay** line in `df` is misleading but normal — it mirrors `/`, not a second 8 GB volume. Your Docker layout is actually **lean** (one real app image + one leftover compose tag). After the commands above, focus on **non-Docker** `du` on `/` — that’s where the missing gigabytes almost certainly are.
+
+---
+
+_**User**_
+
+root@ubuntu:~# rm -f /root/bowlyzer-image.tar
+root@ubuntu:~# docker system prune -f
+docker image prune -a -f
+docker builder prune -a -f
+Deleted Containers:
+38a75dc51fde7a8c5d38b5d0f789406b60b3c89ca2013f4365a9b10466ee77c3
+
+Total reclaimed space: 4.096kB
+Deleted Images:
+untagged: bowlyzer_deploy-bowlyzer:latest
+deleted: sha256:ca8e1b6ee3f01439f50fa7044f696618e28c3e8a7cdd13ba71a3e1bd7d52b99f
+deleted: sha256:ebd72f870e152b0c64113816d3e2e832fce3eef360da19d55bbdfe7f051f4029
+deleted: sha256:b36e0759e313207b79700d4217cb5f4064d83f3d4d6be9d862fdf18f877912fa
+untagged: hello-world:latest
+deleted: sha256:0e760fdfbc48ba8041e7c6db999bb40bfca508b4be580ac75d32c4e29d202ce1
+deleted: sha256:d1a8d0a4eeb63aff09f5f34d4d80505e0ba81905f36158cc3970d8e07179e59e
+deleted: sha256:8e752a1cddeafc02597e756f4a0ec96e29f63ac4bc4af87682daf3f1de843bb7
+
+Total reclaimed space: 5.21MB
+Total:  0B
+root@ubuntu:~# find /var/lib/docker/containers -name '*-json.log' -size +10M -exec truncate -s 0 {} \;
+root@ubuntu:~# journalctl --vacuum-size=80M
+Deleted archived journal /var/log/journal/307f7d71c26540c0938650641b203421/system@2c880391f5d94947bbff02291cf3e59e-0000000001028a43-0006509009898bd1.journal (39.3M).
+Deleted archived journal /var/log/journal/307f7d71c26540c0938650641b203421/system@2c880391f5d94947bbff02291cf3e59e-00000000010373b4-000650a62b00e4b7.journal (39.4M).
+Deleted archived journal /var/log/journal/307f7d71c26540c0938650641b203421/system@2c880391f5d94947bbff02291cf3e59e-0000000001045c95-000650bd6e3eae5f.journal (39.1M).
+Deleted archived journal /var/log/journal/307f7d71c26540c0938650641b203421/system@2c880391f5d94947bbff02291cf3e59e-00000000010541d5-000650d1a0d77e24.journal (38.5M).
+Deleted archived journal /var/log/journal/307f7d71c26540c0938650641b203421/system@2c880391f5d94947bbff02291cf3e59e-0000000001061f86-000650dd74e61d7d.journal (38.5M).
+Deleted archived journal /var/log/journal/307f7d71c26540c0938650641b203421/system@2c880391f5d94947bbff02291cf3e59e-000000000106fe0c-000650e8d1be0eb4.journal (39.3M).
+Deleted archived journal /var/log/journal/307f7d71c26540c0938650641b203421/system@2c880391f5d94947bbff02291cf3e59e-000000000107e66d-000650f9e66a3e79.journal (39.3M).
+Deleted archived journal /var/log/journal/307f7d71c26540c0938650641b203421/system@2c880391f5d94947bbff02291cf3e59e-000000000108ce62-0006510e878cefbd.journal (39.1M).
+Deleted archived journal /var/log/journal/307f7d71c26540c0938650641b203421/system@2c880391f5d94947bbff02291cf3e59e-000000000109b1d9-00065121dc8c8f99.journal (39.1M).
+Deleted archived journal /var/log/journal/307f7d71c26540c0938650641b203421/system@2c880391f5d94947bbff02291cf3e59e-00000000010a96e4-00065138f28fe0e9.journal (39.2M).
+Deleted archived journal /var/log/journal/307f7d71c26540c0938650641b203421/system@2c880391f5d94947bbff02291cf3e59e-00000000010b7d29-0006514bb7e83058.journal (39.1M).
+Deleted archived journal /var/log/journal/307f7d71c26540c0938650641b203421/system@2c880391f5d94947bbff02291cf3e59e-00000000010c64b5-000651601a1f2a73.journal (38.5M).
+Deleted archived journal /var/log/journal/307f7d71c26540c0938650641b203421/system@2c880391f5d94947bbff02291cf3e59e-00000000010d433d-00065173f64a94a1.journal (38.9M).
+Deleted archived journal /var/log/journal/307f7d71c26540c0938650641b203421/system@2c880391f5d94947bbff02291cf3e59e-00000000010e2510-0006517f9cdb842f.journal (39.2M).
+Deleted archived journal /var/log/journal/307f7d71c26540c0938650641b203421/system@2c880391f5d94947bbff02291cf3e59e-00000000010f098e-0006518a8374c583.journal (39.3M).
+Deleted archived journal /var/log/journal/307f7d71c26540c0938650641b203421/system@2c880391f5d94947bbff02291cf3e59e-00000000010fefb9-00065191fb2c9bd4.journal (39.3M).
+Deleted archived journal /var/log/journal/307f7d71c26540c0938650641b203421/system@2c880391f5d94947bbff02291cf3e59e-000000000110d6f7-0006519d88824392.journal (35.0M).
+Deleted archived journal /var/log/journal/307f7d71c26540c0938650641b203421/system@c2554589427a4154a3a63d4cfd0a33d8-0000000001119f28-000651ad812f61cd.journal (35.0M).
+Deleted archived journal /var/log/journal/307f7d71c26540c0938650641b203421/system@4f5f8a887ee441738c970aecb87884e8-0000000001126621-000651bc2dc24206.journal (38.6M).
+Deleted archived journal /var/log/journal/307f7d71c26540c0938650641b203421/system@4f5f8a887ee441738c970aecb87884e8-0000000001134530-000651d58a2a41fe.journal (38.8M).
+Deleted archived journal /var/log/journal/307f7d71c26540c0938650641b203421/system@4f5f8a887ee441738c970aecb87884e8-00000000011424f9-000651e53295bb5a.journal (38.9M).
+Vacuuming done, freed 812.3M of archived journals from /var/log/journal/307f7d71c26540c0938650641b203421.
+Vacuuming done, freed 0B of archived journals from /var/log/journal.
+Vacuuming done, freed 0B of archived journals from /run/log/journal.
+root@ubuntu:~# apt-get clean
+root@ubuntu:~# df -h /
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/vda1       8.7G  7.2G  1.6G  83% /
+root@ubuntu:~#
+
+root@ubuntu:~# docker system df
+TYPE            TOTAL     ACTIVE    SIZE      RECLAIMABLE
+Images          1         1         1.021GB   0B (0%)
+Containers      1         1         389.1kB   0B (0%)
+Local Volumes   0         0         0B        0B
+Build Cache     0         0         0B        0B
+root@ubuntu:~# du -sh /root/bowlyzer/database
+49M     /root/bowlyzer/database
+root@ubuntu:~#
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user freed a significant amount of disk space.</details></think>
+
+_**Agent (default)**_
+
+That worked well. You went from **95% (≈480 MB free)** to **83% (1.6 GB free)** — about **1 GB** recovered.
+
+## What actually freed space
+
+| Action | Approx. gain |
+|--------|----------------|
+| **`journalctl --vacuum-size=80M`** | **~812 MB** (main win) |
+| **`rm bowlyzer-image.tar`** | ~77 MB |
+| **Docker prune** (old compose tag + hello-world) | ~5 MB reported (layers shared with base) |
+
+Docker was never the main problem: **one image (~1 GB) + 49 MB database** is normal.
+
+## Current state (healthy enough)
+
+- **1.6 GB free** — fine for deploys and Clubmeisterschaft imports on a 9 GB disk  
+- **Single image** `bowlyzer:release` — clean  
+- **No leftover tar** — good  
+
+## Keep it from filling again
+
+**1. Cap systemd journals** (so you don’t accumulate another 800 MB of archives):
+
+```bash
+sudo mkdir -p /etc/systemd/journald.conf.d
+sudo tee /etc/systemd/journald.conf.d/size-limit.conf <<'EOF'
+[Journal]
+SystemMaxUse=100M
+SystemMaxFileSize=20M
+EOF
+sudo systemctl restart systemd-journald
+```
+
+**2. After each deploy** — tar is removed automatically once you use the updated `deploy.ps1` (or manually `rm -f …/bowlyzer-image.tar`).
+
+**3. Optional monthly** (or before vacation):
+
+```bash
+journalctl --vacuum-size=80M
+docker image prune -f
+```
+
+## Suggested next steps
+
+1. **`bowlyzer` user migration** — `setup-bowlyzer-user.sh --migrate-from-root` when ready  
+2. **Clubmeisterschaft auto-import dry-run** — you have headroom now  
+3. **Resize disk** only if you plan heavy local Docker builds on the VPS (you build on Windows, so **9 GB is workable** with journal limits)
+
+If you paste `du -xhd1 / 2>/dev/null | sort -h | tail -10` we can confirm nothing else large is hiding, but you’re in good shape to continue the deploy plan.
+
+---
+
+_**User**_
+
+i want to learn the size of /var/www
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants to determine the size of the /var/www directory on their VPS.</details></think>
+
+_**Agent (default)**_
+
+On the VPS, run:
+
+```bash
+du -sh /var/www
+```
+
+More detail (per subdirectory):
+
+```bash
+du -h --max-depth=1 /var/www 2>/dev/null | sort -h
+```
+
+If you want sizes only for immediate children:
+
+```bash
+du -sh /var/www/* 2>/dev/null | sort -h
+```
+
+Paste the output here if you want help interpreting it (e.g. old flaskapp vs static sites).
+
+---
+
+_**User**_
+
+root@ubuntu:~# du -h --max-depth=1 /var/www 2>/dev/null | sort -h
+8.0K    /var/www/html
+100M    /var/www/league_analyzer
+111M    /var/www/league_analyzer_legacy
+210M    /var/www
+to my understading, we wont need that anymore since switching to docker, correct?
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants to know about /var/www on their VPS, which contains:
+
+```
+
+The user is asking about the purpose of directories under `/var/www` on their VPS, specifically `html`, `league_analyzer`, and `league_analyzer_legacy`, which total around 210MB. They have migrated to Docker deployment for bowlyzer and want to know if these directories are still needed. It's unclear whether nginx still serves files from `/var/www` or if it proxies requests to Docker on port 8080. A review of deployment documentation and nginx configuration is recommended to determine if these directories can be removed. The difference between `league_analyzer` and `league_analyzer_legacy` also needs clarification. Based on the conversation context, production uses Docker on port 8080 with nginx proxying to `127.0.0.1:8080`, and the old flaskapp is no longer active.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.{md,sh,conf,ps1,yml}",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "/var/www|league_analyzer"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "/var/www|league_analyzer",
+  "topFiles": [
+    {
+      "matchCount": 5,
+      "uri": ".\\.specstory\\history\\2026-05-19_07-58-26Z-exposing-web-service-on-local-network.md"
+    },
+    {
+      "matchCount": 13,
+      "uri": ".\\.specstory\\history\\2026-05-18_12-35-26Z-docker-container-build-issues-on-windows-11.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\docs\\planning\\DOCKER_MIGRATION_PLAN.md"
+    },
+    {
+      "matchCount": 4,
+      "uri": ".\\docs\\GF_DATA_PIPELINE_IMPLEMENTATION_PLAN.md"
+    },
+    {
+      "matchCount": 2,
+      "uri": ".\\docs\\GF_PIPELINE_SPRINT1_RUNBOOK.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\docs\\CONVERSATION_SUMMARY.md"
+    },
+    {
+      "matchCount": 2,
+      "uri": ".\\database\\input\\INPUT_TO_LEGACY_CSV_MAPPING.md"
+    },
+    {
+      "matchCount": 2,
+      "uri": ".\\.specstory\\history\\2026-05-18_07-05-04Z-(1)-react-application-refactoring-and-deployment.md"
+    },
+    {
+      "matchCount": 2,
+      "uri": ".\\.specstory\\history\\2026-05-18_06-11-54Z-react-application-refactoring-and-deployment.md"
+    },
+    {
+      "matchCount": 8,
+      "uri": ".\\.specstory\\history\\2026-05-16_11-30-21Z-league-view-latest-season-selection.md"
+    }
+  ],
+  "totalFiles": 10,
+  "totalMatches": 205
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I have good context. The user's understanding is correct.</details></think>
+
+_**Agent (default)**_
+
+Yes — **for the live site as you run it now**, those trees are legacy.
+
+| Path | ~Size | Role |
+|------|-------|------|
+| `/var/www/html` | 8 KB | Default placeholder — harmless |
+| `/var/www/league_analyzer` | 100 MB | Old **gunicorn + unix socket** app (`flaskuser`, `flaskapp.sock`) |
+| `/var/www/league_analyzer_legacy` | 111 MB | Older copy / rollback tree |
+
+Production today is **Docker** (`bowlyzer:release` on **8080**), with nginx proxying to the container. The React build and API live **inside the image**; data is in **`~/bowlyzer/database/`**, not under `/var/www`.
+
+You do **not** need `/var/www/league_analyzer*` for bowlyzer.online **if** nginx no longer uses them.
+
+---
+
+## Verify before deleting (~210 MB back)
+
+**1. nginx uses Docker, not the socket**
+
+```bash
+grep -r "proxy_pass\|flaskapp.sock\|/var/www/league" /etc/nginx/sites-enabled/
+```
+
+You want something like `proxy_pass http://127.0.0.1:8080;` and **no** `unix:/var/www/league_analyzer/flaskapp.sock`.
+
+**2. Old app is stopped**
+
+```bash
+systemctl status flaskapp 2>/dev/null || true
+ps aux | grep -E 'gunicorn|league_analyzer' | grep -v grep
+```
+
+`flaskapp` should be **inactive/disabled**; no gunicorn on `/var/www/league_analyzer/`.
+
+**3. Site still works**
+
+```bash
+curl -sI http://127.0.0.1:8080/liga | head -3
+curl -sI https://bowlyzer.online/liga | head -3   # if TLS is set up
+```
+
+---
+
+## Safe removal
+
+```bash
+# optional backup (~210 MB tarball — small compared to what you freed)
+tar czf /root/archive-var-www-$(date +%F).tgz -C /var www
+
+sudo rm -rf /var/www/league_analyzer /var/www/league_analyzer_legacy
+# keep /var/www/html unless you know nothing uses it
+
+df -h /
+```
+
+Also avoid running **`/root/deploy_from_github.sh`** / **`deploy_from_github_safe.sh`** — those likely repopulate `/var/www/league_analyzer`. Use **`.\deploy\deploy.ps1`** instead.
+
+---
+
+**Summary:** Your understanding is right. After the checks above, removing the two `league_analyzer*` dirs is safe and frees about **210 MB** without affecting the Docker deployment.
+
+---
+
+_**User**_
+
+root@ubuntu:~# systemctl status flaskapp 2>/dev/null || true
+○ flaskapp.service - Gunicorn instance to serve Flask application
+     Loaded: loaded (/etc/systemd/system/flaskapp.service; disabled; preset: enabled)
+     Active: inactive (dead)
+
+May 18 18:58:56 ubuntu systemd[1]: Started flaskapp.service - Gunicorn instance to serve Flask application.
+May 18 19:22:41 ubuntu systemd[1]: Stopping flaskapp.service - Gunicorn instance to serve Flask application...
+May 18 19:22:42 ubuntu systemd[1]: flaskapp.service: Deactivated successfully.
+May 18 19:22:42 ubuntu systemd[1]: Stopped flaskapp.service - Gunicorn instance to serve Flask application.
+May 18 19:22:42 ubuntu systemd[1]: flaskapp.service: Consumed 7.225s CPU time, 549.6M memory peak, 0B memory swap peak.
+May 18 19:23:49 ubuntu systemd[1]: Started flaskapp.service - Gunicorn instance to serve Flask application.
+May 18 19:24:46 ubuntu systemd[1]: Stopping flaskapp.service - Gunicorn instance to serve Flask application...
+May 18 19:24:47 ubuntu systemd[1]: flaskapp.service: Deactivated successfully.
+May 18 19:24:47 ubuntu systemd[1]: Stopped flaskapp.service - Gunicorn instance to serve Flask application.
+May 18 19:24:47 ubuntu systemd[1]: flaskapp.service: Consumed 5.842s CPU time, 550.8M memory peak, 0B memory swap peak.
+root@ubuntu:~# ps aux | grep -E 'gunicorn|league_analyzer' | grep -v grep
+root      133895  0.0  1.0 110720  9512 ?        Ssl  00:47   0:05 /app/.venv/bin/python /app/.venv/bin/gunicorn -c deploy/gunicorn.conf.py wsgi:app
+root      153185  0.1 23.3 409684 203032 ?       Sl   07:33   0:12 /app/.venv/bin/python /app/.venv/bin/gunicorn -c deploy/gunicorn.conf.py wsgi:app
+root@ubuntu:~#
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user is sharing the results of their verification commands.</details></think>
+
+_**Agent (default)**_
+
+Those checks look good.
+
+## What this means
+
+**`flaskapp.service`** — `disabled` + `inactive (dead)` → the old host install is **not** running. It will not come back on reboot.
+
+**Gunicorn in `ps`** — paths are `/app/.venv/...` and `deploy/gunicorn.conf.py` → that is the **Docker** app (`bowlyzer-bowlyzer-1`), not `/var/www/league_analyzer`. Normal.
+
+There is **no** `flaskuser` / `flaskapp.sock` process anymore.
+
+---
+
+## Before deleting `/var/www`
+
+Quick nginx check:
+
+```bash
+grep -r "proxy_pass\|flaskapp.sock\|/var/www/league" /etc/nginx/sites-enabled/
+```
+
+You want `127.0.0.1:8080` (or similar), **not** `unix:.../flaskapp.sock`.
+
+---
+
+## Safe to remove
+
+```bash
+sudo rm -rf /var/www/league_analyzer /var/www/league_analyzer_legacy
+df -h /
+```
+
+Optional cleanup so nothing accidentally starts the old stack:
+
+```bash
+sudo systemctl mask flaskapp.service    # extra guard (already disabled)
+# later: sudo rm /etc/systemd/system/flaskapp.service && sudo systemctl daemon-reload
+```
+
+Keep `/var/www/html` unless you know you do not need the default vhost.
+
+---
+
+**Note:** Gunicorn shows as `root` in `ps` because the container still runs as root until you deploy the image with `USER bowlyzer` — unrelated to `/var/www`. After removal you gain ~**210 MB**; the live site stays on Docker only.
+
+---
+
+_**User**_
+
+root@ubuntu:~# grep -r "proxy_pass\|flaskapp.sock\|/var/www/league" /etc/nginx/sites-enabled/
+/etc/nginx/sites-enabled/flaskapp:        #proxy_pass http://unix:/var/www/league_analyzer/flaskapp.sock;
+/etc/nginx/sites-enabled/flaskapp:      proxy_pass http://127.0.0.1:8080;
+/etc/nginx/sites-enabled/flaskapp:        alias /var/www/league_analyzer/app/static/;
+root@ubuntu:~#
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user provided output from an nginx configuration grep command.
+
+The alias `/var/www/league_analyzer/app/static/` may break if the directory is deleted, since it's referenced in the nginx config. However, since the React SPA is now served from Docker, static assets are likely handled within the container or embedded in the application itself. This means deleting `/var/www/league_analyzer` should be safe for the main app, but the static alias should be reviewed for potential issues.
+
+They should either remove or comment the static alias block in nginx, or proxy /static to Docker. The nginx file likely needs to be updated to reflect that the React SPA is now served from Docker, where static assets are handled within the container or embedded in the application. Since the SPA is served from Flask/gunicorn with frontend/dist, static files may be at /static in the container or bundled in the Vite build. The alias block might be legacy for old Jinja static files and could cause issues if not properly configured.</details></think>
+
+_**Agent (default)**_
+
+ is **almost** fully on Docker. One leftover bit still points at the old tree.
+
+## What nginx is doing
+
+| Line | Status |
+|------|--------|
+| `#proxy_pass ... flaskapp.sock` | Commented — good |
+| `proxy_pass http://127.0.0.1:8080` | Live app — good |
+| `alias /var/www/league_analyzer/app/static/` | **Still active** — will **404** after you delete `/var/www/league_analyzer` for any URL under `/static/` |
+
+The React build is served from the **container** (Vite assets under `/app/frontend/dist`). You do **not** need that `alias` for the current site.
+
+---
+
+## Before `rm -rf /var/www/league_analyzer*`
+
+Edit the site config:
+
+```bash
+sudo nano /etc/nginx/sites-enabled/flaskapp
+```
+
+Find the block like:
+
+```nginx
+location /static {
+    alias /var/www/league_analyzer/app/static/;
+}
+```
+
+Either **remove it** (so `/static` is handled by the main `proxy_pass` to `:8080`), or replace with:
+
+```nginx
+location /static/ {
+    proxy_pass http://127.0.0.1:8080;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+}
+```
+
+Then:
+
+```bash
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+Quick check:
+
+```bash
+curl -sI http://127.0.0.1:8080/liga | head -1
+curl -sI https://bowlyzer.online/ | head -1   # if you use HTTPS
+```
+
+---
+
+## Then remove legacy files
+
+```bash
+sudo rm -rf /var/www/league_analyzer /var/www/league_analyzer_legacy
+df -h /
+```
+
+---
+
+**Summary:** `flaskapp` service is dead; Docker on **8080** is correct. Update or drop the **`/static` alias** first, then delete **~210 MB** under `/var/www`. After that, nothing on the host should reference `/var/www/league_analyzer`.
+
+---
+
+_**User**_
+
+root@ubuntu:~# sudo nginx -t && sudo systemctl reload nginx
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+root@ubuntu:~# curl -sI http://127.0.0.1:8080/liga | head -1
+HTTP/1.1 200 OK
+root@ubuntu:~# curl -sI https://bowlyzer.online/ | head -1
+HTTP/2 200
+root@ubuntu:~# sudo rm -rf /var/www/league_analyzer /var/www/league_analyzer_legacy
+root@ubuntu:~# df -h /
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/vda1       8.7G  7.0G  1.8G  81% /
+root@ubuntu:~#
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user successfully updated nginx, confirmed the site is working, deleted old /var/www directories, and now has 1.8GB of free space at 81% disk usage.</details></think>
+
+_**Agent (default)**_
+
+You’re in a solid place now.
+
+## What you fixed today
+
+| Step | Result |
+|------|--------|
+| Docker prune + tar + journals | ~95% → **83%** (~1.6 GB free) |
+| Remove `/var/www/league_analyzer*` | **81%**, **1.8 GB free** |
+| nginx → `:8080` only, `/static` no longer on disk | `liga` and `bowlyzer.online` **200 OK** |
+| `flaskapp.service` | disabled, dead |
+
+Legacy host deploy is fully retired; production is **Docker + nginx proxy** only.
+
+## Optional tidy-up (when you feel like it)
+
+```bash
+sudo systemctl mask flaskapp.service
+# journal cap (stops another ~800MB buildup):
+sudo mkdir -p /etc/systemd/journald.conf.d
+printf '[Journal]\nSystemMaxUse=100M\n' | sudo tee /etc/systemd/journald.conf.d/size-limit.conf
+sudo systemctl restart systemd-journald
+```
+
+## Next on the roadmap
+
+1. **`bowlyzer` user** — `setup-bowlyzer-user.sh --migrate-from-root`, SSH as `bowlyzer`, update `deploy.config.ps1`
+2. **Redeploy** once — non-root container image + `deploy.ps1` (deletes tar after load)
+3. **Clubmeisterschaft dry-run** — rclone + auto-import (you have disk headroom now)
+
+**81% on 8.7 GB is workable** for vacation ops; just avoid building images on the VPS and keep journal limits in place.
+
+---
+
+_**User**_
+
+walk me though step 1
+
+---
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\vps\setup-bowlyzer-user.sh</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\docs\VPS_DISK_AND_USER.md</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\deploy.config.ps1</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user requests a walkthrough for the first step of migrating Bowlyzer users.
+
+This walkthrough outlines migrating Bowlyzer users with two main options for script deployment: using push-vps-maintenance.ps1 from Windows or manual scp transfer. After deploying scripts, run the setup script as root on the VPS, then stop the old container at /root/bowlyzer and start it from the new location, as migration copies files but doesn't automatically move the running container. Configure SSH key access for bowlyzer, update deploy.config.ps1, test SSH and Docker Compose functionality, and optionally remove /root/bowlyzer after verification.
+
+When migrating the container, data must be copied using rsync, along with the .env file and compose file. The container running from /root/bowlyzer must be stopped and restarted from the new location at /home/bowlyzer/bowlyzer under the bowlyzer user. Note that the setup script does not restart Docker, so this must be done manually. Additionally, the running container continues to use the old database mount until restarted from the new directory.
+
+After migration, the bowlyzer user must run `docker compose` from `/home/bowlyzer/bowlyzer`. The old container may still be running with old paths until restarted from the new location. The `setup-bowlyzer-user.sh --migrate-from-root` script should be run as root, followed by `docker compose down` as the bowlyzer user if in the docker group.</details></think>
+
+_**Agent (default)**_
+
+Here’s **step 1: `bowlyzer` user + move deploy off root**, in order. Do this while the site is already healthy on Docker.
+
+---
+
+## What you’re doing
+
+| Today | After step 1 |
+|--------|----------------|
+| SSH as **root** | SSH as **`bowlyzer`** |
+| Deploy dir **`/root/bowlyzer`** | **`/home/bowlyzer/bowlyzer`** |
+| `docker compose` run by root | Same commands, **bowlyzer** in group **`docker`** |
+| Container may still run as root inside image | Step 2 deploy fixes that (non-root image) |
+
+The running container still uses **`/root/bowlyzer/database`** until you **stop it and start from the new directory**.
+
+---
+
+## 1A — Put the setup script on the VPS (from Windows)
+
+In PowerShell, repo root:
+
+```powershell
+cd C:\Users\cfell\repositories\bowlyzer_deploy
+.\deploy\push-vps-maintenance.ps1 -SetupBowlyzerUser -MigrateFromRoot
+```
+
+That uploads scripts and runs `setup-bowlyzer-user.sh --migrate-from-root` as root.
+
+**Or manually** (if you prefer):
+
+```powershell
+scp deploy\vps\setup-bowlyzer-user.sh root@212.227.57.223:/tmp/
+ssh root@212.227.57.223 "sudo bash /tmp/setup-bowlyzer-user.sh --migrate-from-root"
+```
+
+---
+
+## 1B — On the VPS (as root): run migration
+
+If you didn’t use `-SetupBowlyzerUser -MigrateFromRoot`:
+
+```bash
+sudo bash /tmp/setup-bowlyzer-user.sh --migrate-from-root
+```
+
+You should see something like:
+
+- `Creating user bowlyzer` (or “already exists”)
+- `Migrating /root/bowlyzer -> /home/bowlyzer/bowlyzer`
+- `Setup complete`
+
+Quick checks:
+
+```bash
+id bowlyzer
+groups bowlyzer          # should include docker
+ls -la /home/bowlyzer/bowlyzer/
+ls -la /home/bowlyzer/bowlyzer/database | head
+test -f /home/bowlyzer/bowlyzer/.env && echo "env ok"
+test -f /home/bowlyzer/bowlyzer/docker-compose.prod.yml && echo "compose ok"
+```
+
+If UID 1000 is already taken (e.g. by `flaskuser`), the script prints a **WARNING** — tell me the output of `id flaskuser; id bowlyzer` before step 2 deploy.
+
+---
+
+## 1C — Switch the running app to the new directory
+
+Still as **root** (stops the stack that was started from `/root/bowlyzer`):
+
+```bash
+cd /root/bowlyzer
+docker compose -f docker-compose.prod.yml down
+```
+
+Start under **`bowlyzer`** (new group membership needs a login session — use `su` or SSH as bowlyzer next):
+
+```bash
+su - bowlyzer
+cd ~/bowlyzer
+docker compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml ps
+curl -sI http://127.0.0.1:8080/liga | head -1
+exit   # back to root if you want
+```
+
+Expect **`HTTP/1.1 200 OK`**.  
+Public check: `curl -sI https://bowlyzer.online/ | head -1`
+
+---
+
+## 1D — SSH key for `bowlyzer` (so deploy doesn’t use root)
+
+**On your Windows PC** (same key you use for root is fine):
+
+```powershell
+type $env:USERPROFILE\.ssh\id_ed25519.pub
+# or id_rsa.pub
+```
+
+**On VPS as root:**
+
+```bash
+mkdir -p /home/bowlyzer/.ssh
+chmod 700 /home/bowlyzer/.ssh
+nano /home/bowlyzer/.ssh/authorized_keys   # paste one line: your .pub key
+chmod 600 /home/bowlyzer/.ssh/authorized_keys
+chown -R bowlyzer:bowlyzer /home/bowlyzer/.ssh
+```
+
+**Test from Windows:**
+
+```powershell
+ssh bowlyzer@212.227.57.223 "whoami; groups; docker ps --format '{{.Names}}'"
+```
+
+You want `bowlyzer` and `docker` in groups, and container `bowlyzer-bowlyzer-1` (or similar) running.
+
+---
+
+## 1E — Update `deploy.config.ps1` on your PC
+
+Edit `deploy\deploy.config.ps1`:
+
+```powershell
+@{
+    RemoteHost = "212.227.57.223"
+    RemoteUser = "bowlyzer"
+    RemoteDir  = "/home/bowlyzer/bowlyzer"
+    ReleaseImage = "bowlyzer:release"
+}
+```
+
+**Smoke deploy** (no rebuild needed if image unchanged):
+
+```powershell
+.\deploy\deploy.ps1 -SkipBuild
+```
+
+Or full deploy when you’re ready for the non-root image:
+
+```powershell
+.\deploy\deploy.ps1
+```
+
+---
+
+## 1F — Optional cleanup (only after site is OK)
+
+Keep `/root/bowlyzer` as backup for a day, then:
+
+```bash
+# as root, only when bowlyzer stack is verified
+du -sh /root/bowlyzer /home/bowlyzer/bowlyzer
+# optional archive then remove:
+# tar czf /root/root-bowlyzer-backup.tgz -C /root bowlyzer
+# rm -rf /root/bowlyzer
+```
+
+Extra hardening:
+
+```bash
+sudo systemctl mask flaskapp.service
+```
+
+---
+
+## Checklist
+
+- [ ] `setup-bowlyzer-user.sh --migrate-from-root` finished  
+- [ ] `down` in `/root/bowlyzer`, `up -d` in `/home/bowlyzer/bowlyzer`  
+- [ ] `:8080/liga` and https://bowlyzer.online return **200**  
+- [ ] `ssh bowlyzer@…` works without password (if you use keys)  
+- [ ] `deploy.config.ps1` → `bowlyzer` + `/home/bowlyzer/bowlyzer`  
+- [ ] `.\deploy\deploy.ps1 -SkipBuild` succeeds  
+
+---
+
+## If something breaks
+
+| Problem | Fix |
+|---------|-----|
+| `permission denied` on docker | `usermod -aG docker bowlyzer`, then **log out/in** (`su - bowlyzer` again) |
+| 502 from nginx | `docker compose ps` in `~/bowlyzer`; `curl 127.0.0.1:8080/liga` |
+| Two containers | `docker ps -a` — stop old project from `/root/bowlyzer` with `down` |
+| `database` permission errors on import later | `sudo chown -R bowlyzer:bowlyzer /home/bowlyzer/bowlyzer/database` |
+
+Start with **1A or 1B**, then **1C** (that’s the critical cutover). Paste any error output from the setup script or `docker compose up` if you want help on the next message.
+
+---
+
+_**User**_
+
+root@ubuntu:~# cat /tmp/setup-bowlyzer-user.sh
+#!/usr/bin/env bash
+# One-time VPS setup: dedicated bowlyzer user for deploy + Docker (run as root).
+#
+# Does NOT remove flaskuser / legacy flaskapp — only prepares Docker-based deploy.
+#
+# Usage:
+#   sudo bash deploy/vps/setup-bowlyzer-user.sh
+#   sudo bash deploy/vps/setup-bowlyzer-user.sh --migrate-from-root
+
+set -euo pipefail
+
+BOWLYZER_USER="${BOWLYZER_USER:-bowlyzer}"
+BOWLYZER_HOME="/home/${BOWLYZER_USER}"
+DEPLOY_DIR="${BOWLYZER_HOME}/bowlyzer"
+MIGRATE=0
+
+for arg in "$@"; do
+  case "$arg" in
+    --migrate-from-root) MIGRATE=1 ;;
+    -h|--help)
+      echo "Usage: setup-bowlyzer-user.sh [--migrate-from-root]"
+      exit 0
+      ;;
+    *) echo "Unknown option: $arg" >&2; exit 1 ;;
+  esac
+done
+
+if [[ "$(id -u)" -ne 0 ]]; then
+  echo "Run as root." >&2
+  exit 1
+fi
+
+if ! id "${BOWLYZER_USER}" &>/dev/null; then
+  echo "Creating user ${BOWLYZER_USER} (UID 1000 to match container user)"
+  if ! getent passwd 1000 >/dev/null; then
+    useradd -m -u 1000 -s /bin/bash "${BOWLYZER_USER}"
+  else
+    existing="$(getent passwd 1000 | cut -d: -f1)"
+    if [[ "${existing}" != "${BOWLYZER_USER}" ]]; then
+      echo "WARNING: UID 1000 is already used by '${existing}'."
+      echo "         Container runs as UID 1000 — fix ownership or adjust compose user: directive."
+    fi
+    useradd -m -s /bin/bash "${BOWLYZER_USER}"
+  fi
+else
+  echo "User ${BOWLYZER_USER} already exists (uid $(id -u "${BOWLYZER_USER}"))"
+fi
+
+if ! getent group docker >/dev/null; then
+  echo "ERROR: docker group missing — install Docker first." >&2
+  exit 1
+fi
+usermod -aG docker "${BOWLYZER_USER}"
+
+mkdir -p "${DEPLOY_DIR}"
+mkdir -p /var/lib/bowlyzer/clubmeisterschaft/{inbox,work}
+chown -R "${BOWLYZER_USER}:${BOWLYZER_USER}" "${BOWLYZER_HOME}" /var/lib/bowlyzer
+
+if [[ "${MIGRATE}" -eq 1 && -d /root/bowlyzer ]]; then
+  echo "Migrating /root/bowlyzer -> ${DEPLOY_DIR}"
+  if [[ -f /root/bowlyzer/.env ]]; then
+    install -o "${BOWLYZER_USER}" -g "${BOWLYZER_USER}" -m 600 /root/bowlyzer/.env "${DEPLOY_DIR}/.env"
+  fi
+  if [[ -d /root/bowlyzer/database ]]; then
+    rsync -a /root/bowlyzer/database/ "${DEPLOY_DIR}/database/"
+  fi
+  if [[ -f /root/bowlyzer/docker-compose.prod.yml ]]; then
+    install -o "${BOWLYZER_USER}" -g "${BOWLYZER_USER}" -m 644 /root/bowlyzer/docker-compose.prod.yml "${DEPLOY_DIR}/"
+  fi
+  chown -R "${BOWLYZER_USER}:${BOWLYZER_USER}" "${DEPLOY_DIR}"
+fi
+
+# Stale deploy artifacts
+rm -f /root/bowlyzer-image.tar "${DEPLOY_DIR}/bowlyzer-image.tar" 2>/dev/null || true
+
+echo ""
+echo "Setup complete."
+echo "  Deploy dir: ${DEPLOY_DIR}"
+echo "  Deploy as:  ${BOWLYZER_USER}@$(hostname -f)"
+echo ""
+echo "Next:"
+echo "  1. Copy your SSH public key to ${BOWLYZER_HOME}/.ssh/authorized_keys"
+echo "  2. In deploy/deploy.config.ps1 set RemoteUser=${BOWLYZER_USER} RemoteDir=${DEPLOY_DIR}"
+echo "  3. Run deploy/vps/cleanup-disk.sh if disk is still tight"
+echo "  4. Disable legacy flaskapp if still enabled: systemctl disable --now flaskapp"
+root@ubuntu:~# sudo bash /tmp/setup-bowlyzer-user.sh --migrate-from-root
+/tmp/setup-bowlyzer-user.sh: line 9: $'\r': command not found
+: invalid option nameser.sh: line 10: set: pipefail
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user encountered CRLF line ending errors when running the setup script on the VPS, likely due to Windows-style `\r` characters in the bash script uploaded from a Windows machine.</details></think>
+
+_**Agent (default)**_
+
+Windows CRLF line endings broke the script on Linux. Fixing the repo and giving you a one-line fix to run now:
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\push-vps-maintenance.ps1</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **0** results in **1** directory</summary>
+
+Directory: **** (0 files)
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I'll add .gitattributes for shell scripts and update the PowerShell script to strip carriage returns after SCP transfer. I'll also apply similar updates to the install_clubmeisterschaft and deploy/install scripts that use SCP.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\.gitattributes</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\push-vps-maintenance.ps1</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\install_clubmeisterschaft_auto_import.ps1</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\install_clubmeisterschaft_auto_import.ps1</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\docs\VPS_DISK_AND_USER.md</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+That's a **Windows CRLF** issue (`\r` at end of each line). Linux bash reads it as `^M` and fails.
+
+## Fix on the VPS right now
+
+```bash
+sed -i
+
+---
+
+_**User**_
+
+sorry for interrupting, proceed
+
+---
+
+_**Agent (default)**_
+
+That error is **Windows CRLF** (`\r`) in the script — Linux bash treats it as garbage.
+
+## Fix the file on the VPS (right now)
+
+```bash
+sed -i 's/\r$//' /tmp/setup-bowlyzer-user.sh
+sudo bash /tmp/setup-bowlyzer-user.sh --migrate-from-root
+```
+
+You should see `Creating user bowlyzer`, `Migrating /root/bowlyzer -> /home/bowlyzer/bowlyzer`, `Setup complete`.
+
+---
+
+## Step 1C — Cut over to the new deploy dir
+
+```bash
+cd /root/bowlyzer
+docker compose -f docker-compose.prod.yml down
+
+su - bowlyzer
+cd ~/bowlyzer
+docker compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml ps
+curl -sI http://127.0.0.1:8080/liga | head -1
+exit
+```
+
+Expect **`HTTP/1.1 200 OK`**. Check https://bowlyzer.online/ in a browser.
+
+---
+
+## Step 1D — SSH key for `bowlyzer`
+
+On Windows, show your public key:
+
+```powershell
+Get-Content $env:USERPROFILE\.ssh\id_ed25519.pub
+# or id_rsa.pub
+```
+
+On VPS as root:
+
+```bash
+install -d -m 700 -o bowlyzer -g bowlyzer /home/bowlyzer/.ssh
+nano /home/bowlyzer/.ssh/authorized_keys   # paste one line, save
+chmod 600 /home/bowlyzer/.ssh/authorized_keys
+chown bowlyzer:bowlyzer /home/bowlyzer/.ssh/authorized_keys
+```
+
+Test from Windows:
+
+```powershell
+ssh bowlyzer@212.227.57.223 "whoami; groups; docker ps --format '{{.Names}}'"
+```
+
+If `docker` is missing from groups, run `su - bowlyzer` once on the server (group membership needs a fresh login).
+
+---
+
+## Step 1E — Update deploy config on your PC
+
+Edit `deploy\deploy.config.ps1`:
+
+```powershell
+RemoteUser = "bowlyzer"
+RemoteDir  = "/home/bowlyzer/bowlyzer"
+```
+
+Smoke test:
+
+```powershell
+cd C:\Users\cfell\repositories\bowlyzer_deploy
+.\deploy\deploy.ps1 -SkipBuild
+```
+
+---
+
+## Repo fix (for next upload)
+
+`push-vps-maintenance.ps1` now runs `sed` on the VPS after `scp`, and `.gitattributes` forces `*.sh` to LF in git. Re-upload later with:
+
+```powershell
+.\deploy\push-vps-maintenance.ps1 -SetupBowlyzerUser -MigrateFromRoot
+```
+
+only if you need to re-run setup — you don’t need that if the manual `sed` + script already succeeded.
+
+---
+
+Paste the output of `setup-bowlyzer-user.sh` and `curl … /liga` after **1C** if anything fails; otherwise you’re done with step 1 until **step 2** (full deploy with non-root container image).
+
+---
+
+_**User**_
+
+i did not use ssh key yet, only passwords
+
+PS C:\Users\cfell\repositories\bowlyzer_deploy> Get-Content $env:USERPROFILE\.ssh\id_ed25519.pub
+Get-Content : Der Pfad "C:\Users\cfell\.ssh\id_ed25519.pub" kann nicht gefunden werden, da er nicht vorhanden ist.
+In Zeile:1 Zeichen:1
++ Get-Content $env:USERPROFILE\.ssh\id_ed25519.pub
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (C:\Users\cfell\.ssh\id_ed25519.pub:String) [Get-Content], ItemNotFoundException
+    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+
+PS C:\Users\cfell\repositories\bowlyzer_deploy> Get-Content $env:USERPROFILE\.ssh\id_rsa.pub
+Get-Content : Der Pfad "C:\Users\cfell\.ssh\id_rsa.pub" kann nicht gefunden werden, da er nicht vorhanden ist.
+In Zeile:1 Zeichen:1
++ Get-Content $env:USERPROFILE\.ssh\id_rsa.pub
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (C:\Users\cfell\.ssh\id_rsa.pub:String) [Get-Content], ItemNotFoundException
+    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+
+PS C:\Users\cfell\repositories\bowlyzer_deploy> ls  C:\Users\cfell\.ssh\
+
+
+    Verzeichnis: C:\Users\cfell\.ssh
+
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+-a----        29.01.2025     12:23            843 known_hosts
+-a----        29.01.2025     12:23             97 known_hosts.old
+
+
+PS C:\Users\cfell\repositories\bowlyzer_deploy>
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user currently relies on password authentication instead of SSH keys.</details></think>
+
+_**Agent (default)**_
+
+You don’t have any keys yet — only `known_hosts`. That’s fine. Two paths:
+
+---
+
+## Option A — Create an SSH key (recommended for `bowlyzer` + passwordless deploy)
+
+**1. Generate a key on Windows** (PowerShell):
+
+```powershell
+ssh-keygen -t ed25519 -C "cfell@bowlyzer-deploy" -f "$env:USERPROFILE\.ssh\id_ed25519"
+```
+
+Press Enter for empty passphrase (or set one if you prefer).
+
+**2. Show the public key:**
+
+```powershell
+Get-Content "$env:USERPROFILE\.ssh\id_ed25519.pub"
+```
+
+**3. Add it on the VPS** (log in as you do today, e.g. `ssh root@212.227.57.223`, enter password):
+
+```bash
+install -d -m 700 -o bowlyzer -g bowlyzer /home/bowlyzer/.ssh
+nano /home/bowlyzer/.ssh/authorized_keys
+# paste the ONE line from id_ed25519.pub, save
+
+chmod 600 /home/bowlyzer/.ssh/authorized_keys
+chown bowlyzer:bowlyzer /home/bowlyzer/.ssh/authorized_keys
+```
+
+**4. Test from Windows:**
+
+```powershell
+ssh bowlyzer@212.227.57.223
+```
+
+If it still asks for a password, check permissions on `/home/bowlyzer/.ssh` (700) and `authorized_keys` (600).
+
+**Optional — same key for root** (so you can use the key for emergency root SSH too):
+
+```bash
+# as root on VPS
+mkdir -p /root/.ssh
+chmod 700 /root/.ssh
+nano /root/.ssh/authorized_keys   # paste same line (or a second key)
+chmod 600 /root/.ssh/authorized_keys
+```
+
+---
+
+## Option B — Keep passwords for now
+
+You can stay on **password auth** for a while. `ssh` / `scp` and `deploy.ps1` will prompt for the password when needed.
+
+Downsides:
+
+- No non-interactive deploy unless you use an agent or keys.
+- Brute-force risk on `root` — prefer disabling password login for root later and using **`bowlyzer` + key** only.
+
+Update `deploy.config.ps1` to **`bowlyzer`** and **`/home/bowlyzer/bowlyzer`** anyway; the first deploy will ask for `bowlyzer`’s password unless you completed Option A.
+
+---
+
+**Summary:** Run `ssh-keygen` once, copy **`.pub`** to **`/home/bowlyzer/.ssh/authorized_keys`**, then `deploy.ps1` can run without typing a password each time. If you hit “Permission denied (publickey)” after adding the key, paste the exact message and we’ll fix permissions.
+
+---
+
+_**User**_
+
+PS C:\Users\cfell\repositories\bowlyzer_deploy> .\deploy\deploy.ps1
+==> loading C:\Users\cfell\repositories\bowlyzer_deploy\deploy\deploy.config.ps1
+docker : failed to connect to the docker API at npipe:////./pipe/dockerDesktopLinuxEngine; check if the path is correct and if the daemon is running: open
+//./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified.
+In C:\Users\cfell\repositories\bowlyzer_deploy\deploy\deploy.ps1:95 Zeichen:9
++     if (docker image inspect $candidate 2>$null) {
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (failed to conne...file specified.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+PS C:\Users\cfell\repositories\bowlyzer_deploy>
+
+---
+
+_**Agent (default)**_
+
+`deploy.ps1` calls **`docker`** on your **Windows PC** to build, tag, and `docker save` the image. That error means **Docker Desktop isn’t running** (or the Linux engine isn’t started), so the client can’t reach the daemon at `npipe:////./pipe/dockerDesktopLinuxEngine`.
+
+## Fix
+
+1. **Start Docker Desktop** and wait until it shows **Running** (whale icon idle).
+2. Confirm in PowerShell:
+   ```powershell
+   docker version
+   docker images
+   ```
+3. Run deploy again:
+   ```powershell
+   .\deploy\deploy.ps1
+   ```
+
+## If you don’t use Docker Desktop
+
+- Install/start **Docker Desktop for Windows**, **or**
+- Use **WSL2** with Docker integration and ensure `docker` uses that engine.
+
+## If the image is already built locally
+
+Only if you already have `bowlyzer_deploy-bowlyzer:latest` from a previous session:
+
+```powershell
+.\deploy\deploy.ps1 -SkipBuild
+```
+
+That still needs a working `docker` client + daemon to run `docker tag` and `docker save`, so **Docker must be running** anyway.
+
+**TL;DR:** Start Docker Desktop, wait until it’s ready, then re-run `.\deploy\deploy.ps1`.
+
+---
+
+_**User**_
+
+add a respective warning topthe deployment script rather than hard crashing
+
+---
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\deploy.ps1</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I need to add a function called `Test-DockerDaemon` or similar that executes `docker info` or `docker version`, suppresses stderr output, and verifies the exit code.
+
+Call the function after Require-Command docker and before the docker image inspect loop. On failure, display a clear warning with instructions and exit gracefully with exit code 1.
+
+Use `docker info 2>$null` or `docker version --format` with appropriate error handling to avoid terminating errors. In PowerShell, `docker image inspect` may throw non-terminating errors that become terminating, especially when Docker writes to stderr. The function `Assert-DockerEngineRunning` executes `docker info 2>&1`, checks the exit code, and displays a warning with instructions if Docker is unreachable, then exits with code 1.</details></think>

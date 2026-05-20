@@ -42,6 +42,12 @@ COPY pipeline ./pipeline
 COPY deploy ./deploy
 COPY --from=frontend-build /app/frontend/dist ./frontend/dist
 
+# Non-root runtime (matches host user bowlyzer UID 1000 when using setup-bowlyzer-user.sh).
+RUN groupadd --gid 1000 bowlyzer \
+    && useradd --uid 1000 --gid bowlyzer --home-dir /app --no-create-home bowlyzer \
+    && chown -R bowlyzer:bowlyzer /app
+USER bowlyzer
+
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
