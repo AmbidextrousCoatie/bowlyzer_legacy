@@ -1,5 +1,5 @@
 import { QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { MobileNavProvider } from "./context/MobileNavContext";
 import { NavigationQuerySanitizer } from "./components/NavigationQuerySanitizer";
 import { Sidebar } from "./components/Sidebar";
@@ -27,7 +27,8 @@ function App() {
                 <Route path="/" element={<Home />} />
                 <Route path="/liga" element={<LeagueStats />} />
                 <Route path="/turnier" element={<TournamentStats />} />
-                <Route path="/mannschaft" element={<TeamStats />} />
+                <Route path="/club" element={<TeamStats />} />
+                <Route path="/mannschaft" element={<LegacyMannschaftRedirect />} />
                 <Route path="/spieler" element={<PlayerStats />} />
                 <Route path="/diagnose/club-matrix" element={<ClubMatrix />} />
                 <Route path="/diagnose/liga-wochen" element={<LeagueWeekMatrix />} />
@@ -41,6 +42,12 @@ function App() {
       </BrowserRouter>
     </QueryClientProvider>
   );
+}
+
+/** Preserve query string when renaming `/mannschaft` → `/club`. */
+function LegacyMannschaftRedirect() {
+  const { search } = useLocation();
+  return <Navigate to={`/club${search}`} replace />;
 }
 
 function NotFound() {

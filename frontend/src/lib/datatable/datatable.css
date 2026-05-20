@@ -405,6 +405,16 @@
   text-underline-offset: 2px;
 }
 
+/* Player Saisonstatistik — whole competition row links to Liga / Turnier */
+.ds-tabulator.has-event-row-navigation .tabulator-row.tab-event-nav .tabulator-cell {
+  cursor: pointer;
+}
+
+.ds-tabulator.has-event-row-navigation .tabulator-row.tab-event-nav .tabulator-cell:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 /* Empty state placeholder for invalid table data */
 .ds-table-empty {
   padding: 24px;

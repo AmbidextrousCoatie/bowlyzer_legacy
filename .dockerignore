@@ -7,6 +7,8 @@
 .cache
 *.md
 !deploy/README.md
+# Saved deploy artifacts must never be baked into the image (would double image size).
+deploy/artifacts
 frontend/node_modules
 frontend/dist
 frontend/.vite

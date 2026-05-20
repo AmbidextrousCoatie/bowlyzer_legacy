@@ -57294,7 +57294,7 @@ Yes — on the Liga page in **landscape on phones/tablets** (`max-lg:landscape`)
 
 3. **Page title block hidden** in landscape (the big “Liga · Saison …” header), since “Liga” is already in the toolbar.
 
-4. **Portrait mobile** is unchanged: two-row Saison/Liga grid + full “Weitere Auswahl” button.
+4. **Portrait mobile** is unchanged: two-row Saison/Liga grid + full “Auswahl anpassen” button.
 
 `MobileNavContext` coordinates menu open/close between the sidebar drawer and the Liga toolbar.
 

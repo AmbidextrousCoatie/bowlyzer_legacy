@@ -6,6 +6,7 @@ import { useTeamSeasons, useTeams } from "../../hooks/useTeam";
 import { useTranslations } from "../../hooks/useTranslations";
 import {
   getClubTeamColor,
+  normalizeUnicodeLabel,
   splitClubAndTeamNumber,
   teamDisplayLabel,
   teamsForClub,
@@ -22,9 +23,12 @@ export function TeamStats() {
   const season = searchParams.get("season") ?? "all";
 
   const club = useMemo(() => {
-    if (clubParam) return clubParam;
-    if (teamParam) return splitClubAndTeamNumber(teamParam).club;
-    return "";
+    const raw = clubParam
+      ? clubParam
+      : teamParam
+        ? splitClubAndTeamNumber(teamParam).club
+        : "";
+    return normalizeUnicodeLabel(raw);
   }, [clubParam, teamParam]);
 
   const teamsQuery = useTeams();
@@ -42,9 +46,11 @@ export function TeamStats() {
 
   const team = useMemo(() => {
     if (!teamParam) return "";
-    if (clubTeams.includes(teamParam)) return teamParam;
-    const { club: teamClub } = splitClubAndTeamNumber(teamParam);
-    if (teamClub === club) return teamParam;
+    const nt = normalizeUnicodeLabel(teamParam);
+    const fromList = clubTeams.find((n) => normalizeUnicodeLabel(n) === nt);
+    if (fromList) return fromList;
+    const teamClub = normalizeUnicodeLabel(splitClubAndTeamNumber(teamParam).club);
+    if (teamClub === club) return normalizeUnicodeLabel(teamParam);
     return "";
   }, [teamParam, clubTeams, club]);
 
@@ -113,7 +119,7 @@ export function TeamStats() {
           {t("ui.team.eyebrow", "Akteure")}
         </p>
         <h1 className="text-h1">
-          {t("ui.team.page_title", "Mannschaft")}
+          {t("ui.team.page_title", "Club")}
           {club ? (
             <>
               {" "}

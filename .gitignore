@@ -3,6 +3,7 @@
 deploy/deploy.config.ps1
 deploy/artifacts/
 bowlyzer-image.tar
+bowlyzer-image.tar.gz
 __pycache__/
 *.pyc
 .DS_Store

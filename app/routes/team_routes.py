@@ -74,8 +74,7 @@ def get_team_history():
         team_service = get_team_service()
         history = team_service.get_team_history(team_name=team_name)
 
-        return jsonify(history)
-        
+        return jsonify(json_safe(history))
 
     except Exception as e:
         print(f"Error in get_team_history: {str(e)}")
@@ -101,7 +100,7 @@ def get_special_matches():
         special_matches = team_service.get_special_matches(team_name=team_name, season=season if season and season != '' else None)
         
 
-        return jsonify(special_matches)
+        return jsonify(json_safe(special_matches))
     except Exception as e:
         print(f"Error in get_special_matches: {str(e)}")
         return jsonify({'error': str(e)}), 500

@@ -123,7 +123,7 @@ function FilterBarMobile(props: LeagueFilterBarProps) {
       onClick={() => setSheetOpen(true)}
       className="flex h-9 shrink-0 items-center justify-between gap-1.5 rounded-sm border border-border bg-surface px-2.5 text-small font-medium text-foreground hover:border-border-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring max-lg:landscape:h-8 max-lg:landscape:px-2 max-lg:landscape:text-[13px]"
     >
-      <span className="max-lg:landscape:hidden">{t("more_filters", "Weitere Auswahl")}</span>
+      <span className="max-lg:landscape:hidden">{t("more_filters", "Auswahl anpassen")}</span>
       <span className="hidden max-lg:landscape:inline">{t("more_filters_short", "Mehr")}</span>
       <span className="flex items-center gap-1 text-muted">
         {hasDrillDown && (
@@ -171,7 +171,7 @@ function FilterBarMobile(props: LeagueFilterBarProps) {
       </div>
     </div>
 
-    {/* Portrait mobile: Saison/Liga grid + Weitere Auswahl */}
+    {/* Portrait mobile: Saison/Liga grid + Auswahl anpassen */}
     <div className="sticky top-0 z-10 -mx-4 border-b border-border bg-background/85 px-4 py-3 backdrop-blur max-lg:landscape:hidden lg:hidden">
       <div className="grid grid-cols-2 gap-3">
         <SeasonLeagueFields
@@ -190,7 +190,7 @@ function FilterBarMobile(props: LeagueFilterBarProps) {
             onClick={() => setSheetOpen(true)}
             className="flex h-11 w-full items-center justify-between gap-2 rounded-sm border border-border bg-surface px-3 text-[15px] font-medium text-foreground hover:border-border-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
           >
-            <span>{t("more_filters", "Weitere Auswahl")}</span>
+            <span>{t("more_filters", "Auswahl anpassen")}</span>
             <span className="flex items-center gap-2 text-muted">
               {hasDrillDown && (
                 <span className="rounded-xs bg-accent-tint px-1.5 py-0.5 text-label uppercase text-accent">
@@ -207,7 +207,7 @@ function FilterBarMobile(props: LeagueFilterBarProps) {
     <BottomSheet
       open={sheetOpen}
       onClose={() => setSheetOpen(false)}
-      title={t("more_filters", "Weitere Auswahl")}
+      title={t("more_filters", "Auswahl anpassen")}
       closeLabel={t("done", "Fertig")}
     >
       <div className="space-y-4">

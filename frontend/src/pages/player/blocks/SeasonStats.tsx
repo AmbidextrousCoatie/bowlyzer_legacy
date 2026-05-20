@@ -1,5 +1,7 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { DataTable } from "../../../lib/datatable/DataTable";
+import type { DataTableHandle } from "../../../lib/datatable/createDataTable";
 import { TEAM_COLOR_PALETTES } from "../../../lib/color-utils";
 import type { RowMetaEntry, TableData } from "../../../lib/datatable/types";
 import type { PlayerSeasonRow } from "../../../hooks/usePlayer";
@@ -14,9 +16,29 @@ type Props = {
 };
 
 export function SeasonStats({ seasons, selectedPlayerName, t }: Props) {
-  const tableData = useMemo<TableData>(
-    () => buildTableData(seasons, selectedPlayerName, t),
-    [seasons, selectedPlayerName, t],
+  const navigate = useNavigate();
+  const databaseParam =
+    typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("database")
+      : null;
+
+  const { tableData, eventPaths } = useMemo(
+    () => buildTableData(seasons, selectedPlayerName, databaseParam, t),
+    [seasons, selectedPlayerName, databaseParam, t],
+  );
+
+  const handleTableReady = useCallback(
+    (handle: DataTableHandle) => {
+      const onCellClick = (_e: unknown, cell: { getRow: () => { getData: () => unknown } }) => {
+        const rowData = cell.getRow().getData() as { __rowIndex?: number };
+        const idx = rowData.__rowIndex;
+        if (idx == null || typeof idx !== "number") return;
+        const path = eventPaths[idx];
+        if (path) navigate(path);
+      };
+      handle.tabulator.on("cellClick", onCellClick);
+    },
+    [eventPaths, navigate],
   );
 
   if (!seasons || seasons.length === 0) {
@@ -45,12 +67,14 @@ export function SeasonStats({ seasons, selectedPlayerName, t }: Props) {
       </div>
       <DataTable
         data={tableData}
+        className="has-event-row-navigation"
         options={{
           disablePositionCircle: true,
           enableSpecialRowStyling: false,
           tooltips: true,
           disableTeamColorUpdate: true,
         }}
+        onReady={handleTableReady}
       />
     </section>
   );
@@ -59,16 +83,11 @@ export function SeasonStats({ seasons, selectedPlayerName, t }: Props) {
 function buildTableData(
   seasons: PlayerSeasonRow[],
   selectedPlayerName: string,
+  database: string | null,
   t: (key: string, fallback?: string) => string,
-): TableData {
-  const databaseParam =
-    typeof window !== "undefined"
-      ? new URLSearchParams(window.location.search).get("database")
-      : null;
-
-  const rows = seasons.map((season) => [
-    season.season ?? "—",
-    competitionCellHtml({
+): { tableData: TableData; eventPaths: Array<string | null> } {
+  const eventPaths = seasons.map((season) =>
+    buildEventPath({
       season: season.season,
       competition: season.competition ?? null,
       isTournament: !!season.is_tournament,
@@ -76,9 +95,14 @@ function buildTableData(
       club: season.club ?? null,
       teamName: season.team_name ?? null,
       teamNumber: season.team_number ?? null,
-      database: databaseParam,
+      database,
       selectedPlayerName,
     }),
+  );
+
+  const rows = seasons.map((season) => [
+    season.season ?? "—",
+    escapeHtml(season.competition || "—"),
     season.row_type === "season_total"
       ? ""
       : `${season.club ?? "—"}${season.team_number ? ` ${season.team_number}` : ""}`,
@@ -92,55 +116,61 @@ function buildTableData(
     season.worst_game?.score ?? "—",
   ]);
 
-  const rowMetadata: RowMetaEntry[] = seasons.map((season): RowMetaEntry => {
+  const rowMetadata: RowMetaEntry[] = seasons.map((season, index): RowMetaEntry => {
     if (season.row_type === "season_total") {
       return {
         styling: { fontWeight: "700" },
         rowAccentColor: SEASON_TOTAL_ROW_ACCENT,
       };
     }
+    if (eventPaths[index]) {
+      return { eventNav: true };
+    }
     return null;
   });
 
   return {
-    columns: [
-      {
-        title: "",
-        columns: [
-          { title: t("ui.player.season", "Saison"), field: "season" },
-          {
-            title: t("ui.player.competition", "Wettbewerb"),
-            field: "competition",
-            align: "left",
-          },
-          { title: t("ui.player.club", "Verein"), field: "club", align: "left" },
-          { title: t("ui.player.games", "Spiele"), field: "games", align: "right" },
-          {
-            title: t("ui.player.total_pins_col", "Pins"),
-            field: "total_pins",
-            align: "right",
-          },
-          {
-            title: t("ui.player.average_col", "Schnitt"),
-            field: "average",
-            align: "right",
-          },
-          { title: t("ui.player.rank", "Platz"), field: "rank", align: "right" },
-          {
-            title: t("ui.player.best_game", "Bestes Spiel"),
-            field: "best_game",
-            align: "right",
-          },
-          {
-            title: t("ui.player.worst_game", "Schlechtestes Spiel"),
-            field: "worst_game",
-            align: "right",
-          },
-        ],
-      },
-    ],
-    data: rows,
-    row_metadata: rowMetadata,
+    tableData: {
+      columns: [
+        {
+          title: "",
+          columns: [
+            { title: t("ui.player.season", "Saison"), field: "season" },
+            {
+              title: t("ui.player.competition", "Wettbewerb"),
+              field: "competition",
+              align: "left",
+            },
+            { title: t("ui.player.club", "Verein"), field: "club", align: "left" },
+            { title: t("ui.player.games", "Spiele"), field: "games", align: "right" },
+            {
+              title: t("ui.player.total_pins_col", "Pins"),
+              field: "total_pins",
+              align: "right",
+            },
+            {
+              title: t("ui.player.average_col", "Schnitt"),
+              field: "average",
+              align: "right",
+            },
+            { title: t("ui.player.rank", "Platz"), field: "rank", align: "right" },
+            {
+              title: t("ui.player.best_game", "Bestes Spiel"),
+              field: "best_game",
+              align: "right",
+            },
+            {
+              title: t("ui.player.worst_game", "Schlechtestes Spiel"),
+              field: "worst_game",
+              align: "right",
+            },
+          ],
+        },
+      ],
+      data: rows,
+      row_metadata: rowMetadata,
+    },
+    eventPaths,
   };
 }
 
@@ -170,10 +200,9 @@ type CompetitionCellArgs = {
   selectedPlayerName: string;
 };
 
-function competitionCellHtml(args: CompetitionCellArgs): string {
-  const label = args.competition || "—";
+function buildEventPath(args: CompetitionCellArgs): string | null {
   if (args.rowType !== "competition" || !args.competition) {
-    return escapeHtml(label);
+    return null;
   }
   const qs = new URLSearchParams();
   qs.set("season", String(args.season ?? ""));
@@ -191,7 +220,7 @@ function competitionCellHtml(args: CompetitionCellArgs): string {
   }
   if (args.database && !args.isTournament) qs.set("database", args.database);
   const targetPath = args.isTournament ? "/turnier" : "/liga";
-  return `<a href="${targetPath}?${qs.toString()}">${escapeHtml(label)}</a>`;
+  return `${targetPath}?${qs.toString()}`;
 }
 
 function escapeHtml(s: string): string {

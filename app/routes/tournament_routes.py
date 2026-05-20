@@ -141,6 +141,22 @@ def get_available_rounds():
     return jsonify(payload)
 
 
+@bp.route("/tournament/get_tournament_format")
+def get_tournament_format():
+    season = request.args.get("season")
+    tournament = request.args.get("tournament")
+    if not season or not tournament:
+        return jsonify({"error": "season and tournament are required"}), 400
+    cached = _tournament_json_cache_get("get_tournament_format")
+    if cached is not None:
+        return jsonify(cached)
+    payload = get_tournament_service().get_tournament_format_info(
+        season=season, tournament=tournament
+    )
+    _tournament_json_cache_put("get_tournament_format", payload)
+    return jsonify(payload)
+
+
 @bp.route("/tournament/get_available_players")
 def get_available_players():
     season = request.args.get("season")

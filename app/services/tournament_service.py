@@ -604,6 +604,138 @@ class TournamentService:
             )
         return out
 
+    def _handicap_format_info(self, df: pd.DataFrame) -> Dict[str, Any]:
+        """
+        Tournament-wide summary of handicap-related CSV columns for the format infobox.
+
+        ``pins`` uses integer pins per game from ``Handicap`` when the column exists and has
+        values. ``a_priori_average`` and ``handicap_reference`` use float summaries when present.
+        """
+        cols = {
+            "handicap": Columns.handicap in df.columns,
+            "apriori_average": Columns.apriori_average in df.columns,
+            "handicap_reference": Columns.handicap_reference in df.columns,
+        }
+
+        def _pin_summary(series: pd.Series) -> Optional[Dict[str, Any]]:
+            s = pd.to_numeric(series, errors="coerce").dropna()
+            if s.empty:
+                return None
+            vmin, vmax = float(s.min()), float(s.max())
+            if abs(vmax - vmin) < 0.5:
+                return {"kind": "uniform", "value": _arith_round_int((vmin + vmax) / 2)}
+            return {
+                "kind": "range",
+                "min": _arith_round_int(vmin),
+                "max": _arith_round_int(vmax),
+                "mean": round(float(s.mean()), 1),
+            }
+
+        def _float_summary(series: pd.Series, decimals: int = 1) -> Optional[Dict[str, Any]]:
+            s = pd.to_numeric(series, errors="coerce").dropna()
+            if s.empty:
+                return None
+            vmin, vmax = float(s.min()), float(s.max())
+            tol = 10 ** (-decimals)
+            if abs(vmax - vmin) < tol:
+                return {"kind": "uniform", "value": round((vmin + vmax) / 2.0, decimals)}
+            return {
+                "kind": "range",
+                "min": round(vmin, decimals),
+                "max": round(vmax, decimals),
+                "mean": round(float(s.mean()), decimals),
+            }
+
+        out: Dict[str, Any] = {
+            "used": self._tournament_df_has_meaningful_handicap(df),
+            "columns": cols,
+            "pins": None,
+            "a_priori_average": None,
+            "handicap_reference": None,
+        }
+        if df.empty:
+            return out
+
+        if cols["handicap"]:
+            out["pins"] = _pin_summary(df[Columns.handicap])
+
+        if cols["apriori_average"]:
+            out["a_priori_average"] = _float_summary(df[Columns.apriori_average], 1)
+
+        if cols["handicap_reference"]:
+            out["handicap_reference"] = _float_summary(df[Columns.handicap_reference], 1)
+
+        return out
+
+    def get_tournament_format_info(self, season: str, tournament: str) -> Dict[str, Any]:
+        """
+        Rounds from CSV plus KO/cut settings from ``database/data/tournament_ko_config.json``.
+
+        Used by the Turnier UI (format info popup).
+        """
+        df = self._get_tournament_df(season=season, tournament=tournament)
+        rounds = self.get_rounds(season, tournament, df=df)
+        block = self._ko_config_entry(season, tournament)
+
+        public_config: Dict[str, Any] = {}
+        config_note: Optional[str] = None
+        for k, v in block.items():
+            sk = str(k)
+            if sk == "_comment":
+                if isinstance(v, str) and v.strip():
+                    config_note = v.strip()
+                continue
+            if sk.startswith("_"):
+                continue
+            if isinstance(v, (str, int, float, bool)) or v is None:
+                public_config[sk] = v
+            elif isinstance(v, list) and all(isinstance(x, str) for x in v):
+                public_config[sk] = list(v)
+
+        mode = self._ko_finale_series_mode(season, tournament)
+        if mode == KO_FINALE_SERIES_SCRATCH_2G:
+            finale_de = "KO-Finale: zwei Spiele Scratch-Gesamt"
+            finale_en = "KO finals: two-game scratch series total"
+        else:
+            finale_de = "KO-Finale: Best-of-3 (Pinfall je Spiel)"
+            finale_en = "KO finals: best-of-3 pinfall"
+
+        span = self._ko_qualifying_cut_span_config(season, tournament)
+        pair = self._ko_qualifying_cut_pair(season, tournament)
+        ko_fin_rn: Optional[int] = None
+        if not df.empty:
+            ko_fin_rn = self._ko_finale_round_number(df)
+
+        enriched_rounds: List[Dict[str, Any]] = []
+        for r in rounds:
+            rn = int(r["round_number"])
+            name = str(r.get("round_name") or "").strip()
+            enriched_rounds.append(
+                {
+                    "round_number": rn,
+                    "round_name": name,
+                    "is_ko_finale_cluster": bool(
+                        ko_fin_rn is not None and rn == int(ko_fin_rn)
+                    ),
+                }
+            )
+
+        return {
+            "round_count": len(rounds),
+            "rounds": enriched_rounds,
+            "handicap": self._handicap_format_info(df),
+            "ko_finale_round_number_in_data": ko_fin_rn,
+            "ko_finale_series": mode,
+            "ko_finale_series_label_de": finale_de,
+            "ko_finale_series_label_en": finale_en,
+            "qualifying_cut_span": span,
+            "qualifying_cut_pair": (
+                {"round": int(pair[0]), "rank": int(pair[1])} if pair else None
+            ),
+            "config": public_config,
+            "config_note": config_note,
+        }
+
     def _scope_df(self, df: pd.DataFrame, round_number: Optional[int]) -> pd.DataFrame:
         if round_number is None:
             return df.copy()
@@ -1489,9 +1621,9 @@ class TournamentService:
             pivot["avg_net"] = (pivot["total_net"] / pivot["games_played"]).round(1)
             pivot["scratch_rank"] = pivot["total_score"].rank(method="min", ascending=False).astype(int)
             pivot = pivot.sort_values(
-                by=["avg_net", Columns.player_name], ascending=[False, True]
+                by=["total_net", Columns.player_name], ascending=[False, True]
             ).reset_index(drop=True)
-            pivot["rank"] = pivot["avg_net"].rank(method="min", ascending=False).astype(int)
+            pivot["rank"] = pivot["total_net"].rank(method="min", ascending=False).astype(int)
             for kt, sub in work.groupby(group_keys, dropna=False):
                 hc_label_by_key[kt if isinstance(kt, tuple) else (kt,)] = _aggregate_handicap_leaderboard_label(sub)
         else:
@@ -1556,7 +1688,7 @@ class TournamentService:
                     columns=net_columns,
                 ),
             ]
-            default_sort_field = "avg_net"
+            default_sort_field = "total_net"
             table_metadata: Dict[str, Any] = {"leaderboard_mode": "scratch_net_handicap"}
         else:
             columns = [
@@ -2086,6 +2218,11 @@ class TournamentService:
         work[Columns.round_number] = pd.to_numeric(work[Columns.round_number], errors="coerce").astype("Int64")
         work[Columns.game_number] = pd.to_numeric(work[Columns.game_number], errors="coerce").astype("Int64")
 
+        use_hc = self._tournament_df_has_meaningful_handicap(all_df) and Columns.handicap in all_df.columns
+        if use_hc:
+            all_df[Columns.handicap] = pd.to_numeric(all_df[Columns.handicap], errors="coerce").fillna(0)
+            work[Columns.handicap] = pd.to_numeric(work[Columns.handicap], errors="coerce").fillna(0)
+
         round_meta = (
             all_df[[Columns.round_number, Columns.round_name]]
             .dropna(subset=[Columns.round_number])
@@ -2097,8 +2234,9 @@ class TournamentService:
         max_game = int(pd.to_numeric(all_df[Columns.game_number], errors="coerce").dropna().max()) if not all_df.empty else -1
         game_cols = list(range(max_game + 1)) if max_game >= 0 else []
 
-        rows = []
-        running_total = 0
+        rows: List[List[Any]] = []
+        running_sc_total = 0
+        running_net_total = 0
         running_games = 0
 
         for rn in round_numbers:
@@ -2113,44 +2251,96 @@ class TournamentService:
                 for _, r in round_player.iterrows()
                 if pd.notna(r[Columns.game_number])
             }
-            round_total = int(round_player[Columns.score].sum())
+
+            round_total_sc = int(round_player[Columns.score].sum())
             round_games = int(self._played_games_count(round_player[Columns.score]))
-            round_avg = round(round_total / max(round_games, 1), 1)
+            round_hcp_sum = int(round_player[Columns.handicap].sum()) if use_hc else 0
+            round_net = round_total_sc + round_hcp_sum
+            round_avg_sc = round(round_total_sc / max(round_games, 1), 1)
+            round_avg_net = round(round_net / max(round_games, 1), 1)
 
-            # Rank within round by total pins.
-            round_totals = (
-                round_all.groupby(Columns.player_name, dropna=False)[Columns.score]
-                .sum()
-                .sort_values(ascending=False)
+            if use_hc:
+                ra = round_all.assign(
+                    _net_pins=pd.to_numeric(round_all[Columns.score], errors="coerce").fillna(0)
+                    + pd.to_numeric(round_all[Columns.handicap], errors="coerce").fillna(0)
+                )
+                round_totals = (
+                    ra.groupby(Columns.player_name, dropna=False)["_net_pins"]
+                    .sum()
+                    .sort_values(ascending=False)
+                )
+            else:
+                round_totals = (
+                    round_all.groupby(Columns.player_name, dropna=False)[Columns.score]
+                    .sum()
+                    .sort_values(ascending=False)
+                )
+            round_rank = (
+                int(round_totals.rank(method="min", ascending=False).get(player, float("nan")))
+                if player in round_totals.index
+                else None
             )
-            round_rank = int(round_totals.rank(method="min", ascending=False).get(player, float("nan"))) if player in round_totals.index else None
 
-            running_total += round_total
+            running_sc_total += round_total_sc
+            running_net_total += round_net
             running_games += round_games
-            cum_avg = round(running_total / max(running_games, 1), 1)
+            cum_avg_sc = round(running_sc_total / max(running_games, 1), 1)
+            cum_avg_net = round(running_net_total / max(running_games, 1), 1)
 
-            # Cumulative rank up to current round.
             upto_all = all_df[all_df[Columns.round_number].le(float(rn))].copy()
-            cum_totals = (
-                upto_all.groupby(Columns.player_name, dropna=False)[Columns.score]
-                .sum()
-                .sort_values(ascending=False)
+            if use_hc:
+                ua = upto_all.assign(
+                    _net_pins=pd.to_numeric(upto_all[Columns.score], errors="coerce").fillna(0)
+                    + pd.to_numeric(upto_all[Columns.handicap], errors="coerce").fillna(0)
+                )
+                cum_totals = (
+                    ua.groupby(Columns.player_name, dropna=False)["_net_pins"]
+                    .sum()
+                    .sort_values(ascending=False)
+                )
+            else:
+                cum_totals = (
+                    upto_all.groupby(Columns.player_name, dropna=False)[Columns.score]
+                    .sum()
+                    .sort_values(ascending=False)
+                )
+            cum_rank = (
+                int(cum_totals.rank(method="min", ascending=False).get(player, float("nan")))
+                if player in cum_totals.index
+                else None
             )
-            cum_rank = int(cum_totals.rank(method="min", ascending=False).get(player, float("nan"))) if player in cum_totals.index else None
 
-            row = [round_name_map.get(rn, f"Round {rn}")]
+            row: List[Any] = [round_name_map.get(rn, f"Round {rn}")]
+            if use_hc:
+                row.append(_aggregate_handicap_leaderboard_label(round_player))
             for g in game_cols:
                 row.append(int(player_game_scores.get(g, 0)) if g in player_game_scores else "")
-            row.extend(
-                [
-                    round_total,
-                    round_avg,
-                    round_rank if round_rank is not None else "",
-                    running_total,
-                    cum_avg,
-                    cum_rank if cum_rank is not None else "",
-                ]
-            )
+            if use_hc:
+                row.extend(
+                    [
+                        round_total_sc,
+                        round_avg_sc,
+                        round_net,
+                        round_avg_net,
+                        round_rank if round_rank is not None else "",
+                        running_sc_total,
+                        cum_avg_sc,
+                        running_net_total,
+                        cum_avg_net,
+                        cum_rank if cum_rank is not None else "",
+                    ]
+                )
+            else:
+                row.extend(
+                    [
+                        round_total_sc,
+                        round_avg_sc,
+                        round_rank if round_rank is not None else "",
+                        running_sc_total,
+                        cum_avg_sc,
+                        cum_rank if cum_rank is not None else "",
+                    ]
+                )
             rows.append(row)
 
         stage_info_cols = [
@@ -2160,27 +2350,76 @@ class TournamentService:
             Column(title=f"{g + 1}", field=f"game_{g}", width="70px", align="center", decimal_places=0)
             for g in game_cols
         ]
-        stage_stat_cols = [
-            Column(title=i18n_service.get_text("score"), field="score_total", width="105px", align="center", decimal_places=0),
-            Column(title=i18n_service.get_text("average"), field="round_avg", width="90px", align="center", decimal_places=1),
-            Column(title=i18n_service.get_text("ui.tournament.rank"), field="round_rank", width="95px", align="center", decimal_places=0),
+        hcp_pg_title = i18n_service.get_text("ui.tournament.handicap_per_game")
+        hcp_pg_tip = i18n_service.get_text("ui.tournament.handicap_per_game_tooltip")
+        hcp_stage_col = [
+            Column(
+                title=hcp_pg_title,
+                field="round_hcp",
+                width="92px",
+                align="center",
+                tooltip=hcp_pg_tip,
+            )
         ]
-        total_stat_cols = [
-            Column(title=i18n_service.get_text("score"), field="cum_score", width="95px", align="center", decimal_places=0),
-            Column(title=i18n_service.get_text("average"), field="cum_avg", width="90px", align="center", decimal_places=1),
-            Column(title=i18n_service.get_text("ui.tournament.rank"), field="cum_rank", width="90px", align="center", decimal_places=0),
-        ]
-        columns = [
-            ColumnGroup(
-                title=i18n_service.get_text("ui.tournament.stage"),
-                frozen="left",
-                style={"backgroundColor": get_theme_color("background")},
-                columns=stage_info_cols,
-            ),
-            ColumnGroup(title=i18n_service.get_text("ui.tournament.games"), columns=game_score_cols),
-            ColumnGroup(title=i18n_service.get_text("ui.tournament.stage_results"), columns=stage_stat_cols),
-            ColumnGroup(title=i18n_service.get_text("ui.tournament.total_results"), columns=total_stat_cols),
-        ]
+
+        if use_hc:
+            t_pin_sc = i18n_service.get_text("ui.tournament.col_pins_scratch")
+            t_avg_sc = i18n_service.get_text("ui.tournament.col_avg_scratch")
+            t_pin_nt = i18n_service.get_text("ui.tournament.col_pins_net")
+            t_avg_nt = i18n_service.get_text("ui.tournament.col_avg_net")
+            rank_t = i18n_service.get_text("ui.tournament.rank")
+            stage_stat_cols = [
+                Column(title=t_pin_sc, field="stage_score", width="110px", align="center", decimal_places=0),
+                Column(title=t_avg_sc, field="stage_avg", width="100px", align="center", decimal_places=1),
+                Column(title=t_pin_nt, field="stage_net", width="110px", align="center", decimal_places=0),
+                Column(title=t_avg_nt, field="stage_avg_net", width="100px", align="center", decimal_places=1),
+                Column(title=rank_t, field="round_rank", width="95px", align="center", decimal_places=0),
+            ]
+            total_stat_cols = [
+                Column(title=t_pin_sc, field="cum_score", width="110px", align="center", decimal_places=0),
+                Column(title=t_avg_sc, field="cum_avg_sc", width="100px", align="center", decimal_places=1),
+                Column(title=t_pin_nt, field="overall_net", width="110px", align="center", decimal_places=0),
+                Column(title=t_avg_nt, field="overall_avg_net", width="100px", align="center", decimal_places=1),
+                Column(title=rank_t, field="cum_rank", width="90px", align="center", decimal_places=0),
+            ]
+            columns = [
+                ColumnGroup(
+                    title=i18n_service.get_text("ui.tournament.stage"),
+                    frozen="left",
+                    style={"backgroundColor": get_theme_color("background")},
+                    columns=stage_info_cols,
+                ),
+                ColumnGroup(
+                    title="",
+                    columns=hcp_stage_col,
+                ),
+                ColumnGroup(title=i18n_service.get_text("ui.tournament.games"), columns=game_score_cols),
+                ColumnGroup(title=i18n_service.get_text("ui.tournament.stage_results"), columns=stage_stat_cols),
+                ColumnGroup(title=i18n_service.get_text("ui.tournament.total_results"), columns=total_stat_cols),
+            ]
+        else:
+            stage_stat_cols = [
+                Column(title=i18n_service.get_text("score"), field="score_total", width="105px", align="center", decimal_places=0),
+                Column(title=i18n_service.get_text("average"), field="round_avg", width="90px", align="center", decimal_places=1),
+                Column(title=i18n_service.get_text("ui.tournament.rank"), field="round_rank", width="95px", align="center", decimal_places=0),
+            ]
+            total_stat_cols = [
+                Column(title=i18n_service.get_text("score"), field="cum_score", width="95px", align="center", decimal_places=0),
+                Column(title=i18n_service.get_text("average"), field="cum_avg", width="90px", align="center", decimal_places=1),
+                Column(title=i18n_service.get_text("ui.tournament.rank"), field="cum_rank", width="90px", align="center", decimal_places=0),
+            ]
+            columns = [
+                ColumnGroup(
+                    title=i18n_service.get_text("ui.tournament.stage"),
+                    frozen="left",
+                    style={"backgroundColor": get_theme_color("background")},
+                    columns=stage_info_cols,
+                ),
+                ColumnGroup(title=i18n_service.get_text("ui.tournament.games"), columns=game_score_cols),
+                ColumnGroup(title=i18n_service.get_text("ui.tournament.stage_results"), columns=stage_stat_cols),
+                ColumnGroup(title=i18n_service.get_text("ui.tournament.total_results"), columns=total_stat_cols),
+            ]
+
         return TableData(
             columns=columns,
             data=rows,
@@ -2313,6 +2552,7 @@ class TournamentService:
                 "tournament_lowest_avg_series": [],
                 "cut_lines_avg": [],
                 "cut_lines_position": [],
+                "cut_position_at_game": [],
                 "participant_count": 0,
                 "cut_line_series": [],
                 "cut_lines_avg_dynamic": {},
@@ -2362,6 +2602,7 @@ class TournamentService:
         tournament_lowest_avg_series: List[Optional[float]] = []
         cut_lines_avg: List[float] = []
         cut_lines_position: List[int] = []
+        cut_position_at_game: List[Optional[int]] = []
         dynamic_cut_series: Dict[int, List[Optional[float]]] = {rn: [] for rn in cut_rounds_sorted}
 
         per_game_pins = _field_progress_prepare_game_pins(all_df)
@@ -2423,6 +2664,11 @@ class TournamentService:
                 elif in_cut_span and last_cut_pos is not None:
                     cut_lines_position.append(last_cut_pos)
 
+            if in_cut_span and last_cut_pos is not None:
+                cut_position_at_game.append(int(last_cut_pos))
+            else:
+                cut_position_at_game.append(None)
+
         if _fp_t0 is not None and _fp_loop_t0 is not None:
             loop_sec = time.perf_counter() - _fp_loop_t0
             setup_sec = _fp_loop_t0 - _fp_t0
@@ -2448,6 +2694,7 @@ class TournamentService:
             "tournament_lowest_avg_series": tournament_lowest_avg_series,
             "cut_lines_avg": cut_lines_avg,
             "cut_lines_position": cut_lines_position,
+            "cut_position_at_game": cut_position_at_game,
             "participant_count": participant_count,
             "cut_line_series": cut_line_series,
             "cut_lines_avg_dynamic": {
@@ -2515,6 +2762,11 @@ class TournamentService:
         player_df[Columns.round_number] = pd.to_numeric(player_df[Columns.round_number], errors="coerce").astype("Int64")
         player_df[Columns.game_number] = pd.to_numeric(player_df[Columns.game_number], errors="coerce").astype("Int64")
 
+        use_net = self._tournament_df_has_meaningful_handicap(df) and Columns.handicap in df.columns
+        if use_net and Columns.handicap in player_df.columns:
+            player_df[Columns.handicap] = pd.to_numeric(player_df[Columns.handicap], errors="coerce").fillna(0)
+        player_df = _with_progress_pins(player_df, use_net)
+
         avg_series: List[Optional[float]] = []
         game_score_series: List[Optional[int]] = []
         round_end_lines: List[int] = []
@@ -2532,7 +2784,8 @@ class TournamentService:
                     scratch = pd.to_numeric(grp[Columns.score], errors="coerce").fillna(0)
                     if not (scratch > 0).any():
                         continue
-                    player_game_pins[int(g_idx)] = _arith_round_int(float(grp[Columns.score].sum()))
+                    pins = pd.to_numeric(grp["__pins"], errors="coerce").fillna(0)
+                    player_game_pins[int(g_idx)] = _arith_round_int(float(pins.sum()))
 
             game_score_series.append(player_game_pins.get(g))
             if g in player_game_pins:

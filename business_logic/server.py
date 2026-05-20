@@ -1,9 +1,9 @@
 import pandas as pd
-import numpy as np
 from data_access.adapters.data_adapter_factory import DataAdapterFactory, DataAdapterSelector   
 from typing import List
 from data_access.schema import Columns, ColumnsExtra
 from data_access.score_utils import mean_scores, sum_scores
+from data_access.text_norm import normalize_unicode_label, safe_rank_int
 from app.config.debug_config import debug_config
 
 
@@ -109,7 +109,11 @@ class Server:
 
         team_rank = league_season_data.groupby(Columns.team_name)[Columns.points].sum().rank(ascending=False)
 
-        return int(team_rank[team_name])    
+        needle = normalize_unicode_label(team_name)
+        for idx in team_rank.index:
+            if normalize_unicode_label(idx) == needle:
+                return safe_rank_int(team_rank.loc[idx])
+        return 0
 
 
     

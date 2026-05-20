@@ -8,6 +8,8 @@ import {
   usePlayerSeasons,
 } from "../../hooks/usePlayer";
 import { useTranslations } from "../../hooks/useTranslations";
+import { buildPlayerClubHistory } from "../../lib/playerClubHistory";
+import { ClubAffiliationHistory } from "./blocks/ClubHistory";
 import { LifetimeStats } from "./blocks/LifetimeStats";
 import { SeasonStats } from "./blocks/SeasonStats";
 import { TrendChart } from "./blocks/TrendChart";
@@ -94,6 +96,11 @@ export function PlayerStats() {
   const seasonRows = stats?.seasons ?? [];
   const seasons = seasonsQuery.data ?? [];
 
+  const { currentClub, historyRows } = useMemo(
+    () => buildPlayerClubHistory(stats?.seasons ?? []),
+    [stats?.seasons],
+  );
+
   const hasSelection = !!(playerName || playerId);
   const hasResolvedPlayers = playersQuery.isSuccess;
   const playerNotFound = hasSelection && hasResolvedPlayers && !knownPlayer;
@@ -105,11 +112,17 @@ export function PlayerStats() {
           {t("ui.player.title", "Bowl-A-Lyzer")}
         </p>
         <h1 className="text-h1">
-          {t("ui.player.title", "Spieler")}
+          {t("ui.player.stats_headline", "Spielerstatistiken")}
           {playerName ? (
             <>
               {" "}
               · <span className="text-muted font-normal">{playerName}</span>
+              {currentClub ? (
+                <>
+                  {" "}
+                  · <span className="text-muted font-normal">{currentClub}</span>
+                </>
+              ) : null}
             </>
           ) : null}
         </h1>
@@ -172,9 +185,14 @@ export function PlayerStats() {
 
             {statsQuery.isSuccess && stats && (
               <>
-                <LifetimeStats stats={lifetime} t={t} />
+                <LifetimeStats
+                  stats={lifetime}
+                  playerId={playerId || knownPlayer?.id || undefined}
+                  t={t}
+                />
                 <SeasonStats seasons={seasonRows} selectedPlayerName={playerName} t={t} />
                 <TrendChart seasons={seasonRows} lifetime={lifetime} t={t} />
+                <ClubAffiliationHistory rows={historyRows} t={t} />
               </>
             )}
           </>

@@ -18,6 +18,7 @@ import {
   X,
 } from "lucide-react";
 import { Link, NavLink, useSearchParams } from "react-router-dom";
+import { AppLogo } from "./AppLogo";
 import { DatabaseSelector } from "./DatabaseSelector";
 import { useMobileNav } from "../context/MobileNavContext";
 import { querySuffixForPath } from "../lib/navigationQuery";
@@ -53,7 +54,7 @@ const NAV_GROUPS: ReadonlyArray<NavGroup> = [
   {
     label: "Akteure",
     items: [
-      { path: "/mannschaft", label: "Mannschaft", icon: Users },
+      { path: "/club", label: "Club", icon: Users },
       { path: "/spieler", label: "Spieler", icon: User },
     ],
   },
@@ -267,11 +268,10 @@ function Brand() {
   return (
     <Link
       to="/"
+      aria-label="Bowl-A-Lyzer — Startseite"
       className="flex items-center gap-2 rounded-sm hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
     >
-      <div className="grid h-7 w-7 place-items-center rounded-xs bg-accent text-accent-foreground font-mono text-caption font-semibold">
-        BL
-      </div>
+      <AppLogo size={28} />
       <span className="text-body font-semibold tracking-tight text-foreground">Bowl-A-Lyzer</span>
     </Link>
   );

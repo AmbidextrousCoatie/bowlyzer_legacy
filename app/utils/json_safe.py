@@ -34,3 +34,40 @@ def json_safe(obj: Any) -> Any:
         except (ValueError, AttributeError):
             return None
     return obj
+
+
+def _is_nullish(x: Any) -> bool:
+    try:
+        if x is None:
+            return True
+        if isinstance(x, float) and (math.isnan(x) or math.isinf(x)):
+            return True
+        return bool(pd.isna(x))
+    except (TypeError, ValueError):
+        return False
+
+
+def to_json_float(value: Any, *, default: float | None = None) -> float | None:
+    """Finite float for JSON payloads; NaN/NA/invalid -> default."""
+    if _is_nullish(value):
+        return default
+    try:
+        v = float(value)
+        if math.isnan(v) or math.isinf(v):
+            return default
+        return v
+    except (TypeError, ValueError, OverflowError):
+        return default
+
+
+def to_json_int(value: Any, *, default: int | None = None) -> int | None:
+    """Finite int for JSON payloads; NaN/NA/invalid -> default."""
+    if _is_nullish(value):
+        return default
+    try:
+        v = float(value)
+        if math.isnan(v) or math.isinf(v):
+            return default
+        return int(round(v))
+    except (TypeError, ValueError, OverflowError):
+        return default

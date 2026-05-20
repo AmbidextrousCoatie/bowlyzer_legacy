@@ -5,11 +5,12 @@ import { useTranslations } from "../../hooks/useTranslations";
 import { DiagnosisToolbar } from "../../components/DiagnosisToolbar";
 import { oddityLigaPath } from "../../lib/diagnosisLinks";
 
-const ALL_TYPES: DataOddityType[] = ["unnumbered_team", "low_score"];
+const ALL_TYPES: DataOddityType[] = ["unnumbered_team", "low_score", "incomplete_row"];
 
 const TYPE_LABEL: Record<DataOddityType, string> = {
   unnumbered_team: "Mannschaft ohne Nummer",
   low_score: "Ergebnis < 1",
+  incomplete_row: "Spieltag / Ergebnis fehlt",
 };
 
 const SEVERITY_ROW: Record<string, string> = {

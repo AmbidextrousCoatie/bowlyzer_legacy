@@ -2,10 +2,12 @@ import type { PlayerLifetimeStats } from "../../../hooks/usePlayer";
 
 type Props = {
   stats: PlayerLifetimeStats | null | undefined;
+  /** EDV player id from the URL / search, shown in Gesamtwerte block. */
+  playerId?: string;
   t: (key: string, fallback?: string) => string;
 };
 
-export function LifetimeStats({ stats, t }: Props) {
+export function LifetimeStats({ stats, playerId, t }: Props) {
   const totalGames = stats?.total_games ?? null;
   const totalPins = stats?.total_pins ?? null;
   const avg = stats?.average_score ?? null;
@@ -23,7 +25,14 @@ export function LifetimeStats({ stats, t }: Props) {
       </div>
 
       <div className="grid grid-cols-1 gap-x-12 gap-y-8 md:grid-cols-3">
-        <StatGroup label={t("ui.player.overall_stats", "Gesamtwerte")}>
+        <StatGroup label={t("ui.player.career_aggregate", "Karrierewerte")}>
+          {playerId ? (
+            <StatRow
+              label={t("ui.player.edv_id", "EDV-ID")}
+              value={playerId}
+              mono={true}
+            />
+          ) : null}
           <StatRow
             label={t("ui.player.total_games", "Spiele gesamt")}
             value={formatInt(totalGames)}

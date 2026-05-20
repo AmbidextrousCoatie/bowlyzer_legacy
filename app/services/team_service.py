@@ -10,7 +10,9 @@ from business_logic.server import Server
 from flask import jsonify, Response
 from app.services.statistics_service import StatisticsService
 from app.models.statistics_models import TeamStatistics
+from app.utils.json_safe import to_json_float, to_json_int
 from app.utils.league_utils import get_league_level
+
 
 class TeamService:
     # fetches dataframes from server
@@ -92,12 +94,16 @@ class TeamService:
         history = {}
 
         for season in seasons:
-            league_name = self.server.get_leagues(team_name=team_name, season=season)
-            if isinstance(league_name, list):
-                league_name = league_name[0]
+            league_bucket = self.server.get_leagues(team_name=team_name, season=season)
+            if isinstance(league_bucket, list):
+                if not league_bucket:
+                    continue
+                league_name = league_bucket[0]
+            elif league_bucket:
+                league_name = league_bucket
             else:
-                return {}
-                
+                continue
+
             # Get team statistics for this season
             team_stats = self.get_team_statistics(team_name, season)
             if not team_stats:
@@ -114,13 +120,13 @@ class TeamService:
                 "final_position": final_position,
                 "league_level": get_league_level(league_name),
                 "statistics": {
-                    "total_score": float(team_stats.season_summary.total_score),
-                    "total_points": float(team_stats.season_summary.total_points),
-                    "average_score": float(team_stats.season_summary.average_score),
-                    "games_played": float(team_stats.season_summary.games_played),
-                    "best_score": int(team_stats.season_summary.best_score),
-                    "worst_score": int(team_stats.season_summary.worst_score)   
-                }
+                    "total_score": to_json_float(team_stats.season_summary.total_score, default=0.0) or 0.0,
+                    "total_points": to_json_float(team_stats.season_summary.total_points, default=0.0) or 0.0,
+                    "average_score": to_json_float(team_stats.season_summary.average_score, default=0.0) or 0.0,
+                    "games_played": to_json_float(team_stats.season_summary.games_played, default=0.0) or 0.0,
+                    "best_score": to_json_int(team_stats.season_summary.best_score, default=0) or 0,
+                    "worst_score": to_json_int(team_stats.season_summary.worst_score, default=0) or 0,
+                },
             }
 
         return history
@@ -137,9 +143,13 @@ class TeamService:
         comparison_data = {}
         
         for season in seasons:
-            league_name = self.server.get_leagues(team_name=team_name, season=season)
-            if isinstance(league_name, list):
-                league_name = league_name[0]
+            league_bucket = self.server.get_leagues(team_name=team_name, season=season)
+            if isinstance(league_bucket, list):
+                if not league_bucket:
+                    continue
+                league_name = league_bucket[0]
+            elif league_bucket:
+                league_name = league_bucket
             else:
                 continue
             
@@ -311,14 +321,20 @@ class TeamService:
         # Convert DataFrame to list of dictionaries for easier processing
         matches_list = []
         for _, row in team_matches.iterrows():
+            if pd.isna(row.get(Columns.week)):
+                continue
+            sc = row[Columns.score]
+            opp_sc = row["opponent_score"]
+            if pd.isna(sc) or pd.isna(opp_sc):
+                continue
             match_info = {
                 "Season": row[Columns.season],
                 "League": row[Columns.league_name],
-                "Week": int(row[Columns.week]),
-                "Score": float(row[Columns.score]),
+                "Week": to_json_int(row[Columns.week], default=0) or 0,
+                "Score": to_json_float(sc, default=0.0) or 0.0,
                 "Opponent": row[Columns.team_name_opponent],
-                "OpponentScore": float(row['opponent_score']),
-                "WinMargin": float(row[Columns.score] - row['opponent_score'])
+                "OpponentScore": to_json_float(opp_sc, default=0.0) or 0.0,
+                "WinMargin": to_json_float(float(sc) - float(opp_sc), default=0.0) or 0.0,
             }
             matches_list.append(match_info)
         

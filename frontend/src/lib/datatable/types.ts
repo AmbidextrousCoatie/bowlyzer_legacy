@@ -42,6 +42,8 @@ export type RowMetaEntry = {
   rowType?: string;
   /** Optional client-side semantic alias when mapping row_metadata. */
   kind?: string;
+  /** Row is clickable; navigates via parent `onReady` handler (e.g. player Saisonstatistik). */
+  eventNav?: boolean;
 } | null;
 
 export type TableConfig = {

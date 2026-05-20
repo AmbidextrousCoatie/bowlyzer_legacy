@@ -59,11 +59,33 @@ type RowObject = Record<string, unknown> & {
   __rowIndex: number;
   __rowMeta?: {
     styling?: Record<string, string | number>;
+    eventNav?: boolean;
     rowAccentColor?: string;
     separator_before?: boolean;
     kind?: string;
   } | null;
 };
+
+/**
+ * Tabulator 6 only allows freezing on parent column groups, not on nested leaves.
+ * Backend table defs still set `frozen` on individual columns inside groups, which throws.
+ * Until those defs are reworked, drop `frozen` so tables initialize (no sticky columns).
+ */
+function stripFrozenFromTabulatorColumnDefs(
+  defs: ColumnDefinition[],
+): ColumnDefinition[] {
+  return defs.map((def) => {
+    const next = { ...def } as ColumnDefinition & {
+      frozen?: unknown;
+      columns?: ColumnDefinition[];
+    };
+    delete next.frozen;
+    if (Array.isArray(next.columns) && next.columns.length > 0) {
+      next.columns = stripFrozenFromTabulatorColumnDefs(next.columns);
+    }
+    return next as ColumnDefinition;
+  });
+}
 
 function hasSemanticSeparator(rowMeta: RowObject["__rowMeta"]): boolean {
   if (!rowMeta) return false;
@@ -540,6 +562,8 @@ export function createDataTable(
       .filter((g): g is ColumnDefinition => g !== null);
   }
 
+  tabulatorColumns = stripFrozenFromTabulatorColumnDefs(tabulatorColumns);
+
   if (!tabulatorColumns.length) {
     console.warn("[DataTable] No Tabulator column definitions");
     return null;
@@ -609,6 +633,7 @@ export function createDataTable(
       }
 
       rowElement.classList.toggle("tab-row-separator-before", separatorBefore);
+      rowElement.classList.toggle("tab-event-nav", rowData.__rowMeta?.eventNav === true);
 
       if (tournamentCutRowStyling) {
         const cutMeta =

@@ -600,13 +600,53 @@ function buildPositionOption(
       lineStyle: { color: cutColor, type: "dashed" as const, width: 2 },
     }));
 
+  // Match average chart: cut must be a real line series so axis tooltip includes it (markLine does not).
+  const rawCutRank = series.cut_position_at_game ?? [];
+  const labelsLen = series.labels.length;
+  const cutAligned =
+    rawCutRank.length >= labelsLen
+      ? rawCutRank.slice(0, labelsLen)
+      : [...rawCutRank, ...Array(Math.max(0, labelsLen - rawCutRank.length)).fill(null)];
+  let heldCutRank: number | null = null;
+  const cutRankFilled = cutAligned.map((v) => {
+    if (v != null && Number.isFinite(Number(v))) {
+      heldCutRank = Math.round(Number(v));
+    }
+    return heldCutRank;
+  });
+  const hasCutRankSeries =
+    cutRankFilled.length > 0 && cutRankFilled.some((v) => v != null);
+
+  const cutRankLineSeries = hasCutRankSeries
+    ? {
+        name: t("ui.tournament.cut_line_pace", "Cut-Line (Pace)"),
+        type: "line" as const,
+        data: cutRankFilled.map((v, i) => [
+          i + 1,
+          v == null ? null : Math.max(yMin, Math.min(yMax, v)),
+        ]) as Array<[number, number | null]>,
+        showSymbol: false,
+        smooth: false,
+        connectNulls: true,
+        lineStyle: { width: 2, type: "dashed" as const, color: cutColor },
+        itemStyle: { color: cutColor },
+        z: 1,
+      }
+    : null;
+
   return {
     animation: false,
     tooltip: {
       trigger: "axis",
       formatter: (raw: unknown) => formatTooltip(raw, series, t, true),
     },
-    grid: { top: 16, right: 16, bottom: 40, left: 50, containLabel: true },
+    grid: {
+      top: cutRankLineSeries ? 30 : 16,
+      right: 16,
+      bottom: 40,
+      left: 50,
+      containLabel: true,
+    },
     xAxis: {
       type: "value",
       min: 0,
@@ -627,7 +667,9 @@ function buildPositionOption(
       max: yMax,
       inverse: true,
     },
+    legend: cutRankLineSeries ? { show: true, top: 0, textStyle: { fontSize: 11 } } : undefined,
     series: [
+      ...(cutRankLineSeries ? [cutRankLineSeries] : []),
       {
         name: playerName,
         type: "line",
@@ -636,7 +678,7 @@ function buildPositionOption(
         smooth: false,
         lineStyle: { width: 2, color: PLAYER_COLOR },
         itemStyle: { color: PLAYER_COLOR },
-        markLine: cutMarks.length
+        markLine: !cutRankLineSeries && cutMarks.length
           ? {
               symbol: ["none", "none"],
               silent: true,

@@ -1,7 +1,12 @@
 import { getPaletteColor } from "./color-utils";
 
+/** NFC normalization so URL / API strings match CSV labels (e.g. ``ö`` as one codepoint vs decomposed). */
+export function normalizeUnicodeLabel(text: string): string {
+  return String(text ?? "").trim().normalize("NFC");
+}
+
 /**
- * Club / team helpers for `/mannschaft`.
+ * Club / team helpers for `/club`.
  *
  * German bowling org (reference): Verein → Club → Team — e.g.
  * BV 68 Regensburg → Donaubowler Regensburg → Mannschaft 1/2/3.
@@ -21,10 +26,10 @@ export function splitClubAndTeamNumber(teamName: string): { club: string; teamNu
 }
 
 export function teamsForClub(allTeams: string[], club: string): string[] {
-  const needle = club.trim();
+  const needle = normalizeUnicodeLabel(club);
   if (!needle) return [];
   return allTeams
-    .filter((name) => splitClubAndTeamNumber(name).club === needle)
+    .filter((name) => normalizeUnicodeLabel(splitClubAndTeamNumber(name).club) === needle)
     .sort((a, b) => {
       const na = splitClubAndTeamNumber(a).teamNumber;
       const nb = splitClubAndTeamNumber(b).teamNumber;

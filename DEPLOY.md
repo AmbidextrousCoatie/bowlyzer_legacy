@@ -190,4 +190,4 @@ cd .. && uv run gunicorn -c deploy/gunicorn.conf.py wsgi:app
 
 ## Legacy URLs
 
-Old Jinja paths redirect to React routes (301, query string preserved), e.g. `/league/stats` → `/liga`, `/team/stats` → `/mannschaft`.
+Old Jinja paths redirect to React routes (301, query string preserved), e.g. `/league/stats` → `/liga`, `/team/stats` → `/club`, `/mannschaft` → `/club`.

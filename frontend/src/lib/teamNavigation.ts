@@ -1,15 +1,23 @@
-export type TeamNavParams = {
+import { buildUrl } from "./api";
+import { CLUB_PATH } from "./navigationQuery";
+
+export type ClubNavParams = {
   club?: string | null;
   team?: string | null;
   season?: string | null;
 };
 
-/** Build `/mannschaft` path with club / team / season query params. */
-export function buildTeamNavPath(params: TeamNavParams): string {
-  const q = new URLSearchParams();
-  if (params.club) q.set("club", params.club);
-  if (params.team) q.set("team", params.team);
-  if (params.season && params.season !== "all") q.set("season", params.season);
-  const s = q.toString();
-  return s ? `/mannschaft?${s}` : "/mannschaft";
+/** @deprecated Use {@link ClubNavParams}. */
+export type TeamNavParams = ClubNavParams;
+
+/** Build `/club` path with club / team / season query params. */
+export function buildClubNavPath(params: ClubNavParams): string {
+  const q: Record<string, string> = {};
+  if (params.club) q.club = params.club;
+  if (params.team) q.team = params.team;
+  if (params.season && params.season !== "all") q.season = params.season;
+  return buildUrl(CLUB_PATH, q);
 }
+
+/** @deprecated Use {@link buildClubNavPath}. */
+export const buildTeamNavPath = buildClubNavPath;

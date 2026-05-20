@@ -18,6 +18,7 @@ from app.utils.league_utils import (
 )
 from app.config.database_config import database_config
 from app.cache.league_response_cache import league_cache_put, league_cache_try_get
+from app.utils.json_safe import json_safe
 
 bp = Blueprint('league', __name__)
 
@@ -97,7 +98,7 @@ def get_data_oddities():
     try:
         hit = _league_json_cache_get("get_data_oddities")
         if hit is not None:
-            return jsonify(hit)
+            return jsonify(json_safe(hit))
         league_service = get_league_service()
         types_param = (request.args.get("types") or "").strip()
         types = [t.strip() for t in types_param.split(",") if t.strip()] if types_param else None
@@ -107,6 +108,7 @@ def get_data_oddities():
             **result,
             "league_long_names": get_league_long_name_map(),
         }
+        payload = json_safe(payload)
         _league_json_cache_put("get_data_oddities", payload)
         return jsonify(payload)
     except Exception as e:
@@ -828,6 +830,19 @@ def get_translations():
 
                     # Namespaced: Tournament UI
                     "ui.tournament.title", "ui.tournament.season", "ui.tournament.tournament",
+                    "ui.tournament.format_info_aria", "ui.tournament.format_title",
+                    "ui.tournament.format_rounds_heading", "ui.tournament.format_round_count",
+                    "ui.tournament.format_no_rounds", "ui.tournament.format_ko_heading",
+                    "ui.tournament.format_ko_tag", "ui.tournament.format_ko_finale_mode",
+                    "ui.tournament.format_ko_round_index", "ui.tournament.format_cut_span",
+                    "ui.tournament.format_cut_pair", "ui.tournament.format_config_heading",
+                    "ui.tournament.format_note_heading",
+                    "ui.tournament.format_handicap_heading", "ui.tournament.format_handicap_used_hint",
+                    "ui.tournament.format_handicap_not_used_hint", "ui.tournament.format_handicap_pins_uniform",
+                    "ui.tournament.format_handicap_pins_range", "ui.tournament.format_handicap_column_empty",
+                    "ui.tournament.format_handicap_value_empty", "ui.tournament.format_handicap_no_pins_col",
+                    "ui.tournament.format_handicap_apriori_uniform", "ui.tournament.format_handicap_apriori_range",
+                    "ui.tournament.format_handicap_reference_uniform", "ui.tournament.format_handicap_reference_range",
                     "ui.tournament.round", "ui.tournament.player", "ui.tournament.player_placeholder",
                     "ui.tournament.leaderboard",
                     "ui.tournament.ko_placements_title",
@@ -844,6 +859,7 @@ def get_translations():
                     "ui.tournament.player_handicap_card", "ui.tournament.apriori_avg_label",
                     "ui.tournament.handicap_ref_label",
                     "ui.tournament.handicap_col_short",
+                    "ui.tournament.handicap_per_game",
                     "ui.tournament.handicap_per_game_tooltip",
                     "ui.tournament.cum_avg_over_games", "ui.tournament.cut_line_mode",
                     "ui.tournament.cut", "ui.tournament.dynamic", "ui.tournament.static",

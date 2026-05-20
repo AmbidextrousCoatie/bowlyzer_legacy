@@ -82,12 +82,12 @@ export function ClubOverview({
       <section className="rounded-sm border border-border bg-surface">
         <header className="border-b border-border px-4 py-3 lg:px-5">
           <h2 className="text-h3">
-            {t("ui.team.club_position_history", "Platzierungsverlauf (Club)")}
+            {t("ui.team.club_position_history", "Platzierungsverlauf aller Teams des Clubs")}
           </h2>
           <p className="text-small text-muted mt-1">
             {t(
               "ui.team.club_position_history_hint",
-              "Alle Mannschaften — Farben wie in der Liga-Tabelle (Mannschaft 1, 2, …).",
+              "Wie sie im Laufe der Zeit abgeschintten haben",
             )}
           </p>
         </header>

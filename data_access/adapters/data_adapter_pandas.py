@@ -9,6 +9,7 @@ from data_access.models.league_models import LeagueQuery
 from data_access.models.league_models import TeamSeasonPerformance, TeamWeeklyPerformance
 from data_access.models.raw_data_models import RawPlayerData, RawTeamData, RawLeagueData
 from data_access.dtype_normalization import normalize_legacy_dataframe_types
+from data_access.text_norm import normalize_unicode_label
 
 
 
@@ -31,11 +32,41 @@ BOOL_TRUE_TOKENS = {"true", "1", "yes", "y", "on"}
 BOOL_FALSE_TOKENS = {"false", "0", "no", "n", "off", ""}
 
 
+def _safe_int_cell(value: Any, default: int = 0) -> int:
+    """Coerce CSV/DataFrame cells to int; ``pd.NA`` / NaN / invalid -> ``default``."""
+    num = pd.to_numeric(value, errors="coerce")
+    if pd.isna(num):
+        return default
+    try:
+        return int(num)
+    except (ValueError, TypeError, OverflowError):
+        return default
+
+
+def _safe_float_cell(value: Any, default: float = 0.0) -> float:
+    num = pd.to_numeric(value, errors="coerce")
+    if pd.isna(num):
+        return default
+    try:
+        return float(num)
+    except (ValueError, TypeError, OverflowError):
+        return default
+
+
+def _row_ok_for_raw_player(row: pd.Series) -> bool:
+    """Skip rows that cannot be keyed by week (common with bad imports / merged cells)."""
+    if pd.isna(row.get(Columns.week)):
+        return False
+    if pd.isna(row.get(Columns.score)):
+        return False
+    return True
+
+
 def _unique_clean_str_labels(series: pd.Series) -> List[str]:
     """Sorted unique non-empty labels; never returns float NaN (safe for ``jsonify``)."""
     out: List[str] = []
     for x in series.dropna().unique().tolist():
-        s = str(x).strip()
+        s = normalize_unicode_label(str(x))
         if not s or s.lower() in ("nan", "none", "<na>", "nat"):
             continue
         out.append(s)
@@ -181,8 +212,10 @@ class DataAdapterPandas(DataAdapter):
                                     mask = numeric.eq(target)
                                     result = result[mask] if operator_name == "eq" else result[~mask]
                                 else:
-                                    left = col_series.fillna("").astype(str).str.strip()
-                                    right = str(value).strip()
+                                    left = col_series.fillna("").astype(str).str.strip().map(
+                                        normalize_unicode_label
+                                    )
+                                    right = normalize_unicode_label(str(value))
                                     mask = left.eq(right)
                                     result = result[mask] if operator_name == "eq" else result[~mask]
                             elif operator_name in ["lt", "le", "gt", "ge"] and isinstance(value, (int, float)):
@@ -518,11 +551,11 @@ class DataAdapterPandas(DataAdapter):
         return RawPlayerData(
             player_name=str(row[Columns.player_name]),
             team_name=str(row[Columns.team_name]),
-            week=int(row[Columns.week]),
-            round_number=int(row[Columns.round_number]),
-            score=int(row[Columns.score]),
-            points=float(row[Columns.points]),
-            calculated_score=bool(not pd.isna(row[Columns.input_data]))
+            week=_safe_int_cell(row[Columns.week], 0),
+            round_number=_safe_int_cell(row.get(Columns.round_number), 0),
+            score=_safe_int_cell(row[Columns.score], 0),
+            points=_safe_float_cell(row.get(Columns.points), 0.0),
+            calculated_score=bool(not pd.isna(row[Columns.input_data])),
         )
 
     def _convert_to_raw_team_data(self, team_df: pd.DataFrame) -> RawTeamData:
@@ -530,6 +563,7 @@ class DataAdapterPandas(DataAdapter):
         players = [
             self._convert_to_raw_player_data(row)
             for _, row in team_df.iterrows()
+            if _row_ok_for_raw_player(row)
         ]
         return RawTeamData(
             team_name=str(team_df[Columns.team_name].iloc[0]),
@@ -546,7 +580,10 @@ class DataAdapterPandas(DataAdapter):
         team_df = self.get_filtered_data(filters=filters)
         if team_df.empty:
             return None
-        return self._convert_to_raw_team_data(team_df)
+        raw = self._convert_to_raw_team_data(team_df)
+        if not raw.players:
+            return None
+        return raw
 
     def get_raw_league_data(self, league: str, season: str) -> RawLeagueData:
         """Get raw league data as DTO"""

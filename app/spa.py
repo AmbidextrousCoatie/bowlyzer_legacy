@@ -10,7 +10,8 @@ LEGACY_PATH_MAP: dict[str, str] = {
     "/league/stats": "/liga",
     "/league/club_matrix": "/diagnose/club-matrix",
     "/league/week_matrix": "/diagnose/liga-wochen",
-    "/team/stats": "/mannschaft",
+    "/team/stats": "/club",
+    "/mannschaft": "/club",
     "/player/stats": "/spieler",
     "/tournament/stats": "/turnier",
 }

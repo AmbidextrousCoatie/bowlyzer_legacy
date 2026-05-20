@@ -12,6 +12,7 @@ from app.services.statistics_service import StatisticsService
 from app.models.statistics_models import LeagueStatistics, LeagueResults
 from app.models.series_data import SeriesData
 from data_access.schema import Columns
+from data_access.text_norm import normalize_unicode_label, safe_rank_int
 from data_access.score_utils import (
     mean_scores,
     pinfall_display,
@@ -141,13 +142,14 @@ class LeagueService:
         )
         if df is None or df.empty or Columns.team_name not in df.columns:
             return 0
-        if team_name not in df[Columns.team_name].astype(str).values:
+        needle = normalize_unicode_label(team_name)
+        if needle not in set(df[Columns.team_name].astype(str).map(normalize_unicode_label)):
             return 0
         team_rank = df.groupby(Columns.team_name)[Columns.points].sum().rank(ascending=False)
-        try:
-            return int(team_rank[team_name])
-        except (KeyError, TypeError, ValueError):
-            return 0
+        for idx in team_rank.index:
+            if normalize_unicode_label(str(idx)) == needle:
+                return safe_rank_int(team_rank.loc[idx])
+        return 0
 
     def _get_club_source_dataframe(self) -> pd.DataFrame:
         """Return base dataframe used for club matrix computations."""
@@ -366,9 +368,9 @@ class LeagueService:
         """
         Scan league input rows for data-quality oddities with Liga deep-link context.
 
-        Supported types: unnumbered_team, low_score
+        Supported types: unnumbered_team, low_score, incomplete_row
         """
-        allowed_types = {"unnumbered_team", "low_score"}
+        allowed_types = {"unnumbered_team", "low_score", "incomplete_row"}
         selected_types = (
             {t for t in (types or []) if t in allowed_types} or allowed_types
         )
@@ -547,6 +549,101 @@ class LeagueService:
                     }
                 ):
                     break
+
+        if "incomplete_row" in selected_types and len(oddities) < limit:
+            # Einzelspieler-Zeilen ohne Spieltag und/oder ohne gültiges Ergebnis (z. B. pd.NA in Import)
+            if Columns.week in df.columns and Columns.score in df.columns:
+                player_mask = pd.Series(True, index=df.index)
+                if Columns.player_name in df.columns:
+                    players = df[Columns.player_name].fillna("").astype(str).str.strip()
+                    player_mask &= players.ne("") & players.ne("Team Total")
+                if Columns.position in df.columns:
+                    positions = pd.to_numeric(df[Columns.position], errors="coerce").fillna(0)
+                    player_mask &= positions.gt(0)
+
+                wcol = df[Columns.week]
+                week_bad = wcol.isna()
+                try:
+                    wstr = wcol.astype(str).str.strip()
+                    week_bad = week_bad | wstr.isin(["", "nan", "None", "<NA>", "NaT", "<nat>"])
+                except Exception:
+                    pass
+
+                scores_num = pd.to_numeric(df[Columns.score], errors="coerce")
+                score_bad = scores_num.isna()
+
+                bad_df = df.loc[player_mask & (week_bad | score_bad)].copy()
+                bad_df = bad_df.sort_values(
+                    by=[Columns.season, Columns.league_name, Columns.week, Columns.player_name],
+                    na_position="last",
+                )
+
+                for idx, row in bad_df.iterrows():
+                    season = str(row.get(Columns.season) or "").strip()
+                    league = str(row.get(Columns.league_name) or "").strip()
+                    team = str(row.get(Columns.team_name) or "").strip()
+                    player = str(row.get(Columns.player_name) or "").strip()
+                    week = row.get(Columns.week)
+                    round_number = row.get(Columns.round_number)
+                    match_number = row.get(Columns.match_number)
+
+                    wm = bool(week_bad.loc[idx]) if idx in week_bad.index else True
+                    sm = bool(score_bad.loc[idx]) if idx in score_bad.index else True
+
+                    missing_bits: List[str] = []
+                    if wm:
+                        missing_bits.append("Spieltag fehlt")
+                    if sm:
+                        missing_bits.append("Ergebnis fehlt oder ungültig")
+                    gap = ", ".join(missing_bits) if missing_bits else "unvollständige Zeile"
+
+                    if season or league:
+                        message = f"{player} ({team}): {gap} — {league or '—'} · {season or '—'}"
+                    else:
+                        message = f"{player} ({team}): {gap}"
+
+                    link_week = week if not wm else None
+                    link_params = self._liga_deep_link_params(
+                        season=season,
+                        league=league,
+                        week=link_week,
+                        team=team,
+                        round_number=round_number,
+                    )
+                    oddity_id = "|".join(
+                        [
+                            "incomplete_row",
+                            str(idx),
+                            season,
+                            league,
+                            str(week),
+                            str(match_number),
+                            team,
+                            player,
+                        ]
+                    )
+                    severity = "critical" if (wm and sm) else "bad"
+                    if not _append(
+                        {
+                            "id": oddity_id,
+                            "type": "incomplete_row",
+                            "severity": severity,
+                            "message": message,
+                            "context": {
+                                "season": season,
+                                "league": league,
+                                "week": week,
+                                "round": round_number,
+                                "match_number": match_number,
+                                "team": team,
+                                "player": player,
+                                "missing_week": 1 if wm else 0,
+                                "missing_score": 1 if sm else 0,
+                            },
+                            "deep_link": {"path": "/liga", "params": link_params},
+                        }
+                    ):
+                        break
 
         truncated = len(oddities) >= limit
         by_type = {key: summary_counts.get(key, 0) for key in sorted(selected_types)}

@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import { buildUrl, fetchJson } from "../lib/api";
 import type { ClubMatrixSeasonCell } from "../lib/clubMatrixCell";
 import type { TableData } from "../lib/datatable/types";
@@ -372,6 +372,28 @@ export function useClubMatrix(club: string | null, onlyUnnumbered: boolean) {
   });
 }
 
+/** One matrix fetch per club (parallel) for diagnosis multi-club view. */
+export function useClubMatrices(selectedClubs: string[], onlyUnnumbered: boolean) {
+  const database =
+    typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("database")
+      : null;
+  return useQueries({
+    queries: selectedClubs.map((club) => ({
+      queryKey: ["league", "club-matrix", database ?? "", club, onlyUnnumbered],
+      queryFn: () =>
+        fetchJson<ClubMatrixPayload>(
+          buildUrl("/league/get_club_matrix", {
+            club,
+            only_unnumbered: onlyUnnumbered ? 1 : undefined,
+          }),
+        ),
+      staleTime: DIAGNOSIS_LIST_STALE_MS,
+      enabled: Boolean(club),
+    })),
+  });
+}
+
 export function useWeekMatrix(expectedWeeks: number) {
   const database =
     typeof window !== "undefined"
@@ -387,7 +409,7 @@ export function useWeekMatrix(expectedWeeks: number) {
   });
 }
 
-export type DataOddityType = "unnumbered_team" | "low_score";
+export type DataOddityType = "unnumbered_team" | "low_score" | "incomplete_row";
 
 export type DataOddity = {
   id: string;

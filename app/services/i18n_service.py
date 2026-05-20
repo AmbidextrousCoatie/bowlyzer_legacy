@@ -155,7 +155,9 @@ class I18nService:
             "ui.player.competition": {"en": "Competition", "de": "Wettbewerb"},
             "ui.player.club": {"en": "Club", "de": "Verein"},
 
-            # Namespaced: Team / Mannschaft page (always "Club", not "Verein")
+            # Namespaced: Club page (/club) — team drill-down within a club
+            "ui.team.page_title": {"en": "Club", "de": "Club"},
+            "ui.team.eyebrow": {"en": "Actors", "de": "Akteure"},
             "ui.team.club": {"en": "Club", "de": "Club"},
             "ui.team.page_desc": {
                 "en": "Club overview with all teams — per-team analysis like the legacy team view.",

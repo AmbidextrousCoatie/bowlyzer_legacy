@@ -10,6 +10,60 @@ export type TournamentRound = {
   round_name?: string | null;
 };
 
+/** Uniform vs spread for numeric handicap fields in format infobox */
+export type HandicapFormatBand =
+  | { kind: "uniform"; value: number }
+  | { kind: "range"; min: number; max: number; mean: number };
+
+/** `/tournament/get_tournament_format` — enriched rounds + KO config summary */
+export type TournamentHandicapFormatInfo = {
+  used: boolean;
+  columns: {
+    handicap: boolean;
+    apriori_average: boolean;
+    handicap_reference: boolean;
+  };
+  pins: HandicapFormatBand | null;
+  a_priori_average: HandicapFormatBand | null;
+  handicap_reference: HandicapFormatBand | null;
+};
+
+/** Fallback when `/tournament/get_tournament_format` is cached or older backend without `handicap`. */
+export const EMPTY_TOURNAMENT_HANDICAP_FORMAT: TournamentHandicapFormatInfo = {
+  used: false,
+  columns: {
+    handicap: false,
+    apriori_average: false,
+    handicap_reference: false,
+  },
+  pins: null,
+  a_priori_average: null,
+  handicap_reference: null,
+};
+
+/** `/tournament/get_tournament_format` — enriched rounds + KO config summary */
+export type TournamentFormatInfo = {
+  round_count: number;
+  rounds: Array<{
+    round_number: number;
+    round_name: string;
+    is_ko_finale_cluster?: boolean;
+  }>;
+  handicap?: TournamentHandicapFormatInfo;
+  ko_finale_round_number_in_data?: number | null;
+  ko_finale_series?: string;
+  ko_finale_series_label_de?: string;
+  ko_finale_series_label_en?: string;
+  qualifying_cut_span?: {
+    rank: number;
+    first_round: number;
+    through_round: number;
+  } | null;
+  qualifying_cut_pair?: { round: number; rank: number } | null;
+  config: Record<string, unknown>;
+  config_note?: string | null;
+};
+
 export type TournamentSummaryCard = {
   title?: string | null;
   subtitle?: string | null;
@@ -47,6 +101,8 @@ export type TournamentFieldProgress = {
   round_end_lines?: Array<number | null>;
   cut_lines_avg?: Array<number | null>;
   cut_lines_position?: Array<number | null>;
+  /** Cut rank threshold per game index (aligns with `labels`) for position-chart tooltips. */
+  cut_position_at_game?: Array<number | null>;
   cut_line_series?: TournamentCutLineSeries[];
   cut_lines_avg_dynamic?: Record<string, Array<number | null>>;
   participant_count?: number;
@@ -123,6 +179,7 @@ export type TournamentProgressSeries = {
   round_end_lines?: Array<number | null>;
   cut_lines_avg?: Array<number | null>;
   cut_lines_position?: Array<number | null>;
+  cut_position_at_game?: Array<number | null>;
   cut_line_series?: TournamentCutLineSeries[];
   cut_lines_avg_dynamic?: Record<string, Array<number | null>>;
   participant_count?: number;
@@ -207,6 +264,19 @@ export function useTournamentRounds(season: string | null, tournament: string | 
   });
 }
 
+export function useTournamentFormat(season: string | null, tournament: string | null) {
+  return useQuery({
+    // Bump when API shape changes (e.g. handicap on get_tournament_format) so TanStack Query refetches.
+    queryKey: ["tournament", "format", "v2-handicap", season, tournament],
+    queryFn: () =>
+      fetchJson<TournamentFormatInfo>(
+        buildTournamentUrl("/tournament/get_tournament_format", { season, tournament }),
+      ),
+    enabled: !!season && !!tournament,
+    staleTime: TOURNAMENT_LIST_STALE_MS,
+  });
+}
+
 export function useTournamentPlayers(
   season: string | null,
   tournament: string | null,
@@ -253,7 +323,7 @@ export function usePlayerSectionForTournament(
   player: string | null,
 ) {
   return useQuery({
-    queryKey: ["tournament", "player-section", season, tournament, player],
+    queryKey: ["tournament", "player-section", "v4-hcp-per-spiel", season, tournament, player],
     queryFn: () =>
       fetchJson<TournamentPlayerSection>(
         buildTournamentUrl("/tournament/get_player_section", {
