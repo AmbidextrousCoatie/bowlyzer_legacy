@@ -18,6 +18,7 @@ class Columns:
     team_name_opponent: str = 'Opponent'
     score: str = 'Score'
     points: str = 'Points'
+    bonus_points: str = 'Bonus Points'
     input_data: str = 'Input Data'
     computed_data: str = 'Computed Data'
     
@@ -41,7 +42,7 @@ class Columns:
         if selection is None:
             return [self.season, self.week, self.date, self.league_name, self.players_per_team, self.location, self.round_number, 
                     self.match_number, self.team_name, self.position, self.player_name, self.player_id, self.team_name_opponent,
-                    self.score, self.points, self.input_data, self.computed_data, self.event_type, self.event_name, 
+                    self.score, self.points, self.bonus_points, self.input_data, self.computed_data, self.event_type, self.event_name, 
                     self.round_name, self.club, self.game_number, self.handicap, self.apriori_average,
                     self.handicap_reference, self.stage_rank, self.cumulative_score, self.cut_line]
         

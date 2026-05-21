@@ -42,9 +42,13 @@ def normalize_legacy_dataframe_types(df: pd.DataFrame) -> pd.DataFrame:
         Columns.game_number,
         Columns.player_id,
     ]
+    if Columns.bonus_points not in out.columns:
+        out[Columns.bonus_points] = "0"
+
     numeric_float_cols = [
         Columns.score,
         Columns.points,
+        Columns.bonus_points,
         Columns.handicap,
         Columns.apriori_average,
         Columns.handicap_reference,

@@ -46,6 +46,7 @@ OUTPUT_HEADERS = [
     "Opponent",
     "Score",
     "Points",
+    "Bonus Points",
     "Input Data",
     "Computed Data",
 ]
@@ -236,6 +237,7 @@ def convert_source_rows_to_legacy(source_rows: List[Dict[str, str]]) -> List[Dic
                     "Player ID": player_id,
                     "Score": score_raw,
                     "Points": points_for_duel(score, opp),
+                    "Bonus Points": "0",
                     "Input Data": "True",
                     "Computed Data": "False",
                 }
@@ -253,6 +255,7 @@ def convert_source_rows_to_legacy(source_rows: List[Dict[str, str]]) -> List[Dic
                 "Player ID": "0",
                 "Score": total_score_raw,
                 "Points": points_for_team_total(total_score, total_opp),
+                "Bonus Points": "0",
                 "Input Data": "False",
                 "Computed Data": "True",
             }

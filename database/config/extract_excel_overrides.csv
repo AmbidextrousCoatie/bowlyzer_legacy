@@ -1,6 +1,7 @@
-match_type,match_value,force_season,force_league,force_available_weeks,exclude_file,reason
-exact_path,C:\tmp\Sammlung-Ligaergebnisse\Ligaprogramme Nord 2023-24\BYL Männer.xlsx,23/24,,,false,Workbook season cell is inconsistent with historical folder grouping (fix BayL 23/24 incident)
-exact_path,C:\tmp\Sammlung-Ligaergebnisse\Ligaprogramme Nord 2023-24\BYL Frauen.xlsx,23/24,,,false,Workbook season cell is inconsistent with historical folder grouping (fix BayL (D) 23/24 incident)
-exact_path,C:\tmp\Sammlung-Ligaergebnisse\Liga 2022-23\BZL N1 M.xlsx,,BZL N1,,false,Normalize to canonical league ID
-exact_path,C:\tmp\Sammlung-Ligaergebnisse\Liga 2022-23\KRL N1 M + LL N F.xlsx,,KL N1,,false,"Normalize mixed workbook label to canonical league ID; This league season is rather special, since it features both male and female teams in the same league. dunno how to handle this properly"
-exact_path,C:\tmp\Sammlung-Ligaergebnisse\Ligaprogramme Nord 2023-24\LL N1 Männer.xlsx,,LL N1,,false,Normalize to canonical league ID
+match_type,match_value,force_season,force_league,force_available_weeks,exclude_file,force_season_from_path_if_week,reason
+exact_path,C:\tmp\Sammlung-Ligaergebnisse\Ligaprogramme Nord 2023-24\BYL Männer.xlsx,23/24,,,false,,Workbook season cell is inconsistent with historical folder grouping (fix BayL 23/24 incident)
+exact_path,C:\tmp\Sammlung-Ligaergebnisse\Ligaprogramme Nord 2023-24\BYL Frauen.xlsx,23/24,,,false,,Workbook season cell is inconsistent with historical folder grouping (fix BayL (D) 23/24 incident)
+exact_path,C:\tmp\Sammlung-Ligaergebnisse\Liga 2022-23\BZL N1 M.xlsx,,BZL N1,,false,,Normalize to canonical league ID
+exact_path,C:\tmp\Sammlung-Ligaergebnisse\Liga 2022-23\KRL N1 M + LL N F.xlsx,,KL N1,,false,,"Normalize mixed workbook label to canonical league ID; This league season is rather special, since it features both male and female teams in the same league. dunno how to handle this properly"
+exact_path,C:\tmp\Sammlung-Ligaergebnisse\Ligaprogramme Nord 2023-24\LL N1 Männer.xlsx,,LL N1,,false,,Normalize to canonical league ID
+data_format_pre_2022,data_format_pre_2022,,,,false,"1,2","Pre-2022 weeks 1-2: Ligabericht often still shows prior season (18/19); when folder path season differs, use path season"

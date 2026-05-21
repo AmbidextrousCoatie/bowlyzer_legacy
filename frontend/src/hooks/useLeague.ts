@@ -340,15 +340,17 @@ export type WeekMatrixCell = {
   status: "ok" | "warn" | "bad" | "critical" | "";
   missing_weeks?: number[];
   available_weeks?: number[];
+  /** Expected matchdays for this league/season (Bayernliga=6, else team count). */
+  expected_weeks?: number;
+  team_count?: number;
 };
 
 export type WeekMatrixPayload = {
   matrix: {
     seasons: string[];
     rows: Array<{ league: string; seasons: Record<string, WeekMatrixCell> }>;
-    expected_weeks: number;
+    expected_weeks_rule?: string;
   };
-  expected_weeks: number;
   league_long_names?: Record<string, string>;
 };
 
@@ -394,17 +396,14 @@ export function useClubMatrices(selectedClubs: string[], onlyUnnumbered: boolean
   });
 }
 
-export function useWeekMatrix(expectedWeeks: number) {
+export function useWeekMatrix() {
   const database =
     typeof window !== "undefined"
       ? new URLSearchParams(window.location.search).get("database")
       : null;
   return useQuery({
-    queryKey: ["league", "week-matrix", database ?? "", expectedWeeks],
-    queryFn: () =>
-      fetchJson<WeekMatrixPayload>(
-        buildUrl("/league/get_week_matrix", { expected_weeks: expectedWeeks }),
-      ),
+    queryKey: ["league", "week-matrix", database ?? ""],
+    queryFn: () => fetchJson<WeekMatrixPayload>(buildUrl("/league/get_week_matrix")),
     staleTime: DIAGNOSIS_LIST_STALE_MS,
   });
 }

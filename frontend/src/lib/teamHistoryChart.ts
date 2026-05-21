@@ -1,5 +1,6 @@
 import type { EChartsOption } from "echarts";
 import type { TeamHistory, TeamHistorySeason } from "../hooks/useTeam";
+import { compareSeasonString } from "./playerClubHistory";
 
 export const LEAGUE_AXIS_LABELS: Record<number, string> = {
   1: "1. Bundesliga",
@@ -39,7 +40,7 @@ export function buildPositionHistoryChartOption(
   for (const s of seriesList) {
     Object.keys(s.history).forEach((k) => seasonSet.add(k));
   }
-  const seasons = [...seasonSet].sort();
+  const seasons = [...seasonSet].sort(compareSeasonString);
   if (seasons.length === 0) return null;
 
   return {
@@ -70,16 +71,17 @@ export function buildPositionHistoryChartOption(
       top: 40,
       bottom: seriesList.length > 1 ? 56 : 32,
     },
+    // boundaryGap % is supported at runtime; echarts types only allow boolean.
     xAxis: {
       type: "category",
       data: seasons,
-      boundaryGap: ["10%", "10%"],
+      boundaryGap: ["20%", "20%"],
       position: "bottom",
       axisLine: { show: true, onZero: false },
       axisTick: { show: true, alignWithLabel: true },
       axisLabel: { show: true },
       splitLine: { show: false },
-    },
+    } as unknown as NonNullable<EChartsOption["xAxis"]>,
     yAxis: {
       type: "value",
       inverse: true,

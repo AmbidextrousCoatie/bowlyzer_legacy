@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useWeekMatrix, type WeekMatrixCell } from "../../hooks/useLeague";
 import { useTranslations } from "../../hooks/useTranslations";
@@ -17,10 +16,22 @@ function cellClass(cell: WeekMatrixCell | undefined): string {
   return STATUS_BG[status] ?? "";
 }
 
+function cellTitle(cell: WeekMatrixCell | undefined, league: string, season: string): string {
+  if (!cell) return `${league} · ${season}`;
+  const expected = cell.expected_weeks;
+  const teams = cell.team_count;
+  const parts = [`${league} · ${season}`];
+  if (expected != null) parts.push(`${expected} Spieltage erwartet`);
+  if (teams != null && teams > 0) parts.push(`${teams} Teams`);
+  if (cell.missing_weeks?.length) {
+    parts.push(`fehlend: ${cell.missing_weeks.join(", ")}`);
+  }
+  return parts.join(" · ");
+}
+
 export function LeagueWeekMatrix() {
   const { t } = useTranslations();
-  const [expectedWeeks, setExpectedWeeks] = useState(6);
-  const query = useWeekMatrix(expectedWeeks);
+  const query = useWeekMatrix();
   const matrix = query.data?.matrix;
   const longNames = query.data?.league_long_names ?? {};
 
@@ -36,25 +47,18 @@ export function LeagueWeekMatrix() {
         <p className="text-body text-muted mt-2 max-w-[72ch]">
           {t(
             "ui.diagnosis.week_matrix_desc",
-            "Zeilen sind Ligen, Spalten Saisons. Pro Zelle fehlende Spieltage (erwartet 1…n) oder ✓ wenn vollständig.",
+            "Zeilen sind Ligen, Spalten Saisons. Pro Zelle fehlende Spieltage oder ✓ wenn vollständig. Erwartete Spieltage: Bayernliga immer 6, sonst Anzahl Teams in der Liga (historisch oft mehr als 6).",
           )}
         </p>
       </header>
 
       <DiagnosisToolbar>
-        <label className="flex flex-col gap-1.5">
-          <span className="text-label text-muted">
-            {t("ui.diagnosis.expected_weeks", "Erwartete Spieltage")}
-          </span>
-          <input
-            type="number"
-            min={1}
-            max={52}
-            value={expectedWeeks}
-            onChange={(e) => setExpectedWeeks(Math.max(1, Number(e.target.value) || 6))}
-            className="h-9 w-24 rounded-sm border border-border bg-surface-subtle px-2.5 font-mono text-small"
-          />
-        </label>
+        <p className="text-small text-muted max-w-[72ch]">
+          {t(
+            "ui.diagnosis.week_matrix_rule_hint",
+            "Corona-Saisons ohne Spielbetrieb (z. B. 20/21, 21/22) erscheinen nicht als fehlende Wochen, solange für die Liga/Saison keine Daten erwartet werden.",
+          )}
+        </p>
       </DiagnosisToolbar>
 
       {query.isError && (
@@ -110,7 +114,7 @@ export function LeagueWeekMatrix() {
                               <Link
                                 to={href}
                                 className="block text-accent hover:text-accent-hover hover:underline"
-                                title={`${row.league} · ${season}`}
+                                title={cellTitle(cell, row.league, season)}
                               >
                                 {label}
                               </Link>

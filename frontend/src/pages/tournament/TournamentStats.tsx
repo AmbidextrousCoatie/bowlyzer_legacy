@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useMobileNav } from "../../context/MobileNavContext";
+import { pickLatestSeason } from "../../hooks/useLeague";
 import {
   usePlayerSectionForTournament,
   useTournamentNames,
@@ -54,17 +55,23 @@ export function TournamentStats() {
     resolvedPlayer || null,
   );
 
-  // Backfill defaults: if season missing, pick first available; if tournament
-  // missing for the chosen season, pick first.
+  // Backfill defaults: if season missing or invalid, pick latest available season.
   useEffect(() => {
     if (!seasonsQuery.isSuccess) return;
     const list = seasonsQuery.data ?? [];
-    if (!season && list.length > 0) {
-      const next = new URLSearchParams(searchParams);
-      next.set("season", list[0]);
-      setSearchParams(next, { replace: true });
+    if (list.length === 0) return;
+    const latest = pickLatestSeason(list);
+    if (!latest) return;
+    if (season && list.includes(season)) return;
+    const next = new URLSearchParams(searchParams);
+    next.set("season", latest);
+    if (season !== latest) {
+      next.delete("tournament");
+      next.delete("round");
+      next.delete("player");
     }
-  }, [seasonsQuery.isSuccess, seasonsQuery.data, season, searchParams, setSearchParams]);
+    setSearchParams(next, { replace: true });
+  }, [seasonsQuery.isSuccess, seasonsQuery.data, season, tournament, searchParams, setSearchParams]);
 
   useEffect(() => {
     if (!tournamentsQuery.isSuccess) return;

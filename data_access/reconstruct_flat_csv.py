@@ -450,6 +450,7 @@ def reconstruct_flat_csv() -> pd.DataFrame:
 	# Fill Points with calculated values, including zeros
 	points_series = result["points_calc"].round(1)
 	final["Points"] = points_series.map(lambda x: "0.0" if pd.isna(x) else (f"{x:.1f}"))
+	final["Bonus Points"] = "0"
 	final["Input Data"] = "True"
 	final["Computed Data"] = "False"
 	
@@ -534,6 +535,7 @@ def reconstruct_flat_csv() -> pd.DataFrame:
 			"Opponent": opponent,
 			"Score": str(int(total_score)),
 			"Points": f"{team_points_val:.1f}",
+			"Bonus Points": "0",
 			"Input Data": "False",
 			"Computed Data": "True"
 		}

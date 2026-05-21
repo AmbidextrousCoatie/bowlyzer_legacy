@@ -31,14 +31,16 @@ _ENDPOINT_PAYLOAD_VERSION: Dict[str, str] = {
     "get_game_team_details": "abs-pinfall-v1",
     "get_team_week_details_table": "abs-pinfall-v1",
     "get_team_week_head_to_head_table": "abs-pinfall-v1",
-    "get_week_matrix": "league-long-names-v1",
-    "get_team_vs_team_comparison": "standings-order-v2",
+    "get_week_matrix": "per-league-weeks-v2",
+    "get_team_vs_team_comparison": "unplayed-empty-v3",
     "get_club_matrix": "matrix-pos-v1",
     "get_tournament_section": "gesamt-cut-v7",
     "get_player_section": "player-round-hcp-per-game-v1",
     "get_tournament_field_progress": "field-progress-v4",
     # Added handicap block + round names in payload — bump invalidates old disk cache without `handicap`.
     "get_tournament_format": "format-handicap-v1",
+    "get_available_tournaments": "manual-merge-rev-v1",
+    "get_available_seasons": "manual-merge-rev-v1",
 }
 
 
@@ -63,22 +65,35 @@ def _sanitize_db_id(database_id: str) -> str:
     return s[:120] or "default"
 
 
+def _file_revision_part(path: Path) -> str:
+    if not path.is_file():
+        return f"{path.resolve()}|missing"
+    st = path.stat()
+    return f"{path.resolve()}|{st.st_size}|{int(st.st_mtime_ns)}"
+
+
 def compute_data_revision(database_id: str) -> str:
     """
-    Short hash so when the CSV changes (replace or edit), revision changes.
+    Short hash so when backing CSV(s) change (replace or edit), revision changes.
+
+    Includes merge_file_paths (e.g. tournament_manual_postprocessed.csv merged into
+    db_tournament_regions_2026_gf) so club Excel imports invalidate tournament cache.
     """
     cfg = database_config.get_source_config(database_id)
-    if not cfg or not cfg.file_path:
+    if not cfg:
         return "unknown"
-    p = Path(cfg.file_path)
-    if not p.is_file():
-        return "missing"
-    st = p.stat()
-    parts = f"{p.resolve()}|{st.st_size}|{int(st.st_mtime_ns)}"
+    parts: list[str] = []
+    if cfg.file_path:
+        parts.append(_file_revision_part(Path(cfg.file_path)))
+    for extra in getattr(cfg, "merge_file_paths", None) or ():
+        parts.append(_file_revision_part(Path(extra)))
+    if not parts:
+        return "unknown"
+    blob = "|".join(parts)
     extra = (os.environ.get(_ENV_REVISION) or "").strip()
     if extra:
-        parts += f"|{extra}"
-    return hashlib.sha256(parts.encode("utf-8")).hexdigest()[:12]
+        blob += f"|{extra}"
+    return hashlib.sha256(blob.encode("utf-8")).hexdigest()[:12]
 
 
 def effective_database_id(explicit_database: Optional[str]) -> str:

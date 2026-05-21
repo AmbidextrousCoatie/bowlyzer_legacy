@@ -9,6 +9,7 @@ from data_access.models.league_models import LeagueQuery
 from data_access.models.league_models import TeamSeasonPerformance, TeamWeeklyPerformance
 from data_access.models.raw_data_models import RawPlayerData, RawTeamData, RawLeagueData
 from data_access.dtype_normalization import normalize_legacy_dataframe_types
+from data_access.score_utils import league_points_cell
 from data_access.text_norm import normalize_unicode_label
 
 
@@ -470,7 +471,7 @@ class DataAdapterPandas(DataAdapter):
             team_name = row[Columns.team_name]
             week_num = row[Columns.week]
             score = row[Columns.score]
-            points = row[Columns.points]
+            points = league_points_cell(row)
             players_per_team = row.get(Columns.players_per_team, 4)  # Get players per team or default to 4
             
             # Initialize team data if not exists

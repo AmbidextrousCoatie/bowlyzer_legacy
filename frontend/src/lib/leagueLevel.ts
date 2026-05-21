@@ -1,0 +1,36 @@
+/** Mirrors ``app/utils/league_utils.get_league_level`` (``league_mapping.csv``). */
+const LEAGUE_LEVEL_BY_ID: Record<string, number> = {
+  BayL: 3,
+  "BayL (D)": 3,
+  "LL N1": 4,
+  "LL N2": 4,
+  "LL N (D)": 4,
+  "LL S": 4,
+  "LL S (D)": 4,
+  "BZOL N1": 5,
+  "BZOL N2": 5,
+  "BZOL N3": 5,
+  "BZOL S1": 5,
+  "BZOL S1 (D)": 5,
+  "BZOL S2": 5,
+  "BZOL S3": 5,
+  "BZL N1": 6,
+  "BZL N2": 6,
+  "BZL N3": 6,
+  "BZL N4": 6,
+  "BZL S1": 6,
+  "BZL S2": 6,
+  "BZL S3": 6,
+  "KL N1": 7,
+  "KL N2": 7,
+  "KL N3": 7,
+  "KL S1": 7,
+  "KL S2": 7,
+  "KL S3": 7,
+  "KL S4": 7,
+};
+
+export function getLeagueLevel(league: string): number {
+  const key = String(league ?? "").trim();
+  return LEAGUE_LEVEL_BY_ID[key] ?? 99;
+}

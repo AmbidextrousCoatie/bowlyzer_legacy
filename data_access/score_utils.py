@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import pandas as pd
 
+from data_access.schema import Columns
+
 
 def scores_for_totals(series: pd.Series) -> pd.Series:
     """Numeric pinfall series for sum/mean (absolute values)."""
@@ -52,3 +54,24 @@ def mean_scores(series: pd.Series, round_places: int | None = None) -> float:
     if round_places is not None:
         return round(val, round_places)
     return val
+
+
+def sum_league_points(df: pd.DataFrame) -> float:
+    """Match Points + Bonus Points (legacy CSVs without bonus column use Points only)."""
+    if df is None or df.empty:
+        return 0.0
+    total = pd.to_numeric(df[Columns.points], errors="coerce").fillna(0).sum()
+    if Columns.bonus_points in df.columns:
+        total += pd.to_numeric(df[Columns.bonus_points], errors="coerce").fillna(0).sum()
+    return float(total)
+
+
+def league_points_cell(row: pd.Series) -> float:
+    """Single-row league points (match + weekly placement bonus)."""
+    pts = pd.to_numeric(row.get(Columns.points), errors="coerce")
+    pts = 0.0 if pd.isna(pts) else float(pts)
+    if Columns.bonus_points in row.index:
+        bonus = pd.to_numeric(row.get(Columns.bonus_points), errors="coerce")
+        if not pd.isna(bonus):
+            pts += float(bonus)
+    return pts

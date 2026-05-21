@@ -18,6 +18,7 @@ from data_access.score_utils import (
     pinfall_display,
     pinfall_for_total,
     scores_for_totals,
+    sum_league_points,
     sum_scores,
     sum_scores_float,
 )
@@ -33,6 +34,7 @@ from app.utils.league_utils import (
     resolve_league_long_name,
 )
 from app.utils.json_safe import json_safe
+from app.utils.league_week_expectations import expected_weeks_for_league
 # from data_access.series_data import calculate_series_data, get_player_series_data, get_team_series_data
 
 class ColumnWidths:
@@ -260,28 +262,33 @@ class LeagueService:
             "rows": team_rows,
         }
 
-    def get_league_week_matrix(self, expected_weeks: int = 6) -> Dict[str, Any]:
+    def get_league_week_matrix(self, expected_weeks: int = None) -> Dict[str, Any]:
         """
         Build a league-vs-season matrix with missing week information.
+
+        Expected matchdays per cell:
+        - Bayernliga (``BayL``, ``BayL (D)``): always 6
+        - all other leagues: number of teams in that league/season
+
+        ``expected_weeks`` is ignored (kept for API compatibility).
 
         Cell semantics:
         - all expected weeks available -> checkmark
         - missing weeks -> comma-separated week numbers
         """
-        expected_weeks = max(1, int(expected_weeks or 6))
-        expected_set = set(range(1, expected_weeks + 1))
+        _ = expected_weeks  # deprecated global override
 
         filters = {
             Columns.computed_data: {"value": True, "operator": "eq"},
         }
         df = self.adapter.get_filtered_data(filters=filters)
         if df is None or df.empty:
-            return {"seasons": [], "rows": [], "expected_weeks": expected_weeks}
+            return {"seasons": [], "rows": [], "expected_weeks_rule": "bayernliga=6,else=team_count"}
 
         required = [Columns.season, Columns.league_name, Columns.week]
         for col in required:
             if col not in df.columns:
-                return {"seasons": [], "rows": [], "expected_weeks": expected_weeks}
+                return {"seasons": [], "rows": [], "expected_weeks_rule": "bayernliga=6,else=team_count"}
 
         matrix_df = df[required].copy()
         matrix_df[Columns.season] = matrix_df[Columns.season].astype(str).str.strip()
@@ -292,7 +299,7 @@ class LeagueService:
         matrix_df = matrix_df[matrix_df[Columns.week] > 0]
 
         if matrix_df.empty:
-            return {"seasons": [], "rows": [], "expected_weeks": expected_weeks}
+            return {"seasons": [], "rows": [], "expected_weeks_rule": "bayernliga=6,else=team_count"}
 
         seasons = sorted(matrix_df[Columns.season].unique())
         leagues = sorted(matrix_df[Columns.league_name].unique())
@@ -309,8 +316,15 @@ class LeagueService:
             for season in seasons:
                 available_weeks = grouped.get((league, season), [])
                 available_set = set(available_weeks)
+                team_count = self._league_team_count(league, season)
+                expected_count = expected_weeks_for_league(league, team_count)
+                expected_set = set(range(1, expected_count + 1))
                 missing_weeks = sorted(expected_set - available_set)
-                coverage_ratio = len(available_set.intersection(expected_set)) / expected_weeks
+                coverage_ratio = (
+                    len(available_set.intersection(expected_set)) / expected_count
+                    if expected_count > 0
+                    else 0.0
+                )
 
                 if not missing_weeks:
                     label = "✓"
@@ -329,6 +343,8 @@ class LeagueService:
                     "status": status,
                     "missing_weeks": missing_weeks,
                     "available_weeks": available_weeks,
+                    "expected_weeks": expected_count,
+                    "team_count": team_count,
                 }
 
             rows.append({"league": league, "seasons": season_cells})
@@ -336,7 +352,7 @@ class LeagueService:
         return {
             "seasons": seasons,
             "rows": rows,
-            "expected_weeks": expected_weeks,
+            "expected_weeks_rule": "bayernliga=6,else=team_count",
         }
 
     def _liga_deep_link_params(
@@ -2144,7 +2160,7 @@ class LeagueService:
                 # Add team bonus points to season total (up to selected week)
                 if not team_bonus_team_data.empty:
                     team_bonus_until_week = team_bonus_team_data[team_bonus_team_data[Columns.week] <= week]
-                    team_data[team]['season_points'] += float(team_bonus_until_week[Columns.points].sum())
+                    team_data[team]['season_points'] += sum_league_points(team_bonus_until_week)
                 
                 # Calculate weekly data
                 for w in weeks_to_show:
@@ -2158,7 +2174,7 @@ class LeagueService:
                         
                         # Add team bonus points for this week
                         if not team_week_bonus.empty:
-                            week_points += float(team_week_bonus[Columns.points].sum())
+                            week_points += sum_league_points(team_week_bonus)
                         
                         team_data[team]['weekly_data'][w] = {
                             'points': format_float_one_decimal(week_points),
@@ -2316,7 +2332,7 @@ class LeagueService:
                 if week_cap is not None:
                     t_bonus = t_bonus[pd.to_numeric(t_bonus[Columns.week], errors="coerce") <= week_cap]
                 if not t_bonus.empty:
-                    season_points += float(t_bonus[Columns.points].sum())
+                    season_points += sum_league_points(t_bonus)
             totals[team] = (season_points, season_score)
 
         return sorted(teams, key=lambda t: totals.get(t, (0.0, 0)), reverse=True)
@@ -2435,9 +2451,9 @@ class LeagueService:
                 
                 # Get team bonus points for this team and week
                 team_week_data = team_data[(team_data[Columns.team_name] == team) & (team_data[Columns.week] == week)]
-                team_points = team_week_data[Columns.points].sum() if not team_week_data.empty else 0
+                team_points = sum_league_points(team_week_data) if not team_week_data.empty else 0
                 
-                # Total points = individual + team bonus
+                # Total points = individual + team (match + bonus columns)
                 total_week_points = individual_points + team_points
                 weekly_points[team].append(total_week_points)
         
@@ -4149,14 +4165,10 @@ class LeagueService:
                                 total_points_list.append(total_points)
                             
                             avg_points = round(sum(total_points_list) / len(total_points_list), 1) if total_points_list else 0.0
-                        else:
-                            avg_score = 0.0
-                            avg_points = 0.0
-                        
-                        comparison_data[team][opponent] = {
-                            'avg_score': avg_score,
-                            'avg_points': avg_points
-                        }
+                            comparison_data[team][opponent] = {
+                                'avg_score': avg_score,
+                                'avg_points': avg_points,
+                            }
             
             # Row/column order = full-season standings (not the selected week's points).
             standings_order = self._teams_in_standings_order(league, season, week=None)
@@ -4243,7 +4255,7 @@ class LeagueService:
             
             for team in sorted_teams:
                 for opponent in sorted_teams:
-                    if team != opponent and opponent in comparison_data[team]:
+                    if team != opponent and opponent in comparison_data.get(team, {}):
                         all_scores.append(comparison_data[team][opponent]['avg_score'])
                         all_points.append(comparison_data[team][opponent]['avg_points'])
             
@@ -4276,51 +4288,45 @@ class LeagueService:
                 points_column_indices.append(col_idx + 1)
                 col_idx += 2
             
+            empty_cell_style = {"backgroundColor": get_theme_color("background")}
+
             # Generate rows (using sorted teams)
             for row_idx, team in enumerate(sorted_teams):
                 position = team_positions[team]
                 row = [position, team]
-                
-                team_scores = []
-                team_points = []
-                
-                # Collect all team vs opponent data first
-                for opponent in sorted_teams:
-                    if team != opponent:
-                        if opponent in comparison_data[team]:
-                            score = comparison_data[team][opponent]['avg_score']
-                            points = comparison_data[team][opponent]['avg_points']
-                        else:
-                            score = 0.0
-                            points = 0.0
-                        team_scores.append(score)
-                        team_points.append(points)
-                
-                # Calculate and add team averages first (columns 2-3)
-                avg_score = round(sum(team_scores) / len(team_scores), 1) if team_scores else 0
-                avg_points = round(sum(team_points) / len(team_points), 1) if team_points else 0
-                row.extend([avg_score, avg_points])
-                
+
+                played_scores: List[float] = []
+                played_points: List[float] = []
+
                 # Add team columns (starting at column 4)
                 col_idx = 4
                 for opponent in sorted_teams:
                     if team != opponent:
-                        if opponent in comparison_data[team]:
+                        if opponent in comparison_data.get(team, {}):
                             score = comparison_data[team][opponent]['avg_score']
                             points = comparison_data[team][opponent]['avg_points']
+                            played_scores.append(score)
+                            played_points.append(points)
+                            row.extend([score, points])
                         else:
-                            score = 0.0
-                            points = 0.0
-                        
-                        row.extend([score, points])
+                            row.extend(["", ""])
+                            cell_metadata[f"{row_idx}:{col_idx}"] = empty_cell_style
+                            cell_metadata[f"{row_idx}:{col_idx + 1}"] = empty_cell_style
                         col_idx += 2
                     else:
-                        # Diagonal cells - empty cells
                         row.extend(["", ""])
-                        cell_metadata[f"{row_idx}:{col_idx}"] = {"backgroundColor": get_theme_color("background")}
-                        cell_metadata[f"{row_idx}:{col_idx + 1}"] = {"backgroundColor": get_theme_color("background")}
+                        cell_metadata[f"{row_idx}:{col_idx}"] = empty_cell_style
+                        cell_metadata[f"{row_idx}:{col_idx + 1}"] = empty_cell_style
                         col_idx += 2
-                
+
+                avg_score = (
+                    round(sum(played_scores) / len(played_scores), 1) if played_scores else ""
+                )
+                avg_points = (
+                    round(sum(played_points) / len(played_points), 1) if played_points else ""
+                )
+                row[2:2] = [avg_score, avg_points]
+
                 table_data.append(row)
             
             # Heatmap coloring is now handled in the frontend

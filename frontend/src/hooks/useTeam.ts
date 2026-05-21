@@ -3,6 +3,12 @@ import { buildUrl, fetchJson } from "../lib/api";
 
 const TEAM_STALE_MS = 5 * 60_000;
 
+/** Must match `useClubMatrix` — cache is keyed per `?database=` so sources do not bleed. */
+export function teamQueryDatabase(): string {
+  if (typeof window === "undefined") return "";
+  return new URLSearchParams(window.location.search).get("database") ?? "";
+}
+
 export type TeamHistorySeason = {
   league_name: string;
   final_position: number;
@@ -78,16 +84,18 @@ export type SpecialMatches = {
 };
 
 export function useTeams() {
+  const database = teamQueryDatabase();
   return useQuery({
-    queryKey: ["team", "list"],
+    queryKey: ["team", "list", database],
     queryFn: () => fetchJson<string[]>(buildUrl("/team/get_teams")),
     staleTime: TEAM_STALE_MS,
   });
 }
 
 export function useTeamSeasons(teamName: string | null) {
+  const database = teamQueryDatabase();
   return useQuery({
-    queryKey: ["team", "seasons", teamName],
+    queryKey: ["team", "seasons", database, teamName],
     queryFn: () =>
       fetchJson<string[]>(buildUrl("/team/get_available_seasons", { team_name: teamName })),
     enabled: !!teamName,
@@ -96,8 +104,9 @@ export function useTeamSeasons(teamName: string | null) {
 }
 
 export function useTeamHistory(teamName: string | null) {
+  const database = teamQueryDatabase();
   return useQuery({
-    queryKey: ["team", "history", teamName],
+    queryKey: ["team", "history", database, teamName],
     queryFn: () => fetchJson<TeamHistory>(buildUrl("/team/get_team_history", { team_name: teamName })),
     enabled: !!teamName,
     staleTime: TEAM_STALE_MS,
@@ -105,8 +114,9 @@ export function useTeamHistory(teamName: string | null) {
 }
 
 export function useLeagueComparison(teamName: string | null) {
+  const database = teamQueryDatabase();
   return useQuery({
-    queryKey: ["team", "league-comparison", teamName],
+    queryKey: ["team", "league-comparison", database, teamName],
     queryFn: () =>
       fetchJson<LeagueComparison>(
         buildUrl("/team/get_league_comparison", { team_name: teamName }),
@@ -122,8 +132,9 @@ export function useClutchAnalysis(
   clutchThreshold = 10,
 ) {
   const seasonParam = season && season !== "all" ? season : undefined;
+  const database = teamQueryDatabase();
   return useQuery({
-    queryKey: ["team", "clutch", teamName, seasonParam ?? "", clutchThreshold],
+    queryKey: ["team", "clutch", database, teamName, seasonParam ?? "", clutchThreshold],
     queryFn: () =>
       fetchJson<ClutchAnalysis>(
         buildUrl("/team/get_clutch_analysis", {
@@ -139,8 +150,9 @@ export function useClutchAnalysis(
 
 export function useConsistencyMetrics(teamName: string | null, season: string | null) {
   const seasonParam = season && season !== "all" ? season : undefined;
+  const database = teamQueryDatabase();
   return useQuery({
-    queryKey: ["team", "consistency", teamName, seasonParam ?? ""],
+    queryKey: ["team", "consistency", database, teamName, seasonParam ?? ""],
     queryFn: () =>
       fetchJson<ConsistencyMetrics>(
         buildUrl("/team/get_consistency_metrics", {
@@ -155,8 +167,9 @@ export function useConsistencyMetrics(teamName: string | null, season: string | 
 
 export function useSpecialMatches(teamName: string | null, season: string | null) {
   const seasonParam = season && season !== "all" ? season : undefined;
+  const database = teamQueryDatabase();
   return useQuery({
-    queryKey: ["team", "special-matches", teamName, seasonParam ?? ""],
+    queryKey: ["team", "special-matches", database, teamName, seasonParam ?? ""],
     queryFn: () =>
       fetchJson<SpecialMatches>(
         buildUrl("/team/get_special_matches", {

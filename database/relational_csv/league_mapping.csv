@@ -1,26 +1,29 @@
-id,long_name,level,division,gender_scope
-BayL,Bayernliga,3,state,male
-BayL (D),Bayernliga Damen,3,state,female
-LL N1,Landesliga Nord 1,4,north,male
-LL N2,Landesliga Nord 2,4,north,male
-LL N (D),Landesliga Nord Damen,4,north,female
-LL S,Landesliga Süd,4,south,male
-LL S (D),Landesliga Süd Damen,4,south,female
-BZOL N1,Bezirksoberliga Nord 1,5,north,male
-BZOL N2,Bezirksoberliga Nord 2,5,north,male
-BZOL N3,Bezirksoberliga Nord 3,5,north,male
-BZOL S1,Bezirksoberliga Süd 1,5,south,male
-BZOL S2,Bezirksoberliga Süd 2,5,south,male
-BZOL S3,Bezirksoberliga Süd 3,5,south,male
-BZL N1,Bezirksliga Nord 1,6,north,male
-BZL N2,Bezirksliga Nord 2,6,north,male
-BZL N3,Bezirksliga Nord 3,6,north,male
-BZL S1,Bezirksliga Süd 1,6,south,male
-BZL S2,Bezirksliga Süd 2,6,south,male
-BZL S3,Bezirksliga Süd 3,6,south,male
-KL N1,Kreisliga Nord 1,7,north,male
-KL N2,Kreisliga Nord 2,7,north,male
-KL N3,Kreisliga Nord 3,7,north,male
-KL S1,Kreisliga Süd 1,7,south,male
-KL S2,Kreisliga Süd 2,7,south,male
-KL S3,Kreisliga Süd 3,7,south,male
+id,long_name,level,division,gender_scope,aliases
+BayL,Bayernliga,3,state,male,
+BayL (D),Bayernliga Damen,3,state,female,Bayernliga - Frauen
+LL N1,Landesliga Nord 1,4,north,male,
+LL N2,Landesliga Nord 2,4,north,male,
+LL N (D),Landesliga Nord Damen,4,north,female,Landesliga Nord - Frauen
+LL S,Landesliga Süd,4,south,male,
+LL S (D),Landesliga Süd Damen,4,south,female,Landesliga Süd 1 - Frauen
+BZOL N1,Bezirksoberliga Nord 1,5,north,male,
+BZOL N2,Bezirksoberliga Nord 2,5,north,male,
+BZOL N3,Bezirksoberliga Nord 3,5,north,male,
+BZOL S1,Bezirksoberliga Süd 1,5,south,male,
+BZOL S1 (D),Bezirksoberliga Süd 1 Damen,5,south,female,Bezirksoberliga Süd 1 - Frauen
+BZOL S2,Bezirksoberliga Süd 2,5,south,male,
+BZOL S3,Bezirksoberliga Süd 3,5,south,male,
+BZL N1,Bezirksliga Nord 1,6,north,male,
+BZL N2,Bezirksliga Nord 2,6,north,male,
+BZL N3,Bezirksliga Nord 3,6,north,male,
+BZL N4,Bezirksliga Nord 4,6,north,male,Bezirksliga Nord 4 - Männer
+BZL S1,Bezirksliga Süd 1,6,south,male,
+BZL S2,Bezirksliga Süd 2,6,south,male,
+BZL S3,Bezirksliga Süd 3,6,south,male,
+KL N1,Kreisliga Nord 1,7,north,male,
+KL N2,Kreisliga Nord 2,7,north,male,
+KL N3,Kreisliga Nord 3,7,north,male,
+KL S1,Kreisliga Süd 1,7,south,male,
+KL S2,Kreisliga Süd 2,7,south,male,
+KL S3,Kreisliga Süd 3,7,south,male,
+KL S4,Kreisliga Süd 4,7,south,male,Kreisliga Süd 4 - Männer

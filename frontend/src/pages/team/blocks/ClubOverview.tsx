@@ -91,7 +91,12 @@ export function ClubOverview({
             )}
           </p>
         </header>
-        <ClubPositionHistoryChart teams={teams} t={t} />
+        <ClubPositionHistoryChart
+          teams={teams}
+          matrixRows={matrixRows}
+          matrixSeasons={seasons}
+          t={t}
+        />
       </section>
 
       <div className="grid gap-3 sm:grid-cols-3">

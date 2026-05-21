@@ -79,11 +79,9 @@ def get_week_matrix():
         if hit is not None:
             return jsonify(hit)
         league_service = get_league_service()
-        expected_weeks = request.args.get("expected_weeks", default=6, type=int)
-        matrix = league_service.get_league_week_matrix(expected_weeks=expected_weeks)
+        matrix = league_service.get_league_week_matrix()
         payload = {
             "matrix": matrix,
-            "expected_weeks": expected_weeks,
             "league_long_names": get_league_long_name_map(),
         }
         _league_json_cache_put("get_week_matrix", payload)

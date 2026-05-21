@@ -1,7 +1,7 @@
 import type { PlayerSeasonRow } from "../hooks/usePlayer";
 
 /** Chronological order for German season labels like "22/23", "25/26". */
-function compareSeasonString(a: string, b: string): number {
+export function compareSeasonString(a: string, b: string): number {
   const pa = parseSeasonKey(a);
   const pb = parseSeasonKey(b);
   if (pa !== pb) return pa - pb;
