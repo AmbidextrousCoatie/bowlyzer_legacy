@@ -4,6 +4,7 @@ import {
   Building2,
   AlertTriangle,
   CalendarRange,
+  Palette,
   ChevronsLeft,
   ChevronsRight,
   Home as HomeIcon,
@@ -61,6 +62,7 @@ const NAV_GROUPS: ReadonlyArray<NavGroup> = [
   {
     label: "Diagnose",
     items: [
+      { path: "/diagnose/design-system", label: "Designsystem", icon: Palette },
       { path: "/diagnose/club-matrix", label: "Club-Matrix", icon: Building2 },
       { path: "/diagnose/liga-wochen", label: "Liga-Wochen", icon: CalendarRange },
       { path: "/diagnose/daten-anomalien", label: "Anomalien", icon: AlertTriangle },

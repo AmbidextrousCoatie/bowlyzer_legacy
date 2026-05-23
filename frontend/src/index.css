@@ -9,18 +9,18 @@
   --font-sans: "Inter", -apple-system, system-ui, "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
 
-  /* Brand · primary blue */
-  --color-primary-50: #eff6ff;
-  --color-primary-100: #dbeafe;
-  --color-primary-200: #bfdbfe;
-  --color-primary-300: #93c5fd;
-  --color-primary-400: #60a5fa;
-  --color-primary-500: #3b82f6;
-  --color-primary-600: #2563eb;
-  --color-primary-700: #1d4ed8;
-  --color-primary-800: #1e40af;
-  --color-primary-900: #1e3a8a;
-  --color-primary-950: #172554;
+  /* Brand · teal ramp (rainbowPastel[0] = #1B8CA6) — sync with lib/design-tokens.ts */
+  --color-primary-50: #e9f5f8;
+  --color-primary-100: #cfeaef;
+  --color-primary-200: #a5d6e2;
+  --color-primary-300: #74becf;
+  --color-primary-400: #45a5bc;
+  --color-primary-500: #1b8ca6;
+  --color-primary-600: #177a90;
+  --color-primary-700: #136879;
+  --color-primary-800: #0f5663;
+  --color-primary-900: #0b444f;
+  --color-primary-950: #07323a;
 
   /* Neutrals · zinc */
   --color-zinc-50: #fafafa;
@@ -35,11 +35,12 @@
   --color-zinc-900: #18181b;
   --color-zinc-950: #09090b;
 
-  /* Status */
-  --color-success: #10b981;
-  --color-warning: #f59e0b;
-  --color-danger: #f43f5e;
-  --color-info: #0ea5e9;
+  /* Status — rainbowPastel semantic slots (sync with lib/design-tokens.ts) */
+  --color-success: #8cbf8a;
+  --color-warning: #e6c86e;
+  --color-danger: #e86e56;
+  --color-info: #2ca89a;
+  --color-highlight: #a04cbf;
 
   /* Type scale (size + line-height + tracking + weight via Tailwind v4 modifiers) */
   --text-display: 3.5rem;
@@ -125,6 +126,7 @@
   --color-ring: var(--ds-ring);
   --color-success-fg: var(--ds-success-fg);
   --color-danger-fg: var(--ds-danger-fg);
+  --color-highlight-fg: var(--ds-highlight-fg);
 }
 
 :root {
@@ -137,13 +139,14 @@
   --ds-foreground: #18181b;
   --ds-muted: #71717a;
   --ds-subtle: #a1a1aa;
-  --ds-accent: #2563eb;
-  --ds-accent-hover: #1d4ed8;
+  --ds-accent: #177a90;
+  --ds-accent-hover: #136879;
   --ds-accent-foreground: #ffffff;
-  --ds-accent-tint: #eff6ff;
-  --ds-ring: #3b82f6;
-  --ds-success-fg: #10b981;
-  --ds-danger-fg: #f43f5e;
+  --ds-accent-tint: #e9f5f8;
+  --ds-ring: #1b8ca6;
+  --ds-success-fg: #5a9e58;
+  --ds-danger-fg: #c45a42;
+  --ds-highlight-fg: #8a3da3;
 }
 
 [data-theme="dark"] {
@@ -156,13 +159,14 @@
   --ds-foreground: #fafafa;
   --ds-muted: #a1a1aa;
   --ds-subtle: #71717a;
-  --ds-accent: #3b82f6;
-  --ds-accent-hover: #60a5fa;
+  --ds-accent: #2ca89a;
+  --ds-accent-hover: #45a5bc;
   --ds-accent-foreground: #ffffff;
-  --ds-accent-tint: rgba(96, 165, 250, 0.12);
-  --ds-ring: #60a5fa;
-  --ds-success-fg: #34d399;
-  --ds-danger-fg: #fb7185;
+  --ds-accent-tint: rgba(27, 140, 166, 0.14);
+  --ds-ring: #74becf;
+  --ds-success-fg: #8cbf8a;
+  --ds-danger-fg: #f09580;
+  --ds-highlight-fg: #d6a4e6;
 }
 
 html,

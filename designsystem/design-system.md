@@ -9,7 +9,7 @@ tokens are stable.
 - **Variant**: Stadium — dense-analytics × energetic, restrained chrome with
   energy expressed through type and numerals rather than decoration.
 - **Modes**: light + dark, both first-class from day one.
-- **Brand**: refined blue (Tailwind `blue` family, primary at `600`).
+- **Brand**: teal anchored on `rainbowPastel[0]` (`#1B8CA6`) — same hue as chart palette slot 0.
 - **Neutrals**: Tailwind `zinc` (true neutral, no warm/cool cast).
 - **UI font**: Inter.
 - **Numeric font**: JetBrains Mono — used for all scores, averages, ranks,
@@ -27,21 +27,23 @@ tokens around them.
 
 ## Color tokens
 
-### Brand — primary blue
+### Brand — primary teal (derived from `rainbowPastel[0]`)
+
+Canonical values live in `frontend/src/lib/design-tokens.ts` and `frontend/src/index.css`.
 
 | Token         | Hex       | Usage                                |
 | ------------- | --------- | ------------------------------------ |
-| `primary-50`  | `#EFF6FF` | Subtle tint backgrounds              |
-| `primary-100` | `#DBEAFE` | Hover tint on selected states (light)|
-| `primary-200` | `#BFDBFE` | Soft chips, low-emphasis fills       |
-| `primary-300` | `#93C5FD` | Disabled accent                      |
-| `primary-400` | `#60A5FA` | Accent on dark surfaces              |
-| `primary-500` | `#3B82F6` | Bright accent, focus rings           |
-| `primary-600` | `#2563EB` | **Default accent** (light mode)      |
-| `primary-700` | `#1D4ED8` | Hover                                |
-| `primary-800` | `#1E40AF` | Pressed                              |
-| `primary-900` | `#1E3A8A` | Headline accent on subtle tints      |
-| `primary-950` | `#172554` | Reserved                             |
+| `primary-50`  | `#E9F5F8` | Subtle tint backgrounds              |
+| `primary-100` | `#CFEAEF` | Hover tint on selected states (light)|
+| `primary-200` | `#A5D6E2` | Soft chips, low-emphasis fills       |
+| `primary-300` | `#74BECF` | Disabled accent                      |
+| `primary-400` | `#45A5BC` | Accent on dark surfaces              |
+| `primary-500` | `#1B8CA6` | **= rainbowPastel[0]**               |
+| `primary-600` | `#177A90` | **Default accent** (light mode)      |
+| `primary-700` | `#136879` | Hover                                |
+| `primary-800` | `#0F5663` | Pressed                              |
+| `primary-900` | `#0B444F` | Headline accent on subtle tints      |
+| `primary-950` | `#07323A` | Reserved                             |
 
 ### Neutrals — zinc
 
@@ -59,14 +61,15 @@ tokens around them.
 | `zinc-900`  | `#18181B` | Surface (dark) / body text (light)            |
 | `zinc-950`  | `#09090B` | App background (dark)                         |
 
-### Status — desaturated to coexist with the blue
+### Status — mapped to `rainbowPastel` slots
 
-| Token       | Hex       | Use                              |
-| ----------- | --------- | -------------------------------- |
-| `success`   | `#10B981` | Emerald — gains, wins, deltas+   |
-| `warning`   | `#F59E0B` | Amber — soft attention           |
-| `danger`    | `#F43F5E` | Rose — losses, deltas−, errors   |
-| `info`      | `#0EA5E9` | Sky — neutral notice             |
+| Token       | Hex       | Palette slot | Use                            |
+| ----------- | --------- | ------------ | ------------------------------ |
+| `success`   | `#8CBF8A` | [2] positive | Gains, wins, deltas+           |
+| `warning`   | `#E6C86E` | [3]          | Soft attention                 |
+| `danger`    | `#E86E56` | [5] negative | Losses, deltas−, errors        |
+| `info`      | `#2CA89A` | [1]          | Neutral notice                 |
+| `highlight` | `#A04CBF` | [9]          | Emphasis / cut-line highlight  |
 
 Status colors are used for foreground glyphs/text and thin accents — not for
 filled backgrounds, except in toast/banner components.
@@ -87,13 +90,13 @@ flips between light and dark.
 | `fg`                  | `zinc-900`             | `zinc-50`              |
 | `fg-muted`            | `zinc-500`             | `zinc-400`             |
 | `fg-subtle`           | `zinc-400`             | `zinc-500`             |
-| `accent`              | `primary-600`          | `primary-500`          |
+| `accent`              | `primary-600`          | `rainbowPastel[1]`     |
 | `accent-hover`        | `primary-700`          | `primary-400`          |
 | `accent-fg`           | `#FFFFFF`              | `#FFFFFF`              |
-| `accent-tint`         | `primary-50`           | `rgba(96,165,250,.12)` |
-| `focus-ring`          | `primary-500`          | `primary-400`          |
-| `success-fg`          | `success`              | `#34D399`              |
-| `danger-fg`           | `danger`               | `#FB7185`              |
+| `accent-tint`         | `primary-50`           | `rgba(27,140,166,.14)` |
+| `focus-ring`          | `primary-500`          | `primary-300`          |
+| `success-fg`          | `#5A9E58` (light)      | `rainbowPastel[2]`     |
+| `danger-fg`           | `#C45A42` (light)      | `#F09580`              |
 
 ## Typography
 
@@ -210,8 +213,10 @@ Avoid choreography. Snap-to-target beats animated reveals in a stats UI.
 
 ## Data visualization
 
-The chart palettes (`rainbowPastel`, `harmonic10`) are owned by the legacy
-`ColorUtils` module and **must not be redefined here**. The DS exposes only:
+The chart palettes (`rainbowPastel`, `harmonic10`) are owned by
+`frontend/src/lib/color-utils.ts` (port of legacy ColorUtils) and **must not
+be redefined for series colors**. UI chrome (accent, status) is aligned to
+`rainbowPastel` indices; the DS also documents:
 
 - `chart.bg` — chart canvas background (= `surface` semantic).
 - `chart.gridline` — `border` semantic, opacity 0.6.
