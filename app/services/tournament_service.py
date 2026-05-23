@@ -969,12 +969,13 @@ class TournamentService:
         # If no stage is selected, use the latest available stage as the cutoff.
         tournament_leader = None
         tournament_leader_avg = None
+        use_net_pins = self._tournament_df_has_meaningful_handicap(df)
         if stage_round_number is not None:
             cumulative_df = df[pd.to_numeric(df[Columns.round_number], errors="coerce").le(float(stage_round_number))].copy()
             if not cumulative_df.empty:
-                cumulative_df[Columns.score] = pd.to_numeric(cumulative_df[Columns.score], errors="coerce").fillna(0)
+                cumulative_df = cumulative_df.assign(__pins=self._tournament_pins_series(cumulative_df))
                 tournament_totals = (
-                    cumulative_df.groupby([Columns.player_name], dropna=False)[Columns.score]
+                    cumulative_df.groupby([Columns.player_name], dropna=False)["__pins"]
                     .sum()
                     .reset_index(name="total_score")
                     .sort_values(by=["total_score", Columns.player_name], ascending=[False, True])
@@ -997,10 +998,10 @@ class TournamentService:
         stage_winner_avg = None
         if stage_round_number is not None:
             stage_df = df[pd.to_numeric(df[Columns.round_number], errors="coerce").eq(float(stage_round_number))].copy()
-            stage_df[Columns.score] = pd.to_numeric(stage_df[Columns.score], errors="coerce").fillna(0)
             if not stage_df.empty:
+                stage_df = stage_df.assign(__pins=self._tournament_pins_series(stage_df))
                 grouped = (
-                    stage_df.groupby(Columns.player_name, dropna=False)[Columns.score]
+                    stage_df.groupby(Columns.player_name, dropna=False)["__pins"]
                     .sum()
                     .reset_index(name="total_score")
                     .sort_values(by=["total_score", Columns.player_name], ascending=[False, True])
@@ -1036,8 +1037,9 @@ class TournamentService:
         cut_line_card = (
             self._build_cut_line_card(df, season, tournament, card_round) if card_round is not None else None
         )
+        pins_label = "pins (netto)" if use_net_pins else "pins"
         if tournament_leader is not None and not is_ko_finale_view and not gesamt_ko_tournament_winner:
-            subtitle = f"{int(tournament_leader['total_score'])} pins"
+            subtitle = f"{int(tournament_leader['total_score'])} {pins_label}"
             if tournament_leader_avg is not None:
                 subtitle = f"{subtitle} (\u2300{tournament_leader_avg:.1f})"
             cards.append(
@@ -1072,14 +1074,12 @@ class TournamentService:
                 else str(scope_df[Columns.round_name].dropna().iloc[0]) if Columns.round_name in scope_df.columns and not scope_df[Columns.round_name].dropna().empty
                 else f"Round {stage_round_number}"
             )
-            stage_subtitle = f"{stage_name}: {int(stage_winner['total_score'])} pins"
+            stage_subtitle = f"{stage_name}: {int(stage_winner['total_score'])} {pins_label}"
             if stage_winner_avg is not None:
                 # Stage Winner is stage-local: stage total divided by games in this stage.
                 stage_df = df[pd.to_numeric(df[Columns.round_number], errors="coerce").eq(float(stage_round_number))].copy()
-                stage_df[Columns.score] = pd.to_numeric(stage_df[Columns.score], errors="coerce").fillna(0)
                 stage_winner_name = str(stage_winner["player"])
                 stage_total = float(stage_winner["total_score"])
-                stage_games = int(stage_df[stage_df[Columns.player_name].astype(str).eq(stage_winner_name)][Columns.score].count())
                 stage_games = int(
                     self._played_games_count(
                         stage_df[stage_df[Columns.player_name].astype(str).eq(stage_winner_name)][Columns.score]
@@ -1233,30 +1233,15 @@ class TournamentService:
         include_club: bool,
         through_round: Optional[int] = None,
     ) -> Dict[Tuple[Any, ...], int]:
-        """Cumulative scratch-pin rank through ``through_round`` (overall-total / cut ladder)."""
-        if df.empty:
+        """Cumulative pin rank through ``through_round``."""
+        if df.empty or through_round is None:
             return {}
-        work = df.copy()
-        work[Columns.score] = pd.to_numeric(work[Columns.score], errors="coerce").fillna(0)
-        if through_round is not None and Columns.round_number in work.columns:
-            work[Columns.round_number] = pd.to_numeric(work[Columns.round_number], errors="coerce")
-            work = work[work[Columns.round_number].le(float(through_round))].copy()
-        if work.empty:
+        ranked = self._cumulative_totals_ranked(df, int(through_round), include_club=include_club)
+        if ranked.empty:
             return {}
-        group_keys, id_col = self._leaderboard_group_keys(work, include_club=include_club)
-        if id_col == "__player_id_missing__":
-            work[id_col] = work[Columns.player_name].astype(str)
-        totals = (
-            work.groupby(group_keys, dropna=False)[Columns.score]
-            .sum()
-            .reset_index(name="total_pins")
-        )
-        totals = totals.sort_values(
-            by=["total_pins", Columns.player_name], ascending=[False, True]
-        ).reset_index(drop=True)
-        totals["rank"] = totals["total_pins"].rank(method="min", ascending=False).astype(int)
+        group_keys = [c for c in ranked.columns if c not in ("cumulative_pins", "rank")]
         out: Dict[Tuple[Any, ...], int] = {}
-        for _, row in totals.iterrows():
+        for _, row in ranked.iterrows():
             out[self._leaderboard_row_key(row, group_keys)] = int(row["rank"])
         return out
 
@@ -1386,9 +1371,9 @@ class TournamentService:
                     axis=1,
                 )
                 leaderboard = leaderboard.sort_values(
-                    by=["round_net", Columns.player_name], ascending=[False, True]
+                    by=["total_net", Columns.player_name], ascending=[False, True]
                 ).reset_index(drop=True)
-                leaderboard["rank"] = leaderboard["round_net"].rank(method="min", ascending=False).astype(int)
+                leaderboard["rank"] = leaderboard["total_net"].rank(method="min", ascending=False).astype(int)
             else:
                 leaderboard = leaderboard.sort_values(
                     by=["total_score", Columns.player_name], ascending=[False, True]
@@ -1464,7 +1449,7 @@ class TournamentService:
             data = []
             row_metadata = []
             cell_metadata: Dict[str, Dict[str, Any]] = {}
-            default_sort_field = "round_net" if use_hc_round else "total_score"
+            default_sort_field = "total_net" if use_hc_round else "total_score"
             is_ko_finale_round_lb = (
                 ko_fin_rn is not None and int(round_number) == int(ko_fin_rn)
             )
@@ -1921,12 +1906,16 @@ class TournamentService:
                 pivot["overall_net"] = pd.to_numeric(pivot["overall_net"], errors="coerce").fillna(0).astype(int)
                 pivot["overall_avg_net"] = (pivot["overall_net"] / pivot["overall_games"].replace(0, 1)).round(1)
 
-                pivot["overall_rank"] = pivot["stage_net"].rank(method="min", ascending=False).astype(int)
+                # Standings after this stage: cumulative net through the selected round.
+                pivot["overall_rank"] = pivot["overall_net"].rank(method="min", ascending=False).astype(int)
 
-            pivot = pivot.sort_values(
-                by=["overall_rank", "round_total", Columns.player_name],
-                ascending=[True, False, True],
-            ).reset_index(drop=True)
+            sort_by = (
+                ["overall_net", Columns.player_name]
+                if use_hc_rr
+                else ["overall_rank", "round_total", Columns.player_name]
+            )
+            sort_asc = [False, True] if use_hc_rr else [True, False, True]
+            pivot = pivot.sort_values(by=sort_by, ascending=sort_asc).reset_index(drop=True)
 
             spieler_title = i18n_service.get_text("ui.tournament.lb_group_players")
             hcp_short = i18n_service.get_text("ui.tournament.handicap_col_short")
@@ -2083,7 +2072,7 @@ class TournamentService:
                     entry.append(float(row.get("overall_avg_net", 0.0)))
                 data.append(entry)
 
-            default_sort_field = "stage_net" if use_hc_rr else "overall_rank"
+            default_sort_field = "overall_net" if use_hc_rr else "overall_rank"
             default_sort_dir = "desc" if use_hc_rr else "asc"
 
             return TableData(
@@ -3242,6 +3231,54 @@ class TournamentService:
                 return True
         return False
 
+    def _tournament_pins_series(self, df: pd.DataFrame) -> pd.Series:
+        """Scratch pins, or scratch + handicap when the event uses net scoring."""
+        work = _with_progress_pins(df, self._tournament_df_has_meaningful_handicap(df))
+        return pd.to_numeric(work["__pins"], errors="coerce").fillna(0.0)
+
+    def _cumulative_pins_totals_through_round(
+        self,
+        df: pd.DataFrame,
+        through_round: int,
+        *,
+        include_club: bool = False,
+    ) -> pd.DataFrame:
+        """Per-player cumulative pins through ``through_round`` (score + handicap when allowed)."""
+        if df.empty or Columns.round_number not in df.columns:
+            return pd.DataFrame()
+        work = df.copy()
+        work[Columns.round_number] = pd.to_numeric(work[Columns.round_number], errors="coerce")
+        work = work[work[Columns.round_number].le(float(through_round))].copy()
+        if work.empty:
+            return pd.DataFrame()
+        group_keys, id_col = self._leaderboard_group_keys(work, include_club=include_club)
+        if id_col == "__player_id_missing__":
+            work[id_col] = work[Columns.player_name].astype(str)
+        work = work.assign(cumulative_pins=self._tournament_pins_series(work))
+        return (
+            work.groupby(group_keys, dropna=False)["cumulative_pins"]
+            .sum()
+            .reset_index()
+        )
+
+    def _cumulative_totals_ranked(
+        self,
+        df: pd.DataFrame,
+        through_round: int,
+        *,
+        include_club: bool = False,
+    ) -> pd.DataFrame:
+        totals = self._cumulative_pins_totals_through_round(
+            df, int(through_round), include_club=include_club
+        )
+        if totals.empty:
+            return totals
+        totals = totals.sort_values(
+            by=["cumulative_pins", Columns.player_name], ascending=[False, True]
+        ).reset_index(drop=True)
+        totals["rank"] = totals["cumulative_pins"].rank(method="min", ascending=False).astype(int)
+        return totals
+
     def _default_player_card_layout(self, season: str, tournament: str) -> List[str]:
         df = self._get_tournament_df(season=season, tournament=tournament)
         want_pair = self._event_name_suggests_nbm_sbm_lane_pairs(tournament)
@@ -3352,58 +3389,61 @@ class TournamentService:
             return "m"
         return None
 
-    @staticmethod
-    def _cut_score_column_for_snapshot(snap: pd.DataFrame) -> Optional[str]:
-        if Columns.cumulative_score not in snap.columns:
+    def _cut_position_for_score(
+        self,
+        df: pd.DataFrame,
+        through_round: int,
+        cut_score: float,
+        *,
+        include_club: bool = False,
+    ) -> Optional[int]:
+        ranked = self._cumulative_totals_ranked(df, int(through_round), include_club=include_club)
+        if ranked.empty:
             return None
-        score_col = Columns.cumulative_score
-        if "Cut Basis" in snap.columns:
-            basis_vals = [str(x).strip().lower() for x in snap["Cut Basis"].dropna().tolist() if str(x).strip()]
-            if basis_vals and basis_vals[0] == "overall_total" and "Overall Cumulative Score" in snap.columns:
-                score_col = "Overall Cumulative Score"
-        return score_col
-
-    @staticmethod
-    def _cut_position_from_cumulative_snapshot(snap: pd.DataFrame, cut_score: float) -> Optional[int]:
-        """
-        Map export cut-line pin total to overall place after the stage ends.
-
-        Uses cumulative totals in the last game snapshot — not per-game stage_rank.
-        """
-        score_col = TournamentService._cut_score_column_for_snapshot(snap)
-        if score_col is None or Columns.player_name not in snap.columns:
-            return None
-        scores = pd.to_numeric(snap[score_col], errors="coerce")
-        work = snap.assign(_cs=scores).dropna(subset=["_cs"])
-        if work.empty:
-            return None
-        work = work.sort_values(by="_cs", ascending=False)
-        work["_cum_rank"] = work["_cs"].rank(method="min", ascending=False).astype(int)
-        at_cut = work[work["_cs"].eq(float(cut_score))]
+        at_cut = ranked[ranked["cumulative_pins"].eq(float(cut_score))]
         if not at_cut.empty:
-            return int(at_cut["_cum_rank"].min())
-        ge = work[work["_cs"].ge(float(cut_score))]
+            return int(at_cut["rank"].min())
+        ge = ranked[ranked["cumulative_pins"].ge(float(cut_score))]
         if not ge.empty:
-            return int(ge["_cum_rank"].max())
+            return int(ge["rank"].max())
         return None
 
-    @staticmethod
-    def _cut_player_from_cumulative_snapshot(snap: pd.DataFrame, cut_score: float) -> Optional[str]:
-        score_col = TournamentService._cut_score_column_for_snapshot(snap)
-        if score_col is None or Columns.player_name not in snap.columns:
+    def _cut_player_for_score(
+        self,
+        df: pd.DataFrame,
+        through_round: int,
+        cut_score: float,
+        *,
+        include_club: bool = False,
+    ) -> Optional[str]:
+        ranked = self._cumulative_totals_ranked(df, int(through_round), include_club=include_club)
+        if ranked.empty:
             return None
-        scores = pd.to_numeric(snap[score_col], errors="coerce")
-        work = snap.assign(_cs=scores).dropna(subset=["_cs"])
-        if work.empty:
-            return None
-        work = work.sort_values(by="_cs", ascending=False)
-        work["_cum_rank"] = work["_cs"].rank(method="min", ascending=False).astype(int)
-        at_cut = work[work["_cs"].eq(float(cut_score))]
+        at_cut = ranked[ranked["cumulative_pins"].eq(float(cut_score))]
         if at_cut.empty:
             return None
-        row = at_cut.sort_values(by="_cum_rank", ascending=False).iloc[0]
+        row = at_cut.sort_values(by="rank", ascending=False).iloc[0]
         name = str(row.get(Columns.player_name, "") or "").strip()
         return name or None
+
+    @staticmethod
+    def _cut_line_score_for_round(df: pd.DataFrame, target_round: int) -> Optional[float]:
+        if (
+            df.empty
+            or Columns.cut_line not in df.columns
+            or Columns.round_number not in df.columns
+            or Columns.game_number not in df.columns
+        ):
+            return None
+        stage_df = df[pd.to_numeric(df[Columns.round_number], errors="coerce").eq(float(target_round))].copy()
+        if stage_df.empty:
+            return None
+        max_game = pd.to_numeric(stage_df[Columns.game_number], errors="coerce").max()
+        snap = stage_df[pd.to_numeric(stage_df[Columns.game_number], errors="coerce").eq(max_game)].copy()
+        cut_vals = pd.to_numeric(snap[Columns.cut_line], errors="coerce").dropna()
+        if cut_vals.empty:
+            return None
+        return float(cut_vals.iloc[0])
 
     @staticmethod
     def _games_upto_round_in_df(df: pd.DataFrame, target_round: int) -> int:
@@ -3427,47 +3467,18 @@ class TournamentService:
             return 0
         return int(meta[Columns.game_number].apply(lambda g: int(g) + 1).sum())
 
-    def _player_cumulative_pins_through(
-        self, df: pd.DataFrame, player_name: str, through_round: int
-    ) -> Optional[float]:
-        if df.empty or Columns.round_number not in df.columns:
-            return None
-        work = df.copy()
-        work[Columns.score] = pd.to_numeric(work[Columns.score], errors="coerce").fillna(0)
-        work[Columns.round_number] = pd.to_numeric(work[Columns.round_number], errors="coerce")
-        scope = work[work[Columns.round_number].le(float(through_round))].copy()
-        scope = scope[scope[Columns.player_name].astype(str).eq(str(player_name).strip())]
-        if scope.empty:
-            return None
-        return float(scope[Columns.score].sum())
-
     def _build_cut_line_card(
         self, df: pd.DataFrame, season: str, tournament: str, target_round: int
     ) -> Optional[Dict[str, Any]]:
-        """
-        Cut-Line summary card for the selected stage.
-
-        Player matches leaderboard cut shading: cumulative scratch rank at end of
-        ``target_round``, not stage_rank from an earlier qualifying round.
-        """
+        """Cut-Line card: player at the CSV cut score on the cumulative ladder through ``target_round``."""
         cut_pos = self._resolved_cut_position_for_round(df, int(target_round), season, tournament)
         include_club = self._has_any_club_value(df)
         cut_player: Optional[str] = None
-        cut_score: Optional[float] = None
-
-        if Columns.cut_line in df.columns and Columns.game_number in df.columns:
-            stage_df = df[
-                pd.to_numeric(df[Columns.round_number], errors="coerce").eq(float(target_round))
-            ].copy()
-            if not stage_df.empty:
-                max_game = pd.to_numeric(stage_df[Columns.game_number], errors="coerce").max()
-                snap = stage_df[
-                    pd.to_numeric(stage_df[Columns.game_number], errors="coerce").eq(max_game)
-                ].copy()
-                cut_vals = pd.to_numeric(snap[Columns.cut_line], errors="coerce").dropna()
-                if not cut_vals.empty:
-                    cut_score = float(cut_vals.iloc[0])
-                    cut_player = self._cut_player_from_cumulative_snapshot(snap, cut_score)
+        cut_score = self._cut_line_score_for_round(df, int(target_round))
+        if cut_score is not None:
+            cut_player = self._cut_player_for_score(
+                df, int(target_round), cut_score, include_club=include_club
+            )
 
         if cut_player is None and cut_pos is not None:
             rank_map = self._leaderboard_rank_map_qualifying_total_pins(
@@ -3478,9 +3489,10 @@ class TournamentService:
                     cut_player = str(key[0]).strip()
                     break
             if cut_player:
-                pins = self._player_cumulative_pins_through(df, cut_player, int(target_round))
-                if pins is not None:
-                    cut_score = pins
+                ranked = self._cumulative_totals_ranked(df, int(target_round), include_club=include_club)
+                row = ranked[ranked[Columns.player_name].astype(str).str.strip().eq(cut_player)]
+                if not row.empty:
+                    cut_score = float(row["cumulative_pins"].iloc[0])
 
         if not cut_player:
             return None
@@ -3506,38 +3518,15 @@ class TournamentService:
         """Prefer CSV-derived cut rank; fall back to ko_qualifying_cut_* config for the configured round."""
 
         def _from_csv() -> Optional[int]:
-            if (
-                source_df.empty
-                or Columns.cut_line not in source_df.columns
-                or Columns.round_number not in source_df.columns
-                or Columns.game_number not in source_df.columns
-            ):
+            cut_score = self._cut_line_score_for_round(source_df, int(target_round))
+            if cut_score is None:
                 return None
-            stage_df = source_df[pd.to_numeric(source_df[Columns.round_number], errors="coerce").eq(float(target_round))].copy()
-            if stage_df.empty:
-                return None
-            max_game = pd.to_numeric(stage_df[Columns.game_number], errors="coerce").max()
-            snap = stage_df[pd.to_numeric(stage_df[Columns.game_number], errors="coerce").eq(max_game)].copy()
-            if snap.empty:
-                return None
-            cut_vals = pd.to_numeric(snap[Columns.cut_line], errors="coerce").dropna()
-            if cut_vals.empty:
-                return None
-            cut_score = float(cut_vals.iloc[0])
-
-            pos = self._cut_position_from_cumulative_snapshot(snap, cut_score)
-            if pos is not None:
-                return pos
-
-            if Columns.score in snap.columns and Columns.player_name in snap.columns:
-                work = snap.copy()
-                work[Columns.score] = pd.to_numeric(work[Columns.score], errors="coerce").fillna(0)
-                ranked = work.groupby(Columns.player_name, dropna=False)[Columns.score].sum().sort_values(ascending=False)
-                rank_series = ranked.rank(method="min", ascending=False)
-                candidates = rank_series[ranked.ge(cut_score)]
-                if not candidates.empty:
-                    return int(candidates.max())
-            return None
+            return self._cut_position_for_score(
+                source_df,
+                int(target_round),
+                cut_score,
+                include_club=self._has_any_club_value(source_df),
+            )
 
         base = _from_csv()
         if base is not None:

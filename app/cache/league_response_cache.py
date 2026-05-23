@@ -34,7 +34,7 @@ _ENDPOINT_PAYLOAD_VERSION: Dict[str, str] = {
     "get_week_matrix": "per-league-weeks-v2",
     "get_team_vs_team_comparison": "unplayed-empty-v3",
     "get_club_matrix": "matrix-pos-v1",
-    "get_tournament_section": "gesamt-cut-v7",
+    "get_tournament_section": "round-results-net-rank-v11",
     "get_player_section": "player-round-hcp-per-game-v1",
     "get_tournament_field_progress": "field-progress-v4",
     # Added handicap block + round names in payload — bump invalidates old disk cache without `handicap`.
