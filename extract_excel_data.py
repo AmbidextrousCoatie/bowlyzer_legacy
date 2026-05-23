@@ -16,7 +16,9 @@ import warnings
 import shutil
 import subprocess
 import io
-from typing import Dict
+import os
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from typing import Callable, Dict
 from contextlib import contextmanager, redirect_stdout
 
 
@@ -36,9 +38,9 @@ _TEAM_NORMALIZATION_STATS = None
 _LEAGUE_GENDER_SCOPE_CACHE = None
 
 # Bump these when analysis/extraction logic changes in a way that should invalidate prior cache entries.
-ANALYZER_VERSION = "analyzer-v1.2.1"
+ANALYZER_VERSION = "analyzer-v1.2.5"
 EXTRACTOR_VERSION = "extractor-v1.2.6"
-PROCESSOR_VERSION = "processor-v1.2.6"
+PROCESSOR_VERSION = "processor-v1.2.7"
 
 
 def compute_file_sha256(path: Path, chunk_size: int = 1024 * 1024) -> str:
@@ -1263,24 +1265,55 @@ def _season_from_content_is_uncertain(season_text):
     return False
 
 
+def _old_format_year_from_season_month(month: int, season_info: dict) -> int:
+    """Sports season folder rule: month > 8 → first year, month <= 8 → second year."""
+    if int(month) > 8:
+        return int(season_info["year1"])
+    return int(season_info["year2"])
+
+
+def _excel_date_year_is_placeholder(year: int) -> bool:
+    """Excel often stores 1899/1900 when the sheet cell has no calendar year."""
+    return int(year) < 1980
+
+
+def complete_old_format_date_info(date_info: dict | None, season_info: dict | None) -> dict | None:
+    """Fill missing/placeholder year from ``saisonYYYY-YY`` (or other path) season_info."""
+    if not date_info or not season_info:
+        return date_info
+    month = int(date_info.get("month") or 0)
+    if month < 1 or month > 12:
+        return date_info
+    year_full = date_info.get("year_full")
+    if year_full is None or _excel_date_year_is_placeholder(int(year_full)):
+        year_full = _old_format_year_from_season_month(month, season_info)
+        date_info = dict(date_info)
+        date_info["year_full"] = int(year_full)
+        day = int(date_info["day"])
+        date_info["raw"] = f"{day:02d}.{month:02d}.{year_full}"
+    return date_info
+
+
+def old_format_date_is_usable(date_info: dict | None, season_info: dict | None) -> bool:
+    completed = complete_old_format_date_info(date_info, season_info)
+    if not completed:
+        return False
+    try:
+        day = int(completed["day"])
+        month = int(completed["month"])
+        year = int(completed["year_full"])
+    except (KeyError, TypeError, ValueError):
+        return False
+    return 1 <= day <= 31 and 1 <= month <= 12 and year >= 1980
+
+
 def combine_season_and_date(season_info, date_info):
     """Combine season and date information to create full date."""
     try:
-        day = date_info['day']
-        month = int(date_info['month'])
-        year1 = season_info['year1']
-        year2 = season_info['year2']
-        
-        # Determine which year to use based on month
-        if month >= 9:
-            year = year1  # Use first year for months 9-12
-        else:
-            year = year2  # Use second year for months 1-8
-        
-        # Create full date in YYYY-MM-DD format
-        full_date = f"{year}-{month:02d}-{day}"
-        return full_date
-        
+        day = date_info["day"]
+        month = int(date_info["month"])
+        year = _old_format_year_from_season_month(month, season_info)
+        return f"{year}-{month:02d}-{int(day):02d}"
     except Exception as e:
         print(f"Error combining season and date: {e}")
         return "could not extract date"  # Default fallback
@@ -1734,8 +1767,19 @@ def parse_args():
     )
     parser.add_argument(
         "--output-file",
-        default="database/data/bowling_ergebnisse_real_2025_new.csv",
-        help="Output CSV path for process mode.",
+        default="database/data/historical_league_results.csv",
+        help=(
+            "Merged CSV path for process mode (all league/season combos in the run scope). "
+            "Use a dedicated path for legacy scrape batches, then merge sources separately."
+        ),
+    )
+    parser.add_argument(
+        "--output-dir",
+        default=None,
+        help=(
+            "Directory for per league/season combo CSVs in process mode. "
+            "Default: <output-file parent>/<output-file stem>_combos"
+        ),
     )
     parser.add_argument(
         "--weeks",
@@ -1760,6 +1804,14 @@ def parse_args():
         "--force_reanalyze",
         action="store_true",
         help="Ignore analysis cache and re-analyze all files for this run.",
+    )
+    parser.add_argument(
+        "--no-parallel-subdirs",
+        action="store_true",
+        help=(
+            "process mode: disable one worker per top-level folder under --folder "
+            "(default: on when there are 2+ such subfolders)."
+        ),
     )
     parser.add_argument(
         "--force_convert_xls",
@@ -1928,6 +1980,18 @@ def get_cell_value(df, row_idx, col_idx):
     return np.nan
 
 
+def get_cells_text(df, row_idx: int, col_start: int, col_end: int) -> str | None:
+    """Join non-empty cells on one row (merged Excel ranges like C1:F1)."""
+    parts: list[str] = []
+    for col_idx in range(col_start, col_end + 1):
+        text = normalize_optional_text(get_cell_value(df, row_idx, col_idx))
+        if text:
+            parts.append(text)
+    if not parts:
+        return None
+    return " ".join(parts).strip()
+
+
 def resolve_with_fallbacks(resolvers):
     """Return first non-empty resolver value with source tag."""
     for source, resolver in resolvers:
@@ -2035,10 +2099,13 @@ def parse_old_format_date(value):
     else:
         dt = None
     if dt is not None:
+        year_full = int(dt.year)
+        if _excel_date_year_is_placeholder(year_full):
+            year_full = None
         return {
             "day": dt.day,
             "month": dt.month,
-            "year_full": dt.year,
+            "year_full": year_full,
             "raw": dt.strftime("%Y-%m-%d"),
         }
 
@@ -2047,21 +2114,212 @@ def parse_old_format_date(value):
         return None
     # Find all date-like tokens and use the last one (usually main match day).
     matches = re.findall(r"(\d{1,2})\.(\d{1,2})\.(\d{2,4})", text)
-    if not matches:
-        return None
-    day_str, month_str, year_str = matches[-1]
-    day = int(day_str)
-    month = int(month_str)
-    if len(year_str) == 2:
-        year_full = 2000 + int(year_str)
-    else:
-        year_full = int(year_str)
-    return {
-        "day": day,
-        "month": month,
-        "year_full": year_full,
-        "raw": text,
+    if matches:
+        day_str, month_str, year_str = matches[-1]
+        day = int(day_str)
+        month = int(month_str)
+        if len(year_str) == 2:
+            year_full = 2000 + int(year_str)
+        else:
+            year_full = int(year_str)
+        return {
+            "day": day,
+            "month": month,
+            "year_full": year_full,
+            "raw": text,
+        }
+    short_matches = re.findall(r"(\d{1,2})\.(\d{1,2})\.(?!\d)", text)
+    if short_matches:
+        day_str, month_str = short_matches[-1]
+        return {
+            "day": int(day_str),
+            "month": int(month_str),
+            "year_full": None,
+            "raw": text,
+        }
+    # e.g. "4./5.10.08" — use the main match day (second date).
+    range_match = re.search(r"(?:\d{1,2}\./)?(\d{1,2})\.(\d{1,2})\.(\d{2,4})", text)
+    if range_match:
+        day_str, month_str, year_str = range_match.groups()
+        year_full = 2000 + int(year_str) if len(year_str) == 2 else int(year_str)
+        if _excel_date_year_is_placeholder(year_full):
+            year_full = None
+        return {
+            "day": int(day_str),
+            "month": int(month_str),
+            "year_full": year_full,
+            "raw": text,
+        }
+    return None
+
+
+def _pre_2022_metadata_value_present(value) -> bool:
+    if value is None or (isinstance(value, float) and pd.isna(value)):
+        return False
+    return bool(str(value).strip())
+
+
+def _pre_2022_value_beside_label(df, row_idx: int, col_idx: int, max_col: int):
+    """Read the first non-empty cell to the right of a label (typical Ligabericht layout)."""
+    for offset in (2, 1, 3, 4):
+        c = col_idx + offset
+        if c >= max_col:
+            continue
+        value = get_cell_value(df, row_idx, c)
+        if _pre_2022_metadata_value_present(value):
+            return value
+    return None
+
+
+def _parse_ligabericht_metadata_df(df) -> dict:
+    """
+    Parse Ligabericht header fields.
+
+    Supports two layouts seen in Bavarian exports:
+    - Classic: league P8, week E6, date Q6, location E8 (0-based row/col 7/15, 5/4, 5/16, 7/4)
+    - Spielberichtsbogen: label row with Spieltag (~row 4), Anlage/Liga (~row 6)
+    """
+    meta = {
+        "source": "ligabericht",
+        "league_raw": get_cell_value(df, 7, 15),
+        "location_raw": get_cell_value(df, 7, 4),
+        "week_raw": get_cell_value(df, 5, 4),
+        "date_raw": get_cell_value(df, 5, 16),
     }
+    max_row = min(len(df), 15)
+    max_col = min(int(df.shape[1]), 22) if getattr(df, "shape", None) else 22
+
+    for row_idx in range(max_row):
+        for col_idx in range(max_col):
+            label = (normalize_optional_text(get_cell_value(df, row_idx, col_idx)) or "").rstrip(
+                ":"
+            ).lower()
+            if not label:
+                continue
+            if label == "spieltag" and not _pre_2022_metadata_value_present(meta["week_raw"]):
+                meta["week_raw"] = _pre_2022_value_beside_label(df, row_idx, col_idx, max_col)
+            elif label == "anlage" and not _pre_2022_metadata_value_present(meta["location_raw"]):
+                meta["location_raw"] = _pre_2022_value_beside_label(df, row_idx, col_idx, max_col)
+            elif label == "liga" and not _pre_2022_metadata_value_present(meta["league_raw"]):
+                meta["league_raw"] = _pre_2022_value_beside_label(df, row_idx, col_idx, max_col)
+            elif label == "datum" and not _pre_2022_metadata_value_present(meta["date_raw"]):
+                meta["date_raw"] = _pre_2022_value_beside_label(df, row_idx, col_idx, max_col)
+    return meta
+
+
+def _pre_2022_metadata_core_fields_ok(meta: dict) -> bool:
+    return (
+        _pre_2022_metadata_value_present(meta.get("league_raw"))
+        and _pre_2022_metadata_value_present(meta.get("week_raw"))
+        and _pre_2022_metadata_value_present(meta.get("location_raw"))
+    )
+
+
+def _merge_pre_2022_metadata(primary: dict, fallback: dict) -> dict:
+    """Fill empty primary fields from fallback (e.g. date from Spielzettel)."""
+    merged = dict(primary)
+    for key in ("league_raw", "week_raw", "date_raw", "location_raw"):
+        if not _pre_2022_metadata_value_present(merged.get(key)) and _pre_2022_metadata_value_present(
+            fallback.get(key)
+        ):
+            merged[key] = fallback[key]
+    return merged
+
+
+def read_pre_2022_metadata_from_spielzettel(excel_path, workbook=None) -> dict | None:
+    """
+    Four-sheet legacy exports (no Ligabericht): Spielzettel header block.
+
+    Excel layout (1-based rows/cols):
+      C1:F1 season, D2:F2 league, D3 date, D4:F4 venue; Spieltag value beside date (F3).
+    """
+    read_kwargs: dict = {"sheet_name": "Spielzettel", "header": None, "nrows": 8}
+    if workbook is not None:
+        read_kwargs["workbook"] = workbook
+    try:
+        df = read_excel_safely(excel_path, **read_kwargs)
+    except Exception:
+        return None
+    # 0-based: row 0 = Excel 1, col C = 2 …
+    week_raw = get_cell_value(df, 2, 5)
+    if not _pre_2022_metadata_value_present(week_raw):
+        for col_idx in range(4, 7):
+            label = (normalize_optional_text(get_cell_value(df, 2, col_idx)) or "").rstrip(":").lower()
+            if label == "spieltag":
+                week_raw = _pre_2022_value_beside_label(df, 2, col_idx, min(int(df.shape[1]), 12))
+                break
+    return {
+        "source": "spielzettel",
+        "season_raw": get_cells_text(df, 0, 2, 5),
+        "league_raw": get_cells_text(df, 1, 3, 5),
+        "date_raw": get_cell_value(df, 2, 3),
+        "week_raw": week_raw,
+        "location_raw": get_cells_text(df, 3, 3, 5),
+    }
+
+
+def infer_pre_2022_number_of_teams(
+    excel_path,
+    tabelle_df: pd.DataFrame | None = None,
+    *,
+    workbook=None,
+) -> int | None:
+    """Team count from Tabelle N3:Q3, title-row integer, or Spielzettel block count."""
+    if tabelle_df is not None:
+        classic = parse_metadata_int(get_cell_value(tabelle_df, 2, 13))
+        if classic is not None and classic > 0:
+            return int(classic)
+        max_col = min(int(tabelle_df.shape[1]), 8)
+        for col_idx in range(max_col):
+            candidate = parse_metadata_int(get_cell_value(tabelle_df, 2, col_idx))
+            if candidate is not None and 4 <= int(candidate) <= 24:
+                return int(candidate)
+
+    if "Spielzettel" not in get_sheet_names_safely(excel_path, workbook=workbook):
+        return None
+    read_kwargs: dict = {"sheet_name": "Spielzettel", "header": None}
+    if workbook is not None:
+        read_kwargs["workbook"] = workbook
+    try:
+        spielzettel_df = read_excel_safely(excel_path, **read_kwargs)
+        block_count = len(list(_find_spielzettel_block_starts(spielzettel_df)))
+        if block_count >= 4:
+            return int(block_count)
+    except Exception:
+        return None
+    return None
+
+
+def read_pre_2022_metadata_from_ligabericht(excel_path, workbook=None) -> dict | None:
+    read_kwargs: dict = {"sheet_name": "Ligabericht", "header": None, "nrows": _ANALYZE_LIGABERICHT_NROWS}
+    if workbook is not None:
+        read_kwargs["workbook"] = workbook
+    try:
+        df = read_excel_safely(excel_path, **read_kwargs)
+    except Exception:
+        return None
+    meta = _parse_ligabericht_metadata_df(df)
+    if _pre_2022_metadata_core_fields_ok(meta):
+        return meta
+    return None
+
+
+def resolve_pre_2022_workbook_metadata(
+    excel_path, sheet_names: list[str], workbook=None
+) -> dict | None:
+    """Prefer Ligabericht; merge date from Spielzettel when Ligabericht omits it."""
+    spielzettel_meta = None
+    if "Spielzettel" in sheet_names:
+        spielzettel_meta = read_pre_2022_metadata_from_spielzettel(excel_path, workbook=workbook)
+
+    if "Ligabericht" in sheet_names:
+        ligabericht_meta = read_pre_2022_metadata_from_ligabericht(excel_path, workbook=workbook)
+        if ligabericht_meta is not None:
+            if spielzettel_meta is not None:
+                return _merge_pre_2022_metadata(ligabericht_meta, spielzettel_meta)
+            return ligabericht_meta
+
+    return spielzettel_meta
 
 
 def derive_season_from_old_date(date_info):
@@ -2514,17 +2772,21 @@ def _pre_2022_placement_bonus_row(
 
 
 def pre_2022_full_date(season_short: str, date_raw, excel_file: Path) -> str:
-    """Build YYYY-MM-DD from Ligabericht date text and season label or path."""
-    season_info = season_label_to_season_info(season_short) if season_short else None
+    """Build YYYY-MM-DD from Ligabericht date text and season label or folder path."""
+    path_season = infer_season_from_path(excel_file)
+    season_info = path_season or (
+        season_label_to_season_info(season_short) if season_short else None
+    )
     if season_info is None or _season_from_content_is_uncertain(season_short or ""):
-        path_season = infer_season_from_path(excel_file)
         if path_season:
             season_info = path_season
     if season_info is None:
         season_info = {"season_short": season_short or "??/??", "year1": "????", "year2": "????"}
 
-    date_info = parse_old_format_date(date_raw)
-    if date_info:
+    date_info = complete_old_format_date_info(
+        parse_old_format_date(date_raw), season_info
+    )
+    if old_format_date_is_usable(date_info, season_info):
         return combine_season_and_date(
             season_info,
             {"day": str(date_info["day"]).zfill(2), "month": str(date_info["month"]).zfill(2)},
@@ -2551,8 +2813,8 @@ def extract_pre_2022_file(
         print(f"Warning: no Spielzettel sheet in {excel_path}")
         return []
 
-    ligabericht_df = read_excel_safely(excel_path, sheet_name="Ligabericht", header=None)
-    date_raw = get_cell_value(ligabericht_df, 5, 16)
+    header_meta = resolve_pre_2022_workbook_metadata(excel_path, sheet_names)
+    date_raw = header_meta["date_raw"] if header_meta else None
     full_date = pre_2022_full_date(season, date_raw, excel_path)
 
     spielzettel_df = read_excel_safely(excel_path, sheet_name="Spielzettel", header=None)
@@ -2690,19 +2952,7 @@ def _analyze_excel_file_with_workbook(excel_path, workbook, old_format_sheet_thr
     ):
         result["data_format"] = "data_format_pre_2022"
         old_issues = []
-        ligabericht_df = None
         tabelle_df = None
-
-        try:
-            ligabericht_df = read_excel_safely(
-                excel_path,
-                sheet_name="Ligabericht",
-                header=None,
-                workbook=workbook,
-                nrows=_ANALYZE_LIGABERICHT_NROWS,
-            )
-        except Exception:
-            old_issues.append("Missing or unreadable 'Ligabericht' sheet")
 
         try:
             tabelle_df = read_excel_safely(
@@ -2715,11 +2965,17 @@ def _analyze_excel_file_with_workbook(excel_path, workbook, old_format_sheet_thr
         except Exception:
             old_issues.append("Missing or unreadable 'Tabelle' sheet")
 
-        if ligabericht_df is not None:
-            league_raw = get_cell_value(ligabericht_df, 7, 15)  # P8:T8
-            location_raw = get_cell_value(ligabericht_df, 7, 4)  # E8:J8
-            week_raw = get_cell_value(ligabericht_df, 5, 4)  # E6:F6
-            date_raw = get_cell_value(ligabericht_df, 5, 16)  # Q6:T6
+        header_meta = resolve_pre_2022_workbook_metadata(
+            excel_path, sheet_names, workbook=workbook
+        )
+        if header_meta is None:
+            old_issues.append("Missing metadata (no Ligabericht or Spielzettel header)")
+        else:
+            league_raw = header_meta["league_raw"]
+            location_raw = header_meta["location_raw"]
+            week_raw = header_meta["week_raw"]
+            date_raw = header_meta["date_raw"]
+            meta_src = header_meta["source"]
 
             result["debug_league_raw"] = "" if pd.isna(league_raw) else str(league_raw)
             result["debug_location_raw"] = "" if pd.isna(location_raw) else str(location_raw)
@@ -2731,37 +2987,49 @@ def _analyze_excel_file_with_workbook(excel_path, workbook, old_format_sheet_thr
             week_value = parse_week_from_text(week_raw)
             if week_value is not None:
                 result["available_weeks"] = str(week_value)
+            path_si = infer_season_from_path(excel_path)
+            if path_si:
+                result["season"] = path_si["season_short"]
+                result["season_source"] = "folder_path"
+            season_from_sheet = normalize_season_cell_to_short(
+                header_meta.get("season_raw") if header_meta else None
+            )
+            if season_from_sheet and (
+                not result.get("season") or _season_from_content_is_uncertain(result.get("season"))
+            ):
+                result["season"] = season_from_sheet
+                result["season_source"] = f"{meta_src}:season"
             date_info = parse_old_format_date(date_raw)
-            result["season"] = derive_season_from_old_date(date_info)
-            if not result["season"] or _season_from_content_is_uncertain(result["season"]):
-                path_si = infer_season_from_path(excel_path)
-                if path_si:
-                    result["season"] = path_si["season_short"]
+            season_info = path_si or season_label_to_season_info(result.get("season") or "")
+            date_info = complete_old_format_date_info(date_info, season_info)
+            if not result.get("season"):
+                result["season"] = derive_season_from_old_date(date_info)
             result["games_per_week"] = None
             result["degradation_trace"] = (
-                f"old_format league_raw='{result['debug_league_raw'] or 'missing'}', "
+                f"old_format source={meta_src}, league_raw='{result['debug_league_raw'] or 'missing'}', "
                 f"week_raw='{result['debug_week_raw'] or 'missing'}', "
                 f"date_raw='{result['debug_date_raw'] or 'missing'}', "
                 f"location_raw='{result['debug_location_raw'] or 'missing'}'"
             )
 
             if not result["league"]:
-                old_issues.append("Missing league in Ligabericht P8:T8")
+                old_issues.append(f"Missing league in {meta_src} header")
             if week_value is None:
-                old_issues.append("Missing week in Ligabericht E6:F6")
-            if date_info is None:
-                old_issues.append("Missing/invalid date in Ligabericht Q6:T6")
+                old_issues.append(f"Missing week in {meta_src} header")
+            if not old_format_date_is_usable(date_info, season_info):
+                old_issues.append(f"Missing/invalid date in {meta_src} header")
             if not result["season"]:
-                old_issues.append("Could not derive season from Ligabericht date or folder path")
+                old_issues.append("Could not derive season from date or folder path")
             if not result["location"]:
-                old_issues.append("Missing location in Ligabericht E8:J8")
+                old_issues.append(f"Missing location in {meta_src} header")
 
-        if tabelle_df is not None:
-            teams_raw = get_cell_value(tabelle_df, 2, 13)  # N3:Q3
-            result["debug_teams_raw"] = "" if pd.isna(teams_raw) else str(teams_raw)
-            result["number_of_teams"] = parse_metadata_int(teams_raw)
-            if result["number_of_teams"] is None:
-                old_issues.append("Missing number of teams in Tabelle N3:Q3")
+        team_count = infer_pre_2022_number_of_teams(
+            excel_path, tabelle_df=tabelle_df, workbook=workbook
+        )
+        result["number_of_teams"] = team_count
+        result["debug_teams_raw"] = str(team_count) if team_count is not None else ""
+        if team_count is None:
+            old_issues.append("Missing number of teams (Tabelle and Spielzettel)")
 
         if not old_format_results_are_valid(excel_path, workbook=workbook):
             old_issues.append("Tagesschnittliste has fewer than 10 valid data rows")
@@ -3111,6 +3379,426 @@ def sanitize_filename_component(value):
     return sanitized or "unknown"
 
 
+DEFAULT_PROCESS_OUTPUT_FILE = Path("database/data/historical_league_results.csv")
+
+
+def _resolve_cli_path(path_value: str | Path) -> Path:
+    path = Path(path_value)
+    if not path.is_absolute():
+        path = Path.cwd() / path
+    return path.resolve()
+
+
+def resolve_process_output_paths(args) -> tuple[Path, Path]:
+    """Resolve merged output CSV and per-combo CSV directory for process mode."""
+    continuous_output_file = _resolve_cli_path(args.output_file)
+    if args.output_dir:
+        output_dir = _resolve_cli_path(args.output_dir)
+    else:
+        output_dir = (continuous_output_file.parent / f"{continuous_output_file.stem}_combos").resolve()
+    return output_dir, continuous_output_file
+
+
+def process_scope_cache_key(continuous_output_file: Path) -> str:
+    """Cache bucket id for a process run's merged output file."""
+    repo_default = (Path(__file__).resolve().parent / DEFAULT_PROCESS_OUTPUT_FILE).resolve()
+    if continuous_output_file.resolve() == repo_default:
+        return "historical_league_results"
+    return f"scope::{sanitize_filename_component(continuous_output_file.stem)}"
+
+
+def combo_processing_cache_key(process_scope_key: str, season_part: str, league_part: str) -> str:
+    """Per league/season cache key; default historical scope keeps legacy key shape."""
+    season_league = f"{season_part}::{league_part}"
+    if process_scope_key == "historical_league_results":
+        return season_league
+    return f"{process_scope_key}::{season_part}::{league_part}"
+
+
+def top_level_subdir_key(file_path: Path, folder_root: Path) -> str:
+    """First path segment under folder_root, or _root for files directly in folder_root."""
+    folder_root = folder_root.resolve()
+    file_path = Path(file_path).resolve()
+    try:
+        relative = file_path.relative_to(folder_root)
+    except ValueError:
+        return "_external"
+    if len(relative.parts) <= 1:
+        return "_root"
+    return relative.parts[0]
+
+
+def _combo_csv_paths_for_eligible(eligible_df: pd.DataFrame, output_dir: Path) -> list[Path]:
+    paths = []
+    for row in eligible_df.itertuples(index=False):
+        season_value = getattr(row, "season", None)
+        league_value = getattr(row, "league", None)
+        if pd.isna(season_value) or pd.isna(league_value):
+            continue
+        season_part = sanitize_filename_component(season_value)
+        league_part = sanitize_filename_component(league_value)
+        paths.append(output_dir / f"{season_part} {league_part}.csv")
+    return sorted(set(paths))
+
+
+def _merge_combo_csvs(
+    combo_csv_paths: list[Path],
+    *,
+    continuous_output_file: Path,
+    apply_team_numbering: bool = True,
+) -> pd.DataFrame | None:
+    merged_frames = []
+    missing = []
+    for csv_file in combo_csv_paths:
+        if csv_file.is_file():
+            try:
+                merged_frames.append(pd.read_csv(csv_file, sep=";", dtype=str))
+            except Exception as exc:
+                print(f"Warning: failed to read combo CSV during merge: {csv_file} ({exc})")
+        else:
+            missing.append(csv_file)
+
+    if not merged_frames:
+        if missing:
+            print("Missing combo CSVs:")
+            for missing_file in missing:
+                print(f"  - {missing_file}")
+        return None
+
+    merged_df = pd.concat(merged_frames, ignore_index=True)
+    merged_df = normalize_extracted_dataframe(merged_df)
+    if apply_team_numbering:
+        merged_df = normalize_team_numbering_dataframe(merged_df, overrides_df=load_team_number_overrides())
+    merged_df = merged_df.sort_values(
+        by=["Season", "League", "Week", "Round Number", "Match Number", "Team", "Position"],
+        key=lambda col: col.astype(str),
+    )
+    continuous_output_file.parent.mkdir(parents=True, exist_ok=True)
+    merged_df.to_csv(continuous_output_file, sep=";", index=False)
+    if missing:
+        print("\nCombo CSVs missing (excluded from merge):")
+        for missing_file in missing:
+            print(f"  - {missing_file}")
+    return merged_df
+
+
+def process_eligible_combos(
+    eligible_df: pd.DataFrame,
+    *,
+    output_dir: Path,
+    team_sheet_prefix: str,
+    season_sheet: str,
+    combo_cache: dict | None,
+    process_scope_key: str,
+    force_reanalyze: bool,
+    log: Callable[[str], None] = print,
+) -> tuple[list[tuple[Path, int]], int, list[Path]]:
+    """
+    Extract all season/league combos for eligible files into output_dir.
+
+    When combo_cache is None, combo processing cache is skipped (for parallel workers).
+    """
+    output_dir.mkdir(parents=True, exist_ok=True)
+    created_files: list[tuple[Path, int]] = []
+    skipped_combo_count = 0
+    combo_keys = (
+        eligible_df[["Season", "League"]]
+        if "Season" in eligible_df.columns and "League" in eligible_df.columns
+        else eligible_df[["season", "league"]].rename(columns={"season": "Season", "league": "League"})
+    )
+    combo_count = len(combo_keys.drop_duplicates())
+    processed_combos = 0
+    use_cache = combo_cache is not None
+
+    for (season_value, league_value), combo_df in eligible_df.groupby(["season", "league"], dropna=False):
+        processed_combos += 1
+        season_part = sanitize_filename_component(season_value if pd.notna(season_value) else "unknown_season")
+        league_part = sanitize_filename_component(league_value if pd.notna(league_value) else "unknown_league")
+        combo_output_file = output_dir / f"{season_part} {league_part}.csv"
+        combo_cache_key = combo_processing_cache_key(process_scope_key, season_part, league_part)
+        combo_signature = _build_combo_processing_signature(
+            combo_df,
+            season_value=season_value,
+            league_value=league_value,
+        )
+
+        cached_combo = (combo_cache or {}).get(combo_cache_key, {})
+        combo_cache_hit = (
+            use_cache
+            and not force_reanalyze
+            and isinstance(cached_combo, dict)
+            and cached_combo.get("combo_signature") == combo_signature
+            and cached_combo.get("analyzer_version") == ANALYZER_VERSION
+            and cached_combo.get("processor_version") == PROCESSOR_VERSION
+            and combo_output_file.is_file()
+        )
+
+        if combo_cache_hit:
+            current_combo_hash = compute_file_sha256(combo_output_file)
+            if current_combo_hash == cached_combo.get("output_hash"):
+                skipped_combo_count += 1
+                combo_cache[combo_cache_key] = {
+                    **cached_combo,
+                    "last_skip_reason": "Skipped due to unchanged combo signature + versions + output hash",
+                    "last_skipped_at": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
+                }
+                print_progress_bar(processed_combos, combo_count, "Processing combos")
+                continue
+
+        if use_cache:
+            combo_criteria = {
+                "force_reanalyze_disabled": not force_reanalyze,
+                "has_cached_combo": isinstance(cached_combo, dict),
+                "combo_signature_match": cached_combo.get("combo_signature") == combo_signature,
+                "analyzer_version_match": cached_combo.get("analyzer_version") == ANALYZER_VERSION,
+                "processor_version_match": cached_combo.get("processor_version") == PROCESSOR_VERSION,
+                "output_file_exists": combo_output_file.is_file(),
+            }
+            if force_reanalyze:
+                combo_reexecute_reason = "forced via --force_reanalyze"
+            else:
+                failed_combo_criteria = [name for name, ok in combo_criteria.items() if not ok]
+                combo_reexecute_reason = (
+                    "cache miss: " + ", ".join(failed_combo_criteria)
+                    if failed_combo_criteria
+                    else "output_hash_mismatch"
+                )
+            log(f"  reprocess combo [{season_part} | {league_part}] -> {combo_reexecute_reason}")
+
+        combo_output_df = pd.DataFrame()
+        total_files_in_combo = len(combo_df)
+        for row in combo_df.itertuples(index=False):
+            input_file = Path(row.file)
+            data_format = getattr(row, "data_format", "data_format_post_2022")
+            available_weeks = parse_available_weeks(row.available_weeks)
+            if not available_weeks:
+                continue
+
+            for week in available_weeks:
+                global dict_of_match_numbers
+                dict_of_match_numbers = {}
+                csv_data = []
+                if data_format == "data_format_pre_2022":
+                    with redirect_stdout(io.StringIO()):
+                        csv_data = extract_pre_2022_file(
+                            str(input_file),
+                            league=row.league,
+                            season=row.season,
+                            week=week,
+                            location=getattr(row, "location", None) or "Unknown",
+                            players_per_team=int(getattr(row, "players_per_team", None) or 4),
+                            number_of_teams=getattr(row, "number_of_teams", None),
+                        )
+                else:
+                    with redirect_stdout(io.StringIO()):
+                        result = extract_excel_data(
+                            str(input_file),
+                            team_sheet_prefix + str(week),
+                            season_sheet,
+                        )
+                    if result is None:
+                        continue
+                    df, season_info, full_date = result
+                    placeholder_season = season_info.get("season_short") in (None, "??/??") or season_info.get(
+                        "year1"
+                    ) in (None, "????")
+
+                    merged_season = None
+                    if getattr(row, "season", None) and not _season_from_content_is_uncertain(row.season):
+                        merged_season = season_label_to_season_info(row.season)
+                    if merged_season is None and placeholder_season:
+                        merged_season = infer_season_from_path(input_file)
+                    if merged_season is not None:
+                        season_info = dict(merged_season)
+                        with redirect_stdout(io.StringIO()):
+                            recomputed_date_info = extract_date_info(df)
+                        full_date = combine_season_and_date(season_info, recomputed_date_info)
+
+                    with redirect_stdout(io.StringIO()):
+                        csv_data = parse_teams(
+                            df,
+                            season_info,
+                            full_date,
+                            league_override=row.league,
+                            week_override=week,
+                            max_games_per_week=row.games_per_week,
+                        )
+                if csv_data:
+                    temp_df = pd.DataFrame(csv_data)
+                    combo_output_df = pd.concat([combo_output_df, temp_df], ignore_index=True)
+
+        if not combo_output_df.empty:
+            combo_output_df = normalize_extracted_dataframe(combo_output_df)
+            combo_output_df = combo_output_df.sort_values(
+                by=["Season", "League", "Week", "Round Number", "Match Number", "Team", "Position"]
+            )
+            combo_output_df.to_csv(combo_output_file, sep=";", index=False)
+            combo_hash = compute_file_sha256(combo_output_file)
+            created_files.append((combo_output_file, len(combo_output_df)))
+            if use_cache:
+                combo_cache[combo_cache_key] = {
+                    "combo_signature": combo_signature,
+                    "analyzer_version": ANALYZER_VERSION,
+                    "processor_version": PROCESSOR_VERSION,
+                    "output_file": str(combo_output_file.resolve()),
+                    "output_hash": combo_hash,
+                    "season": str(season_value),
+                    "league": str(league_value),
+                    "last_processed_at": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
+                    "eligible_file_count": int(total_files_in_combo),
+                    "last_skip_reason": "",
+                    "last_reexecute_reason": combo_reexecute_reason if use_cache else "",
+                }
+
+        print_progress_bar(processed_combos, combo_count, "Processing combos")
+
+    target_output_files = _combo_csv_paths_for_eligible(eligible_df, output_dir)
+    return created_files, skipped_combo_count, target_output_files
+
+
+def _process_subdir_worker(job: dict) -> dict:
+    """Process one top-level subfolder (multiprocessing entry point)."""
+    log_lines: list[str] = []
+
+    def log(message: str) -> None:
+        log_lines.append(str(message))
+
+    subdir_key = str(job["subdir_key"])
+    try:
+        eligible_df = pd.DataFrame(job["eligible_records"])
+        combo_output_dir = Path(job["combo_output_dir"])
+        partial_output_csv = Path(job["partial_output_csv"])
+        log(f"subdir={subdir_key} files={len(eligible_df)} combo_dir={combo_output_dir}")
+
+        process_scope_key = str(job["process_scope_key"])
+        created_files, _, target_output_files = process_eligible_combos(
+            eligible_df,
+            output_dir=combo_output_dir,
+            team_sheet_prefix=str(job["team_sheet_prefix"]),
+            season_sheet=str(job["season_sheet"]),
+            combo_cache=None,
+            process_scope_key=process_scope_key,
+            force_reanalyze=True,
+            log=log,
+        )
+        for combo_path, row_count in created_files:
+            log(f"  wrote {combo_path} ({row_count} rows)")
+
+        merged_df = _merge_combo_csvs(
+            target_output_files,
+            continuous_output_file=partial_output_csv,
+            apply_team_numbering=False,
+        )
+        if merged_df is None:
+            return {
+                "subdir_key": subdir_key,
+                "ok": False,
+                "error": "no combo CSVs produced",
+                "partial_output_csv": "",
+                "row_count": 0,
+            }
+        log(f"partial {partial_output_csv} ({len(merged_df)} rows)")
+        return {
+            "subdir_key": subdir_key,
+            "ok": True,
+            "error": "",
+            "partial_output_csv": str(partial_output_csv.resolve()),
+            "row_count": int(len(merged_df)),
+        }
+    except Exception as exc:
+        log(f"ERROR: {exc}")
+        return {
+            "subdir_key": subdir_key,
+            "ok": False,
+            "error": str(exc),
+            "partial_output_csv": "",
+            "row_count": 0,
+        }
+    finally:
+        log_path = Path(job["log_path"])
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        log_path.write_text("\n".join(log_lines) + "\n", encoding="utf-8")
+
+
+def _run_parallel_subdir_processing(
+    eligible_df: pd.DataFrame,
+    *,
+    folder_root: Path,
+    output_dir: Path,
+    continuous_output_file: Path,
+    process_scope_key: str,
+    args,
+) -> tuple[pd.DataFrame | None, list[Path]]:
+    eligible_df = eligible_df.copy()
+    eligible_df["__subdir"] = eligible_df["file"].map(
+        lambda file_value: top_level_subdir_key(Path(file_value), folder_root)
+    )
+    subdir_groups = list(eligible_df.groupby("__subdir", sort=True))
+    partials_dir = continuous_output_file.parent / f"{continuous_output_file.stem}_partials"
+    logs_dir = continuous_output_file.parent / f"{continuous_output_file.stem}_parallel_logs"
+    partials_dir.mkdir(parents=True, exist_ok=True)
+    logs_dir.mkdir(parents=True, exist_ok=True)
+
+    jobs = []
+    for subdir_key, subdir_df in subdir_groups:
+        subdir_df = subdir_df.drop(columns=["__subdir"])
+        safe_subdir = sanitize_filename_component(subdir_key)
+        jobs.append(
+            {
+                "subdir_key": subdir_key,
+                "eligible_records": subdir_df.to_dict(orient="records"),
+                "combo_output_dir": str((output_dir / safe_subdir).resolve()),
+                "partial_output_csv": str((partials_dir / f"{safe_subdir}.csv").resolve()),
+                "log_path": str((logs_dir / f"{safe_subdir}.log").resolve()),
+                "team_sheet_prefix": args.team_sheet_prefix,
+                "season_sheet": args.season_sheet,
+                "process_scope_key": process_scope_key,
+            }
+        )
+
+    max_workers = min(len(jobs), os.cpu_count() or 4)
+    print(
+        f"Parallel process: {len(jobs)} subdir job(s), max_workers={max_workers}, "
+        f"partials={partials_dir}, logs={logs_dir}"
+    )
+
+    partial_paths: list[Path] = []
+    with ProcessPoolExecutor(max_workers=max_workers) as executor:
+        futures = [executor.submit(_process_subdir_worker, job) for job in jobs]
+        for future in as_completed(futures):
+            result = future.result()
+            subdir_key = result.get("subdir_key", "?")
+            if result.get("ok"):
+                partial_path = Path(result["partial_output_csv"])
+                partial_paths.append(partial_path)
+                print(f"  done {subdir_key}: {partial_path} ({result.get('row_count', 0)} rows)")
+            else:
+                print(f"  FAILED {subdir_key}: {result.get('error', 'unknown error')}")
+
+    if not partial_paths:
+        print("Parallel process: no partial CSVs produced.")
+        return None, []
+
+    merged_frames = []
+    for partial_path in sorted(partial_paths):
+        try:
+            merged_frames.append(pd.read_csv(partial_path, sep=";", dtype=str))
+        except Exception as exc:
+            print(f"Warning: failed to read partial CSV {partial_path}: {exc}")
+
+    if not merged_frames:
+        return None, partial_paths
+
+    merged_df = pd.concat(merged_frames, ignore_index=True)
+    merged_df = normalize_extracted_dataframe(merged_df)
+    merged_df = normalize_team_numbering_dataframe(merged_df, overrides_df=load_team_number_overrides())
+    merged_df = merged_df.sort_values(
+        by=["Season", "League", "Week", "Round Number", "Match Number", "Team", "Position"],
+        key=lambda col: col.astype(str),
+    )
+    return merged_df, partial_paths
+
+
 def run_process_mode_with_analysis(excel_files, args):
     """Analyze first, then process eligible post-2022 and pre-2022 files."""
     reset_team_normalization_stats()
@@ -3166,229 +3854,81 @@ def run_process_mode_with_analysis(excel_files, args):
         print("No eligible files to process.")
         return
 
-    continuous_output_file = Path("database/data/historical_league_results.csv")
+    output_dir, continuous_output_file = resolve_process_output_paths(args)
+    process_scope_key = process_scope_cache_key(continuous_output_file)
     process_cache = analysis_log.setdefault("processing_cache", {})
     combo_cache = process_cache.setdefault("league_season_outputs", {})
 
-    output_dir = Path("C:/tmp/csvs")
     output_dir.mkdir(parents=True, exist_ok=True)
-    created_files = []
+    print(f"Process merged output: {continuous_output_file}")
+    print(f"Process combo CSV dir: {output_dir} (scope={process_scope_key})")
+
+    folder_root = Path(args.folder).resolve() if args.folder else None
+    use_parallel_subdirs = (
+        folder_root is not None
+        and not args.no_parallel_subdirs
+        and len({top_level_subdir_key(Path(file_value), folder_root) for file_value in eligible_df["file"]}) > 1
+    )
+
+    created_files: list[tuple[Path, int]] = []
     skipped_combo_count = 0
+    target_output_files: list[Path] = []
 
-    combo_keys = (
-        eligible_df[["Season", "League"]]
-        if "Season" in eligible_df.columns and "League" in eligible_df.columns
-        else eligible_df[["season", "league"]].rename(columns={"season": "Season", "league": "League"})
-    )
-    combo_count = len(combo_keys.drop_duplicates())
-    processed_combos = 0
-
-    for (season_value, league_value), combo_df in eligible_df.groupby(["season", "league"], dropna=False):
-        processed_combos += 1
-        season_part = sanitize_filename_component(season_value if pd.notna(season_value) else "unknown_season")
-        league_part = sanitize_filename_component(league_value if pd.notna(league_value) else "unknown_league")
-        combo_output_file = output_dir / f"{season_part} {league_part}.csv"
-        combo_cache_key = f"{season_part}::{league_part}"
-        combo_signature = _build_combo_processing_signature(
-            combo_df,
-            season_value=season_value,
-            league_value=league_value,
+    if use_parallel_subdirs:
+        merged_df, partial_paths = _run_parallel_subdir_processing(
+            eligible_df,
+            folder_root=folder_root,
+            output_dir=output_dir,
+            continuous_output_file=continuous_output_file,
+            process_scope_key=process_scope_key,
+            args=args,
         )
-
-        cached_combo = combo_cache.get(combo_cache_key, {})
-        combo_cache_hit = (
-            not args.force_reanalyze
-            and isinstance(cached_combo, dict)
-            and cached_combo.get("combo_signature") == combo_signature
-            and cached_combo.get("analyzer_version") == ANALYZER_VERSION
-            and cached_combo.get("processor_version") == PROCESSOR_VERSION
-            and combo_output_file.is_file()
+        if merged_df is None:
+            return
+        continuous_output_file.parent.mkdir(parents=True, exist_ok=True)
+        merged_df.to_csv(continuous_output_file, sep=";", index=False)
+        target_output_files = partial_paths
+    else:
+        created_files, skipped_combo_count, target_output_files = process_eligible_combos(
+            eligible_df,
+            output_dir=output_dir,
+            team_sheet_prefix=args.team_sheet_prefix,
+            season_sheet=args.season_sheet,
+            combo_cache=combo_cache,
+            process_scope_key=process_scope_key,
+            force_reanalyze=args.force_reanalyze,
         )
-
-        if combo_cache_hit:
-            current_combo_hash = compute_file_sha256(combo_output_file)
-            if current_combo_hash == cached_combo.get("output_hash"):
-                skipped_combo_count += 1
-                combo_cache[combo_cache_key] = {
-                    **cached_combo,
-                    "last_skip_reason": "Skipped due to unchanged combo signature + versions + output hash",
-                    "last_skipped_at": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
-                }
-                print_progress_bar(processed_combos, combo_count, "Processing combos")
-                continue
-
-        combo_criteria = {
-            "force_reanalyze_disabled": not args.force_reanalyze,
-            "has_cached_combo": isinstance(cached_combo, dict),
-            "combo_signature_match": cached_combo.get("combo_signature") == combo_signature,
-            "analyzer_version_match": cached_combo.get("analyzer_version") == ANALYZER_VERSION,
-            "processor_version_match": cached_combo.get("processor_version") == PROCESSOR_VERSION,
-            "output_file_exists": combo_output_file.is_file(),
-        }
-        if args.force_reanalyze:
-            combo_reexecute_reason = "forced via --force_reanalyze"
-        else:
-            failed_combo_criteria = [name for name, ok in combo_criteria.items() if not ok]
-            combo_reexecute_reason = (
-                "cache miss: " + ", ".join(failed_combo_criteria) if failed_combo_criteria else "output_hash_mismatch"
-            )
-        print(f"  reprocess combo [{season_part} | {league_part}] -> {combo_reexecute_reason}")
-
-        combo_output_df = pd.DataFrame()
-        total_files_in_combo = len(combo_df)
-        for file_index, row in enumerate(combo_df.itertuples(index=False), start=1):
-            input_file = Path(row.file)
-            data_format = getattr(row, "data_format", "data_format_post_2022")
-            available_weeks = parse_available_weeks(row.available_weeks)
-            if not available_weeks:
-                continue
-
-            for week in available_weeks:
-                global dict_of_match_numbers
-                dict_of_match_numbers = {}
-                csv_data = []
-                if data_format == "data_format_pre_2022":
-                    with redirect_stdout(io.StringIO()):
-                        csv_data = extract_pre_2022_file(
-                            str(input_file),
-                            league=row.league,
-                            season=row.season,
-                            week=week,
-                            location=getattr(row, "location", None) or "Unknown",
-                            players_per_team=int(getattr(row, "players_per_team", None) or 4),
-                            number_of_teams=getattr(row, "number_of_teams", None),
-                        )
-                else:
-                    with redirect_stdout(io.StringIO()):
-                        result = extract_excel_data(
-                            str(input_file),
-                            args.team_sheet_prefix + str(week),
-                            args.season_sheet,
-                        )
-                    if result is None:
-                        continue
-                    df, season_info, full_date = result
-                    placeholder_season = season_info.get("season_short") in (None, "??/??") or season_info.get(
-                        "year1"
-                    ) in (None, "????")
-
-                    merged_season = None
-                    if getattr(row, "season", None) and not _season_from_content_is_uncertain(row.season):
-                        merged_season = season_label_to_season_info(row.season)
-                    if merged_season is None and placeholder_season:
-                        merged_season = infer_season_from_path(input_file)
-                    if merged_season is not None:
-                        season_info = dict(merged_season)
-                        with redirect_stdout(io.StringIO()):
-                            recomputed_date_info = extract_date_info(df)
-                        full_date = combine_season_and_date(season_info, recomputed_date_info)
-
-                    with redirect_stdout(io.StringIO()):
-                        csv_data = parse_teams(
-                            df,
-                            season_info,
-                            full_date,
-                            league_override=row.league,
-                            week_override=week,
-                            max_games_per_week=row.games_per_week,
-                        )
-                if csv_data:
-                    temp_df = pd.DataFrame(csv_data)
-                    combo_output_df = pd.concat([combo_output_df, temp_df], ignore_index=True)
-
-        if not combo_output_df.empty:
-            # Stage 3: normalize extracted data before writing/merging.
-            combo_output_df = normalize_extracted_dataframe(combo_output_df)
-            combo_output_df = combo_output_df.sort_values(
-                by=["Season", "League", "Week", "Round Number", "Match Number", "Team", "Position"]
-            )
-            combo_output_df.to_csv(combo_output_file, sep=";", index=False)
-            combo_hash = compute_file_sha256(combo_output_file)
-            created_files.append((combo_output_file, len(combo_output_df)))
-            combo_cache[combo_cache_key] = {
-                "combo_signature": combo_signature,
-                "analyzer_version": ANALYZER_VERSION,
-                "processor_version": PROCESSOR_VERSION,
-                "output_file": str(combo_output_file.resolve()),
-                "output_hash": combo_hash,
-                "season": str(season_value),
-                "league": str(league_value),
-                "last_processed_at": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
-                "eligible_file_count": int(total_files_in_combo),
-                "last_skip_reason": "",
-                "last_reexecute_reason": combo_reexecute_reason,
-            }
-
-        print_progress_bar(processed_combos, combo_count, "Processing combos")
-
-    # Build merge targets from the current eligible process scope (not all CSVs in output dir).
-    target_output_files = []
-    for row in eligible_df.itertuples(index=False):
-        season_value = getattr(row, "season", None)
-        league_value = getattr(row, "league", None)
-        if pd.isna(season_value) or pd.isna(league_value):
-            continue
-        season_part = sanitize_filename_component(season_value)
-        league_part = sanitize_filename_component(league_value)
-        target_output_files.append(output_dir / f"{season_part} {league_part}.csv")
-    target_output_files = sorted(set(target_output_files))
-
-    merged_frames = []
-    missing_target_outputs = []
-    for csv_file in target_output_files:
-        if csv_file.is_file():
-            try:
-                merged_frames.append(pd.read_csv(csv_file, sep=";", dtype=str))
-            except Exception as exc:
-                print(f"Warning: failed to read target CSV during merge: {csv_file} ({exc})")
-        else:
-            missing_target_outputs.append(csv_file)
-
-    if not merged_frames:
-        print("No data extracted and no existing target CSVs found for eligible process scope.")
-        if missing_target_outputs:
-            print("Missing target CSVs:")
-            for missing_file in missing_target_outputs:
-                print(f"  - {missing_file}")
-        return
-
-    merged_df = pd.concat(merged_frames, ignore_index=True)
-    # Apply normalization at merge stage even when all combo outputs were cache hits.
-    merged_df = normalize_extracted_dataframe(merged_df)
-    merged_df = normalize_team_numbering_dataframe(merged_df, overrides_df=load_team_number_overrides())
-    merged_df = merged_df.sort_values(
-        by=["Season", "League", "Week", "Round Number", "Match Number", "Team", "Position"],
-        key=lambda col: col.astype(str),
-    )
-
-    # Continuous cross-season/cross-league output for backend source registration.
-    continuous_output_file.parent.mkdir(parents=True, exist_ok=True)
-    merged_df.to_csv(continuous_output_file, sep=";", index=False)
+        merged_df = _merge_combo_csvs(
+            target_output_files,
+            continuous_output_file=continuous_output_file,
+            apply_team_numbering=True,
+        )
+        if merged_df is None:
+            print("No data extracted and no existing target CSVs found for eligible process scope.")
+            return
     output_hash = compute_file_sha256(continuous_output_file)
     export_unique_team_names_after_merge(merged_df)
 
-    process_cache["historical_league_results"] = {
-        "scope_signature": hashlib.sha256(
-            "|".join(str(p.resolve()) for p in target_output_files).encode("utf-8")
-        ).hexdigest()
-        if target_output_files
-        else "",
+    scope_signature = hashlib.sha256(
+        "|".join(sorted(eligible_df["file"].astype(str))).encode("utf-8")
+    ).hexdigest()
+    process_cache[process_scope_key] = {
+        "scope_signature": scope_signature,
         "output_file": str(continuous_output_file.resolve()),
+        "combo_output_dir": str(output_dir.resolve()),
         "output_hash": output_hash,
         "last_processed_at": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
         "eligible_count": int(len(eligible_df)),
         "combo_cache_entries": int(len(combo_cache)),
         "skipped_combo_count": int(skipped_combo_count),
+        "parallel_subdirs": bool(use_parallel_subdirs),
     }
     save_analysis_log(analysis_log)
 
-    print("\nCreated CSV files:")
-    for output_file, row_count in created_files:
-        print(f"  - {output_file} ({row_count} rows)")
-    if missing_target_outputs:
-        print("\nProcess scope CSVs missing (skipped from merge):")
-        for missing_file in missing_target_outputs:
-            print(f"  - {missing_file}")
+    if created_files:
+        print("\nCreated combo CSV files:")
+        for output_file, row_count in created_files:
+            print(f"  - {output_file} ({row_count} rows)")
     print(f"  - {continuous_output_file} ({len(merged_df)} rows, continuous, hash={output_hash[:12]}...)")
 
     summary_df = (
