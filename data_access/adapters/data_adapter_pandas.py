@@ -11,6 +11,7 @@ from data_access.models.raw_data_models import RawPlayerData, RawTeamData, RawLe
 from data_access.dtype_normalization import normalize_legacy_dataframe_types
 from data_access.score_utils import league_points_cell
 from data_access.text_norm import normalize_unicode_label
+from data_access.shared_pandas_store import LeagueMetadataIndex, build_league_metadata_index
 
 
 
@@ -79,6 +80,7 @@ class DataAdapterPandas(DataAdapter):
         self.data_path = path_to_csv_data
         self.df = None
         self.database = database
+        self._metadata_index: LeagueMetadataIndex = LeagueMetadataIndex()
         
         if path_to_csv_data is not None and path_to_csv_data.exists():
             self._load_data()
@@ -88,6 +90,7 @@ class DataAdapterPandas(DataAdapter):
                 work = work.loc[:, ~work.columns.duplicated()].copy()
             self.df = normalize_legacy_dataframe_types(work)
             self._normalize_week_column()
+            self._rebuild_metadata_index()
         elif database is not None:
             # Load from database parameter
             self._load_data_from_database()
@@ -96,6 +99,9 @@ class DataAdapterPandas(DataAdapter):
             print(type(df))
             print(type(database))
             raise ValueError("Either path_to_csv_data, df, or database must be provided")
+
+    def _rebuild_metadata_index(self) -> None:
+        self._metadata_index = build_league_metadata_index(self.df)
     
     def _load_data_from_database(self):
         """Load data from database parameter"""
@@ -131,12 +137,11 @@ class DataAdapterPandas(DataAdapter):
 
     def _load_data(self):
         """Load data from CSV file"""
+        from data_access.shared_pandas_store import get_dataframe
 
-        self.df = pd.read_csv(self.data_path, sep=";", dtype=str, low_memory=False)
-        if self.df.columns.duplicated().any():
-            self.df = self.df.loc[:, ~self.df.columns.duplicated()].copy()
-        self.df = normalize_legacy_dataframe_types(self.df)
+        self.df = get_dataframe(pathlib.Path(self.data_path))
         self._normalize_week_column()
+        self._rebuild_metadata_index()
 
     @staticmethod
     def _bool_mask(series: pd.Series, value: bool) -> pd.Series:
@@ -147,6 +152,7 @@ class DataAdapterPandas(DataAdapter):
         """Set the dataframe directly (for testing or in-memory operations)"""
         self.df = df
         self._normalize_week_column()
+        self._rebuild_metadata_index()
 
     def get_filtered_data(self, 
                           filters: Optional[Dict[str, Dict[str, Any]]] = None, 
@@ -262,25 +268,31 @@ class DataAdapterPandas(DataAdapter):
     
     def get_weeks(self, season: str, league: str) -> List[int]:
         """Get available weeks for a season and league"""
-        filters = {"Season": season, "League": league}
-        result = self.get_filtered_data__deprecated(filters_eq=filters)
-        
-        if result.empty:
-            return []
-        
-        if "Week" in result.columns:
-            weeks: List[int] = []
-            for w in result["Week"].dropna().unique():
-                try:
-                    w_str = str(w).strip()
-                    if not w_str or w_str.lower() == "nan":
-                        continue
-                    weeks.append(int(float(w_str)))
-                except (ValueError, TypeError):
-                    continue
-            return sorted(set(weeks))
+        season_key = normalize_unicode_label(season)
+        league_key = normalize_unicode_label(league)
+        if season_key and league_key:
+            cached = self._metadata_index.weeks_by_season_league.get((season_key, league_key))
+            if cached is not None:
+                return list(cached)
 
-        return []
+        filters = {
+            Columns.season: {"value": season, "operator": "eq"},
+            Columns.league_name: {"value": league, "operator": "eq"},
+        }
+        result = self.get_filtered_data(filters=filters, columns=[Columns.week])
+        if result.empty or Columns.week not in result.columns:
+            return []
+
+        weeks: List[int] = []
+        for w in result[Columns.week].dropna().unique():
+            try:
+                w_str = str(w).strip()
+                if not w_str or w_str.lower() == "nan":
+                    continue
+                weeks.append(int(float(w_str)))
+            except (ValueError, TypeError):
+                continue
+        return sorted(set(weeks))
 
     def get_league_week_data(self, query: LeagueQuery) -> pd.DataFrame:
         """Get league data for specific weeks"""
@@ -309,9 +321,27 @@ class DataAdapterPandas(DataAdapter):
     
     def get_all_players(self) -> List[str]:
         return self.df[Columns.player_name].unique().tolist()
+
+    def get_all_teams(self, league_name: str = None, season: str = None) -> List[str]:
+        """Distinct team names; uses metadata index when unfiltered."""
+        if league_name is None and season is None and self._metadata_index.teams_all:
+            return list(self._metadata_index.teams_all)
+
+        filters: Dict[str, Dict[str, object]] = {
+            Columns.computed_data: {"value": False, "operator": "eq"},
+        }
+        if league_name is not None:
+            filters[Columns.league_name] = {"value": league_name, "operator": "eq"}
+        if season is not None:
+            filters[Columns.season] = {"value": season, "operator": "eq"}
+        series = self.get_filtered_data(columns=[Columns.team_name], filters=filters)[Columns.team_name]
+        return _unique_clean_str_labels(series)
     
     def get_filtered_data__deprecated(self, columns: List[Columns]=None, filters_eq: dict=None, filters_lt: dict=None, filters_gt: dict=None, print_debug: bool=False) -> pd.DataFrame:
-        filtered_df = self.df.copy()
+        if self.df is None:
+            return pd.DataFrame()
+
+        filtered_df = self.df
 
         if print_debug:
             print("Initial DataFrame shape:", filtered_df.shape)
@@ -347,35 +377,37 @@ class DataAdapterPandas(DataAdapter):
             if print_debug:
                 print(f"DataFrame shape after filtering: {filtered_df.shape}")  
 
-        # extract columns
         if columns is not None:
-            filtered_df = filtered_df[columns] 
+            filtered_df = filtered_df[columns]
             if print_debug:
                 print("extracting columns: " + str(columns))
                 print(f"DataFrame shape after extracting columns: {filtered_df.shape}")  
         return filtered_df
     
     def get_seasons(self, league_name: str=None, team_name: str=None) -> List[str]:
-        filters_eq = dict()
-        print(f"## DA - Pandas - get_seasons - Getting seasons for league_name: {league_name} and team_name: {team_name}")
+        if league_name is None and team_name is None:
+            return list(self._metadata_index.seasons_all)
+
+        filters: Dict[str, Dict[str, object]] = {}
         if league_name is not None:
-            filters_eq[Columns.league_name] = league_name
+            filters[Columns.league_name] = {"value": league_name, "operator": "eq"}
         if team_name is not None:
-            filters_eq[Columns.team_name] = team_name
-        series = self.get_filtered_data__deprecated(columns=[Columns.season], filters_eq=filters_eq)[Columns.season]
-        cleaned = _unique_clean_str_labels(series)
-        print(f"## DA - Pandas - get_seasons - Seasons: {cleaned}")
-        return cleaned
+            filters[Columns.team_name] = {"value": team_name, "operator": "eq"}
+        series = self.get_filtered_data(columns=[Columns.season], filters=filters)[Columns.season]
+        return _unique_clean_str_labels(series)
     
     def get_leagues(self, season: str=None, team_name: str=None) -> List[str]:
-        filters_eq = dict()
+        if season is not None and team_name is None:
+            season_key = normalize_unicode_label(season)
+            if season_key and season_key in self._metadata_index.leagues_by_season:
+                return list(self._metadata_index.leagues_by_season[season_key])
+
+        filters: Dict[str, Dict[str, object]] = {}
         if season is not None:
-            filters_eq[Columns.season] = season
+            filters[Columns.season] = {"value": season, "operator": "eq"}
         if team_name is not None:
-            filters_eq[Columns.team_name] = team_name
-        series = self.get_filtered_data__deprecated(columns=[Columns.league_name], filters_eq=filters_eq)[
-            Columns.league_name
-        ]
+            filters[Columns.team_name] = {"value": team_name, "operator": "eq"}
+        series = self.get_filtered_data(columns=[Columns.league_name], filters=filters)[Columns.league_name]
         return _unique_clean_str_labels(series)
     
     def get_weeks__deprecated(self, league_name: str=None, season: str=None, team_name: str=None) -> List[int]:

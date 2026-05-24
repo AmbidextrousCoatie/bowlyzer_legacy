@@ -1,6 +1,5 @@
 import pandas as pd
 import re
-import os
 from data_access.schema import Columns
 from data_access.score_utils import mean_scores, sum_scores, sum_scores_float
 from app.services.data_manager import DataManager
@@ -23,7 +22,7 @@ def _csv_bool_is_false(s: pd.Series) -> pd.Series:
 
 
 class PlayerService:
-    _player_catalog_cache: Dict[Tuple[str, str, float], List[Dict[str, str]]] = {}
+    _player_catalog_cache: Dict[str, List[Dict[str, str]]] = {}
 
     def __init__(self, database: str = None):
         self.database = database
@@ -91,37 +90,44 @@ class PlayerService:
         best = sorted(cleaned, key=lambda n: (-score(n), -len(n), n.lower()))[0]
         return best
 
+    @staticmethod
+    def _safe_player_rows(df: pd.DataFrame) -> pd.DataFrame:
+        out = df
+        if Columns.input_data in out.columns:
+            out = out[_csv_bool_is_true(out[Columns.input_data])]
+        if Columns.computed_data in out.columns:
+            out = out[_csv_bool_is_false(out[Columns.computed_data])]
+        return out
+
     def _player_catalog(self) -> List[Dict[str, str]]:
         df = self.data_manager.df
         if df is None or df.empty or Columns.player_name not in df.columns:
             return []
         source_id = str(self.data_manager.current_source or self.database or "")
-        source_cfg = database_config.get_source_config(source_id) if source_id else None
-        source_path = str(source_cfg.file_path) if source_cfg and source_cfg.file_path else ""
-        source_mtime = os.path.getmtime(source_path) if source_path and os.path.exists(source_path) else 0.0
-        cache_key = (source_id, source_path, float(source_mtime))
+        from data_access.shared_pandas_store import compute_database_revision
+
+        cache_key = compute_database_revision(source_id) if source_id else source_id
         cached = self._player_catalog_cache.get(cache_key)
         if cached is not None:
             return cached
 
-        sub = df
-        if Columns.input_data in df.columns and Columns.computed_data in df.columns:
-            sub = df[_csv_bool_is_true(df[Columns.input_data]) & _csv_bool_is_false(df[Columns.computed_data])]
+        sub = self._safe_player_rows(df)
         if Columns.player_id not in sub.columns:
-            # fallback: name-only
             names = sorted({str(n).strip() for n in sub[Columns.player_name].dropna().tolist() if str(n).strip()})
-            return [{"id": n, "name": n} for n in names]
+            sorted_out = [{"id": n, "name": n} for n in names if n != "Team Total"]
+            self._player_catalog_cache[cache_key] = sorted_out
+            return sorted_out
+
+        work = sub[[Columns.player_id, Columns.player_name]].dropna(subset=[Columns.player_name]).copy()
+        work["name"] = work[Columns.player_name].astype(str).str.strip()
+        work = work[work["name"].ne("") & work["name"].ne("Team Total")]
+        work["pid"] = work[Columns.player_id].map(self._normalize_player_id)
+        work["key"] = work["pid"].where(work["pid"].astype(bool), work["name"])
 
         grouped: Dict[str, List[str]] = {}
-        for _, row in sub[[Columns.player_id, Columns.player_name]].dropna(subset=[Columns.player_name]).iterrows():
-            pid = self._normalize_player_id(row.get(Columns.player_id))
-            name = str(row.get(Columns.player_name) or "").strip()
-            if not name or name == "Team Total":
-                continue
-            key = pid or name
-            grouped.setdefault(key, [])
-            if name not in grouped[key]:
-                grouped[key].append(name)
+        for key, names in work.groupby("key", sort=False)["name"]:
+            unique_names = list(dict.fromkeys(names.tolist()))
+            grouped[str(key)] = unique_names
 
         out = []
         token_stats = self._build_name_token_stats(sub)
@@ -132,6 +138,65 @@ class PlayerService:
         sorted_out = sorted(out, key=lambda x: x["name"].lower())
         self._player_catalog_cache[cache_key] = sorted_out
         return sorted_out
+
+    def _subset_player_games(
+        self,
+        player_name: str,
+        player_id: str = "",
+        season: str | None = None,
+    ) -> pd.DataFrame:
+        """Player input rows for one player (optional season), without copying the full table."""
+        base = self.data_manager.df
+        if base is None or base.empty:
+            return pd.DataFrame()
+
+        pid = self._normalize_player_id(player_id)
+        if pid and Columns.player_id in base.columns:
+            id_series = base[Columns.player_id].astype(str).map(self._normalize_player_id)
+            games_df = base.loc[id_series.eq(pid)]
+        elif player_name:
+            games_df = self.server.get_games_for_player(player_name)
+            if games_df is None:
+                games_df = base.iloc[0:0]
+        else:
+            games_df = base.iloc[0:0]
+
+        if season and str(season).strip().lower() != "all":
+            season_norm = str(season).strip()
+            if Columns.season in games_df.columns:
+                games_df = games_df.loc[games_df[Columns.season].astype(str).str.strip().eq(season_norm)]
+
+        games_df = self._safe_player_rows(games_df)
+        if Columns.score in games_df.columns:
+            games_df = games_df.copy()
+            games_df[Columns.score] = pd.to_numeric(games_df[Columns.score], errors="coerce")
+            games_df = games_df.dropna(subset=[Columns.score])
+        return games_df
+
+    def _subset_ranking_frame(
+        self,
+        season_value: Any,
+        *,
+        league_value: str | None = None,
+        event_value: str | None = None,
+        tournament_only: bool = False,
+    ) -> pd.DataFrame:
+        base = self.data_manager.df
+        if base is None or base.empty:
+            return pd.DataFrame()
+        if Columns.season in base.columns:
+            base = base.loc[base[Columns.season].astype(str).str.strip().eq(str(season_value).strip())]
+        if league_value and Columns.league_name in base.columns:
+            base = base.loc[
+                base[Columns.league_name].astype(str).str.strip().eq(str(league_value).strip())
+            ]
+        if event_value and Columns.event_name in base.columns:
+            base = base.loc[
+                base[Columns.event_name].astype(str).str.strip().eq(str(event_value).strip())
+            ]
+        if tournament_only and Columns.event_type in base.columns:
+            base = base.loc[base[Columns.event_type].astype(str).str.strip().str.lower().eq("tournament")]
+        return self._safe_player_rows(base)
 
     def get_all_players(self):
         """Get list of all players for selection"""
@@ -244,13 +309,8 @@ class PlayerService:
         """Get sorted season list for a specific player."""
         if not player_name and not player_id:
             return []
-        games_df = self.data_manager.df.copy()
-        pid = self._normalize_player_id(player_id)
-        if pid and Columns.player_id in games_df.columns:
-            games_df = games_df[games_df[Columns.player_id].astype(str).map(self._normalize_player_id).eq(pid)]
-        else:
-            games_df = self.server.get_games_for_player(player_name)
-        if games_df is None or games_df.empty or Columns.season not in games_df.columns:
+        games_df = self._subset_player_games(player_name, player_id)
+        if games_df.empty or Columns.season not in games_df.columns:
             return []
         seasons = [str(s).strip() for s in games_df[Columns.season].dropna().unique().tolist() if str(s).strip()]
         return sorted(seasons)
@@ -261,26 +321,8 @@ class PlayerService:
 
     def get_lifetime_stats(self, player_name, season: str = "all", player_id: str = ""):
         """Get lifetime statistics for a player."""
-        base = self.data_manager.df.copy()
         pid = self._normalize_player_id(player_id)
-        if pid and Columns.player_id in base.columns:
-            id_series = base[Columns.player_id].astype(str).map(self._normalize_player_id)
-            games_df = base[id_series.eq(pid)]
-        else:
-            games_df = self.server.get_games_for_player(player_name)
-        if season and str(season).strip().lower() != "all":
-            season_norm = str(season).strip()
-            if Columns.season in games_df.columns:
-                games_df = games_df[games_df[Columns.season].astype(str).str.strip().eq(season_norm)]
-        
-        if games_df.empty:
-            return None
- 
-        # CSVs are loaded as strings; convert score once for all aggregates below.
-        if Columns.score in games_df.columns:
-            games_df = games_df.copy()
-            games_df[Columns.score] = pd.to_numeric(games_df[Columns.score], errors="coerce")
-            games_df = games_df.dropna(subset=[Columns.score])
+        games_df = self._subset_player_games(player_name, player_id, season=season)
         if games_df.empty:
             return None
 
@@ -338,28 +380,13 @@ class PlayerService:
                 round_part = f" {row.get(Columns.round_name)}"
             return f"{event}{week_part}{round_part}".strip()
 
-        def _safe_player_rows(df: pd.DataFrame) -> pd.DataFrame:
-            out = df.copy()
-            if Columns.input_data in out.columns:
-                out = out[_csv_bool_is_true(out[Columns.input_data])]
-            if Columns.computed_data in out.columns:
-                out = out[_csv_bool_is_false(out[Columns.computed_data])]
-            return out
-
         def league_average_rank(
             season_value: Any,
             league_value: str,
             player_value: str,
             player_id_value: str = "",
         ) -> Tuple[Optional[int], int]:
-            base = self.data_manager.df.copy()
-            if base.empty:
-                return None, 0
-            if Columns.season in base.columns:
-                base = base[base[Columns.season].astype(str).str.strip().eq(str(season_value).strip())]
-            if Columns.league_name in base.columns:
-                base = base[base[Columns.league_name].astype(str).str.strip().eq(str(league_value).strip())]
-            base = _safe_player_rows(base)
+            base = self._subset_ranking_frame(season_value, league_value=league_value)
             if base.empty or Columns.player_name not in base.columns or Columns.score not in base.columns:
                 return None, 0
             base = base.copy()
@@ -395,15 +422,11 @@ class PlayerService:
             player_value: str,
             player_id_value: str = "",
         ) -> Tuple[Optional[int], int]:
-            base = self.data_manager.df.copy()
-            if base.empty:
-                return None, 0
-            if Columns.season in base.columns:
-                base = base[base[Columns.season].astype(str).str.strip().eq(str(season_value).strip())]
-            if Columns.event_name in base.columns:
-                base = base[base[Columns.event_name].astype(str).str.strip().eq(str(event_value).strip())]
-            if Columns.event_type in base.columns:
-                base = base[base[Columns.event_type].astype(str).str.strip().str.lower().eq("tournament")]
+            base = self._subset_ranking_frame(
+                season_value,
+                event_value=event_value,
+                tournament_only=True,
+            )
             if base.empty or Columns.player_name not in base.columns:
                 return None, 0
 

@@ -4,13 +4,19 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 
 import pandas as pd
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_CSV = REPO_ROOT / "database/data/legacy_scrape/legacy_scrape_extracted.csv"
-ALT_CSV = REPO_ROOT / "database/data/legacy_scrape/legacy_scrap_extracxted.csv"
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from database.paths import legacy_scrape_dir
+
+DEFAULT_CSV = legacy_scrape_dir() / "legacy_scrape_extracted.csv"
+ALT_CSV = legacy_scrape_dir() / "legacy_scrap_extracxted.csv"
 
 
 def resolve_csv(path: str | None) -> Path:

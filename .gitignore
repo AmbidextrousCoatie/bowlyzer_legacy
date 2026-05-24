@@ -51,4 +51,11 @@ database/data/league_results_merged_duplicates.csv
 database/data/league_results_merged_duplicates_non_exact.csv
 database/data/historical_league_results.csv
 database/data/historical_league_results.csv
+# Pipeline intermediates (default: C:\tmp\bowlyzer\data on Windows via database/paths.py)
+database/data/legacy_scrape/
+database/data/tmp/
+database/data/historical_league_results.csv
+database/data/league_results_merged_duplicates*.csv
+database/data/unique_team_names_after_merge.csv
+database/data/bowling_ergebnisse*.csv
 database/data/legacy_scrape/*

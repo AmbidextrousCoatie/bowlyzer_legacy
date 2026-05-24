@@ -33,14 +33,19 @@ _ENDPOINT_PAYLOAD_VERSION: Dict[str, str] = {
     "get_team_week_head_to_head_table": "abs-pinfall-v1",
     "get_week_matrix": "per-league-weeks-v2",
     "get_team_vs_team_comparison": "unplayed-empty-v3",
-    "get_club_matrix": "matrix-pos-v1",
+    "get_club_matrix": "matrix-pos-v2",
     "get_tournament_section": "round-results-net-rank-v11",
     "get_player_section": "player-round-hcp-per-game-v1",
     "get_tournament_field_progress": "field-progress-v4",
     # Added handicap block + round names in payload — bump invalidates old disk cache without `handicap`.
     "get_tournament_format": "format-handicap-v1",
     "get_available_tournaments": "manual-merge-rev-v1",
-    "get_available_seasons": "manual-merge-rev-v1",
+    "get_available_seasons": "metadata-index-v1",
+    "get_available_leagues": "metadata-index-v1",
+    "team_get_teams": "metadata-index-v1",
+    "player_search": "player-catalog-v1",
+    "player_get_available_seasons": "player-subset-v1",
+    "get_lifetime_stats": "player-lifetime-v1",
 }
 
 
@@ -84,7 +89,11 @@ def compute_data_revision(database_id: str) -> str:
         return "unknown"
     parts: list[str] = []
     if cfg.file_path:
-        parts.append(_file_revision_part(Path(cfg.file_path)))
+        csv_path = Path(cfg.file_path)
+        parts.append(_file_revision_part(csv_path))
+        parquet_path = csv_path.with_suffix(".parquet")
+        if parquet_path.is_file():
+            parts.append(_file_revision_part(parquet_path))
     for extra in getattr(cfg, "merge_file_paths", None) or ():
         parts.append(_file_revision_part(Path(extra)))
     if not parts:

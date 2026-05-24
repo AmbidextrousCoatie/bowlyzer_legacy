@@ -28,8 +28,15 @@ USER_AGENT = "Bowl-A-Lyzer/1.0 (legacy-liga-scrape)"
 REQUEST_INTERVAL_S = 2.5
 MIN_RESULT_BYTES = 8_192
 
+import sys
+
 _REPO_ROOT = Path(__file__).resolve().parents[1]
-SCRAPE_ROOT = _REPO_ROOT / "database" / "data" / "legacy_scrape"
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+from database.paths import legacy_scrape_dir
+
+SCRAPE_ROOT = legacy_scrape_dir()
 LOG_PATH = SCRAPE_ROOT / "scrape_log.jsonl"
 
 # LB_* result sheets under regional auswertungen folders (2018+) or direct folders (2009-era).

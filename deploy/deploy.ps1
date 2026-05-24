@@ -286,12 +286,27 @@ Write-Host "==> SCP: $(Split-Path -Leaf $ImageTarGz) (~${gzMb} MB - upload time 
 if (-not $?) { throw "scp image failed" }
 
 if ($SyncDatabase) {
-    Write-Host "==> SCP: database/ (may take a while)"
+    Write-Host "==> SCP: database config + published CSVs only (no legacy_scrape / work dir)"
     $databasePath = Join-Path $RepoRoot "database"
-    & scp @SshOpts '-r' $databasePath "${Remote}:${RemoteDir}/"
-    if (-not $?) { throw "scp database failed" }
+    $remoteDb = "${Remote}:${RemoteDir}/database"
+    & ssh @SshOpts $Remote "mkdir -p '$RemoteDir/database/data' '$RemoteDir/database/relational_csv' '$RemoteDir/database/config'"
+    if (-not $?) { throw "ssh mkdir database failed" }
+    & scp @SshOpts '-r' (Join-Path $databasePath "relational_csv") "${remoteDb}/"
+    if (-not $?) { throw "scp database/relational_csv failed" }
+    & scp @SshOpts '-r' (Join-Path $databasePath "config") "${remoteDb}/"
+    if (-not $?) { throw "scp database/config failed" }
+    $dataFiles = Get-ChildItem -LiteralPath (Join-Path $databasePath "data") -File -ErrorAction SilentlyContinue
+    if ($dataFiles) {
+        foreach ($f in $dataFiles) {
+            & scp @SshOpts $f.FullName "${remoteDb}/data/"
+            if (-not $?) { throw "scp database/data/$($f.Name) failed" }
+        }
+        Write-Host "    uploaded $($dataFiles.Count) file(s) from database/data/"
+    } else {
+        Write-Host "    warning: no files in database/data/ to upload"
+    }
 } else {
-    Write-Host "==> skipping database/ (use -SyncDatabase when CSV data changed)"
+    Write-Host "==> skipping database sync (use -SyncDatabase when published CSV data changed)"
 }
 
 Write-Host "==> remote: docker load + compose up + health (health loop up to ~60s)"

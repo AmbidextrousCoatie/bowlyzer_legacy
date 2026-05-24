@@ -52,15 +52,9 @@ class DataAdapterFactory:
         if adapter_type == DataAdapterSelector.PANDAS:
             from data_access.adapters.data_adapter_pandas import DataAdapterPandas
             if database:
-                # Map abstract database ID to actual file path
-                from app.config.database_config import database_config, DATABASE_DATA_DIR
-                config = database_config.get_source_config(database)
-                if config:
-                    adapter = DataAdapterFactory._pandas_from_source_config(config)
-                    if adapter is not None:
-                        return adapter
-                actual_filename = database_config.get_filename_for_source(database)
-                return DataAdapterPandas(path_to_csv_data=pathlib.Path(DATABASE_DATA_DIR) / actual_filename)
+                from data_access.shared_pandas_store import get_shared_pandas_adapter
+
+                return get_shared_pandas_adapter(database)
             else:
                 # Fallback to current DataManager logic
                 try:

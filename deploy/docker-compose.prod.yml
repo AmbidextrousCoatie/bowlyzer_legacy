@@ -13,6 +13,8 @@ services:
       GUNICORN_WORKERS: "1"
       GUNICORN_THREADS: "2"
       LOG_LEVEL: info
+      # Avoid OOM on ~1 GB VPS: no background cache warmup at container start.
+      LEAGUE_CACHE_WARM_ON_START: "0"
     # Host ./database must be readable by UID/GID 1000 (image user). Deploy script chmods a+rX before up.
     volumes:
       - ./database:/app/database:ro

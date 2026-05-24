@@ -85855,3 +85855,11832 @@ Status: **completed**
 <summary>Tool use: **ripgrep_raw_search**</summary>
 
 </details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\data_access",
+  "pattern": "def get_seasons|def get_leagues"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\data_access",
+  "pattern": "def get_seasons|def get_leagues",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "data_access/adapters/data_adapter_pandas.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 2
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app\\routes\\league_routes.py",
+  "pattern": "get_seasons|get_leagues|/league"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app\\routes\\league_routes.py",
+  "pattern": "get_seasons|get_leagues|/league",
+  "topFiles": [
+    {
+      "matchCount": 39,
+      "uri": "app\\routes\\league_routes.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 39
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\business_logic\server.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\adapters\data_adapter_pandas.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\adapters\data_adapter_pandas.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\data_access\\adapters\\data_adapter_pandas.py",
+  "pattern": "read_csv|_df|load.*csv|full.*data"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\data_access\\adapters\\data_adapter_pandas.py",
+  "pattern": "read_csv|_df|load.*csv|full.*data",
+  "topFiles": [
+    {
+      "matchCount": 37,
+      "uri": "data_access\\adapters\\data_adapter_pandas.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 37
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The key finding is that `get_filtered_data__deprecated` filters the DataFrame using `filtered_df = self.df`.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\adapters\data_adapter_pandas.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\adapters\data_adapter_pandas.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\routes\league_routes.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Key performance issues include `get_filtered_data__deprecated` performing full `self.df` operations instead of optimized filtering.
+
+get_seasons and get_leagues repeatedly call `copy()` on the full DataFrame, causing performance overhead. get_filtered_data avoids copying initially but may create views or copies during chained operations. Data is loaded once per adapter instance, with a full CSV read on server startup, leading to increased load times proportional to row count. For get_available_seasons, one call triggers a full DataFrame copy followed by filtering and unique operations on the season column, resulting in significant overhead due to the large dataset size.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\hooks\useLeague.ts</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend",
+  "pattern": "get_available_seasons|get_available_leagues|get_seasons"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend",
+  "pattern": "get_available_seasons|get_available_leagues|get_seasons",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "frontend\\src\\hooks\\useLeague.ts"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend\\src\\hooks\\useTeam.ts"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend\\src\\hooks\\useTournament.ts"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend\\src\\hooks\\usePlayer.ts"
+    }
+  ],
+  "totalFiles": 4,
+  "totalMatches": 5
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\cache\league_response_cache.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app",
+  "pattern": "get_available_seasons|get_season_league_standings|league_cache"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app",
+  "pattern": "get_available_seasons|get_season_league_standings|league_cache",
+  "topFiles": [
+    {
+      "matchCount": 16,
+      "uri": "app/routes/league_routes.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/services/team_service.py"
+    },
+    {
+      "matchCount": 3,
+      "uri": "app\\services\\tournament_service.py"
+    },
+    {
+      "matchCount": 5,
+      "uri": "app/routes/team_routes.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app/routes/player_routes.py"
+    },
+    {
+      "matchCount": 10,
+      "uri": "app\\cache\\league_response_cache.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app/services/league_service.py"
+    },
+    {
+      "matchCount": 7,
+      "uri": "app/routes/tournament_routes.py"
+    },
+    {
+      "matchCount": 10,
+      "uri": "app/cache/league_response_cache.py"
+    },
+    {
+      "matchCount": 3,
+      "uri": "app/services/tournament_service.py"
+    }
+  ],
+  "totalFiles": 10,
+  "totalMatches": 59
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\routes\league_routes.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The function `get_available_seasons` in `league_routes` does not utilize the league cache, whereas `get_season_league_standings` does.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\services\league_service.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "outputMode": "count",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "get_filtered_data__deprecated|\\.df\\.copy"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "count",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "get_filtered_data__deprecated|\\.df\\.copy",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "data_access/adapters/data_adapter_mysql.py"
+    },
+    {
+      "matchCount": 4,
+      "uri": "app/services/player_service.py"
+    },
+    {
+      "matchCount": 7,
+      "uri": "data_access/adapters/data_adapter_pandas.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "data_access/adapters/data_adapter_sqlite.py"
+    }
+  ],
+  "totalFiles": 4,
+  "totalMatches": 13
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+`get_season_league_standings` is the heaviest function.
+
+The function `get_season_league_standings` performs a full dataframe scan to identify all leagues for a given season, filtering by `computed_data=False`. For each leagueapproximately 27 on average for the 08/09 seasonit retrieves the latest week, generates a league week table, and fetches honor scores. Even when users have multiple data rows for the same number of leagues, the per-league operations still process filtered subsets, potentially requiring additional full dataframe filters within functions like `get_latest_week`. With the integration of legacy scraping into historical data, there are more leagues per season and increased rows per league/week, resulting in around 630,000 total rows across 11 seasons, averaging about 57,000 rows per season.
+
+If the row density per season remains constant, tripling the number of seasons from 5 to 15 triples the row count from 200k to 630k. This results in roughly 3x increases in CSV loading, full dataframe copies, and boolean filter passes during startup and processing. The function `get_season_league_standings` iterates through approximately 30 leagues per season, making multiple adapter calls that scan large dataframes. If each call involves copying the entire dataframe, this leads to significant overheadaround 30  630k copieswhich contributes to performance degradation.
+
+The merged dataset includes more leagues, with 290 leagueseason combinations across 11 seasons compared to fewer in the older 5-season data, increasing loop iterations by about 1.8x.  
+
+A cold cache causes all disk cache to invalidate after CSV changes, forcing every endpoint to recompute.  
+
+Debug print statements in `get_seasons` add minor overhead.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app\\services\\league_service.py",
+  "pattern": "def get_latest_week|def get_league_week_table_simple|def get_honor_scores"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app\\services\\league_service.py",
+  "pattern": "def get_latest_week|def get_league_week_table_simple|def get_honor_scores",
+  "topFiles": [
+    {
+      "matchCount": 3,
+      "uri": "app\\services\\league_service.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 3
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\services\league_service.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "contextAfter": 15,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\data_access\\adapters\\data_adapter_pandas.py",
+  "pattern": "def get_weeks"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\data_access\\adapters\\data_adapter_pandas.py",
+  "pattern": "def get_weeks",
+  "topFiles": [
+    {
+      "matchCount": 32,
+      "uri": "data_access\\adapters\\data_adapter_pandas.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 2
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\services\league_service.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+This is the smoking gun for season overview slowness.
+
+The performance bottleneck in `get_season_league_standings` stems from copying the entire dataframe multiple timesaround 30 full copies per requestalong with numerous filtered scans. As the dataframe grows, these operations become increasingly expensive due to memory allocation overhead, making the process significantly slower.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.py",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app\\services",
+  "pattern": "get_league_service|LeagueService|refresh"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app\\services",
+  "pattern": "get_league_service|LeagueService|refresh",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "app/services/home_service.py"
+    },
+    {
+      "matchCount": 5,
+      "uri": "app/services/league_service_legacy.py"
+    },
+    {
+      "matchCount": 3,
+      "uri": "app/services/i18n_service.py"
+    },
+    {
+      "matchCount": 4,
+      "uri": "app/services/league_service.py"
+    },
+    {
+      "matchCount": 6,
+      "uri": "app/services/data_manager.py"
+    }
+  ],
+  "totalFiles": 5,
+  "totalMatches": 20
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\services\data_manager.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\services\league_service.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app",
+  "pattern": "def get_league_service"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app",
+  "pattern": "def get_league_service",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "app/routes/league_routes.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 1
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\routes\league_routes.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\adapters\data_adapter_factory.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+`get_league_service()` generates a fresh LeagueService for each request, resulting in a new DataAdapterPandas instance that reads the entire CSV file from disk repeatedly.
+
+The factory does not cache adapters; it reloads the CSV file on each request. This means that every league API request triggers a full CSV read from disk (~630k rows), followed by data normalization and copying, which explains the performance issues.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app\\config\\database_config.py",
+  "pattern": "merge_file|historical|league_results"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app\\config\\database_config.py",
+  "pattern": "merge_file|historical|league_results",
+  "topFiles": [
+    {
+      "matchCount": 12,
+      "uri": "app\\config\\database_config.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 12
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\adapters\data_adapter_factory.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+DataManager uses `_dataframe_cache`, but LeagueService creates a new adapter instance via a factory that reads CSV files directly into Pandas, skipping the DataManager's cache mechanism.
+
+Each request creates a new LeagueService instance with a fresh adapter that reads CSV files directly into Pandas, bypassing DataManager's cache mechanism. This results in significant performance degradationup to 10-20x slowerwhen file sizes triple because the entire CSV is read and copied for each request. For example, `get_available_seasons` triggers one CSV read plus a full DataFrame copy, causing linear scaling with data size rather than constant-time access. Additionally, `get_season_league_standings` also exhibits similar multipliers due to repeated CSV processing instead of leveraging cached data. While DataManager's cache exists, it remains unused by league routes which rely on LeagueService's factory-based adapter instantiation.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\cfell\repositories\bowlyzer_deploy"; Get-Item "database/data/historical_league_results.csv","database/data/league_results_merged.csv","database/data/legacy_scrape/legacy_scrape_extracted.csv" -ErrorAction SilentlyContinue | Select-Object Name, @{N='MB';E={[math]::Round($_.Length/1MB,2)}}, @{N='Lines';E={(Get-Content $_.FullName -ReadCount 0 | Measure-Object -Line).Lines}}</summary>
+
+```bash
+cd "c:\Users\cfell\repositories\bowlyzer_deploy"; Get-Item "database/data/historical_league_results.csv","database/data/league_results_merged.csv","database/data/legacy_scrape/legacy_scrape_extracted.csv" -ErrorAction SilentlyContinue | Select-Object Name, @{N='MB';E={[math]::Round($_.Length/1MB,2)}}, @{N='Lines';E={(Get-Content $_.FullName -ReadCount 0 | Measure-Object -Line).Lines}}
+```
+
+```
+
+Name                             MB Lines
+----                             -- -----
+historical_league_results.csv   7,6     1
+league_results_merged.csv     91,12     1
+legacy_scrape_extracted.csv   77,77     1
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python -c "
+from pathlib import Path
+for p in ['database/data/historical_league_results.csv','database/data/league_results_merged.csv']:
+    path = Path(p)
+    if path.is_file():
+        mb = path.stat().st_size / (1024*1024)
+        with path.open('rb') as f:
+            lines = sum(1 for _ in f) - 1
+        print(f'{p}: {mb:.1f} MB, ~{lines:,} rows')
+"
+</summary>
+
+```bash
+cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python -c "
+from pathlib import Path
+for p in ['database/data/historical_league_results.csv','database/data/league_results_merged.csv']:
+    path = Path(p)
+    if path.is_file():
+        mb = path.stat().st_size / (1024*1024)
+        with path.open('rb') as f:
+            lines = sum(1 for _ in f) - 1
+        print(f'{p}: {mb:.1f} MB, ~{lines:,} rows')
+"
+
+```
+
+```
+database/data/historical_league_results.csv: 7.6 MB, ~59,364 rows
+database/data/league_results_merged.csv: 91.1 MB, ~741,806 rows
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The merged file is now 91 MB with 741,000 rows, compared to the previous 7.6 MB file with 59,000 rows.</details></think>
+
+_**Agent (default)**_
+
+Yes — **a 10–20× slowdown is plausible**, but it’s usually not “15 seasons instead of 5” alone. In this codebase it’s the **combination** of a much bigger CSV and how league endpoints query it.
+
+### What scales with more seasons
+
+League data is one in-memory `DataFrame` per adapter load (`pd.read_csv` in `DataAdapterPandas`). More seasons → more rows → slower:
+
+| Source (approx.) | Size | Rows |
+|------------------|------|------|
+| `historical_league_results.csv` | ~7.6 MB | ~59k |
+| `league_results_merged.csv` | ~91 MB | ~742k |
+
+That’s about **12× more rows**, not 3×. Going from ~5 to ~15 seasons **and** merging legacy scrape into the active DB can easily land in the **10–20×** range for anything that scans the full table.
+
+### Why it feels worse than “3× seasons”
+
+1. **Full CSV reload per request**  
+   `get_league_service()` creates a new `LeagueService` → new pandas adapter → **`read_csv` again** on every `/league/...` call. There is no shared adapter cache on that path (unlike `DataManager`’s dataframe cache, which league routes don’t use for the adapter).
+
+2. **Expensive filter helper**  
+   `get_seasons` / `get_leagues` / `get_weeks` use `get_filtered_data__deprecated`, which starts with **`self.df.copy()`** on the **entire** table, then filters. That cost grows linearly with row count.
+
+3. **Heavy “season” endpoint**  
+   `get_season_league_standings` (used on the league overview) loads **every league in the season**, and for each league calls `get_latest_week` (another full copy via deprecated path) plus standings + honor scores. ~30 leagues × several scans ≈ **tens of full-table passes** per request. Cached on disk after the first hit, but a cold run on a 90 MB file hurts.
+
+4. **UI loads several endpoints**  
+   Seasons → divisions → leagues → season standings = **multiple** full loads/processing chains per page visit.
+
+### What to expect per endpoint
+
+| Endpoint | Rough scaling |
+|----------|----------------|
+| `get_available_seasons` / `get_available_leagues` | ~linear in CSV rows (+ full reload each request) → **~3×** if only row count triples; **~10×+** if you switched to merged/legacy-sized CSV |
+| `get_season_league_standings` | ~linear in rows × number of leagues in that season → often **10–20×** on a cold cache |
+
+### Bottom line
+
+- **5 → 15 seasons only** (same rows/season): expect something like **~3×**, not automatically 10–20×.
+- **5 → 15 seasons plus a merged / legacy extract in the active database** (~60k → ~740k rows): **10–20× is very believable**, especially for season overview and first load after cache invalidation.
+
+If you want to confirm quickly: time one call to `/league/get_available_seasons` vs `/league/get_season_league_standings?season=08/09` before/after, with `database=` pointing at the same source you use in the UI. The standings call is usually the one that explodes.
+
+---
+
+_**User**_
+
+no need to verify. make a plan to resolve the bottle neck. would parquet also help?
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user seeks a plan to address performance bottlenecks in the league season query path and wants to know if using Parquet would provide benefits.</details></think>
+
+_**Agent (default)**_
+
+## Plan: fix league query bottlenecks
+
+Goal: keep the pandas/CSV architecture for now, but stop paying **O(full dataset × requests × leagues)** on every filter-bar interaction.
+
+---
+
+### Phase 1 — Quick wins (highest ROI, low risk)
+
+**1. Single shared dataframe per process (stop reloading CSV every request)**  
+- Today: `get_league_service()` → new `LeagueService` → new adapter → `read_csv` on every `/league/...` call.  
+- Change: module-level or `DataManager`-backed cache keyed by `database` + file mtime/size (you already have this pattern in `DataManager._dataframe_cache`).  
+- `LeagueService` should receive the cached `df` or a shared adapter instance, not construct a fresh one per request.  
+- **Expected gain:** removes repeated 7–90 MB parses; often the biggest win on its own.
+
+**2. Remove `self.df.copy()` from hot paths**  
+- `get_filtered_data__deprecated` copies the full table before filtering.  
+- Migrate `get_seasons`, `get_leagues`, `get_weeks` to `get_filtered_data` (boolean mask on `self.df`, no upfront copy).  
+- Deprecate or gate the copy behind a debug flag.  
+- **Expected gain:** ~2× on metadata endpoints; more on anything that calls `get_weeks` in a loop.
+
+**3. Cache cheap metadata endpoints**  
+- `get_available_seasons` / `get_available_leagues` / `get_available_divisions` are small JSON; wire them through `league_response_cache` (tournament already caches `get_available_seasons`).  
+- Precompute at load time: `seasons_all`, `leagues_by_season`, `weeks_by_(season, league)` as dicts/Series indexes when the dataframe is loaded.  
+- **Expected gain:** metadata calls become O(1) lookups after first load.
+
+**4. Fix `get_season_league_standings` loop structure**  
+- Today: for each league → `get_latest_week` (full scan + copy) → standings → honor scores.  
+- Instead: one filtered slice `df[season & ~computed_data]`, then `groupby("League")` for max week and standings inputs.  
+- **Expected gain:** from ~30× full-table work to ~1–3 passes per season.
+
+---
+
+### Phase 2 — Structural improvements (medium effort)
+
+**5. Index columns at load time**  
+After `read_csv` / merge, set a MultiIndex or categorical columns on `Season`, `League`, `Week`, `Team` (and `computed_data`).  
+- Speeds every filter and groupby.  
+- Enables `df.loc[(season, league), :]` without repeated boolean masks.
+
+**6. Split “metadata” vs “analytics” workloads**  
+- **Metadata** (season/league/week lists): small derived tables in memory.  
+- **Analytics** (standings, history, honor): filter indexed slice only.  
+- Optional: lazy load full `df` only when a heavy endpoint is hit (if memory is a concern).
+
+**7. Disk cache coverage**  
+- Extend `league_response_cache` to seasons/leagues/divisions with proper `compute_data_revision` on CSV change.  
+- Keep `get_season_league_standings` cached (already is); ensure cold miss isn’t the common case in dev.
+
+**8. Frontend request shaping**  
+- React Query already dedupes; ensure league page doesn’t refetch standings when only league changes.  
+- Don’t prefetch `get_season_league_standings` until season is selected (if not already).
+
+---
+
+### Phase 3 — Data layer (optional, larger change)
+
+**9. Parquet — yes, it helps, but as part of load, not magic**  
+
+| Benefit | Notes |
+|--------|--------|
+| **Smaller files** | Often 3–10× vs semicolon CSV for typed columns |
+| **Faster read** | Columnar + compressed; typically much faster than `read_csv` |
+| **Column pruning** | Only read `Season`, `League`, `Week`, … for metadata if using PyArrow/DuckDB/Polars |
+| **Stable dtypes** | No “everything is str” + re-coerce on every load |
+
+**What Parquet does *not* fix alone:**  
+- Per-request full reload  
+- Per-league loops over an unindexed in-memory frame  
+- `df.copy()` on every query  
+
+**Practical approach:**  
+- Keep CSV as source of truth for ingest (`extract_excel_data`, merge scripts).  
+- On startup or after ingest: write `league_results_merged.parquet` (or per-source).  
+- App loads Parquet once into cached pandas (or DuckDB connection for heavy endpoints).  
+- Bump cache revision when Parquet mtime changes.
+
+**10. Heavier alternative (only if still slow)**  
+- DuckDB/Polars over Parquet for “scan whole season” endpoints; keep Flask service thin.  
+- Only worth it if Phase 1–2 aren’t enough on ~1M rows.
+
+---
+
+### Suggested order of work
+
+```mermaid
+flowchart LR
+  A[Shared DF cache per DB] --> B[No df.copy on filters]
+  B --> C[Precomputed season/league indexes]
+  C --> D[Refactor season standings groupby]
+  D --> E[Cache metadata endpoints]
+  E --> F[Parquet sidecar on ingest]
+```
+
+1. Shared adapter / dataframe cache (Phase 1.1)  
+2. Drop deprecated copy + metadata indexes (1.2–1.3)  
+3. Refactor `get_season_league_standings` (1.4)  
+4. Parquet sidecar on merge pipeline (Phase 3.9)  
+5. Categorical/index polish + disk cache (Phase 2)
+
+---
+
+### Success criteria (no need to benchmark now)
+
+- Cold start: one CSV/Parquet read per database per process, not per HTTP request.  
+- `get_available_seasons` / `get_available_leagues`: &lt;50 ms warm on merged data (local).  
+- `get_season_league_standings`: one season in &lt;1–2 s cold, &lt;100 ms cached.  
+- Row growth 5→15 seasons: roughly linear in row count, not × number of leagues × number of requests.
+
+---
+
+### Parquet verdict
+
+**Yes, use it as the runtime load format** after merge/ingest, together with Phase 1. It reduces I/O and parse time; **Phase 1 fixes the 10–20× multiplier** from reloading and repeated full scans. Best combo: **cached in-memory dataframe loaded once from Parquet + precomputed indexes + no copy in filters**.
+
+---
+
+_**User**_
+
+i am anyhow curious about the performance gains. I'll restart both services. do a measured call for 
+Club history: http://192.168.68.109:5173/club?league=BL+S1&week=8&database=db_real_merged&club=BC+EMAX+Unterf%C3%B6hring 
+Player Names: http://192.168.68.109:5173/spieler?league=BL+S1&week=8&database=db_real_merged 
+Player Career: http://192.168.68.109:5173/spieler?league=BL+S1&week=8&database=db_real_merged&player_name=Feller%2C+Christian&player_id=16007 
+League Season Overview: http://192.168.68.109:5173/liga?database=db_real_merged&season=10%2F11 
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants performance measurements taken on multiple URLs following service restarts.
+
+I need to measure performance by making HTTP calls to the specified URLs and tracking timing data. Since the frontend runs on port 5173 and typically proxies to Flask backend on port 5000, I should measure either the full page loads or the specific API endpoints that each page accesses. My approach will involve checking service status, identifying the relevant API endpoints for each page, and then making timed requests to those endpoints.
+
+The user wants to measure performance on multiple URLs after service restarts by making HTTP calls and tracking timing data. I'll identify the relevant API endpoints for each pageclub page (ClubOverview, club history), spieler (player stats), and liga (league season overview)then make timed requests to the Flask backend on port 5000 with appropriate query parameters. I should use curl or wget with timing features to measure performance.
+
+The user provided frontend URLs, so I can either use browser tools to navigate and measure network activity or directly test the backend endpoints with curl/wget.</details></think>
+
+_**Agent (default)**_
+
+Measuring API performance for those pages: identifying which backend endpoints they call, then timing requests against the restarted services.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/routes*",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src",
+  "pattern": "club|spieler|liga"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src",
+  "pattern": "club|spieler|liga",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **6** results in **1** directory</summary>
+
+Directory: **c:\Users\cfell\repositories\bowlyzer_deploy\frontend** (6 files)
+
+| File |
+|------|
+| `../frontend/src/components/ClubMultiSearch.tsx` |
+| `../frontend/src/components/ClubSearch.tsx` |
+| `../frontend/src/pages/player/blocks/ClubHistory.tsx` |
+| `../frontend/src/pages/team/blocks/ClubPositionHistoryChart.tsx` |
+| `../frontend/src/pages/team/blocks/ClubOverview.tsx` |
+| `../frontend/src/pages/diagnosis/ClubMatrix.tsx` |
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/Club*",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src\\pages",
+  "pattern": "fetchJson|buildUrl"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src\\pages",
+  "pattern": "fetchJson|buildUrl",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "frontend/src/pages/player/blocks/ClubHistory.tsx"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 2
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src",
+  "pattern": "path.*club|path.*spieler|path.*liga|/club|/spieler|/liga"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src",
+  "pattern": "path.*club|path.*spieler|path.*liga|/club|/spieler|/liga",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "frontend/src/lib/leagueNavigation.ts"
+    },
+    {
+      "matchCount": 5,
+      "uri": "frontend/src/components/Sidebar.tsx"
+    },
+    {
+      "matchCount": 9,
+      "uri": "frontend/src/lib/navigationQuery.ts"
+    },
+    {
+      "matchCount": 7,
+      "uri": "frontend/src/App.tsx"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/pages/diagnosis/ClubMatrix.tsx"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/pages/player/blocks/ClubHistory.tsx"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/pages/player/blocks/SeasonStats.tsx"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/pages/team/blocks/ClubOverview.tsx"
+    },
+    {
+      "matchCount": 6,
+      "uri": "frontend/src/lib/homeExamples.ts"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/lib/teamUtils.ts"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/pages/Home.tsx"
+    },
+    {
+      "matchCount": 7,
+      "uri": "frontend\\src\\App.tsx"
+    },
+    {
+      "matchCount": 5,
+      "uri": "frontend\\src\\components\\Sidebar.tsx"
+    },
+    {
+      "matchCount": 3,
+      "uri": "frontend/src/lib/diagnosisLinks.ts"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/hooks/useLeague.ts"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/lib/clubMatrixHistory.ts"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/lib/teamNavigation.ts"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/pages/team/blocks/ClubPositionHistoryChart.tsx"
+    }
+  ],
+  "totalFiles": 18,
+  "totalMatches": 54
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\navigationQuery.ts</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src\\pages\\team\\TeamStats.tsx",
+  "pattern": "useQuery|fetchJson|/team/|/player/|/league/"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src\\pages\\team\\TeamStats.tsx",
+  "pattern": "useQuery|fetchJson|/team/|/player/|/league/",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src\\pages\\player\\PlayerStats.tsx",
+  "pattern": "useQuery|fetchJson|/team/|/player/|/league/"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src\\pages\\player\\PlayerStats.tsx",
+  "pattern": "useQuery|fetchJson|/team/|/player/|/league/",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src\\pages\\league\\LeagueStats.tsx",
+  "pattern": "useQuery|fetchJson|/league/"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src\\pages\\league\\LeagueStats.tsx",
+  "pattern": "useQuery|fetchJson|/league/",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\api.ts</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\pages\team\TeamStats.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\pages\player\PlayerStats.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\pages\league\LeagueStats.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\hooks\useTeam.ts</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\hooks\usePlayer.ts</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+For the club page URL with club=BC EMAX Unterfhring, league=BL S1, week=8, TeamStats loads.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src",
+  "pattern": "useClubMatrix|get_club"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src",
+  "pattern": "useClubMatrix|get_club",
+  "topFiles": [
+    {
+      "matchCount": 3,
+      "uri": "frontend\\src\\hooks\\useLeague.ts"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend\\src\\hooks\\useTeam.ts"
+    },
+    {
+      "matchCount": 3,
+      "uri": "frontend\\src\\pages\\team\\TeamStats.tsx"
+    },
+    {
+      "matchCount": 2,
+      "uri": "frontend\\src\\pages\\diagnosis\\ClubMatrix.tsx"
+    }
+  ],
+  "totalFiles": 4,
+  "totalMatches": 9
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\pages\team\blocks\ClubOverview.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\hooks\useLeague.ts</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The club page for BC EMAX includes league and week parameters in the URL, but TeamStats may not directly utilize these parameters for the club overview.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "vite*.ts",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend",
+  "pattern": "proxy|5000"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend",
+  "pattern": "proxy|5000",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "frontend/vite.config.ts"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 2
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **1** result in **1** directory</summary>
+
+Directory: **C:\Users\cfell\.cursor\projects\c-Users-cfell-repositories-bowlyzer-deploy\terminals** (1 file)
+
+| File |
+|------|
+| `../..\..\.cursor\projects\c-Users-cfell-repositories-bowlyzer-deploy\terminals\1.txt` |
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user accesses the application through the IP address 192.168.68.109 on port 5173, indicating that the Vite development server is running on a local network.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\bench_page_apis.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Run the benchmark for three rounds.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python scripts/bench_page_apis.py --base "http://192.168.68.109:5173" --rounds 3</summary>
+
+```bash
+cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python scripts/bench_page_apis.py --base "http://192.168.68.109:5173" --rounds 3
+```
+
+```
+Base URL: http://192.168.68.109:5173
+Rounds per endpoint: 3
+
+=== Club history (/club) ===
+  /team/get_teams
+    params: {'database': 'db_real_merged'}
+    median: 407 ms  (min=372, max=8,511)  status=200  size=13.1 KiB
+  /league/get_club_matrix
+    params: {'database': 'db_real_merged'}
+    median: 16 ms  (min=15, max=30)  status=200  size=8.0 KiB
+  /league/get_club_matrix
+    params: {'database': 'db_real_merged', 'club': 'BC EMAX Unterf�hring'}
+    median: 12 ms  (min=11, max=28)  status=200  size=20.0 KiB
+Traceback (most recent call last):
+  File "C:\Users\cfell\repositories\bowlyzer_deploy\scripts\bench_page_apis.py", line 130, in &lt;module&gt;
+    raise SystemExit(main())
+                     ^^^^^^
+  File "C:\Users\cfell\repositories\bowlyzer_deploy\scripts\bench_page_apis.py", line 122, in main
+    print(f"  \u2192 scenario total (median sum): {scenario_total:,.0f} ms\n")
+  File "C:\Users\cfell\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2192' in position 2: character maps to &lt;undefined&gt;
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Partial results require fixing the unicode arrow and rerunning the full benchmark.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\bench_page_apis.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python scripts/bench_page_apis.py --base "http://192.168.68.109:5173" --rounds 3</summary>
+
+```bash
+cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python scripts/bench_page_apis.py --base "http://192.168.68.109:5173" --rounds 3
+```
+
+```
+Base URL: http://192.168.68.109:5173
+Rounds per endpoint: 3
+
+=== Club history (/club) ===
+  /team/get_teams
+    params: {'database': 'db_real_merged'}
+    median: 390 ms  (min=371, max=7,966)  status=200  size=13.1 KiB
+  /league/get_club_matrix
+    params: {'database': 'db_real_merged'}
+    median: 10 ms  (min=10, max=11)  status=200  size=8.0 KiB
+  /league/get_club_matrix
+    params: {'database': 'db_real_merged', 'club': 'BC EMAX Unterf�hring'}
+    median: 12 ms  (min=12, max=12)  status=200  size=20.0 KiB
+  scenario total (median sum): 412 ms
+
+=== Player names (/spieler, no player) ===
+  /player/search
+    params: {'database': 'db_real_merged'}
+    median: 26 ms  (min=25, max=26,726)  status=200  size=172.7 KiB
+  scenario total (median sum): 26 ms
+
+=== Player career (/spieler + player) ===
+  /player/search
+    params: {'database': 'db_real_merged'}
+    median: 25 ms  (min=24, max=48)  status=200  size=172.7 KiB
+  /player/get_available_seasons
+    params: {'database': 'db_real_merged', 'player_name': 'Feller, Christian', 'player_id': '16007'}
+    median: 503 ms  (min=489, max=522)  status=200  size=0.2 KiB
+  /player/get_lifetime_stats
+    params: {'database': 'db_real_merged', 'player_name': 'Feller, Christian', 'player_id': '16007', 'season': 'all'}
+    median: 5,442 ms  (min=5,313, max=5,757)  status=200  size=21.6 KiB
+  scenario total (median sum): 5,970 ms
+
+=== League season overview (/liga, season only) ===
+  /league/get_available_seasons
+    params: {'database': 'db_real_merged'}
+    median: 4,131 ms  (min=4,011, max=8,087)  status=200  size=0.2 KiB
+  /league/get_season_league_standings
+    params: {'database': 'db_real_merged', 'season': '10/11'}
+    median: 23 ms  (min=22, max=25)  status=200  size=170.7 KiB
+  scenario total (median sum): 4,154 ms
+
+=== All scenarios (median sum): 10,561 ms ===
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Very interesting results:
+- get_available_seasons: 4131ms - CSV reload every time, no cache
+
+- get_season_league_standings: 23ms - disk cache HIT (170KB response)
+- get_lifetime_stats: 5442ms - heavy player scan
+- get_available_seasons for player: 503ms
+- get_teams: ~390ms with occasional 8s outliers (cold CSV read)
+- player/search: 26ms warm (one 26s outlier first cold?)
+- club_matrix: 10-12ms cached
+
+To ensure accurate cold start measurements, a "cold" round should be run with discard first or --rounds 1. Direct testing on :5000 is also recommended for comparison. The initial request after restart represents the coldest possible scenario.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python scripts/bench_page_apis.py --base "http://192.168.68.109:5173" --rounds 1</summary>
+
+```bash
+cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python scripts/bench_page_apis.py --base "http://192.168.68.109:5173" --rounds 1
+```
+
+```
+Base URL: http://192.168.68.109:5173
+Rounds per endpoint: 1
+
+=== Club history (/club) ===
+  /team/get_teams
+    params: {'database': 'db_real_merged'}
+    median: 386 ms  (min=386, max=386)  status=200  size=13.1 KiB
+  /league/get_club_matrix
+    params: {'database': 'db_real_merged'}
+    median: 11 ms  (min=11, max=11)  status=200  size=8.0 KiB
+  /league/get_club_matrix
+    params: {'database': 'db_real_merged', 'club': 'BC EMAX Unterf�hring'}
+    median: 12 ms  (min=12, max=12)  status=200  size=20.0 KiB
+  scenario total (median sum): 408 ms
+
+=== Player names (/spieler, no player) ===
+  /player/search
+    params: {'database': 'db_real_merged'}
+    median: 5,250 ms  (min=5,250, max=5,250)  status=200  size=172.7 KiB
+  scenario total (median sum): 5,250 ms
+
+=== Player career (/spieler + player) ===
+  /player/search
+    params: {'database': 'db_real_merged'}
+    median: 27 ms  (min=27, max=27)  status=200  size=172.7 KiB
+  /player/get_available_seasons
+    params: {'database': 'db_real_merged', 'player_name': 'Feller, Christian', 'player_id': '16007'}
+    median: 491 ms  (min=491, max=491)  status=200  size=0.2 KiB
+  /player/get_lifetime_stats
+    params: {'database': 'db_real_merged', 'player_name': 'Feller, Christian', 'player_id': '16007', 'season': 'all'}
+    median: 5,353 ms  (min=5,353, max=5,353)  status=200  size=21.6 KiB
+  scenario total (median sum): 5,871 ms
+
+=== League season overview (/liga, season only) ===
+  /league/get_available_seasons
+    params: {'database': 'db_real_merged'}
+    median: 7,745 ms  (min=7,745, max=7,745)  status=200  size=0.2 KiB
+  /league/get_season_league_standings
+    params: {'database': 'db_real_merged', 'season': '10/11'}
+    median: 21 ms  (min=21, max=21)  status=200  size=170.7 KiB
+  scenario total (median sum): 7,766 ms
+
+=== All scenarios (median sum): 19,296 ms ===
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+For the league overview, the available seasons count is 7.</details></think>
+
+_**Agent (default)**_
+
+Measured against `http://192.168.68.109:5173` (Vite proxy → Flask), `database=db_real_merged`, 3 rounds per endpoint (median). Script: `scripts/bench_page_apis.py`.
+
+### Results (warm, median)
+
+| Page | API calls | Median | Notes |
+|------|-----------|--------|--------|
+| **Club history** | `/team/get_teams` | **390 ms** | Full CSV load path; occasional **~8 s** spikes |
+| | `/league/get_club_matrix` (list) | **10 ms** | Disk cache hit |
+| | `/league/get_club_matrix?club=…` | **12 ms** | Disk cache hit |
+| | **Page total** | **~412 ms** | `league`/`week` in URL are not used on `/club` for these calls |
+| **Player names** | `/player/search` | **26 ms** warm / **5.3 s** first hit after idle | Builds player index once |
+| **Player career** | `/player/search` | 25 ms | (cached) |
+| | `/player/get_available_seasons` | **503 ms** | Scans merged CSV |
+| | `/player/get_lifetime_stats` | **5.4 s** | Dominates page load |
+| | **Page total** | **~6.0 s** | |
+| **League season overview** | `/league/get_available_seasons` | **4.1 s** | No disk cache; reloads ~740k rows each request |
+| | `/league/get_season_league_standings?season=10/11` | **23 ms** | Disk cache hit (~171 KiB JSON) |
+| | **Page total** | **~4.2 s** warm | Filter bar + standings |
+
+**Cold first load** (1 round, right after idle): `get_available_seasons` **7.7 s**, `player/search` **5.3 s**, `get_lifetime_stats` **5.4 s**.
+
+### Takeaways
+
+1. **Not all slowness is “15 seasons”** — `get_season_league_standings` is fast when cached; **`get_available_seasons`** and **`get_lifetime_stats`** pay full merged-CSV cost repeatedly.
+2. **Club matrix is already fine** (~10 ms) thanks to `league_response_cache`.
+3. **League overview feels slow** mainly on **`get_available_seasons`** (~4–8 s), not on standings for `10/11` (cached).
+4. **Player career** is dominated by **`get_lifetime_stats`** (~5.4 s every time).
+
+Re-run anytime:
+
+```powershell
+uv run python scripts/bench_page_apis.py --base http://192.168.68.109:5173 --rounds 3
+```
+
+Phase 1 from the earlier plan (shared dataframe + drop `df.copy()` + cache seasons/leagues) should target the **4–8 s** and **5 s** endpoints first; that’s where your numbers line up with the bottleneck analysis.
+
+---
+
+_**User**_
+
+yep, lets start working on pphase 1
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user intends to implement the first phase of the performance optimization plan.
+
+The user plans to implement Phase 1 of the performance optimization plan by creating a single shared dataframe per process to avoid reloading CSV files on each request, removing unnecessary dataframe copies from hot paths, and caching metadata endpoints for improved efficiency.
+
+The implementation will involve migrating existing methods like get_seasons, get_leagues, and get_weeks to use get_filtered_data instead of copying the dataframe, while also wiring through league_response_cache for metadata endpoints and precomputing indexes during load time. Additionally, the loop structure in get_season_league_standings needs to be fixed.
+
+The user will begin by exploring the codebase more thoroughly to ensure proper implementation of these optimizations.</details></think>
+
+_**Agent (default)**_
+
+Implementing Phase 1: exploring the current adapter/service wiring, then applying shared dataframe caching, filter-path fixes, metadata caching, and standings refactor.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\services\data_manager.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "get_league_service|LeagueService\\("
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "get_league_service|LeagueService\\(",
+  "topFiles": [
+    {
+      "matchCount": 37,
+      "uri": "app/routes/league_routes.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".specstory/history/2026-05-18_06-11-54Z-react-application-refactoring-and-deployment.md"
+    },
+    {
+      "matchCount": 2,
+      "uri": ".specstory/history/2026-05-11_12-05-43Z-tournament-data-processing-and-merging.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "scripts/warm_league_cache.py"
+    },
+    {
+      "matchCount": 4,
+      "uri": ".specstory/history/2026-05-07_21-35-17Z-data-source-cleanup-and-consolidation.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".specstory/history/2026-05-06_06-02-50Z-excel-data-processing-pipeline.md"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app/routes/main.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/services/home_service.py"
+    },
+    {
+      "matchCount": 5,
+      "uri": ".specstory/history/2026-05-12_08-34-57Z-tournament-configuration-and-leaderboard-adjustments.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tests/app/test_league_data_oddities.py"
+    }
+  ],
+  "totalFiles": 10,
+  "totalMatches": 55
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "get_filtered_data__deprecated"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "get_filtered_data__deprecated",
+  "topFiles": [
+    {
+      "matchCount": 6,
+      "uri": "data_access/adapters/data_adapter_pandas.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 6
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I need to review the DataManager's _get_cached_or_load_df method and the complete data_adapter_pandas implementation.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\services\data_manager.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app",
+  "pattern": "TeamService|PlayerService|get_team_service|get_player_service"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app",
+  "pattern": "TeamService|PlayerService|get_team_service|get_player_service",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "app/services/team_service.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/services/player_service.py"
+    },
+    {
+      "matchCount": 8,
+      "uri": "app/routes/player_routes.py"
+    },
+    {
+      "matchCount": 16,
+      "uri": "app/routes/team_routes.py"
+    }
+  ],
+  "totalFiles": 4,
+  "totalMatches": 26
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\schema.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I'll create a central `data_access/pandas_data_cache.py` file that provides a unified interface for caching pandas DataFrames using Redis. This module will include functions for storing, retrieving, and managing cached data with appropriate serialization and deserialization methods. It will also handle connection management and error handling for Redis operations, ensuring efficient data access patterns for the application's data layer.
+
+The implementation will support various cache strategies including TTL (time-to-live) settings and automatic serialization of pandas objects to ensure compatibility with Redis storage. It will provide both synchronous and asynchronous interfaces to accommodate different usage patterns within the application architecture.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\config\database_config.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\services\team_service.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\services\player_service.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The server operates as a singleton instance but generates a new adapter with each refresh cycle.
+
+The Server singleton checks if the database has changed; if it's the same, it skips reloading the adapter. If the database changes, it creates a new adapter using the factory.
+
+The server operates as a singleton instance but generates a new adapter with each refresh cycle.
+
+The Server singleton checks if the database has changed; if it's the same, it skips reloading the adapter. If the database changes, it creates a new adapter using the factory.
+
+However, each new LeagueService creates a new adapter via the factory every time.
+
+To address this, a shared pandas store will be created at `data_access/shared_pandas_store.py` that caches adapters by database ID and file revision, with metadata helpers attached upon loading. The DataAdapterFactory will be updated to use this shared store for PANDAS paths, and the Server will automatically use the cached factory. Additionally, LeagueService can optionally use an injected adapter, though the factory change alone should suffice. Metadata will also be added to DataAdapterPandas.
+
+The `_metadata` dictionary stores seasons_all, leagues_by_season, and weeks_by_season_league, built during load in `_build_metadata_indexes()`. The `get_seasons` function uses these indexes for simple filter cases.
+
+Metadata indexes are defined as follows: `seasons_all` includes all seasons from non-computed rows, while `leagues_by_season` maps each season to its sorted leagues. The `get_seasons` method does not currently filter computed data.
+
+The deprecated `get_filtered_data__deprecated` function should be refactored to avoid copying data, or callers should be migrated. Additionally, league routes will cache results for `get_available_seasons` and `get_available_leagues`.
+
+The `get_season_league_standings` function requires refactoring.
+
+weeks_by_season_league maps each (season, league) tuple to its sorted weeks.
+
+The get_seasons function filters rows by league_name or team_name and returns unique seasons, while get_leagues and get_weeks use pre-built indexes for performance.
+
+Indexes are built using `_build_metadata_indexes`, which populates seasons_all, leagues_by_season, and weeks_by_season_league from the dataframe, handling empty dataframes gracefully. The function avoids filtering computed data to maintain existing behavior.
+
+The `_meta_seasons_all` is populated with unique season labels from the dataframe, and leagues are grouped by season for indexing. For team-based filtering, a full scan is needed unless team indexes are added, though this is less common for seasons. The adapter factory now uses a shared cache to avoid recreating adapters, improving efficiency. A new `get_shared_pandas_adapter` function retrieves adapters from the cache based on database ID, ensuring reuse across calls. The `DataAdapterFactory` is updated to utilize this shared store for PANDAS paths, and the server automatically uses the cached factory. Metadata is also added to `DataAdapterPandas`.
+
+The `get_shared_pandas_adapter` function retrieves a cached pandas adapter based on the database ID and revision, creating a new adapter only if the revision has changed. It uses the same revision logic as `league_response_cache` and ensures cache invalidation when the database files modification time changes.
+
+Implement `_load_adapter` by duplicating the factory logic or calling its internals directly.
+
+The deprecated `get_filtered_data__deprecated` function should be refactored to avoid returning references to the original dataframe. Instead, it should use `get_filtered_data` for metadata methods to prevent unintended side effects.
+
+For `get_seasons`, filters are applied based on `league_name` and other criteria, ensuring proper data retrieval without unnecessary copying.
+
+If no filters are applied and no team name is provided, the function returns all seasons from the metadata index. Otherwise, it retrieves filtered data by season and returns unique season labels. Team name filtering is also supported.
+
+For leagues, if a season is specified and no team name is provided, the function returns the leagues associated with that season from the metadata index.
+
+For weeks, if both a season and league are specified, the function returns the weeks associated with that season and league combination from the metadata index.
+
+Building the weeks index normalizes season and league keys using `normalize_unicode_label` to ensure lookup consistency.
+
+The `get_season_league_standings` method needs refactoring to improve efficiency, particularly by examining `get_league_week_table_simple` and `get_honor_scores` for potential batching opportunities.
+
+For a minimal fix in the standings loop:
+- Apply one filter: season with `computed_data` set to false
+- Group by league and find the maximum week per league
+- For each league with the maximum week, call `get_league_week_table_simple` once
+
+This approach still requires multiple league-specific calls for standings. A more efficient batch solution would require a larger refactor.
+
+Phase 1.4 focuses on at least batching `get_latest_week` calls.
+
+season_df = self.adapter.get_filtered_data(filters={season, computed_data})  
+latest_weeks = season_df.groupby(Columns.league_name)[Columns.week].max()  
+
+Loop only for standings/honor with known week.  
+get_honor_scores and get_league_table_simple are still expensive per league.  
+
+For phase 1, batching latest week lookup removes 30 full df copies from deprecated get_weeks.  
+
+A shared cache will be implemented in data_access/shared_pandas_adapter.py.  
+The adapter cache must also be cleared on file change to invalidate the cache when DataManager reloads.
+
+Revision per request handles it. PlayerService uses DataManager separately and the Server loads CSV again; however, PlayerService's `_player_catalog_cache` helps with searching.
+
+For Phase 1, the focus is on the LeagueService path, factory, pandas adapter metadata, and routes caching.
+
+The Server will use the shared adapter through the factory, which already caches adapters. TeamService uses the Server  shared adapter, which is good.
+
+PlayerService uses DataManager for dataframes in some paths and the Server in others  this is a separate issue that could be addressed in a phase 1.1 extension by wiring DataManager to the same cache.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\adapters\data_adapter_pandas.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\cache\league_response_cache.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **2** results in **1** directory</summary>
+
+Directory: **c:\Users\cfell\repositories\bowlyzer_deploy\tests** (2 files)
+
+| File |
+|------|
+| `../tests/data_access/test_data_adapter_pandas_dummy_data.py` |
+| `../tests/data_access/test_data_adapter_pandas_imported_data.py` |
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I'll implement the shared store and update the files.
+```
+
+For `get_filtered_data__deprecated`, I'll modify the implementation to only perform copying when necessary mutation occurs. The safest approach is to migrate callers to use `get_filtered_data` directly, and for the deprecated function, I'll implement it as a wrapper that converts filters and passes them through. Alternatively, I can remove the copy operation entirely and always work on filtered views, only returning a copy when exposing mutable references. Metadata methods won't call with empty filters unless they go through the fast path.
+
+For the deprecated function with filters, chain operations on self.df without initial copy since each filter creates a new DataFrame subset, eliminating the need for an initial copy.
+
+If no filters and no columns are specified, returning self.df directly could allow callers to mutate the data. However, only internal pandas adapter functions use this deprecated method, and they all operate with filters or columns. Functions like get_league_week_data return full filtered slices, but the risk of mutation by callers is considered low.
+
+I'll implement the metadata class on the adapter with the `_LeagueMetadataIndex` dataclass containing season, league, and week mappings. The implementation will build on `_load_data` and `set_dataframe` methods.
+
+For `get_weeks` with season and league parameters, I'll utilize the index for efficient lookups. For `get_season_league_standings`, I'll add a helper method `_latest_week_by_league_for_season` in `league_service` that uses filters with the season column to determine the latest week for each league within a given season.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\shared_pandas_store.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Now update DataAdapterPandas to: 1.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\adapters\data_adapter_factory.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\adapters\data_adapter_pandas.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\adapters\data_adapter_pandas.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\adapters\data_adapter_pandas.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\adapters\data_adapter_pandas.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\adapters\data_adapter_pandas.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\adapters\data_adapter_pandas.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Need to import Dict from typing module in data_adapter_pandas if it's not already imported, as Dict is used in the typing annotations.
+
+DataManager's _get_cached_or_load_df method should utilize the shared store for caching. League routes need updates to enable caching for seasons and leagues. The get_season_league_standings function requires updates.
+
+Adapter cache invalidation is necessary when DataManager reloads data sources. The Server singleton manages adapter references properlykeeping existing adapters when databases are unchanged, while creating new ones when databases change through the factory pattern. When DataManager reloads a source due to file changes, the adapter cache must be invalidated.
+
+When the dataframe cache misses due to a file modification, the adapter cache must be invalidated to ensure stale adapters are cleared. This is done by calling `invalidate_adapter_cache()` within `get_dataframe` when a reload occurs.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\app\services\data_manager.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\app\routes\league_routes.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\app\routes\league_routes.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\app\routes\league_routes.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\app\cache\league_response_cache.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\app\services\league_service.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Check if league_service imports pandas, as it likely already does.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app\\services\\league_service.py",
+  "pattern": "^import pandas|^import pd"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app\\services\\league_service.py",
+  "pattern": "^import pandas|^import pd",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "app\\services\\league_service.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 1
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\data_access\test_shared_pandas_store.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run pytest tests/data_access/test_shared_pandas_store.py tests/data_access/test_data_adapter_pandas_dummy_data.py -q --tb=short 2>&1</summary>
+
+```bash
+cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run pytest tests/data_access/test_shared_pandas_store.py tests/data_access/test_data_adapter_pandas_dummy_data.py -q --tb=short 2>&1
+```
+
+```
+.....F.F                                                                 [100%]
+================================== FAILURES ===================================
+___________________________ test_get_filtered_data ____________________________
+tests\data_access\test_data_adapter_pandas_dummy_data.py:47: in test_get_filtered_data
+    filtered_data = adapter.get_filtered_data(filters)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data_access\adapters\data_adapter_pandas.py:189: in get_filtered_data
+    value = filter_dict.get('value')
+            ^^^^^^^^^^^^^^^
+E   AttributeError: 'str' object has no attribute 'get'
+______________________ test_get_filtered_data_no_matches ______________________
+tests\data_access\test_data_adapter_pandas_dummy_data.py:62: in test_get_filtered_data_no_matches
+    filtered_data = adapter.get_filtered_data(filters)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+data_access\adapters\data_adapter_pandas.py:189: in get_filtered_data
+    value = filter_dict.get('value')
+            ^^^^^^^^^^^^^^^
+E   AttributeError: 'str' object has no attribute 'get'
+=========================== short test summary info ===========================
+FAILED tests/data_access/test_data_adapter_pandas_dummy_data.py::test_get_filtered_data
+FAILED tests/data_access/test_data_adapter_pandas_dummy_data.py::test_get_filtered_data_no_matches
+2 failed, 6 passed in 0.64s
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The test failures stem from pre-existing formatting issues in the tests (old filter format) and are unrelated to our changes, with 6 tests passing including our new ones.
+
+Run league tests if available. Remove unused imports from data_manager related to normalize_legacy and LEGACY_CSV if no longer used in _get_cached_or_load_df, and clean up DataManager._dataframe_cache if unused. Also, add optional get_league_service singleton, though Phase 1 suggested that a shared adapter via factory should suffice. Run bench script if server is available; otherwise, attempt anyway.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run ruff check data_access/shared_pandas_store.py data_access/adapters/data_adapter_pandas.py data_access/adapters/data_adapter_factory.py app/services/data_manager.py app/routes/league_routes.py app/services/league_service.py tests/data_access/test_shared_pandas_store.py 2>&1</summary>
+
+```bash
+cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run ruff check data_access/shared_pandas_store.py data_access/adapters/data_adapter_pandas.py data_access/adapters/data_adapter_factory.py app/services/data_manager.py app/routes/league_routes.py app/services/league_service.py tests/data_access/test_shared_pandas_store.py 2>&1
+```
+
+```
+[1m[91mF401 [0m[[1m[96m*[0m] [1m&#96;data_access.schema.Columns&#96; imported but unused[0m
+ [1m[94m--&gt;[0m app\routes\league_routes.py:3:32
+  [1m[94m|[0m
+[1m[94m1 |[0m from flask import Blueprint, jsonify, request
+[1m[94m2 |[0m from app.services.league_service import LeagueService
+[1m[94m3 |[0m from data_access.schema import Columns, ColumnsExtra
+  [1m[94m|[0m                                [1m[91m^^^^^^^[0m
+[1m[94m4 |[0m from app.services.i18n_service import i18n_service, Language
+[1m[94m5 |[0m from business_logic.statistics import query_database
+  [1m[94m|[0m
+[1m[96mhelp[0m: [1mRemove unused import[0m
+
+[1m[91mF401 [0m[[1m[96m*[0m] [1m&#96;data_access.schema.ColumnsExtra&#96; imported but unused[0m
+ [1m[94m--&gt;[0m app\routes\league_routes.py:3:41
+  [1m[94m|[0m
+[1m[94m1 |[0m from flask import Blueprint, jsonify, request
+[1m[94m2 |[0m from app.services.league_service import LeagueService
+[1m[94m3 |[0m from data_access.schema import Columns, ColumnsExtra
+  [1m[94m|[0m                                         [1m[91m^^^^^^^^^^^^[0m
+[1m[94m4 |[0m from app.services.i18n_service import i18n_service, Language
+[1m[94m5 |[0m from business_logic.statistics import query_database
+  [1m[94m|[0m
+[1m[96mhelp[0m: [1mRemove unused import[0m
+
+[1m[91mF401 [0m[[1m[96m*[0m] [1m&#96;business_logic.statistics.query_database&#96; imported but unused[0m
+ [1m[94m--&gt;[0m app\routes\league_routes.py:5:39
+  [1m[94m|[0m
+[1m[94m3 |[0m from data_access.schema import Columns, ColumnsExtra
+[1m[94m4 |[0m from app.services.i18n_service import i18n_service, Language
+[1m[94m5 |[0m from business_logic.statistics import query_database
+  [1m[94m|[0m                                       [1m[91m^^^^^^^^^^^^^^[0m
+[1m[94m6 |[0m from data_access.adapters.data_adapter_factory import DataAdapterSelector
+[1m[94m7 |[0m import traceback
+  [1m[94m|[0m
+[1m[96mhelp[0m: [1mRemove unused import: &#96;business_logic.statistics.query_database&#96;[0m
+
+[1m[91mF401 [0m[[1m[96m*[0m] [1m&#96;data_access.adapters.data_adapter_factory.DataAdapterSelector&#96; imported but unused[0m
+ [1m[94m--&gt;[0m app\routes\league_routes.py:6:55
+  [1m[94m|[0m
+[1m[94m4 |[0m from app.services.i18n_service import i18n_service, Language
+[1m[94m5 |[0m from business_logic.statistics import query_database
+[1m[94m6 |[0m from data_access.adapters.data_adapter_factory import DataAdapterSelector
+  [1m[94m|[0m                                                       [1m[91m^^^^^^^^^^^^^^^^^^^[0m
+[1m[94m7 |[0m import traceback
+[1m[94m8 |[0m import sys
+  [1m[94m|[0m
+[1m[96mhelp[0m: [1mRemove unused import: &#96;data_access.adapters.data_adapter_factory.DataAdapterSelector&#96;[0m
+
+[1m[91mF401 [0m[[1m[96m*[0m] [1m&#96;app.services.data_dict.DataDict&#96; imported but unused[0m
+  [1m[94m--&gt;[0m app\routes\league_routes.py:11:36
+   [1m[94m|[0m
+[1m[94m 9 |[0m import hashlib
+[1m[94m10 |[0m import inspect
+[1m[94m11 |[0m from app.services.data_dict import DataDict
+   [1m[94m|[0m                                    [1m[91m^^^^^^^^[0m
+[1m[94m12 |[0m from app.config.debug_config import debug_config
+[1m[94m13 |[0m from app.models.table_data import TableData, ColumnGroup, Column
+   [1m[94m|[0m
+[1m[96mhelp[0m: [1mRemove unused import: &#96;app.services.data_dict.DataDict&#96;[0m
+
+[1m[91mF401 [0m[[1m[96m*[0m] [1m&#96;app.models.table_data.TableData&#96; imported but unused[0m
+  [1m[94m--&gt;[0m app\routes\league_routes.py:13:35
+   [1m[94m|[0m
+[1m[94m11 |[0m from app.services.data_dict import DataDict
+[1m[94m12 |[0m from app.config.debug_config import debug_config
+[1m[94m13 |[0m from app.models.table_data import TableData, ColumnGroup, Column
+   [1m[94m|[0m                                   [1m[91m^^^^^^^^^[0m
+[1m[94m14 |[0m from app.utils.league_utils import (
+[1m[94m15 |[0m     get_league_division_map,
+   [1m[94m|[0m
+[1m[96mhelp[0m: [1mRemove unused import[0m
+
+[1m[91mF401 [0m[[1m[96m*[0m] [1m&#96;app.models.table_data.ColumnGroup&#96; imported but unused[0m
+  [1m[94m--&gt;[0m app\routes\league_routes.py:13:46
+   [1m[94m|[0m
+[1m[94m11 |[0m from app.services.data_dict import DataDict
+[1m[94m12 |[0m from app.config.debug_config import debug_config
+[1m[94m13 |[0m from app.models.table_data import TableData, ColumnGroup, Column
+   [1m[94m|[0m                                              [1m[91m^^^^^^^^^^^[0m
+[1m[94m14 |[0m from app.utils.league_utils import (
+[1m[94m15 |[0m     get_league_division_map,
+   [1m[94m|[0m
+[1m[96mhelp[0m: [1mRemove unused import[0m
+
+[1m[91mF401 [0m[[1m[96m*[0m] [1m&#96;app.models.table_data.Column&#96; imported but unused[0m
+  [1m[94m--&gt;[0m app\routes\league_routes.py:13:59
+   [1m[94m|[0m
+[1m[94m11 |[0m from app.services.data_dict import DataDict
+[1m[94m12 |[0m from app.config.debug_config import debug_config
+[1m[94m13 |[0m from app.models.table_data import TableData, ColumnGroup, Column
+   [1m[94m|[0m                                                           [1m[91m^^^^^^[0m
+[1m[94m14 |[0m from app.utils.league_utils import (
+[1m[94m15 |[0m     get_league_division_map,
+   [1m[94m|[0m
+[1m[96mhelp[0m: [1mRemove unused import[0m
+
+[1m[91mF401 [0m[[1m[96m*[0m] [1m&#96;app.utils.league_utils.get_league_division_map&#96; imported but unused[0m
+  [1m[94m--&gt;[0m app\routes\league_routes.py:15:5
+   [1m[94m|[0m
+[1m[94m13 |[0m from app.models.table_data import TableData, ColumnGroup, Column
+[1m[94m14 |[0m from app.utils.league_utils import (
+[1m[94m15 |[0m     get_league_division_map,
+   [1m[94m|[0m     [1m[91m^^^^^^^^^^^^^^^^^^^^^^^[0m
+[1m[94m16 |[0m     get_league_long_name_map,
+[1m[94m17 |[0m     resolve_league_long_name,
+   [1m[94m|[0m
+[1m[96mhelp[0m: [1mRemove unused import: &#96;app.utils.league_utils.get_league_division_map&#96;[0m
+
+[1m[91mF401 [0m[[1m[96m*[0m] [1m&#96;data_access.pd_dataframes.fetch_column&#96; imported but unused[0m
+ [1m[94m--&gt;[0m app\services\data_manager.py:2:39
+  [1m[94m|[0m
+[1m[94m1 |[0m import pandas as pd
+[1m[94m2 |[0m from data_access.pd_dataframes import fetch_column
+  [1m[94m|[0m                                       [1m[91m^^^^^^^^^^^^[0m
+[1m[94m3 |[0m from flask import session
+[1m[94m4 |[0m import os
+  [1m[94m|[0m
+[1m[96mhelp[0m: [1mRemove unused import: &#96;data_access.pd_dataframes.fetch_column&#96;[0m
+
+[1m[91mF401 [0m[[1m[96m*[0m] [1m&#96;os&#96; imported but unused[0m
+ [1m[94m--&gt;[0m app\services\data_manager.py:4:8
+  [1m[94m|[0m
+[1m[94m2 |[0m from data_access.pd_dataframes import fetch_column
+[1m[94m3 |[0m from flask import session
+[1m[94m4 |[0m import os
+  [1m[94m|[0m        [1m[91m^^[0m
+[1m[94m5 |[0m import json
+[1m[94m6 |[0m from typing import Optional
+  [1m[94m|[0m
+[1m[96mhelp[0m: [1mRemove unused import: &#96;os&#96;[0m
+
+[1m[91mF401 [0m[[1m[96m*[0m] [1m&#96;json&#96; imported but unused[0m
+ [1m[94m--&gt;[0m app\services\data_manager.py:5:8
+  [1m[94m|[0m
+[1m[94m3 |[0m from flask import session
+[1m[94m4 |[0m import os
+[1m[94m5 |[0m import json
+  [1m[94m|[0m        [1m[91m^^^^[0m
+[1m[94m6 |[0m from typing import Optional
+[1m[94m7 |[0m from pathlib import Path
+  [1m[94m|[0m
+[1m[96mhelp[0m: [1mRemove unused import: &#96;json&#96;[0m
+
+[1m[91mF401 [0m[[1m[96m*[0m] [1m&#96;data_access.dtype_normalization.normalize_legacy_dataframe_types&#96; imported but unused[0m
+  [1m[94m--&gt;[0m app\services\data_manager.py:9:45
+   [1m[94m|[0m
+[1m[94m 7 |[0m from pathlib import Path
+[1m[94m 8 |[0m from app.config.database_config import database_config, DATABASE_DATA_DIR
+[1m[94m 9 |[0m from data_access.dtype_normalization import normalize_legacy_dataframe_types
+   [1m[94m|[0m                                             [1m[91m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[1m[94m10 |[0m
+[1m[94m11 |[0m # Read legacy semicolon CSVs as strings to avoid mixed-type chunk inference warnings.
+   [1m[94m|[0m
+[1m[96mhelp[0m: [1mRemove unused import: &#96;data_access.dtype_normalization.normalize_legacy_dataframe_types&#96;[0m
+
+[1m[91mF401 [0m[[1m[96m*[0m] [1m&#96;app.models.statistics_models.LeagueStatistics&#96; imported but unused[0m
+  [1m[94m--&gt;[0m app\services\league_service.py:12:42
+   [1m[94m|[0m
+[1m[94m10 |[0m from app.models.table_data import TableData, ColumnGroup, Column, PlotData, TileData
+[1m[94m11 |[0m from app.services.statistics_service import StatisticsService
+[1m[94m12 |[0m from app.models.statistics_models import LeagueStatistics, LeagueResults
+   [1m[94m|[0m                                          [1m[91m^^^^^^^^^^^^^^^^[0m
+[1m[94m13 |[0m from app.models.series_data import SeriesData
+[1m[94m14 |[0m from data_access.schema import Columns
+   [1m[94m|[0m
+[1m[96mhelp[0m: [1mRemove unused import[0m
+
+[1m[91mF401 [0m[[1m[96m*[0m] [1m&#96;app.models.statistics_models.LeagueResults&#96; imported but unused[0m
+  [1m[94m--&gt;[0m app\services\league_service.py:12:60
+   [1m[94m|[0m
+[1m[94m10 |[0m from app.models.table_data import TableData, ColumnGroup, Column, PlotData, TileData
+[1m[94m11 |[0m from app.services.statistics_service import StatisticsService
+[1m[94m12 |[0m from app.models.statistics_models import LeagueStatistics, LeagueResults
+   [1m[94m|[0m                                                            [1m[91m^^^^^^^^^^^^^[0m
+[1m[94m13 |[0m from app.models.series_data import SeriesData
+[1m[94m14 |[0m from data_access.schema import Columns
+   [1m[94m|[0m
+[1m[96mhelp[0m: [1mRemove unused import[0m
+
+[1m[91mF401 [0m[[1m[96m*[0m] [1m&#96;app.utils.color_constants.get_heat_map_color&#96; imported but unused[0m
+  [1m[94m--&gt;[0m app\services\league_service.py:27:56
+   [1m[94m|[0m
+[1m[94m25 |[0m from itertools import accumulate
+[1m[94m26 |[0m from app.config.debug_config import debug_config
+[1m[94m27 |[0m from app.utils.color_constants import get_theme_color, get_heat_map_color
+   [1m[94m|[0m                                                        [1m[91m^^^^^^^^^^^^^^^^^^[0m
+[1m[94m28 |[0m from app.utils.league_utils import (
+[1m[94m29 |[0m     format_float_one_decimal,
+   [1m[94m|[0m
+[1m[96mhelp[0m: [1mRemove unused import: &#96;app.utils.color_constants.get_heat_map_color&#96;[0m
+
+[1m[91mF541 [0m[[1m[96m*[0m] [1mf-string without any placeholders[0m
+   [1m[94m--&gt;[0m app\services\league_service.py:857:23
+    [1m[94m|[0m
+[1m[94m855 |[0m                 columns=[],
+[1m[94m856 |[0m                 data=[],
+[1m[94m857 |[0m                 title=f"Error loading game overview data"
+    [1m[94m|[0m                       [1m[91m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[1m[94m858 |[0m             )
+    [1m[94m|[0m
+[1m[96mhelp[0m: [1mRemove extraneous &#96;f&#96; prefix[0m
+
+[1m[91mF541 [0m[[1m[96m*[0m] [1mf-string without any placeholders[0m
+   [1m[94m--&gt;[0m app\services\league_service.py:892:23
+    [1m[94m|[0m
+[1m[94m891 |[0m             if player_data.empty:
+[1m[94m892 |[0m                 print(f"get_game_team_details_data: No player data found")
+    [1m[94m|[0m                       [1m[91m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[1m[94m893 |[0m                 return TableData(
+[1m[94m894 |[0m                     columns=[],
+    [1m[94m|[0m
+[1m[96mhelp[0m: [1mRemove extraneous &#96;f&#96; prefix[0m
+
+[1m[91mF541 [0m[[1m[96m*[0m] [1mf-string without any placeholders[0m
+   [1m[94m--&gt;[0m app\services\league_service.py:919:23
+    [1m[94m|[0m
+[1m[94m918 |[0m             if not opponent_name or opponent_name == '' or opponent_name.lower() == 'nan':
+[1m[94m919 |[0m                 print(f"get_game_team_details_data: No opponent name found")
+    [1m[94m|[0m                       [1m[91m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[1m[94m920 |[0m                 return TableData(
+[1m[94m921 |[0m                     columns=[],
+    [1m[94m|[0m
+[1m[96mhelp[0m: [1mRemove extraneous &#96;f&#96; prefix[0m
+
+[1m[91mF541 [0m[[1m[96m*[0m] [1mf-string without any placeholders[0m
+    [1m[94m--&gt;[0m app\services\league_service.py:1100:23
+     [1m[94m|[0m
+[1m[94m1098 |[0m                 columns=[],
+[1m[94m1099 |[0m                 data=[],
+[1m[94m1100 |[0m                 title=f"Error loading game team details data"
+     [1m[94m|[0m                       [1m[91m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[1m[94m1101 |[0m             )
+     [1m[94m|[0m
+[1m[96mhelp[0m: [1mRemove extraneous &#96;f&#96; prefix[0m
+
+[1m[91mE712 [0m[1mAvoid equality comparisons to &#96;True&#96;; use &#96;team_data[Columns.computed_data]:&#96; for truth checks[0m
+    [1m[94m--&gt;[0m app\services\league_service.py:2595:89
+     [1m[94m|[0m
+[1m[94m2593 |[0m                             row.extend(["", "", ""])
+[1m[94m2594 |[0m                     # Team totals for this round (if available)
+[1m[94m2595 |[0m                     team_totals = team_data[(team_data[Columns.round_number] == rnd) &amp; (team_data[Columns.computed_data] == True)]
+     [1m[94m|[0m                                                                                         [1m[91m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[1m[94m2596 |[0m                     if not team_totals.empty:
+[1m[94m2597 |[0m                         row.append(int(team_totals[Columns.score].iloc[0]))
+     [1m[94m|[0m
+[1m[96mhelp[0m: [1mReplace with &#96;team_data[Columns.computed_data]&#96;[0m
+
+[1m[91mE712 [0m[1mAvoid equality comparisons to &#96;True&#96;; use &#96;team_data[Columns.computed_data]:&#96; for truth checks[0m
+    [1m[94m--&gt;[0m app\services\league_service.py:2615:42
+     [1m[94m|[0m
+[1m[94m2613 |[0m                 # Team total score/points for all rounds
+[1m[94m2614 |[0m                 team_score_total = (
+[1m[94m2615 |[0m                     sum_scores(team_data[team_data[Columns.computed_data] == True][Columns.score])
+     [1m[94m|[0m                                          [1m[91m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[1m[94m2616 |[0m                     if not team_data.empty
+[1m[94m2617 |[0m                     else ""
+     [1m[94m|[0m
+[1m[96mhelp[0m: [1mReplace with &#96;team_data[Columns.computed_data]&#96;[0m
+
+[1m[91mE712 [0m[1mAvoid equality comparisons to &#96;True&#96;; use &#96;team_data[Columns.computed_data]:&#96; for truth checks[0m
+    [1m[94m--&gt;[0m app\services\league_service.py:2619:47
+     [1m[94m|[0m
+[1m[94m2617 |[0m [1m[94m…[0m         else ""
+[1m[94m2618 |[0m [1m[94m…[0m     )
+[1m[94m2619 |[0m [1m[94m…[0m     team_points_total = team_data[team_data[Columns.computed_data] == True][Columns.points].sum() if not team_data.empty else ""
+     [1m[94m|[0m                                     [1m[91m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[1m[94m2620 |[0m [1m[94m…[0m     team_total_row.append(int(team_score_total) if team_score_total != "" else "")
+[1m[94m2621 |[0m [1m[94m…[0m     team_total_row.append(int(team_points_total) if team_points_total != "" else "")
+     [1m[94m|[0m
+[1m[96mhelp[0m: [1mReplace with &#96;team_data[Columns.computed_data]&#96;[0m
+
+[1m[91mE712 [0m[1mAvoid equality comparisons to &#96;True&#96;; use &#96;team_data[Columns.computed_data]:&#96; for truth checks[0m
+    [1m[94m--&gt;[0m app\services\league_service.py:2658:89
+     [1m[94m|[0m
+[1m[94m2656 |[0m                         row.extend(["", "", ""])
+[1m[94m2657 |[0m                     # Team totals (if available)
+[1m[94m2658 |[0m                     team_totals = team_data[(team_data[Columns.round_number] == rnd) &amp; (team_data[Columns.computed_data] == True)]
+     [1m[94m|[0m                                                                                         [1m[91m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[1m[94m2659 |[0m                     if not team_totals.empty:
+[1m[94m2660 |[0m                         row.append(int(team_totals[Columns.score].iloc[0]))
+     [1m[94m|[0m
+[1m[96mhelp[0m: [1mReplace with &#96;team_data[Columns.computed_data]&#96;[0m
+
+[1m[91mE712 [0m[1mAvoid equality comparisons to &#96;True&#96;; use &#96;opponent_data[Columns.computed_data]:&#96; for truth checks[0m
+    [1m[94m--&gt;[0m app\services\league_service.py:2682:96
+     [1m[94m|[0m
+[1m[94m2680 |[0m [1m[94m…[0m             row.extend(["", "", ""])
+[1m[94m2681 |[0m [1m[94m…[0m     # Team totals (if available)
+[1m[94m2682 |[0m [1m[94m…[0m     opp_totals = opponent_data[(opponent_data[Columns.round_number] == rnd) &amp; (opponent_data[Columns.computed_data] == True)]
+     [1m[94m|[0m                                                                                  [1m[91m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[1m[94m2683 |[0m [1m[94m…[0m     if not opp_totals.empty:
+[1m[94m2684 |[0m [1m[94m…[0m         row.append(int(opp_totals[Columns.score].iloc[0]))
+     [1m[94m|[0m
+[1m[96mhelp[0m: [1mReplace with &#96;opponent_data[Columns.computed_data]&#96;[0m
+
+[1m[91mF841 [0m[1mLocal variable &#96;players&#96; is assigned to but never used[0m
+    [1m[94m--&gt;[0m app\services\league_service.py:2770:9
+     [1m[94m|[0m
+[1m[94m2768 |[0m                 })
+[1m[94m2769 |[0m         
+[1m[94m2770 |[0m         players = [p['identifier'] for p in player_identifiers]
+     [1m[94m|[0m         [1m[91m^^^^^^^[0m
+[1m[94m2771 |[0m
+[1m[94m2772 |[0m         # Build columns
+     [1m[94m|[0m
+[1m[96mhelp[0m: [1mRemove assignment to unused variable &#96;players&#96;[0m
+
+[1m[91mF841 [0m[1mLocal variable &#96;winning_team_name&#96; is assigned to but never used[0m
+    [1m[94m--&gt;[0m app\services\league_service.py:2964:29
+     [1m[94m|[0m
+[1m[94m2962 |[0m [1m[94m…[0m                     team_totals = team_totals.sort_values(by=Columns.points, ascending=False)
+[1m[94m2963 |[0m [1m[94m…[0m                     winning_team_points = team_totals.iloc[0][Columns.points]
+[1m[94m2964 |[0m [1m[94m…[0m                     winning_team_name = team_totals.iloc[0][Columns.team_name]
+     [1m[94m|[0m                       [1m[91m^^^^^^^^^^^^^^^^^[0m
+[1m[94m2965 |[0m [1m[94m…[0m                     
+[1m[94m2966 |[0m [1m[94m…[0m                     season_points[season] = winning_team_points
+     [1m[94m|[0m
+[1m[96mhelp[0m: [1mRemove assignment to unused variable &#96;winning_team_name&#96;[0m
+
+[1m[91mF841 [0m[1mLocal variable &#96;unique_leagues&#96; is assigned to but never used[0m
+    [1m[94m--&gt;[0m app\services\league_service.py:3271:13
+     [1m[94m|[0m
+[1m[94m3269 |[0m             league_filters = {}
+[1m[94m3270 |[0m             all_league_data = self.adapter.get_filtered_data(filters=league_filters)
+[1m[94m3271 |[0m             unique_leagues = all_league_data[Columns.league_name].unique() if not all_league_data.empty else []
+     [1m[94m|[0m             [1m[91m^^^^^^^^^^^^^^[0m
+[1m[94m3272 |[0m             
+[1m[94m3273 |[0m             all_performances = []
+     [1m[94m|[0m
+[1m[96mhelp[0m: [1mRemove assignment to unused variable &#96;unique_leagues&#96;[0m
+
+[1m[91mF841 [0m[1mLocal variable &#96;computed_data_values&#96; is assigned to but never used[0m
+    [1m[94m--&gt;[0m app\services\league_service.py:3286:25
+     [1m[94m|[0m
+[1m[94m3285 |[0m                     if not basic_data.empty:
+[1m[94m3286 |[0m                         computed_data_values = basic_data[Columns.computed_data].unique()
+     [1m[94m|[0m                         [1m[91m^^^^^^^^^^^^^^^^^^^^[0m
+[1m[94m3287 |[0m                         individual_rows = basic_data[basic_data[Columns.computed_data] == False]
+[1m[94m3288 |[0m                         team_rows = basic_data[basic_data[Columns.computed_data] == True]
+     [1m[94m|[0m
+[1m[96mhelp[0m: [1mRemove assignment to unused variable &#96;computed_data_values&#96;[0m
+
+[1m[91mF841 [0m[1mLocal variable &#96;individual_rows&#96; is assigned to but never used[0m
+    [1m[94m--&gt;[0m app\services\league_service.py:3287:25
+     [1m[94m|[0m
+[1m[94m3285 |[0m                     if not basic_data.empty:
+[1m[94m3286 |[0m                         computed_data_values = basic_data[Columns.computed_data].unique()
+[1m[94m3287 |[0m                         individual_rows = basic_data[basic_data[Columns.computed_data] == False]
+     [1m[94m|[0m                         [1m[91m^^^^^^^^^^^^^^^[0m
+[1m[94m3288 |[0m                         team_rows = basic_data[basic_data[Columns.computed_data] == True]
+     [1m[94m|[0m
+[1m[96mhelp[0m: [1mRemove assignment to unused variable &#96;individual_rows&#96;[0m
+
+[1m[91mE712 [0m[1mAvoid equality comparisons to &#96;False&#96;; use &#96;not basic_data[Columns.computed_data]:&#96; for false checks[0m
+    [1m[94m--&gt;[0m app\services\league_service.py:3287:54
+     [1m[94m|[0m
+[1m[94m3285 |[0m                     if not basic_data.empty:
+[1m[94m3286 |[0m                         computed_data_values = basic_data[Columns.computed_data].unique()
+[1m[94m3287 |[0m                         individual_rows = basic_data[basic_data[Columns.computed_data] == False]
+     [1m[94m|[0m                                                      [1m[91m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[1m[94m3288 |[0m                         team_rows = basic_data[basic_data[Columns.computed_data] == True]
+     [1m[94m|[0m
+[1m[96mhelp[0m: [1mReplace with &#96;not basic_data[Columns.computed_data]&#96;[0m
+
+[1m[91mF841 [0m[1mLocal variable &#96;team_rows&#96; is assigned to but never used[0m
+    [1m[94m--&gt;[0m app\services\league_service.py:3288:25
+     [1m[94m|[0m
+[1m[94m3286 |[0m                         computed_data_values = basic_data[Columns.computed_data].unique()
+[1m[94m3287 |[0m                         individual_rows = basic_data[basic_data[Columns.computed_data] == False]
+[1m[94m3288 |[0m                         team_rows = basic_data[basic_data[Columns.computed_data] == True]
+     [1m[94m|[0m                         [1m[91m^^^^^^^^^[0m
+[1m[94m3289 |[0m                     
+[1m[94m3290 |[0m                     # Get individual averages for each season
+     [1m[94m|[0m
+[1m[96mhelp[0m: [1mRemove assignment to unused variable &#96;team_rows&#96;[0m
+
+[1m[91mE712 [0m[1mAvoid equality comparisons to &#96;True&#96;; use &#96;basic_data[Columns.computed_data]:&#96; for truth checks[0m
+    [1m[94m--&gt;[0m app\services\league_service.py:3288:48
+     [1m[94m|[0m
+[1m[94m3286 |[0m                         computed_data_values = basic_data[Columns.computed_data].unique()
+[1m[94m3287 |[0m                         individual_rows = basic_data[basic_data[Columns.computed_data] == False]
+[1m[94m3288 |[0m                         team_rows = basic_data[basic_data[Columns.computed_data] == True]
+     [1m[94m|[0m                                                [1m[91m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[1m[94m3289 |[0m                     
+[1m[94m3290 |[0m                     # Get individual averages for each season
+     [1m[94m|[0m
+[1m[96mhelp[0m: [1mReplace with &#96;basic_data[Columns.computed_data]&#96;[0m
+
+[1m[91mF841 [0m[1mLocal variable &#96;avg_score_col_idx&#96; is assigned to but never used[0m
+    [1m[94m--&gt;[0m app\services\league_service.py:4281:13
+     [1m[94m|[0m
+[1m[94m4280 |[0m             # Average columns are first (right after position and team)
+[1m[94m4281 |[0m             avg_score_col_idx = 2
+     [1m[94m|[0m             [1m[91m^^^^^^^^^^^^^^^^^[0m
+[1m[94m4282 |[0m             avg_points_col_idx = 3
+     [1m[94m|[0m
+[1m[96mhelp[0m: [1mRemove assignment to unused variable &#96;avg_score_col_idx&#96;[0m
+
+[1m[91mF841 [0m[1mLocal variable &#96;avg_points_col_idx&#96; is assigned to but never used[0m
+    [1m[94m--&gt;[0m app\services\league_service.py:4282:13
+     [1m[94m|[0m
+[1m[94m4280 |[0m             # Average columns are first (right after position and team)
+[1m[94m4281 |[0m             avg_score_col_idx = 2
+[1m[94m4282 |[0m             avg_points_col_idx = 3
+     [1m[94m|[0m             [1m[91m^^^^^^^^^^^^^^^^^^[0m
+[1m[94m4283 |[0m             
+[1m[94m4284 |[0m             # Team columns come after averages
+     [1m[94m|[0m
+[1m[96mhelp[0m: [1mRemove assignment to unused variable &#96;avg_points_col_idx&#96;[0m
+
+[1m[91mF841 [0m[[1m[96m*[0m] [1mLocal variable &#96;e&#96; is assigned to but never used[0m
+    [1m[94m--&gt;[0m app\services\league_service.py:4513:29
+     [1m[94m|[0m
+[1m[94m4511 |[0m             return pd.DataFrame(result_data)
+[1m[94m4512 |[0m             
+[1m[94m4513 |[0m         except Exception as e:
+     [1m[94m|[0m                             [1m[91m^[0m
+[1m[94m4514 |[0m             return pd.DataFrame()
+     [1m[94m|[0m
+[1m[96mhelp[0m: [1mRemove assignment to unused variable &#96;e&#96;[0m
+
+[1m[91mF401 [0m[[1m[96m*[0m] [1m&#96;data_access.schema.ColumnsExtra&#96; imported but unused[0m
+ [1m[94m--&gt;[0m data_access\adapters\data_adapter_pandas.py:2:41
+  [1m[94m|[0m
+[1m[94m1 |[0m from data_access.adapters.data_adapter import DataAdapter
+[1m[94m2 |[0m from data_access.schema import Columns, ColumnsExtra
+  [1m[94m|[0m                                         [1m[91m^^^^^^^^^^^^[0m
+[1m[94m3 |[0m import pandas as pd
+[1m[94m4 |[0m import pathlib
+  [1m[94m|[0m
+[1m[96mhelp[0m: [1mRemove unused import: &#96;data_access.schema.ColumnsExtra&#96;[0m
+
+[1m[91mF401 [0m[[1m[96m*[0m] [1m&#96;typing.Tuple&#96; imported but unused[0m
+ [1m[94m--&gt;[0m data_access\adapters\data_adapter_pandas.py:6:47
+  [1m[94m|[0m
+[1m[94m4 |[0m import pathlib
+[1m[94m5 |[0m import operator
+[1m[94m6 |[0m from typing import List, Dict, Any, Optional, Tuple, Callable, Union
+  [1m[94m|[0m                                               [1m[91m^^^^^[0m
+[1m[94m7 |[0m
+[1m[94m8 |[0m from data_access.models.league_models import LeagueQuery
+  [1m[94m|[0m
+[1m[96mhelp[0m: [1mRemove unused import[0m
+
+[1m[91mF401 [0m[[1m[96m*[0m] [1m&#96;typing.Callable&#96; imported but unused[0m
+ [1m[94m--&gt;[0m data_access\adapters\data_adapter_pandas.py:6:54
+  [1m[94m|[0m
+[1m[94m4 |[0m import pathlib
+[1m[94m5 |[0m import operator
+[1m[94m6 |[0m from typing import List, Dict, Any, Optional, Tuple, Callable, Union
+  [1m[94m|[0m                                                      [1m[91m^^^^^^^^[0m
+[1m[94m7 |[0m
+[1m[94m8 |[0m from data_access.models.league_models import LeagueQuery
+  [1m[94m|[0m
+[1m[96mhelp[0m: [1mRemove unused import[0m
+
+[1m[91mF401 [0m[[1m[96m*[0m] [1m&#96;typing.Optional&#96; imported but unused[0m
+  [1m[94m--&gt;[0m data_access\shared_pandas_store.py:12:32
+   [1m[94m|[0m
+[1m[94m10 |[0m from dataclasses import dataclass, field
+[1m[94m11 |[0m from pathlib import Path
+[1m[94m12 |[0m from typing import Dict, List, Optional, Tuple
+   [1m[94m|[0m                                [1m[91m^^^^^^^^[0m
+[1m[94m13 |[0m
+[1m[94m14 |[0m import pandas as pd
+   [1m[94m|[0m
+[1m[96mhelp[0m: [1mRemove unused import: &#96;typing.Optional&#96;[0m
+
+Found 40 errors.
+[[36m*[0m] 25 fixable with the &#96;--fix&#96; option (15 hidden fixes can be enabled with the &#96;--unsafe-fixes&#96; option).
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python scripts/bench_page_apis.py --base "http://192.168.68.109:5173" --rounds 3 2>&1</summary>
+
+```bash
+cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python scripts/bench_page_apis.py --base "http://192.168.68.109:5173" --rounds 3 2>&1
+```
+
+```
+Base URL: http://192.168.68.109:5173
+Rounds per endpoint: 3
+
+=== Club history (/club) ===
+  /team/get_teams
+    params: {'database': 'db_real_merged'}
+    median: 390 ms  (min=389, max=5,470)  status=200  size=13.1 KiB
+  /league/get_club_matrix
+    params: {'database': 'db_real_merged'}
+    median: 12 ms  (min=11, max=15)  status=200  size=8.0 KiB
+  /league/get_club_matrix
+    params: {'database': 'db_real_merged', 'club': 'BC EMAX Unterf�hring'}
+    median: 12 ms  (min=12, max=12)  status=200  size=20.0 KiB
+  scenario total (median sum): 415 ms
+
+=== Player names (/spieler, no player) ===
+  /player/search
+    params: {'database': 'db_real_merged'}
+    median: 48 ms  (min=26, max=24,530)  status=200  size=172.7 KiB
+  scenario total (median sum): 48 ms
+
+=== Player career (/spieler + player) ===
+  /player/search
+    params: {'database': 'db_real_merged'}
+    median: 26 ms  (min=23, max=36)  status=200  size=172.7 KiB
+  /player/get_available_seasons
+    params: {'database': 'db_real_merged', 'player_name': 'Feller, Christian', 'player_id': '16007'}
+    median: 488 ms  (min=488, max=523)  status=200  size=0.2 KiB
+  /player/get_lifetime_stats
+    params: {'database': 'db_real_merged', 'player_name': 'Feller, Christian', 'player_id': '16007', 'season': 'all'}
+    median: 5,568 ms  (min=5,242, max=5,645)  status=200  size=21.6 KiB
+  scenario total (median sum): 6,082 ms
+
+=== League season overview (/liga, season only) ===
+  /league/get_available_seasons
+    params: {'database': 'db_real_merged'}
+    median: 34 ms  (min=11, max=34)  status=200  size=0.2 KiB
+  /league/get_season_league_standings
+    params: {'database': 'db_real_merged', 'season': '10/11'}
+    median: 22 ms  (min=21, max=32)  status=200  size=170.7 KiB
+  scenario total (median sum): 56 ms
+
+=== All scenarios (median sum): 6,601 ms ===
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Excellent results! get_available_seasons improved from 4131ms to 34ms, delivering a significant performance boost.
+
+League season overview total improved from 4154ms to 56ms. The user may need to restart Flask for changes, though bench tests show improvement. Only minimal cleanup was performed in data_manager: removed unused imports and constants, ensuring no unrelated code changes were made.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app\\services\\data_manager.py",
+  "pattern": "os\\.|json\\.|_LEGACY_CSV|normalize_legacy"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app\\services\\data_manager.py",
+  "pattern": "os\\.|json\\.|_LEGACY_CSV|normalize_legacy",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "app\\services\\data_manager.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 2
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\app\services\data_manager.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\shared_pandas_store.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Phase 1 is in place. **Restart Flask** (and Vite if needed) so the running process picks up the changes.
+
+### What changed
+
+1. **Shared pandas cache** (`data_access/shared_pandas_store.py`)  
+   - One loaded CSV + one `DataAdapterPandas` per `database` id (invalidates when file mtime changes).  
+   - `DataAdapterFactory`, `DataManager`, and every `LeagueService` request reuse it.
+
+2. **Metadata indexes at load**  
+   - Precomputed: all seasons, leagues per season, weeks per (season, league).  
+   - `get_seasons()` / `get_leagues(season=…)` / `get_weeks()` use O(1) lookups when possible.
+
+3. **No full `df.copy()`** on `get_filtered_data__deprecated` (metadata paths use `get_filtered_data` instead).
+
+4. **Disk cache** for `get_available_seasons` and `get_available_leagues`.
+
+5. **`get_season_league_standings`**  
+   - One groupby for latest week per league instead of ~30× `get_latest_week()` full scans.
+
+### Benchmark after changes (`db_real_merged`, 3 rounds)
+
+| Scenario | Before (median) | After (median) |
+|----------|-----------------|----------------|
+| **League season overview** | ~4,154 ms | **~56 ms** |
+| `get_available_seasons` alone | ~4,131 ms | **~34 ms** |
+| Club history | ~412 ms | ~415 ms (first `get_teams` still ~390 ms until warm) |
+| Player names | ~26 ms | ~48 ms |
+| Player career | ~5,970 ms | **~6,082 ms** (unchanged — `get_lifetime_stats` still ~5.5 s) |
+
+League filter/season overview was the main win. Player career is still dominated by `get_lifetime_stats` (Phase 2 target).
+
+Re-measure anytime:
+
+```powershell
+uv run python scripts/bench_page_apis.py --base http://192.168.68.109:5173 --rounds 3
+```
+
+Tests: `tests/data_access/test_shared_pandas_store.py` passes (2 new tests).
+
+---
+
+_**User**_
+
+are you really using cold cache / a fresh backend process here? 
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user questions whether the benchmarks measured cold cache or warm cached performance.
+
+The benchmark script executes multiple rounds sequentially without restarting Flask or clearing caches, meaning results reflect warmed-up performance rather than cold starts. The initial measurements likely came from a server with pre-loaded data.
+
+The "after" measurements occurred after code changes, and while Flask may have auto-reloaded or been restarted, the first request would have loaded the CSV into a shared cache, making subsequent rounds warm. For get_available_seasons specifically, the performance improved from over 4 seconds to 34ms median, likely due to a warm in-process adapter cache, disk cache hits, metadata index lookups, or a combination of these factors.
+
+The user is correct to question whether "cold" performance was actually tested. The benchmark script does not simulate a fresh backend process, so results reflect warmed-up performance rather than true cold starts. While the first round might be cold for an endpoint's disk cache, it is not cold for the shared dataframe, which loads on the first API hit. The significant improvement in get_available_seasons remains valid for typical usage but makes direct before/after comparisons invalid without consistent conditions.</details></think>
+
+_**Agent (default)**_
+
+No — those numbers were not from a fresh backend process or a cleared cache. Checking what the benchmark actually measured:
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\bench_page_apis.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I will provide an honest answer and optionally improve the bench script by adding a cold mode that documents the meaning of each layer.
+
+I will provide a clear answer to the user's question without implementing anything unless necessary. The performance breakdown shows that the first HTTP request incurs a full `read_csv` load (~90MB merged) plus metadata index building. Subsequent requests benefit from a warm process with cold disk cache, where adapters are in memory but league_response_cache misses occur per endpoint. Finally, a fully warmed system achieves 34ms latency for get_available_seasons. The benchmark was run with a long-lived Flask process, though the user mentioned restarting it.
+
+The scenarios execute in sequenceclubplayerleaguemeaning the adapter was already warmed by the time of league season processing. The 23ms response for `get_season_league_standings` indicates a disk cache hit. The initial 4s delay for `get_available_seasons` likely stemmed from a cold adapter or repeated CSV loading. With the new code, the first request now loads the adapter once and builds the index, taking several seconds, but subsequent requests are fast. Overstating results should be avoided.
+
+I will add a --cold mode that tests one endpoint in isolation after restarting Flask, or use a subprocess benchmark to load the adapter directly in a fresh Python process. Alternatively, a direct in-process cold test can be done without requiring the user's server:
+
+```python
+uv run python -c "
+import time
+from data_access.shared_pandas_store import invalidate_adapter_cache, get_shared_pandas_adapter
+
+invalidate_adapter_cache()
+t0 = time.perf_counter()
+adapter = get_shared_pandas_adapter('db_real_merged')
+load_ms = (time.perf_counter()-t0)*1000
+t1 = time.perf_counter()
+seasons = adapter.get_seasons()
+"
+```</details></think>
+
+_**Agent (default)**_
+
+No. Those runs were warm in several ways. Running an honest cold-load measurement in a fresh Python process:
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python -c "
+import time
+from data_access.shared_pandas_store import invalidate_adapter_cache, get_shared_pandas_adapter
+
+# Fresh process = cold by default. Simulate 'first request after restart':
+invalidate_adapter_cache()
+t0 = time.perf_counter()
+adapter = get_shared_pandas_adapter('db_real_merged')
+load_ms = (time.perf_counter() - t0) * 1000
+rows = len(adapter.df) if adapter.df is not None else 0
+
+t1 = time.perf_counter()
+seasons = adapter.get_seasons()
+seasons_ms = (time.perf_counter() - t1) * 1000
+
+t2 = time.perf_counter()
+leagues = adapter.get_leagues(season='10/11')
+leagues_ms = (time.perf_counter() - t2) * 1000
+
+print(f'Cold load (read CSV + metadata index): {load_ms:,.0f} ms  ({rows:,} rows)')
+print(f'get_seasons() after load:              {seasons_ms:,.0f} ms  ({len(seasons)} seasons)')
+print(f'get_leagues(10/11) after load:         {leagues_ms:,.0f} ms  ({len(leagues)} leagues)')
+"
+</summary>
+
+```bash
+cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python -c "
+import time
+from data_access.shared_pandas_store import invalidate_adapter_cache, get_shared_pandas_adapter
+
+# Fresh process = cold by default. Simulate 'first request after restart':
+invalidate_adapter_cache()
+t0 = time.perf_counter()
+adapter = get_shared_pandas_adapter('db_real_merged')
+load_ms = (time.perf_counter() - t0) * 1000
+rows = len(adapter.df) if adapter.df is not None else 0
+
+t1 = time.perf_counter()
+seasons = adapter.get_seasons()
+seasons_ms = (time.perf_counter() - t1) * 1000
+
+t2 = time.perf_counter()
+leagues = adapter.get_leagues(season='10/11')
+leagues_ms = (time.perf_counter() - t2) * 1000
+
+print(f'Cold load (read CSV + metadata index): {load_ms:,.0f} ms  ({rows:,} rows)')
+print(f'get_seasons() after load:              {seasons_ms:,.0f} ms  ({len(seasons)} seasons)')
+print(f'get_leagues(10/11) after load:         {leagues_ms:,.0f} ms  ({len(leagues)} leagues)')
+"
+
+```
+
+```
+Cold load (read CSV + metadata index): 14,372 ms  (741,806 rows)
+get_seasons() after load:              0 ms  (16 seasons)
+get_leagues(10/11) after load:         0 ms  (29 leagues)
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+**No** — the HTTP benchmark was **not** a cold backend or cold cache test.
+
+### What that script actually did
+
+| Layer | State during the run |
+|--------|----------------------|
+| **Flask process** | Already running; no restart between endpoints or rounds |
+| **In-memory CSV** | Warm after the first API hit in the run (club/team/player run **before** league) |
+| **Disk `league_response_cache`** | Often warm (`get_season_league_standings` ~22 ms ≈ cache hit) |
+| **Reported metric** | Median of 3 rounds → almost always **warm** |
+
+So **`get_available_seasons` ~34 ms** is “second+ request with adapter already loaded,” not “user just restarted Flask and opened `/liga`.”
+
+The old **~4 s** number was also ambiguous: it could be cold **or** the old “reload CSV every request” behavior on a warm process — we didn’t isolate that.
+
+### Honest cold numbers (fresh Python, `db_real_merged`)
+
+Measured in-process with an empty adapter cache (simulates **first load after restart**):
+
+| Step | Time |
+|------|------|
+| Read merged CSV + build metadata index | **~14.4 s** (741k rows) |
+| `get_seasons()` after load | **&lt;1 ms** (index) |
+| `get_leagues("10/11")` after load | **&lt;1 ms** (index) |
+
+Phase 1 still helps: you pay **~14 s once per process**, not **~4–8 s on every** seasons/leagues call. The HTTP bench mixed that up by warming the adapter before league endpoints ran.
+
+### What a real “cold page” test needs
+
+1. Restart Flask (or kill the worker).
+2. Optionally delete `.cache/league/` for disk-cache cold.
+3. Hit **one** URL first and time it (e.g. only `/league/get_available_seasons?database=db_real_merged`).
+
+I can add a `--cold` mode to `bench_page_apis.py` that prints **round 1 only**, documents warmup order, and warns if the adapter was already warmed — say if you want that.
+
+---
+
+_**User**_
+
+add the initial max time as reference to the script
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants the benchmark script to report the initial max time as a reference.
+
+The benchmark script will now report the initial request time and the maximum time as reference points, in addition to the existing median and minimum times. The initial time will be labeled explicitly as a reference point, and a --cold flag will be added to emphasize or run only the first round.</details></think>
+
+_**Agent (default)**_
+
+Updating the benchmark script to report the first-request (initial) and max times as explicit reference metrics.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\bench_page_apis.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\bench_page_apis.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\bench_page_apis.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\bench_page_apis.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\bench_page_apis.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Fixed invalidate_adapter_cache function call to use database_id instead of args.database.</details></think>
+
+_**Agent (default)**_
+
+Cancelled
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+---
+
+_**User**_
+
+i meant add the max time from the unoptimized run as reference. also add a warm time (median) as reference 
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The benchmark script should include hardcoded reference values from the unoptimized run and the warm median from before Phase 1 optimization.
+
+These reference values from the unoptimized run and warm median will be displayed alongside current measurements for comparison. The unoptimized/warm benchmarks include: Club history total at ~412 ms, with get_teams at 390 ms median (max ~8511/7966) and club_matrix at 10-12 ms; Player names at 26 ms warm/5250 ms first hit; Player career at ~5970 ms total, including player/search at 25 ms, get_available_seasons at 503 ms, and get_lifetime_stats at 5442 ms; League season overview at ~4154 ms warm, with get_available_seasons at 4131 ms and get_season_league_standings at 23 ms; and get_available_seasons at 34 ms median.
+
+The benchmark script will include reference values from the unoptimized run, such as max times and warm medians, for comparison. These values are stored in a REFERENCE dictionary mapping endpoint paths and scenarios to their respective ref_warm_median_ms and ref_max_ms. For example, /team/get_teams has a median of 390 ms and a max of 8511 ms, while /league/get_club_matrix (no club) has a median of 10 ms and a max of 30 ms. The user also wants to track the maximum time from the unoptimized run and the warm time from the unoptimized run as references. The script will store these values in the REFERENCE dictionary for easy access during benchmarking. The user's request includes adding a REFERENCE dict in the script mapping endpoint paths + scenario to ref_warm_median_ms and ref_max_ms. The first benchmark shows /team/get_teams with a median of 390 ms and a max
+
+The benchmark script will include reference values from the unoptimized run, such as median and max times, for comparison. These values are stored in a REFERENCE dictionary mapping endpoint paths and scenarios to their respective ref_warm_median_ms and ref_max_ms. For example, /player/get_available_seasons (player) has a median of 503 ms and a max of 522 ms, while /player/get_lifetime_stats has a median of 5442 ms and a max of 5757 ms. Similarly, /league/get_available_seasons has a median of 4131 ms and a max of 8087 ms, and /league/get_season_league_standings has a median of 23 ms and a max of 25 ms. Cold single round benchmarks include get_available_seasons at 7745 ms and player/search at 5250 ms. The output will display these reference values using the format
+
+The benchmark script will now include reference values from the unoptimized run, such as median and max times, for comparison. These values are stored in a REFERENCE dictionary mapping endpoint paths and scenarios to their respective ref_warm_median_ms and ref_max_ms. For example, the Club scenario has a total median of 412 ms, Player names 26 ms, Player career 5970 ms, and League 4154 ms. The script will also display these reference values alongside current measurements to enable easy comparison. The user requested that these reference values be added to the script, and they will be included in the REFERENCE dictionary for easy access during benchmarking. The output will show these reference values using the format specified earlier. The scenario totals from the unoptimized run are as follows: Club at 412 ms, Player names at 26 ms, Player career at 5970 ms, League at 4154 ms, and
+
+The benchmark script will use per-endpoint max times from the unoptimized run as reference values, avoiding misleading scenario totals. Reference values include warm median and max time for each endpoint, formatted as `median=34 ms | initial=11 ms | max=34 ms | min=11 ms`, with `ref (pre-opt): warm median=4,131 ms max=8,087 ms`. A function `_ref_key` generates keys using path and sorted parameters for consistent reference lookup.</details></think>
+
+_**Agent (default)**_
+
+Adding hardcoded pre-optimization reference medians and max times from our earlier benchmark runs.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\bench_page_apis.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I'll add REFERENCE_PRE_OPTIMIZATION with warm_median_ms and max_ms per endpoint key.
+
+2. SCENARIO_REFERENCE_PRE_OPTIMIZATION for scenario totals
+3. _ref_key helper
+4. _format_reference_line
+5. _format_timing_line updated - remove confusing "(ref)" on initial/max from current run, label them as "this run"
+6. Add line showing pre-opt reference
+
+Pre-opt data from conversation (3-round median, max from bench before Phase 1 on db_real_merged via :5173):
+
+| endpoint | warm median | max |
+|----------|-------------|-----|
+| /team/get_teams | 390 | 8511 |
+| /league/get_club_matrix (no club) | 10 | 30 |
+| /league/get_club_matrix (club) | 12 | 28 |
+| /player/search | 26 | 26726 |
+
+| /player/get_available_seasons (player) | 503 | 522 |
+| /player/get_lifetime_stats | 5442 | 5757 |
+| /league/get_available_seasons | 4131 | 8087 |
+| /league/get_season_league_standings | 23 | 25 |
+
+Scenario warm median sums:
+- Club: 412
+- Player names: 26
+- Player career: 5970 (25+503+5442)
+- League: 4154 (4131+23)
+- All: 10561
+
+Scenario max sums (for reference - user asked max from unoptimized):
+- Club: 8511+30+28 = 8569
+- Player names: 26726
+- Player career: 2
+
+Use per-scenario totals from the first full benchmark:
+
+- Player names: 26 median, 26726 max
+- Player career: 5970 median (25+503+5442), 6328 max (48+523+5757) from second bench or 26726+522+5757 from first
+- League: 4154 median (4131+23), 8112 max (8087+25)
+
+Scenario references:
+SCENARIO_REF_PRE_OPT = {
+    "Club history (/club)": {"warm_median_ms": 412, "max_ms": 8569},
+    ...
+
+"Player names (/spieler, no player)": {"warm_median_ms": 26, "max_ms": 26726},
+"Player career (/spieler + player)": {"warm_median_ms": 5970, "max_ms": 6328},
+
+For the max values, the first benchmark showed 26726+522+5757 = 32805 as the true maximum sum, while the second run showed 36+523+5757 = 6316. The 26726 value from the first run was an outlier during search.
+
+I'll document the source in a comment: "pre Phase-1 shared cache; 3-round HTTP bench 192.168.68.109:5173 db_real_merged"
+
+For the player career scenario max, I'll use 6328 as a more realistic warm scenario maximum, excluding the search outlier from the first benchmark. The user requested max time from unoptimized run, so I'll use per-endpoint max values: search 26726, seasons 523, lifetime 5757.
+
+I'll show scenario reference max as the sum of endpoint max references for each scenario.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\bench_page_apis.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The maximum value for ALL_SCENARIOS is 76,412, calculated as 8,569 + 26,726 + 33,005 + 8,112. For the player's career, the maximum is 33,005, derived from 26,726 + 522 + 5,757. Refer to the accompanying comment for documentation.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python -m py_compile scripts/bench_page_apis.py</summary>
+
+```bash
+cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python -m py_compile scripts/bench_page_apis.py
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Updated `scripts/bench_page_apis.py` with fixed **pre-Phase-1** reference lines on every endpoint and scenario:
+
+```
+this run: median=34 ms  |  initial=11 ms  |  max=34 ms  |  min=11 ms
+pre-Phase-1 ref: warm median=4,131 ms  |  max=8,087 ms
+vs ref warm median: 0.01x
+```
+
+References are from the unoptimized 3-round bench (`db_real_merged`, `:5173`):
+
+| Endpoint | Ref warm median | Ref max |
+|----------|-----------------|---------|
+| `/league/get_available_seasons` | 4,131 ms | 8,087 ms |
+| `/team/get_teams` | 390 ms | 8,511 ms |
+| `/player/get_lifetime_stats` | 5,442 ms | 5,757 ms |
+| … | (all page APIs in script) | |
+
+Scenario and grand totals include the same ref + `vs ref warm median` ratio.
+
+```powershell
+uv run python scripts/bench_page_apis.py --base http://192.168.68.109:5173 --rounds 3
+```
+
+---
+
+_**User**_
+
+=== All scenarios: median=5,815 ms  |  initial=36,737 ms  |  max=36,765 ms
+  pre-Phase-1 ref: warm median=10,561 ms  |  max=76,412 ms
+  vs ref warm median: 0.55x
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user is sharing benchmark results from running the bench script.
+
+The benchmark results show a median scenario time of 5,815 ms, with initial and maximum times at 36,737 ms and 36,765 ms respectively. This indicates that the first requests experienced significant delays due to cold CSV loading or cache issues, while subsequent requests were much faster. The median performance represents a 55% improvement over the pre-Phase-1 reference warm median. The user may be sharing these results for analysis or seeking clarification on the high initial and maximum times.
+
+The median improvement of 0.55x versus the warm reference is genuine, but the initial and maximum times reflect cold starts or CSV loading delays rather than true performance. These values represent summed per-endpoint times within each scenario, not wall-clock durations. If the first endpoint triggers a 14-second CSV load, this delay affects all scenarios, potentially impacting the overall initial and maximum times significantly.
+
+The initial benchmark time of 36 seconds likely stems from multiple slow operations, including potential cold CSV loads for `get_teams` and a slow search index for `player_search`, rather than a single bottleneck. A more accurate sum of individual endpoint times would total around 25 seconds, suggesting that the actual slowest operations are repeated across scenarios, contributing to the high initial sum.
+
+The user may want clarification on how grand totals are reported, particularly since summing "initial" times across endpoints can be misleading when one endpoint incurs a CSV load delay. They might also want commentary on whether the script should report wall-clock times per scenario instead. Alternatively, they could be satisfied with the current results and are simply sharing them for review or discussion.
+
+The user appears to be analyzing the benchmark data for accuracy and clarity, possibly considering improvements to how totals are calculated or displayed. They may have shared the numbers to seek feedback or confirmation on their interpretation of the results.</details></think>
+
+_**Agent (default)**_
+
+These numbers are consistent with a **mostly warm** run where the **first hits in the sequence** were still expensive.
+
+### What improved (the fair comparison)
+
+| Metric | Pre-Phase-1 ref | Your run | |
+|--------|------------------|----------|---|
+| **Warm (median sum)** | 10,561 ms | **5,815 ms** | **~0.55×** — about **45% faster** across the scripted page APIs |
+
+That’s the number that matches “Phase 1 helped steady-state league/club flows.”
+
+### Why `initial` / `max` look scary (~37 s)
+
+Those lines are **sums of per-endpoint first and worst rounds**, not one page load:
+
+1. **Club** runs first → `/team/get_teams` often pays **full CSV load** (~10–15 s on merged) if Flask just restarted.
+2. **Player names** → `/player/search` can pay another **multi-second** cold build on first hit.
+3. **Player career** → `get_lifetime_stats` still **~5 s** every time (not fixed in Phase 1).
+4. Later league calls are cheap **if** the adapter is already warm.
+
+So `initial=36,737 ms` ≈ “add up every endpoint’s first request,” which **double-counts** one shared cold load and mixes in the slow player endpoints. Same for `max` when one endpoint spikes (e.g. search **~27 s** in the old ref).
+
+The old **ref max=76,412 ms** is the same kind of sum (including that **26.7 s** `player/search` spike), so **initial/max sums aren’t good head-to-head metrics**.
+
+### Practical read
+
+- **Typical use after warmup:** think **~5.8 s** total for all four scenarios’ medians vs **~10.6 s** before — solid win.
+- **Right after restart:** first navigation still hurts until CSV is in memory once (~14 s in-process; your **37 s** sum is several cold-ish endpoints in one bench pass).
+- **Spieler career** still dominates warm time (`get_lifetime_stats`).
+
+If you want clearer output, we can change the grand line to **only compare ref warm median** (drop summed initial/max) and add **wall-clock per scenario** so “open `/liga`” is one number instead of a sum.
+
+---
+
+_**User**_
+
+so, what are our next steps then? just out of curioisity: would a sqlite db increase our perfomance here? 
+
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants to know the subsequent actions following Phase 1.
+
+SQLite could improve performance by enabling incremental queries without loading the entire table into memory and providing faster indexed lookups on Season, League, Week, Team, and Player ID. It would also offer a smaller, faster initial connection compared to parsing the 90MB CSV text file each time.
+
+SQLite may provide limited benefits if all data is loaded into pandas for processing, but it could still improve performance through indexed lookups and faster connections. However, migration effort and potential performance issues with repeated queries suggest considering Parquet as a middle ground or an in-memory adapter after initial load. The best approach depends on whether queries can leverage connection pooling and proper indexing, especially for operations like get_lifetime_stats that scan many player rows.</details></think>
+
+_**Agent (default)**_
+
+Here’s a practical ordering, plus an honest take on SQLite.
+
+## Next steps (recommended order)
+
+### 1. Finish what Phase 1 didn’t touch (biggest user-visible gaps)
+
+| Area | Issue | Direction |
+|------|--------|-----------|
+| **Player career** | `get_lifetime_stats` still ~5 s | Filter by `player_id` early; avoid full-table scans; optional disk cache |
+| **Club `/team/get_teams`** | Still reloads or rescans on cold | Reuse shared adapter (should already); cache team list like `player/search` |
+| **Cold start** | ~14 s once per Flask process | Parquet sidecar on merge (Phase 3-lite) — faster than CSV, low risk |
+
+### 2. Phase 2 (medium effort, high value)
+
+- **Precompute more at load**: teams list, player catalog (you partly have this).
+- **Extend disk cache** to slow player/team endpoints (same pattern as `get_club_matrix`).
+- **`get_season_league_standings`**: still N leagues × standings/honor — batch or cache per season (cold miss can still hurt).
+
+### 3. Measure properly
+
+- Restart Flask → hit **one** page → time that.
+- Use `bench_page_apis.py` for **median vs pre-Phase-1 ref** (warm), not summed `initial`/`max`.
+
+### 4. Later (only if still slow)
+
+- **Parquet** at ingest: keep CSV as source of truth; app loads `.parquet` (~3–10× faster read, smaller).
+- **SQLite/DuckDB**: only if queries stay **in the DB** (filtered SQL), not `SELECT *` → pandas every request.
+
+---
+
+## Would SQLite help?
+
+**Sometimes yes — but not automatically**, and often **not as the first move** after Phase 1.
+
+### Where SQLite would help
+
+- **Filtered lookups** with indexes: `season`, `league`, `week`, `player_id`, `team`.
+- **Metadata endpoints**: `DISTINCT season`, leagues per season — sub-ms with indexes.
+- **Smaller cold start** than parsing 90 MB semicolon CSV (especially if you don’t load the whole DB into RAM).
+- **Memory** if you stop holding the full 740k-row frame in every worker.
+
+### Where it wouldn’t help much (your current shape)
+
+- If the app still does **`SELECT *` → pandas** per request, you’ve mostly moved the CSV parse problem to SQLite read + still pay Python/pandas cost.
+- **Complex standings / honor / history** logic is already written against DataFrames — migration is a large project.
+- **Single-file SQLite** on network disk (NAS, Docker volume) can be **slower** than RAM after warmup.
+- You already get **~0.55× warm** with in-memory data + indexes; SQLite’s win is biggest on **cold** and **narrow queries**, not on “everything in RAM already.”
+
+### Compared to Parquet (usually earlier win)
+
+| | Parquet + shared cache | SQLite |
+|--|------------------------|--------|
+| Ingest change | Export on merge | Load CSV → DB pipeline |
+| App change | Swap `read_csv` → `read_parquet` | New query layer or hybrid |
+| Cold load | Often much faster | Good with indexes |
+| Warm metadata | Already fast (Phase 1) | Fast |
+| Player lifetime scan | Still need index/filter design | Same — needs `player_id` index |
+
+**Rule of thumb:**  
+- **Parquet** = cheaper upgrade, keeps pandas pipeline.  
+- **SQLite/DuckDB** = worth it when you’re ready to **query in SQL** (or DuckDB on Parquet) for heavy endpoints, not just store the same blob.
+
+---
+
+## Suggested “next step” in one line
+
+**Optimize `get_lifetime_stats` + cache team/player lists, add Parquet on merge for cold start** — then re-measure. Revisit SQLite only if you still need sub-second cold metadata or want to drop the full in-memory frame.
+
+I can start with player lifetime stats + `/team/get_teams` caching if you want to continue in code.
+
+---
+
+_**User**_
+
+do that. we will push sqlite for a later implementation with DTOs 
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants me to implement the next steps: 1.</details></think>
+
+_**Agent (default)**_
+
+Implementing player lifetime-stats optimization, team/player list caching, and Parquet sidecar on merge. Exploring the current implementations.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.py",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "get_lifetime_stats|lifetime_stats"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "get_lifetime_stats|lifetime_stats",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "app/services/player_service.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "scripts\\bench_page_apis.py"
+    },
+    {
+      "matchCount": 3,
+      "uri": "app/routes/player_routes.py"
+    }
+  ],
+  "totalFiles": 3,
+  "totalMatches": 6
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.py",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app",
+  "pattern": "get_teams|get_all_teams|player/search|_player_catalog"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app",
+  "pattern": "get_teams|get_all_teams|player/search|_player_catalog",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "app/services/league_service.py"
+    },
+    {
+      "matchCount": 5,
+      "uri": "app/services/player_service.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app\\services\\league_service.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/routes/league_routes.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app\\routes\\league_routes.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/services/team_service.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/routes/main.py"
+    },
+    {
+      "matchCount": 4,
+      "uri": "app/routes/team_routes.py"
+    }
+  ],
+  "totalFiles": 8,
+  "totalMatches": 15
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\merge_league_sources.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\services\player_service.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\routes\player_routes.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\routes\team_routes.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\merge_league_sources.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I need to read the rest of get_lifetime_stats and understand how PlayerService handles database routingit uses DataManager instead of the shared pandas adapter for league merged sources.
+```
+
+Important: The player service maps db_real_merged to db_player_merged_hybrid, using a different database file. For teams, get_teams uses team_service with server's data_adapter through shared cache if TeamService is wired to the shared adapter. TeamService uses Server, which uses a factory with shared cache after Phase 1. team get_all_teams calls get_filtered_data, which should work after warm load; an in-memory team list cache on adapter or team service is needed. Player service uses data_manager and should be wired to shared_pandas_store get_dataframe or get adapter.
+
+PlayerService now correctly uses DataManager with the shared store's get_dataframe, but player routes still use db_player_merged_hybrid instead of db_real_merged. Team operations use db_real_merged and go through TeamService  Server  shared adapter. A team list cache will be added to DataAdapterPandas metadata index during load time, using distinct team names from computed_data=False rows. Player catalog optimizations include vectorized groupby instead of iterrows and updated cache keys using shared store revisions.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\services\player_service.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\shared_pandas_store.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\services\team_service.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I need to extend `get_dataframe` to prioritize `{path}.parquet` when it exists and is newer than the corresponding CSV file.
+
+Add `write_parquet_sidecar` in the merge script.
+
+Extend Team list cache by adding `teams_all` to LeagueMetadataIndex and using it in team_service for retrieving all teams without filters.
+
+Optimize Player catalog by vectorizing with groupby, using compute_database_revision for cache keys, and sharing with the shared store.
+
+Optimize `get_lifetime_stats` by avoiding full dataframe copies at the start and introducing a helper function `_filter_player_games_df` for filtering player games data.
+
+Fix league_average_rank and tournament_final_rank to filter data before copying the full dataframe.  
+Add route disk cache for get_lifetime_stats.
+
+Use shared revision for PlayerService catalog cache and optionally use get_shared_pandas_adapter for consistent dataframes.  
+Wire PlayerService DataManager to support parquet files, ensuring parquet sidecars invalidate revisions and update file paths in league_response_cache or shared store.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "pyarrow|fastparquet"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "pyarrow|fastparquet",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\services\player_service.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\merge_league_sources.py",
+  "pattern": "merge_sources|to_csv"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\merge_league_sources.py",
+  "pattern": "merge_sources|to_csv",
+  "topFiles": [
+    {
+      "matchCount": 3,
+      "uri": "scripts\\merge_league_sources.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 3
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\pyproject.toml",
+  "pattern": "pandas|pyarrow"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\pyproject.toml",
+  "pattern": "pandas|pyarrow",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "pyproject.toml"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 1
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\merge_league_sources.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Add pyarrow as a required dependency in pyproject.toml, since pandas' to_parquet function requires either pyarrow or fastparquet.
+
+I'll add pyarrow to pyproject.toml dependencies.
+
+The implementation plan includes updating `data_access/shared_pandas_store.py` to handle parquet sidecars, extending `LeagueMetadataIndex` with teams_all, and building teams from computed_data=false rows. Additionally, `data_adapter_pandas.py` will expose teams via metadata and provide a fast path for get_all_teams through a new method or metadata index.
+
+team_service.py will use the metadata cache for teams when no league or season filter is applied, by checking for the existence of `_metadata_index` on the adapter. 
+
+player_service.py will refactor player catalog operations to use vectorized groupby, implement a cache key based on database revision, add a helper for filtering player rows, create a subset method for player games without full data copying, and refactor lifetime stats retrieval to utilize the new subset helper.
+
+Refactor league_average_rank and tournament_final_rank to pre-filter season and league on the DataFrame before copying, using an optional pre-filtered player rows index. For rank functions, filter season and league on the base DataFrame first to avoid scanning the entire table, applying filters like `base[base[Columns.season].astype(str).str.strip().eq(...)]` before creating copies.
+
+`player_routes.py` adds league caching for search, get_lifetime_stats, and get_available_seasons.
+
+`team_routes.py` adds league caching for get_teams.
+
+`league_response_cache.py` adds endpoint versions for get_lifetime_stats, player search, and get_teams.
+
+`merge_league_sources.py` writes parquet files after CSV files.
+
+`app/cache/league_response_cache.py` extends compute_data_revision to include parquet mtime when it exists.
+
+The revision logic currently uses CSV mtime, but when parquet files are newer and used, they should also be included in the revision calculation.
+
+Update `compute_data_revision` in the shared store to include parquet file modification times when parquet files are newer than CSV files, ensuring the league cache uses both CSV and parquet paths for revision calculations.
+
+Tests for parquet load preference and teams metadata should be added.
+
+PlayerService should wire DataManager to use the same revision, with player catalog cache keys utilizing `compute_database_revision`.
+
+For get_lifetime_stats, the disk cache stores complex JSON responses, and league_cache_put handles caching correctly.
+
+Player search returns the full catalog, so the entire response is cached per database revision.
+
+get_player_seasons is optimized to avoid unnecessary `games_df.copy()` at the start.
+
+A shared `get_dataframe` function is implemented for the player hybrid database, which DataManager already utilizes.
+
+For league_average_rank optimization, the base DataFrame is filtered in place without creating an initial full copy:
+
+```python
+def _league_player_frame(self, season, league):
+    base = self.data_manager.df
+    if Columns.season in base.columns:
+```
+
+The `league_average_rank` function now filters the base DataFrame in place by season and league before creating copies, improving efficiency. This change applies to both `league_average_rank` and `tournament_final_rank`, where the filtering logic ensures that only relevant data is processed, avoiding scans of the entire table.
+
+PlayerService now uses DataManager for loading data via `get_dataframe`, enabling support for parquet files. Vectorized operations on player catalogs have been implemented, including filtering out null player names and removing "Team Total" entries from the results.</details></think>
+
+_**Agent (default)**_
+
+Implementing Parquet sidecar loading, team-list metadata cache, optimized player paths, and response caching.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\pyproject.toml</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\cache\league_response_cache.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+update compute_data_revision to include parquet sidecar for file_path</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\pyproject.toml</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\app\cache\league_response_cache.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\parquet_sidecar.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The shared_pandas_store's get_dataframe method should be updated to utilize parquet format.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\shared_pandas_store.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\shared_pandas_store.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\shared_pandas_store.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\adapters\data_adapter_pandas.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\app\services\team_service.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Now comes the significant change to player_service.
+
+The player service undergoes significant refactoring including adding class-level helpers and optimizing data processing methods. Key changes include implementing route caching for player and team routes, updating tests for shared pandas store functionality, and enhancing catalog cache management with compute_database_revision. The vectorized catalog implementation improves performance through optimized data handling, while methods like _subset_player_games and get_lifetime_stats are streamlined to avoid unnecessary data copying. Additionally, league_average_rank and tournament_final_rank functions are modified to filter data efficiently without full DataFrame duplication, and nested functions now utilize dedicated helpers for better performance.
+
+The `_safe_player_rows` helper function, previously nested within `get_lifetime_stats`, is now moved to module level for broader use. It filters DataFrames based on input data flags using the existing `_csv_bool` utility. This change enhances code organization and reusability across player service methods.
+
+The `_subset_for_player` method filters player data based on player ID or name, returning an empty DataFrame if neither is found. It normalizes player IDs for comparison and uses game data when available.
+
+If a season is specified and it's not 'all', the code filters the base DataFrame to include only rows matching that season, then returns the result using `_safe_player_rows`. 
+
+`get_games_for_player` may copy datathis needs verification on the server. For `get_player_seasons`, the method uses `_subset_for_player` to retrieve player games. In `_player_catalog`, the cache key is generated using `compute_database_revision` from the shared pandas store, with the source ID determining the revision.
+
+Player data may use `db_player_merged_hybrid` instead of `db_real_merged`, but the revision still functions correctly based on configuration.
+
+In the vectorized catalog implementation, the code first filters rows using `_safe_player_rows`, and if `player_id` isn't present, it processes the data by copying relevant columns. It then cleans and normalizes player names, maps IDs where applicable, and creates a key for grouping. Finally, it groups by this key to aggregate unique names.
+
+Grouped data is aggregated by key to collect unique names, with canonical name loops processing smaller groups. To ensure proper caching, the cache key for player routes must use the actual database ID from `get_player_service`, rather than relying on `request.args` which may reference `db_real_merged` instead of the hybrid database used by the player service. For caching player routes, the system now uses `league_cache_try_get` with the database parameter from request arguments to generate the appropriate cache key.
+
+The caching mechanism incorrectly stores data under the `db_real_merged` key while the service loads hybrid data, leading to inconsistencies. To fix this, the cache must use the actual database ID of the player service. A helper function `_player_cache_database_id()` is added to retrieve the correct database ID from either the player service or request arguments. However, since `get_player_service()` creates a new instance each time, the logic for determining the effective database ID is reused in `_effective_player_database()`.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\app\services\player_service.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\app\services\player_service.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\app\services\player_service.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\app\services\player_service.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\app\services\player_service.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\app\services\player_service.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Remove the unused `import os` statement from player_service if it was only used for mtime.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\services\player_service.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\app\routes\player_routes.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\app\routes\player_routes.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\app\routes\player_routes.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\app\routes\player_routes.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\app\routes\team_routes.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\app\routes\team_routes.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\app\cache\league_response_cache.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\merge_league_sources.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\merge_league_sources.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Remove unused os import from player_service if no longer needed.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app\\services\\player_service.py",
+  "pattern": "\\bos\\."
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app\\services\\player_service.py",
+  "pattern": "\\bos\\.",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\data_access\test_shared_pandas_store.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\data_access\test_shared_pandas_store.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\data_access\test_parquet_sidecar.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\app\services\player_service.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv sync 2>&1; uv run pytest tests/data_access/test_shared_pandas_store.py tests/data_access/test_parquet_sidecar.py -q --tb=short 2>&1</summary>
+
+```bash
+cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv sync 2>&1; uv run pytest tests/data_access/test_shared_pandas_store.py tests/data_access/test_parquet_sidecar.py -q --tb=short 2>&1
+```
+
+```
+uv : Resolved 31 packages in 0.98ms
+In C:\Users\cfell\AppData\Local\Temp\ps-script-39a4212b-31c0-4d05-aa47-b0d828dfb586.ps1:82 Zeichen:51
++ ... d "c:\Users\cfell\repositories\bowlyzer_deploy"; uv sync 2&gt;&amp;1; uv run ...
++                                                      ~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Resolved 31 packages in 0.98ms:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+Checked 30 packages in 2ms
+....                                                                     [100%]
+4 passed in 0.91s
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Generate parquet files directly from existing merged CSVs using a simple script or documentation guide.</details></think>
+
+_**Agent (default)**_
+
+Phase 2 performance work is in (SQLite deferred). Summary:
+
+### 1. Parquet sidecar (cold start)
+- `data_access/parquet_sidecar.py` — read/write helpers
+- `get_dataframe()` prefers `{name}.parquet` when it exists and is newer than the CSV
+- `merge_league_sources.py` writes Parquet after merge
+- Added **`pyarrow`** to `pyproject.toml`
+
+Generate a sidecar for the existing merged file (one-time):
+
+```powershell
+uv sync
+uv run python -c "from pathlib import Path; from data_access.shared_pandas_store import get_dataframe, invalidate_adapter_cache, invalidate_dataframe_cache; from data_access.parquet_sidecar import write_parquet_sidecar; p=Path('database/data/league_results_merged.csv'); write_parquet_sidecar(get_dataframe(p), p); invalidate_dataframe_cache(); invalidate_adapter_cache()"
+```
+
+### 2. Team list cache
+- Metadata index includes **`teams_all`** (distinct teams from input rows)
+- `DataAdapterPandas.get_all_teams()` uses O(1) lookup when unfiltered
+- **`/team/get_teams`** uses disk cache (`team_get_teams`)
+
+### 3. Player optimizations
+- **Catalog**: vectorized `groupby` (no `iterrows`), cache keyed by data revision
+- **`get_lifetime_stats`**: no full-table copy; filters by `player_id` first; ranking helpers filter season/league before aggregating
+- **`get_player_seasons`**: uses the same subset helper
+- Disk cache: **`player_search`**, **`player_get_available_seasons`**, **`get_lifetime_stats`**
+
+### 4. Tests
+- `tests/data_access/test_parquet_sidecar.py`
+- Extended `test_shared_pandas_store.py` for teams
+
+Restart Flask, run `uv sync`, create the Parquet sidecar if you want faster cold loads, then re-run `bench_page_apis.py`. Expect **`get_available_seasons`** / **`get_teams`** / **`player/search`** much faster warm; **`get_lifetime_stats`** faster on first compute, near-instant on cache hit. Cold process load should drop noticeably once Parquet exists.
+
+---
+
+_**User**_
+
+=== All scenarios: median=5,815 ms  |  initial=36,737 ms  |  max=36,765 ms
+  pre-Phase-1 ref: warm median=10,561 ms  |  max=76,412 ms
+  vs ref warm median: 0.55x
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user is sharing benchmark results again and may be seeking interpretation or clarification on why there are no improvements after Phase 2 changes. They might have run the benchmark prior to restarting or applying Phase 2.
+
+I should:
+1. Consider whether the user is asking for an explanation of the unchanged results.
+2. Clarify if the benchmark was run before Phase 2 was applied or restarted.
+3. Determine if further investigation or clarification is needed.
+
+These benchmark numbers reflect the pre-Phase 2 state, matching the earlier post-Phase-1 results with a median of 5,815 ms and initial value of 36,737. The lack of improvement suggests the benchmark may have been run before restarting Flask, generating parquet files, or clearing the cache. Phase 2 targets different endpoints than those that previously improved performance from 10s to 0.55x on warm median. To observe Phase 2 gains, users should restart Flask, regenerate parquet files, and ensure proper cache handling.</details></think>
+
+_**Agent (default)**_
+
+These numbers match the **post–Phase-1, pre–Phase-2** run — same **5,815 ms** median and **~37 s** initial sum as before. Phase 2 changes won’t show until Flask is restarted and the new caches/Parquet path are active.
+
+### How to read this run
+
+| Line | Meaning |
+|------|--------|
+| **median=5,815 ms** | Steady-state total across all four scenarios — **~0.55×** the old **10,561 ms** warm ref. Real win, mostly from league metadata (seasons/leagues). |
+| **initial/max ≈ 37 s** | Sum of each endpoint’s **first** request in one bench pass — not one page load. First hits still pay CSV load + cold `player/search` + **~5 s `get_lifetime_stats`**. |
+| **vs ref 0.55×** | Fair headline for **warm** behaviour after the adapter is loaded. |
+
+### Why it didn’t move further yet
+
+Phase 2 targets endpoints this aggregate still includes:
+
+- **`get_lifetime_stats`** — still ~5 s on **cache miss** (dominates player career).
+- **`/team/get_teams`** — still ~390 ms if metadata/cache not loaded.
+- **`player/search`** — cold spike on first hit in the run.
+
+League overview is already ~56 ms; it barely moves the total.
+
+### To see Phase 2 gains
+
+1. **Restart Flask** (fresh process).
+2. **Optional cold start:** create Parquet sidecar for merged CSV (see prior message).
+3. **Warm disk cache:** run once, then again — or delete `.cache/league` and run twice to see miss vs hit.
+4. Re-run bench:
+
+```powershell
+uv run python scripts/bench_page_apis.py --base http://192.168.68.109:5173 --rounds 3
+```
+
+**Expected after Phase 2 + warm cache:** total median could drop toward **~1–2 s** (lifetime stats + teams from cache). **First run after restart** will still show a large **initial** sum until CSV/Parquet is loaded once.
+
+If you paste a fresh bench output after restart, we can compare line-by-line to the refs.
+
+---
+
+_**User**_
+
+PS C:\Users\cfell\repositories\bowlyzer_deploy> uv run python scripts/bench_page_apis.py --base http://192.168.68.109:5173 --rounds 3
+Base URL: http://192.168.68.109:5173
+Rounds per endpoint: 3
+Compare to pre-Phase-1 ref (per-request CSV reload, no metadata index, limited route cache).
+
+=== Club history (/club) ===
+  /team/get_teams
+    params: {'database': 'db_real_merged'}
+    this run: median=31 ms  |  initial=2,078 ms  |  max=2,078 ms  |  min=10 ms
+    pre-Phase-1 ref: warm median=390 ms  |  max=8,511 ms
+    vs ref warm median: 0.08x
+    status=200  size=13.1 KiB
+  /league/get_club_matrix
+    params: {'database': 'db_real_merged'}
+    this run: median=15 ms  |  initial=1,058 ms  |  max=1,058 ms  |  min=11 ms
+    pre-Phase-1 ref: warm median=10 ms  |  max=30 ms
+    vs ref warm median: 1.51x
+    status=200  size=8.0 KiB
+  /league/get_club_matrix
+    params: {'database': 'db_real_merged', 'club': 'BC EMAX Unterföhring'}
+    this run: median=20 ms  |  initial=24,493 ms  |  max=24,493 ms  |  min=11 ms
+    pre-Phase-1 ref: warm median=12 ms  |  max=28 ms
+    vs ref warm median: 1.65x
+    status=200  size=20.0 KiB
+  scenario total: median=66 ms  |  initial=27,629 ms  |  max=27,629 ms
+  pre-Phase-1 ref: warm median=412 ms  |  max=8,569 ms
+  vs ref warm median: 0.16x
+
+=== Player names (/spieler, no player) ===
+  /player/search
+    params: {'database': 'db_real_merged'}
+    this run: median=25 ms  |  initial=8,456 ms  |  max=8,456 ms  |  min=22 ms
+    pre-Phase-1 ref: warm median=26 ms  |  max=26,726 ms
+    vs ref warm median: 0.97x
+    status=200  size=172.7 KiB
+  scenario total: median=25 ms  |  initial=8,456 ms  |  max=8,456 ms
+  pre-Phase-1 ref: warm median=26 ms  |  max=26,726 ms
+  vs ref warm median: 0.97x
+
+=== Player career (/spieler + player) ===
+  /player/search
+    params: {'database': 'db_real_merged'}
+    this run: median=22 ms  |  initial=22 ms  |  max=23 ms  |  min=22 ms
+    pre-Phase-1 ref: warm median=26 ms  |  max=26,726 ms
+    vs ref warm median: 0.85x
+    status=200  size=172.7 KiB
+  /player/get_available_seasons
+    params: {'database': 'db_real_merged', 'player_name': 'Feller, Christian', 'player_id': '16007'}
+    this run: median=13 ms  |  initial=497 ms  |  max=497 ms  |  min=10 ms
+    pre-Phase-1 ref: warm median=503 ms  |  max=522 ms
+    vs ref warm median: 0.03x
+    status=200  size=0.2 KiB
+  /player/get_lifetime_stats
+    params: {'database': 'db_real_merged', 'player_name': 'Feller, Christian', 'player_id': '16007', 'season': 'all'}
+    this run: median=12 ms  |  initial=1,672 ms  |  max=1,672 ms  |  min=12 ms
+    pre-Phase-1 ref: warm median=5,442 ms  |  max=5,757 ms
+    vs ref warm median: 0.00x
+    status=200  size=21.6 KiB
+  scenario total: median=47 ms  |  initial=2,192 ms  |  max=2,193 ms
+  pre-Phase-1 ref: warm median=5,970 ms  |  max=33,005 ms
+  vs ref warm median: 0.01x
+
+=== League season overview (/liga, season only) ===
+  /league/get_available_seasons
+    params: {'database': 'db_real_merged'}
+    this run: median=9 ms  |  initial=14 ms  |  max=14 ms  |  min=9 ms
+    pre-Phase-1 ref: warm median=4,131 ms  |  max=8,087 ms
+    vs ref warm median: 0.00x
+    status=200  size=0.2 KiB
+  /league/get_season_league_standings
+    params: {'database': 'db_real_merged', 'season': '10/11'}
+    this run: median=24 ms  |  initial=31,704 ms  |  max=31,704 ms  |  min=20 ms
+    pre-Phase-1 ref: warm median=23 ms  |  max=25 ms
+    vs ref warm median: 1.06x
+    status=200  size=170.7 KiB
+  scenario total: median=34 ms  |  initial=31,718 ms  |  max=31,718 ms
+  pre-Phase-1 ref: warm median=4,154 ms  |  max=8,112 ms
+  vs ref warm median: 0.01x
+
+=== All scenarios: median=172 ms  |  initial=69,994 ms  |  max=69,995 ms
+  pre-Phase-1 ref: warm median=10,561 ms  |  max=76,412 ms
+  vs ref warm median: 0.02x
+PS C:\Users\cfell\repositories\bowlyzer_deploy>
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user shares their new benchmark results following Phase 2.</details></think>
+
+_**Agent (default)**_
+
+These numbers show Phase 1 + 2 are working. The headline is the **warm median**, not the **initial** sum.
+
+### Warm behaviour (what users feel after the app has loaded)
+
+| Scenario | Before (ref median) | Now (median) | |
+|----------|---------------------|--------------|---|
+| Club history | 412 ms | **66 ms** | ~6× faster |
+| Player names | 26 ms | **25 ms** | ~same |
+| Player career | 5,970 ms | **47 ms** | **~127× faster** |
+| League overview | 4,154 ms | **34 ms** | **~122× faster** |
+| **All scenarios** | **10,561 ms** | **172 ms** | **~0.02× (~98% less)** |
+
+Standouts:
+
+- **`get_available_seasons`**: 4,131 ms → **9 ms**
+- **`get_lifetime_stats`**: 5,442 ms → **12 ms** (disk cache hit after first build)
+- **`get_available_seasons` (player)**: 503 ms → **13 ms**
+- **`get_teams`**: 390 ms → **31 ms**
+
+First compute for lifetime stats is still **~1.7 s** (`initial=1,672 ms`) vs **~5.4 s** before — the subset/filter work helps even on a cache miss.
+
+### Why `initial` / `max` still look huge (~70 s total)
+
+The script runs endpoints **in order** and **sums each one’s first request**. Those first hits are cache misses:
+
+| Endpoint | First request | Likely cause |
+|----------|---------------|--------------|
+| `get_season_league_standings` | **~31.7 s** | Cold disk-cache build for full `10/11` standings |
+| `get_club_matrix?club=…` | **~24.5 s** | Same family of heavy aggregate (or first matrix with club filter) |
+| `player/search` | **~8.5 s** | Building player catalog once |
+| `get_teams` | **~2.1 s** | Adapter warm-up / first team list |
+
+That is **not** “one page load takes 70 seconds.” It is “run the whole benchmark script once on a fresh-ish server.”
+
+### Realistic UX after restart
+
+1. **First** open of Liga / Spieler / Club: slow on whichever page hits the big cold paths first (standings ~30 s worst case).
+2. **Same pages again**: should feel like the **median** row (tens of ms per API).
+3. **Parquet sidecar** (if you created it): mainly shortens the **first** CSV load, not the standings compute.
+
+### Bottom line
+
+- **Warm: mission accomplished** for this bench — **172 ms** vs **10.6 s** ref.
+- **Cold: still work left** if you care about first visit after restart — mainly **`get_season_league_standings`** cold miss (~32 s). Next target would be warming that cache on startup or lazy-loading standings per league instead of one big cold build.
+
+If you want, we can tackle cold **`get_season_league_standings`** next (startup warm script or slimmer payload).
+
+---
+
+_**User**_
+
+yep, lets do a warm up for the caches. mainly the really big queris: league + season combos, player names
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants to implement cache warming on startup for expensive endpoints, particularly focusing on endpoint 1.</details></think>
+
+_**Agent (default)**_
+
+Exploring existing cache-warming infrastructure and Flask startup hooks.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\warm_league_cache.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.py",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app",
+  "pattern": "warm|create_app|before_first"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app",
+  "pattern": "warm|create_app|before_first",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "app/__init__.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 1
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app",
+  "pattern": "db_real_merged|get_default_source"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app",
+  "pattern": "db_real_merged|get_default_source",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "app/routes/main.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/routes/team_routes.py"
+    },
+    {
+      "matchCount": 4,
+      "uri": "app/config/database_config.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app/routes/tournament_routes.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app/routes/player_routes.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app/services/home_service.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/cache/league_response_cache.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app\\routes\\league_routes.py"
+    },
+    {
+      "matchCount": 6,
+      "uri": "app\\services\\data_manager.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app\\routes\\team_routes.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app\\cache\\league_response_cache.py"
+    },
+    {
+      "matchCount": 6,
+      "uri": "app/services/data_manager.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app\\routes\\player_routes.py"
+    }
+  ],
+  "totalFiles": 13,
+  "totalMatches": 31
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\warm_league_cache.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\__init__.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **1** result in **1** directory</summary>
+
+Directory: **c:\Users\cfell\repositories\bowlyzer_deploy** (1 file)
+
+| File |
+|------|
+| `../scripts/rebuild_league_caches.py` |
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I need to create a focused cache warmup module that supports both background and synchronous execution on Flask startup and via CLI.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\warm_league_cache.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\rebuild_league_caches.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.{sh,md,yml}",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "gunicorn|create_app|FLASK"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "gunicorn|create_app|FLASK",
+  "topFiles": [
+    {
+      "matchCount": 5,
+      "uri": "docs/planning/DOCKER_MIGRATION_PLAN.md"
+    },
+    {
+      "matchCount": 4,
+      "uri": "DEPLOY.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "deploy/README.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "docs/DATABASE_SWITCHING_GUIDE.md"
+    },
+    {
+      "matchCount": 14,
+      "uri": ".specstory/history/2026-05-18_07-05-04Z-(1)-react-application-refactoring-and-deployment.md"
+    }
+  ],
+  "totalFiles": 5,
+  "totalMatches": 218
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I'll create `app/cache/cache_warmup.py` with a focused `warm_essential_caches` function that specifically handles warming up the most critical caches needed for application startup. This function will efficiently preload essential data structures without overcomplicating the implementation.
+
+The cache warming process loads the shared pandas adapter through LeagueService and preloads cheap but essential functions like get_available_seasons and team_get_teams. For each season, it retrieves season league standings with standings_no_division_grid enabled for startup efficiency, while also resolving player databases and warming player_search with empty string input. The process optionally includes club matrix data, though this may be skipped if not critical for initial startup performance.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\gunicorn.conf.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\wsgi.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Gunicorn's 120s timeout may not suffice for sequentially warming all 16 seasons' standings, which could take over 8 minutes.
+
+Warming all 16 seasons' standings could take over 8 minutes, exceeding Gunicorn's 120s timeout, even with cached data. A background thread is needed to avoid blocking startup, and the shared adapter should be preloaded to ensure fast initial API responses. The implementation involves creating a cache warmup module, a CLI wrapper, and starting a daemon thread during app creation. Documentation updates are skipped per user rules.
+
+Default `LEAGUE_CACHE_WARM_ON_START` to `1` with opt-out `0`, and default `LEAGUE_CACHE_WARM_DATABASE` to `db_real_merged`. For player database resolution, duplicate the logic from `player_routes` into `cache_warmup.py`.
+
+```python
+def resolve_player_database_for_league(league_database: str) -> str:
+    merged_like = {'db_real_historical_league', 'db_real_merged'}
+```
+
+The warm jobs include retrieving available seasons, team data, and league standings for each season. Player searches are also warmed using cache databases. Internationalization (i18n) support is included for German and English languages, similar to league caching, ensuring that standings and other content use appropriate language-specific strings. This approach helps maintain fast API responses by preloading necessary data and handling localization early in the process.
+
+Both languages need to be warmed for standings and player search, as player endpoints likely use i18n similar to league caching. The `_warm_one` function should be extracted into a shared module or imported from the warm script and placed in `cache_warmup.py`. The `warm_essential_caches` function now includes parameters for specifying languages and optional season filtering, along with logging and division standings inclusion.
+
+For startup, division standings are excluded to focus on full season standings per season. Player service warming requires an app context, using `PlayerService` to retrieve all players and cache player search data. Lifetime stats are skipped as requested. A background thread is initiated for cache warming, with `start_cache_warmup_background` managing the process.
+
+If cache warming is enabled and league caching is active, the application starts a background thread to warm the cache using the specified database. Any failure during warming is logged, and the thread runs as a daemon to ensure it doesn't block shutdown.
+
+Call `start_cache_warmup_background(app)` at the end of `create_app` to ensure the app instance is available. Gunicorn uses one worker, so duplication isn't an issue; dev mode may double-start, but thats acceptable. Use a module-level flag `_warmup_started` to prevent duplicate initialization. Move `resolve_player_database` to a shared utility file to eliminate duplication.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\routes\player_routes.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I'll create `app/utils/league_player_sources.py` containing the `resolve_player_database_id` function and update `player_routes` to utilize it.
+
+I'll implement `cache_warmup.py` with full logic including the CLI script `scripts/warm_essential_caches.py`. The `create_app` function will be hooked to warm caches, with optional environment variable `LEAGUE_CACHE_WARM_MAX_SEASONS` to limit seasons. Default behavior warms all seasons, while startup warming defaults to 3 latest seasons to keep startup time reasonable. User requested "league + season combos" which I'll handle by warming all seasons in background with logging, and adding environment variable support to limit them.
+
+Default startup warms all seasons in the background, with optional `LEAGUE_CACHE_WARM_MAX_SEASONS=3` for faster partial warming. For startup defaults, the latest 5 seasons are picked using string sorting, matching the `pickLatestSeason` logic. The CLI script defaults to warming all seasons but supports an optional `--all-seasons` flag. Bowling seasons like "25/26" and "10/11" sort correctly within the same century. The `pick_recent_seasons` function handles limiting seasons by sorting and taking the most recent entries.</details></think>
+
+_**Agent (default)**_
+
+Creating a focused cache warmup module, startup hook, CLI script, and shared player-database resolution.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\app\utils\league_player_sources.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\app\cache\cache_warmup.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\warm_essential_caches.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\app\routes\player_routes.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\app\routes\player_routes.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\app\__init__.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app\\services\\league_service.py",
+  "pattern": "self\\.adapter"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app\\services\\league_service.py",
+  "pattern": "self\\.adapter",
+  "topFiles": [
+    {
+      "matchCount": 5,
+      "uri": "app\\services\\league_service.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 52
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\services\league_service.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Add a get_all_teams method to LeagueService or use TeamService in warmup, simplifying the add method on league service or calling TeamService in cache_warmup.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\app\cache\cache_warmup.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\app\test_cache_warmup.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\app\cache\cache_warmup.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\app\test_cache_warmup.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run pytest tests/app/test_cache_warmup.py -q --tb=short 2>&1</summary>
+
+```bash
+cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run pytest tests/app/test_cache_warmup.py -q --tb=short 2>&1
+```
+
+```
+..                                                                       [100%]
+2 passed in 13.89s
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\app\test_cache_warmup.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Tests are passing. I will now review the complete cache_warmup implementation.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\cache\cache_warmup.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "start_cache_warmup|cache_warmup"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "start_cache_warmup|cache_warmup",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": ".\\tests\\app\\test_cache_warmup.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\app\\cache\\cache_warmup.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": ".\\app\\__init__.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\scripts\\warm_essential_caches.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\.specstory\\history\\2026-05-19_07-58-26Z-exposing-web-service-on-local-network.md"
+    }
+  ],
+  "totalFiles": 5,
+  "totalMatches": 6
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\warm_essential_caches.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The warmup is implemented. I need to verify whether the `get_season_league_standings` cache key includes language, as it may otherwise duplicate work per language.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app",
+  "pattern": "get_season_league_standings|player_search|get_available_seasons|team_get_teams"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app",
+  "pattern": "get_season_league_standings|player_search|get_available_seasons|team_get_teams",
+  "topFiles": [
+    {
+      "matchCount": 10,
+      "uri": "app\\cache\\cache_warmup.py"
+    },
+    {
+      "matchCount": 6,
+      "uri": "app\\routes\\player_routes.py"
+    },
+    {
+      "matchCount": 4,
+      "uri": "app\\cache\\league_response_cache.py"
+    },
+    {
+      "matchCount": 7,
+      "uri": "app\\routes\\team_routes.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app\\services\\team_service.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app\\services\\league_service.py"
+    },
+    {
+      "matchCount": 15,
+      "uri": "app\\routes\\league_routes.py"
+    },
+    {
+      "matchCount": 4,
+      "uri": "app\\routes\\tournament_routes.py"
+    }
+  ],
+  "totalFiles": 8,
+  "totalMatches": 49
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\__init__.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\cache\league_response_cache.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\routes\league_routes.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\cache\league_response_cache.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app\\cache",
+  "pattern": "get_season_league_standings"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app\\cache",
+  "pattern": "get_season_league_standings",
+  "topFiles": [
+    {
+      "matchCount": 3,
+      "uri": "app\\cache\\cache_warmup.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 3
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Since the standings cache key includes the language retrieved from i18n_service.get_current_language(), it is necessary to pre-warm the cache for both German (de) and English (en) languages.</details></think>
+
+_**Agent (default)**_
+
+Running a quick warmup smoke test with one season to verify end-to-end.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\cfell\repositories\bowlyzer_deploy"; $env:LEAGUE_CACHE_WARM_MAX_SEASONS="1"; uv run python scripts/warm_essential_caches.py --database db_real_merged 2>&1</summary>
+
+```bash
+cd "c:\Users\cfell\repositories\bowlyzer_deploy"; $env:LEAGUE_CACHE_WARM_MAX_SEASONS="1"; uv run python scripts/warm_essential_caches.py --database db_real_merged 2>&1
+```
+
+```
+Cache warmup started in background for database='db_real_merged'
+Cache warmup: loading data (league_database='db_real_merged', player='db_player_merged_hybrid') �
+Cache warmup: loading data (league_database='db_real_merged', player='db_player_merged_hybrid') �
+Cache warmup: 1 season(s) for standings.
+  [de] get_available_seasons -&gt; hit
+  [de] team_get_teams -&gt; hit
+  [de] get_season_league_standings season='25/26' -&gt; hit
+  [en] get_available_seasons -&gt; hit
+  [en] team_get_teams -&gt; hit
+Cache warmup: 1 season(s) for standings.
+  [de] get_available_seasons -&gt; hit
+  [de] team_get_teams -&gt; hit
+  [de] get_season_league_standings season='25/26' -&gt; hit
+  [en] get_available_seasons -&gt; hit
+  [en] team_get_teams -&gt; hit
+  [en] get_season_league_standings season='25/26' -&gt; built
+  [en] get_season_league_standings season='25/26' -&gt; built
+  [de] player_search ERROR: [WinError 32] Der Prozess kann nicht auf die Datei zugreifen, da sie von einem anderen Prozess verwendet wird: 'C:\\Users\\cfell\\repositories\\bowlyzer_deploy\\.cache\\league\\db_player_merged_hybrid\\74fc819b2cdc\\player_search__354c70d104e34bcbdc40.json.tmp' -&gt; 'C:\\Users\\cfell\\repositories\\bowlyzer_deploy\\.cache\\league\\db_player_merged_hybrid\\74fc819b2cdc\\player_search__354c70d104e34bcbdc40.json'
+  [de] player_search (catalog) -&gt; built
+  [en] player_search ERROR: [Errno 13] Permission denied: 'C:\\Users\\cfell\\repositories\\bowlyzer_deploy\\.cache\\league\\db_player_merged_hybrid\\74fc819b2cdc\\player_search__a10032616b84e493c19b.json.tmp'
+Cache warmup done: built=2 hit=5 skip_empty=0 errors=1
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+There is a race condition where both `create_app()` and the CLI attempt to write to the same cache files during background warmup.
+
+The best solution is for scripts/warm_essential_caches.py to set `LEAGUE_CACHE_WARM_ON_START=0` before calling create_app() to prevent duplicate cache warming. Additionally, a race condition exists between background and foreground processes during player_search that needs to be addressed in the script environment.</details></think>
+
+_**Agent (default)**_
+
+Fixing a race: the CLI script called `create_app()`, which also started background warmup. Disabling background warmup in the CLI script.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\warm_essential_caches.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\cache\league_response_cache.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+A small retry mechanism was added to `tmp.replace` for handling Windows race conditions when concurrent warmups occur, providing better hardening for the development reloader.</details></think>
+
+_**Agent (default)**_
+
+Cache warmup for the heavy endpoints is in place. Here is what you get and how to use it.
+
+### What warms on Flask start
+After `create_app()`, a daemon thread runs `warm_essential_caches()` for the default DB (or `LEAGUE_CACHE_WARM_DATABASE`):
+
+| Endpoint | What it covers |
+|----------|----------------|
+| `get_season_league_standings` | Every season × **de** + **en** (i18n is in the cache key) |
+| `player_search` | Full player name catalog (`search=""`) on the resolved player DB |
+| `get_available_seasons` | Season list |
+| `team_get_teams` | Club/team list |
+
+It also preloads the shared pandas adapters (league + player hybrid when merged).
+
+### Controls
+| Env var | Default | Meaning |
+|---------|---------|---------|
+| `LEAGUE_CACHE_WARM_ON_START` | `1` | Set `0` to disable background warmup |
+| `LEAGUE_CACHE_WARM_DATABASE` | default source | Which league DB to warm |
+| `LEAGUE_CACHE_WARM_MAX_SEASONS` | all | e.g. `5` → only the latest 5 seasons (faster first boot) |
+
+### Manual warmup (no double thread)
+```powershell
+uv run python scripts/warm_essential_caches.py --database db_real_merged
+```
+
+The script now sets `LEAGUE_CACHE_WARM_ON_START=0` so it does not race the background thread from `create_app()`.
+
+### Files
+- `app/cache/cache_warmup.py` — warmup logic + `start_cache_warmup_background()`
+- `app/__init__.py` — starts background warmup
+- `scripts/warm_essential_caches.py` — CLI
+- `tests/app/test_cache_warmup.py` — season limit + player DB resolution
+
+On restart you should see `Cache warmup started in background for database='db_real_merged'` in the Flask log, then per-endpoint `built` / `hit` lines. First run after a CSV change can take a while (all seasons × 2 languages); later requests should be cache hits.
+
+If full-season warmup is too slow at startup, set e.g. `LEAGUE_CACHE_WARM_MAX_SEASONS=3` in your env. I can wire that into `start.sh` / `DEPLOY.md` if you want.
+
+---
+
+_**User**_
+
+on the club page, there is one artifact:
+http://192.168.68.109:5173/club?database=db_real_merged&league=BZOL+N1&club=Donaubowler+Regensburg 
+what today is Bezirksoberliga (BZOL) was Bereichsliga (BL) in the earlier days. it should be mapped onto the same level 
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user reports that league names on the club page have changed over time.</details></think>
+
+_**Agent (default)**_
+
+Investigating how the club page groups leagues and where BZOL/BL mapping should apply.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.{py,ts,tsx,json,csv}",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "BZOL|Bereichsliga|Bezirksoberliga|\\bBL\\b"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "BZOL|Bereichsliga|Bezirksoberliga|\\bBL\\b",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "database/relational_csv/league_season.csv"
+    },
+    {
+      "matchCount": 100,
+      "uri": "database/input/liga_bzol-n2_ergebnisse-2026-04-03.csv"
+    },
+    {
+      "matchCount": 100,
+      "uri": "database/input/liga_bzol-n1_ergebnisse-2026-04-03.csv"
+    },
+    {
+      "matchCount": 2,
+      "uri": "database/conversion/bowlingbayern_legacy_core.py"
+    },
+    {
+      "matchCount": 100,
+      "uri": "database/data/bowling_ergebnisse_real_from_bowlingbayern.csv"
+    },
+    {
+      "matchCount": 100,
+      "uri": "database/data/tmp/bowling_ergebnisse_real_2025.csv"
+    },
+    {
+      "matchCount": 2,
+      "uri": "frontend/src/lib/homeExamples.ts"
+    },
+    {
+      "matchCount": 100,
+      "uri": "database/input/gf_tables_export/gf_player_stats__league_plus_tournaments.csv"
+    },
+    {
+      "matchCount": 100,
+      "uri": "database/pipeline/bowling_bayern/canonical/merged_gf_canonical.csv"
+    },
+    {
+      "matchCount": 100,
+      "uri": "database/data/tmp/bowling_ergebnisse_real_backup.csv"
+    },
+    {
+      "matchCount": 7,
+      "uri": "frontend/src/lib/leagueLevel.ts"
+    },
+    {
+      "matchCount": 100,
+      "uri": "database/data/bowling_ergebnisse_real.csv"
+    },
+    {
+      "matchCount": 1,
+      "uri": "database/relational_csv/new/league_new.csv"
+    },
+    {
+      "matchCount": 12,
+      "uri": "business_logic/league.py"
+    },
+    {
+      "matchCount": 100,
+      "uri": "database/data/tmp/bowling_ergebnisse_real_bak.csv"
+    },
+    {
+      "matchCount": 100,
+      "uri": "database/data/bowling_ergebnisse_reconstructed.csv"
+    },
+    {
+      "matchCount": 100,
+      "uri": "database/data/tmp/bowling_ergebnisse_real_lowerleagues.csv"
+    },
+    {
+      "matchCount": 21,
+      "uri": "database/relational_csv/league_mapping.csv"
+    },
+    {
+      "matchCount": 100,
+      "uri": "database/data/tmp/bowling_ergebnisse_real_sorted.csv"
+    },
+    {
+      "matchCount": 100,
+      "uri": "database/data/tmp/bowling_ergebnisse_real_fixed.csv"
+    }
+  ],
+  "totalFiles": 28,
+  "totalMatches": 1751
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **0** results in **1** directory</summary>
+
+Directory: **c:\Users\cfell\repositories\bowlyzer_deploy\frontend** (0 files)
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.{py,ts,tsx,json}",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "league.*map|league_mapping|division|tier"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "league.*map|league_mapping|division|tier",
+  "topFiles": [
+    {
+      "matchCount": 4,
+      "uri": "scripts/rebuild_league_caches.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/utils/league_week_expectations.py"
+    },
+    {
+      "matchCount": 16,
+      "uri": "app/utils/league_utils.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tests/domain/test_value_objects_points.py"
+    },
+    {
+      "matchCount": 4,
+      "uri": "frontend/src/lib/koBracket.ts"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/pages/league/blocks/SeasonLeagueStandings.tsx"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/pages/team/blocks/LeagueComparisonSection.tsx"
+    },
+    {
+      "matchCount": 11,
+      "uri": "extract_excel_data.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/services/league_service.py"
+    }
+  ],
+  "totalFiles": 9,
+  "totalMatches": 178
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\database\relational_csv\league_mapping.csv</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.{ts,tsx}",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend",
+  "pattern": "club|ClubMatrix|/club"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend",
+  "pattern": "club|ClubMatrix|/club",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "frontend\\src\\components\\Sidebar.tsx"
+    },
+    {
+      "matchCount": 5,
+      "uri": "frontend\\src\\App.tsx"
+    },
+    {
+      "matchCount": 20,
+      "uri": "frontend\\src\\hooks\\useLeague.ts"
+    },
+    {
+      "matchCount": 26,
+      "uri": "frontend\\src\\pages\\team\\blocks\\ClubOverview.tsx"
+    },
+    {
+      "matchCount": 3,
+      "uri": "frontend\\src\\pages\\team\\blocks\\ClubPositionHistoryChart.tsx"
+    },
+    {
+      "matchCount": 13,
+      "uri": "frontend\\src\\lib\\playerClubHistory.ts"
+    },
+    {
+      "matchCount": 5,
+      "uri": "frontend\\src\\lib\\clubMatrixHistory.ts"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend\\src\\hooks\\useTeam.ts"
+    },
+    {
+      "matchCount": 2,
+      "uri": "frontend\\src\\lib\\homeExamples.ts"
+    },
+    {
+      "matchCount": 7,
+      "uri": "frontend\\src\\pages\\player\\blocks\\ClubHistory.tsx"
+    },
+    {
+      "matchCount": 17,
+      "uri": "frontend\\src\\lib\\teamUtils.ts"
+    },
+    {
+      "matchCount": 50,
+      "uri": "frontend\\src\\pages\\team\\TeamStats.tsx"
+    },
+    {
+      "matchCount": 3,
+      "uri": "frontend\\src\\lib\\teamNavigation.ts"
+    },
+    {
+      "matchCount": 7,
+      "uri": "frontend\\src\\lib\\navigationQuery.ts"
+    },
+    {
+      "matchCount": 6,
+      "uri": "frontend\\src\\pages\\player\\blocks\\SeasonStats.tsx"
+    },
+    {
+      "matchCount": 2,
+      "uri": "frontend\\src\\pages\\tournament\\blocks\\PlayerSection.tsx"
+    },
+    {
+      "matchCount": 2,
+      "uri": "frontend\\src\\hooks\\useTournament.ts"
+    },
+    {
+      "matchCount": 22,
+      "uri": "frontend\\src\\components\\ClubMultiSearch.tsx"
+    },
+    {
+      "matchCount": 33,
+      "uri": "frontend\\src\\pages\\diagnosis\\ClubMatrix.tsx"
+    },
+    {
+      "matchCount": 14,
+      "uri": "frontend\\src\\components\\ClubSearch.tsx"
+    }
+  ],
+  "totalFiles": 24,
+  "totalMatches": 258
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\utils\league_utils.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The club page is located at `/club`.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\pages\team\TeamStats.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src\\pages\\team",
+  "pattern": "league|BZOL|BL |level|canonical"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src\\pages\\team",
+  "pattern": "league|BZOL|BL |level|canonical",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/pages/team/blocks/SpecialMatchesSection.tsx"
+    },
+    {
+      "matchCount": 12,
+      "uri": "frontend/src/pages/team/blocks/ClubOverview.tsx"
+    },
+    {
+      "matchCount": 15,
+      "uri": "frontend/src/pages/team/blocks/LeagueComparisonSection.tsx"
+    },
+    {
+      "matchCount": 7,
+      "uri": "frontend/src/pages/team/blocks/TeamDetail.tsx"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/pages/team/TeamStats.tsx"
+    }
+  ],
+  "totalFiles": 5,
+  "totalMatches": 36
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app",
+  "pattern": "get_club_matrix|club_team_season|league.*level|canonical"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app",
+  "pattern": "get_club_matrix|club_team_season|league.*level|canonical",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "app/utils/league_utils.py"
+    },
+    {
+      "matchCount": 4,
+      "uri": "app/services/player_service.py"
+    },
+    {
+      "matchCount": 4,
+      "uri": "app\\services\\league_service.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app\\cache\\league_response_cache.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app/services/league_service_legacy.py"
+    },
+    {
+      "matchCount": 4,
+      "uri": "app/services/league_service.py"
+    },
+    {
+      "matchCount": 5,
+      "uri": "app/routes/league_routes.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app\\services\\team_service.py"
+    },
+    {
+      "matchCount": 5,
+      "uri": "app\\routes\\league_routes.py"
+    },
+    {
+      "matchCount": 4,
+      "uri": "app\\services\\player_service.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/services/i18n_service.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/cache/league_response_cache.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app/services/team_service.py"
+    },
+    {
+      "matchCount": 6,
+      "uri": "app/config/database_config.py"
+    }
+  ],
+  "totalFiles": 14,
+  "totalMatches": 42
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\diagnosisLinks.ts</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\navigationQuery.ts</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\services\league_service.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend",
+  "pattern": "searchParams\\.get\\([\\\"']league|league.*param|league_level|team_history"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend",
+  "pattern": "searchParams\\.get\\([\\\"']league|league.*param|league_level|team_history",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "frontend/src/hooks/useTeam.ts"
+    },
+    {
+      "matchCount": 2,
+      "uri": "frontend/src/pages/team/blocks/TeamDetail.tsx"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/lib/clubMatrixHistory.ts"
+    },
+    {
+      "matchCount": 2,
+      "uri": "frontend/src/lib/diagnosisLinks.ts"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/lib/leagueLevel.ts"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/lib/teamHistoryChart.ts"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/pages/league/LeagueStats.tsx"
+    }
+  ],
+  "totalFiles": 7,
+  "totalMatches": 10
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\pages\team\blocks\ClubOverview.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "BL N|BZOL|league_equiv|successor|canonical.*league"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "BL N|BZOL|league_equiv|successor|canonical.*league",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": ".specstory/history/2026-05-11_12-05-43Z-tournament-data-processing-and-merging.md"
+    },
+    {
+      "matchCount": 7,
+      "uri": "frontend/src/lib/leagueLevel.ts"
+    },
+    {
+      "matchCount": 14,
+      "uri": "database/relational_csv/league_mapping.csv"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/lib/homeExamples.ts"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/services/league_service.py"
+    },
+    {
+      "matchCount": 8,
+      "uri": "business_logic/league.py"
+    },
+    {
+      "matchCount": 57,
+      "uri": ".specstory/history/2026-05-06_06-02-50Z-excel-data-processing-pipeline.md"
+    },
+    {
+      "matchCount": 100,
+      "uri": "database/pipeline/bowling_bayern/legacy_out/latest.csv"
+    },
+    {
+      "matchCount": 2,
+      "uri": "database/conversion/bowlingbayern_legacy_core.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "docs/WEEKS_AND_CONTENT_FIXES.md"
+    },
+    {
+      "matchCount": 100,
+      "uri": "database/data/tmp/bowling_ergebnisse_real_lowerleagues.csv"
+    },
+    {
+      "matchCount": 1,
+      "uri": "database/relational_csv/league_season.csv"
+    },
+    {
+      "matchCount": 100,
+      "uri": "database/data/bowling_ergebnisse_real_from_bowlingbayern.csv"
+    },
+    {
+      "matchCount": 100,
+      "uri": "database/input/liga_bzol-n1_ergebnisse-2026-04-03.csv"
+    },
+    {
+      "matchCount": 100,
+      "uri": "database/input/gf_tables_export/gf_player_stats__league_plus_tournaments.csv"
+    },
+    {
+      "matchCount": 100,
+      "uri": "database/input/liga_bzol-n2_ergebnisse-2026-04-03.csv"
+    },
+    {
+      "matchCount": 40,
+      "uri": ".specstory/history/2026-05-12_08-34-57Z-tournament-configuration-and-leaderboard-adjustments.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".specstory/history/2026-04-28_06-16-30Z-player-stats-overview-table-logic.md"
+    },
+    {
+      "matchCount": 6,
+      "uri": "docs/LEAGUE_SELECTION_FIXES.md"
+    },
+    {
+      "matchCount": 3,
+      "uri": "database/config/extract_excel_overrides.csv"
+    }
+  ],
+  "totalFiles": 41,
+  "totalMatches": 1886
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The chart relies on league_level data from the frontend.
+
+The chart may display BL and BZOL as separate Y-axis bands despite both being level 5, potentially due to distinct league IDs. The artifact could stem from the position history chart treating BL N1 and BZOL N1 as different leagues, resulting in separate bands even at the same level. Alternatively, a visual jump might occur if the chart uses `(league_level - 1) * 10 + final_position` for Y positionsboth level 5 teams would overlap incorrectly. A stuck league filter in the URL from liga navigation is another possibility.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\leagueLevel.ts</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\pages\team\blocks\ClubPositionHistoryChart.tsx</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\teamHistoryChart.ts</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\clubMatrixHistory.ts</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Found the issue: `leagueLevel.ts` contains BZOL entries at level 5 but is missing BL (Bereichsliga) entries.
+
+The issue occurs because `leagueLevel.ts` lacks BL entries despite having BZOL entries at level 5, causing `getLeagueLevel` to return 99 for "BL N1" and breaking the chart Y-axis. The fix requires adding BL N1, BL N2, etc. to `leagueLevel.ts` at level 5 and mapping BL to BZOL for consistency. Although backend `league_mapping.csv` already has BL at level 5, the frontend is incomplete.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\services\team_service.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "get_team_history|team_history"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "get_team_history|team_history",
+  "topFiles": [
+    {
+      "matchCount": 13,
+      "uri": "app/routes/team_routes.py"
+    },
+    {
+      "matchCount": 3,
+      "uri": ".specstory/history/2026-04-28_06-16-30Z-player-stats-overview-table-logic.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "docs/FRONTEND_REFACTORING_PLAN.md"
+    },
+    {
+      "matchCount": 3,
+      "uri": "app\\routes\\league_routes.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/hooks/useTeam.ts"
+    },
+    {
+      "matchCount": 1,
+      "uri": "docs/archive/CONTENT_BLOCKS_EMPTY_ISSUE.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/services/team_service.py"
+    },
+    {
+      "matchCount": 13,
+      "uri": "app\\routes\\team_routes.py"
+    },
+    {
+      "matchCount": 4,
+      "uri": ".specstory/history/2026-05-06_06-02-50Z-excel-data-processing-pipeline.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app\\services\\team_service.py"
+    },
+    {
+      "matchCount": 3,
+      "uri": "app/routes/league_routes.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "docs/PHASE_3_COMPLETE.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "docs/archive/CLUTCH_BLOCK_FIX.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "docs/archive/PHASE_1_COMPLETION_SUMMARY.md"
+    },
+    {
+      "matchCount": 3,
+      "uri": "docs/TEAM_API_500_ERRORS_FIX.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "docs/archive/PHASE_3_FILTER_FIX.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "docs/RESPONSIVE_DATA_SPECIFICATION.md"
+    },
+    {
+      "matchCount": 6,
+      "uri": "app/services/i18n_service.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "frontend/src/pages/team/blocks/TeamDetail.tsx"
+    }
+  ],
+  "totalFiles": 19,
+  "totalMatches": 60
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\business_logic\league.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The root cause is clear: the frontend file `leagueLevel.ts` is missing BL leagues.
+
+The backend correctly reads BL leagues from `league_mapping.csv` with level 5, but the frontend's `leagueLevel.ts` file is missing these entries, causing BL N1 to return level 99 instead of 5 in `getLeagueLevel`. This misalignment affects the club overview chart, while team detail charts remain accurate.
+
+To fix this, either add BL entries to `leagueLevel.ts` for a minimal solution, or implement a shared concept like `resolveLeagueLevelGroup` to map BL N1 to the same chart tier as BZOL N1, ensuring consistent Y-axis levels across charts.
+
+For the distinct league count, grouping by level and division would work but adds complexity. Since the user mentioned "artifact" specifically, its likely referring to the chart spike caused by BL N1 being treated as level 99 instead of 5. A simpler approach is to add BL leagues to the frontend `leagueLevel.ts` file and optionally extend the mapping with `LEAGUE_LEVEL_EQUIVALENTS`.
+
+Alternatively, a `league_tier_group` or `league_equivalence` column in `league_mapping.csv` with a `tier_key` could be added, though thats overkill. Another option is to introduce `canonical_league_id_for_level`, mapping BL N1 to BZOL N1 for tooltips onlythough the user didnt request renaming displays.
+
+For the Y-axis label, level 5 should display "Bezirksoberliga," and BL seasons would then correctly appear in the Bezirksoberliga band once the level is set to 5.
+
+To ensure consistency and avoid duplication, the frontend should derive `leagueLevel.ts` from the CSV or fetch the `league_level` from the backend. The cleanest long-term solution is to include `league_level` directly in the matrix items from the backend in `get_club_team_season_matrix`, making it a single source of truth.
+
+The frontend's `leagueLevel.ts` file needs to be updated with all BL entries from `league_mapping.csv` to fix the bug where BL N1 returns level 99 instead of 5. A minimal fix involves ensuring `getLeagueLevel` correctly maps BL leagues to level 5, which aligns with the backend logic. No backend API changes are required, as this is a frontend bug fix. Adding a `resolveLeagueChartLevel` function to normalize BL leagues to level 5 is optional but can provide consistency if needed. The simplest approach is to update the frontend mapping directly.</details></think>
+
+_**Agent (default)**_
+
+Glob pattern "**/*" matches every file and is not allowed. Use a more specific glob or no glob.
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **9** results in **1** directory</summary>
+
+Directory: **c:\Users\cfell\repositories\bowlyzer_deploy\tests** (9 files)
+
+| File |
+|------|
+| `../tests/application/test_get_league_standings_handler.py` |
+| `../tests/infrastructure/test_repositories_csv/test_league_season_repository.py` |
+| `../tests/application/test_get_league_history_handler.py` |
+| `../tests/domain/test_entities_league.py` |
+| `../tests/test_league_response_cache.py` |
+| `../tests/infrastructure/test_repositories_csv/test_league_repository.py` |
+| `../tests/app/test_league_data_oddities.py` |
+| `../tests/app/test_league_week_expectations.py` |
+| `../tests\test_league_gender_normalization.py` |
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I'll create a more maintainable solution:
+1.
+
+Add `canonical_league_level` helper in backend league_utils that reads CSV, and add `league_level` to matrix items in `get_club_team_season_matrix` backend so clubMatrixHistory uses item.league_level instead of getLeagueLevel for single source of truth.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\clubMatrixCell.ts</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\tests",
+  "pattern": "get_club_team_season_matrix|club_matrix"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\tests",
+  "pattern": "get_club_team_season_matrix|club_matrix",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I'll implement adding league_level to matrix items in the backend's get_club_team_season_matrix function.
+
+Frontend implementation needs to utilize item.league_level from clubMatrixHistory.ts. The leagueLevel.ts file should include BL entries as fallback options synchronized from CSV files, which benefits other potential uses.
+
+For tracking distinct leagues, consider counting unique (level, division) combinations rather than just league levels to avoid inflated counts from BL and BZOL distinctions. However, prioritizing the chart fix over this more complex approach.
+
+An optional enhancement would be to add `league_equivalent_ids` in league_utils to map BL N1 to BZOL N1 for consistent display grouping, though this wasn't specifically requested.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src",
+  "pattern": "get\\([\\\"']league[\\\"']\\)|searchParams.*league"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src",
+  "pattern": "get\\([\\\"']league[\\\"']\\)|searchParams.*league",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/pages/league/LeagueStats.tsx"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 1
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The league parameter in the URL on the club page is a harmless leftover and not an artifact.</details></think>
+
+_**Agent (default)**_
+
+Adding `league_level` to club-matrix API items (from `league_mapping.csv`) and using it in the chart so historical `BL N*` leagues share the Bezirksoberliga band with `BZOL N*`.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\app\services\league_service.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\app\cache\league_response_cache.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\clubMatrixCell.ts</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\clubMatrixHistory.ts</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\leagueLevel.ts</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\tests",
+  "pattern": "get_league_level"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\tests",
+  "pattern": "get_league_level",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\app\test_league_level.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Cancelled
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+---
+
+_**User**_
+
+#37 exporting to image
+#37 exporting layers
+#37 exporting layers 37.0s done
+#37 exporting manifest sha256:fa0b9ca4e84a1771ce88c9e68aa36f49c3bdf2b1b91fea8e20caa647cd69a9ab 0.0s done
+#37 exporting config sha256:427b367fbce8bfe652cd63b276c8e04009004918612528aa40e2b2fccace835f 0.0s done
+#37 exporting attestation manifest sha256:2741634e68840de02e7b435d7889f215143487746a0b061a25b871e1abcff266
+#37 exporting attestation manifest sha256:2741634e68840de02e7b435d7889f215143487746a0b061a25b871e1abcff266 0.1s done
+#37 exporting manifest list sha256:ea2777d84e048a63b0471c5d530502caf2c5519ff69fbcbe77b8516892f6b75b 0.0s done
+#37 naming to docker.io/library/bowlyzer_deploy-bowlyzer:latest
+#37 naming to docker.io/library/bowlyzer_deploy-bowlyzer:latest done
+#37 unpacking to docker.io/library/bowlyzer_deploy-bowlyzer:latest
+[+] build 0/1
+ - Image bowlyzer_deploy-bowlyzer Building                                                                                           219.8s
+failed to receive status: rpc error: code = Unavailable desc = error reading from server: EOF
+
+
+What's next:
+    Debug this Compose error with Gordon → docker ai "help me fix this compose error"
+docker compose build failed with exit code 1
+In C:\Users\cfell\repositories\bowlyzer_deploy\deploy\deploy.ps1:232 Zeichen:32
++ ... DE -ne 0) { throw "docker compose build failed with exit code $LASTEX ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (docker compose ...ith exit code 1:String) [], RuntimeException
+    + FullyQualifiedErrorId : docker compose build failed with exit code 1
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user encountered a Docker build failure.
+
+The Docker build completed most steps but failed during the final unpack phase with a connection error: "failed to receive status: rpc error: code = Unavailable desc = error reading from server: EOF". This is often caused by a Docker Desktop or BuildKit daemon crash on Windows, rather than an issue with the Dockerfile itself. Further investigation into the Docker setup, deploy script, and potential optimizations is needed. The focus should be on reviewing the Dockerfile, docker-compose.yml, and deploy.ps1 around line 232.</details></think>
+
+_**Agent (default)**_
+
+Investigating the Docker setup and deploy script — this error often indicates the Docker daemon dropped during the final unpack phase on Windows.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\Dockerfile</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\docker-compose.yml</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\deploy.ps1</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "docker compose build|buildx|BUILDKIT"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "docker compose build|buildx|BUILDKIT",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "deploy/README.md"
+    },
+    {
+      "matchCount": 21,
+      "uri": ".specstory/history/2026-05-18_07-05-04Z-(1)-react-application-refactoring-and-deployment.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".specstory/history/2026-05-18_06-11-54Z-react-application-refactoring-and-deployment.md"
+    },
+    {
+      "matchCount": 2,
+      "uri": "DEPLOY.md"
+    },
+    {
+      "matchCount": 5,
+      "uri": "deploy/deploy.ps1"
+    },
+    {
+      "matchCount": 1,
+      "uri": "docs/planning/DOCKER_MIGRATION_PLAN.md"
+    },
+    {
+      "matchCount": 21,
+      "uri": ".specstory/history/2026-05-18_12-35-26Z-docker-container-build-issues-on-windows-11.md"
+    }
+  ],
+  "totalFiles": 7,
+  "totalMatches": 53
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Let me read the specstory section about this exact error and .dockerignore for artifacts.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\.specstory\history\2026-05-18_12-35-26Z-docker-container-build-issues-on-windows-11.md</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\.dockerignore</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\deploy.ps1</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user's error differs from the TypeScript error.
+
+The Docker build process failed during the final unpack phase due to a daemon crash, resulting in an EOF error when trying to receive the build status.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\deploy.ps1</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "EOF|Unavailable|provenance|attestation"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "EOF|Unavailable|provenance|attestation",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "scripts/clubmeisterschaft_auto_import.sh"
+    },
+    {
+      "matchCount": 6,
+      "uri": ".specstory/history/2026-05-18_12-35-26Z-docker-container-build-issues-on-windows-11.md"
+    },
+    {
+      "matchCount": 2,
+      "uri": ".specstory/history/2026-05-18_07-05-04Z-(1)-react-application-refactoring-and-deployment.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".specstory/history/2026-05-07_21-35-17Z-data-source-cleanup-and-consolidation.md"
+    }
+  ],
+  "totalFiles": 4,
+  "totalMatches": 11
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I'll enhance deploy.ps1 by setting BUILDKIT environment variables to disable provenance and attestation, which reduces export steps that cause EOF errors on Windows.
+
+I'll add retry logic for EOF/Unavailable errors and check if images exist after failed builds to allow continuation. A note about disabling provenance and attestation will be added to DEPLOY.md or deploy/README.md. Common Windows fix includes setting DOCKER_BUILDKIT=1, BUILDKIT_PROGRESS=plain, and using --provenance=false with docker compose build. Docker Compose v2 supports buildx flags like --provenance=false --sbom=false, and compose files can use COMPOSE_BAKE=true or build provenance flags. Docker compose build may pass through buildx options according to Docker documentation.</details></think>
+
+_**Agent (default)**_
+
+Cancelled
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+---
+
+_**User**_
+
+im might run out of hdd space here. how can i make docker build on drive d:?
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants to reconfigure Docker on Windows to use the D: drive instead of the C: drive due to insufficient disk space.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\DEPLOY.md",
+  "pattern": "disk|WSL|Docker Desktop|drive"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\DEPLOY.md",
+  "pattern": "disk|WSL|Docker Desktop|drive",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "DEPLOY.md"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 2
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\deploy",
+  "pattern": "disk|WSL|Docker Desktop"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\deploy",
+  "pattern": "disk|WSL|Docker Desktop",
+  "topFiles": [
+    {
+      "matchCount": 4,
+      "uri": "deploy/README.md"
+    },
+    {
+      "matchCount": 4,
+      "uri": "deploy/deploy.ps1"
+    },
+    {
+      "matchCount": 6,
+      "uri": "deploy/vps/cleanup-disk.sh"
+    },
+    {
+      "matchCount": 6,
+      "uri": "deploy/push-vps-maintenance.ps1"
+    },
+    {
+      "matchCount": 2,
+      "uri": "deploy/vps/docker-disk-report.sh"
+    },
+    {
+      "matchCount": 1,
+      "uri": "deploy/vps/setup-bowlyzer-user.sh"
+    }
+  ],
+  "totalFiles": 6,
+  "totalMatches": 23
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Here is a clear, actionable guide for using the D: drive with Windows Docker Desktop.
+
+There are multiple methods to use the D: drive with Docker Desktop. The cleanest approach is through Docker Desktop settings under Resources  Advanced, where you can set the disk image location to D:\Docker. This moves the entire WSL2 virtual disk containing images, containers, and build caches. Alternatively, you can adjust WSL integration settings or use .wslconfig with export/import commands, though moving `%LOCALAPPDATA%\Docker` is not officially recommended. Docker Desktop 4.x simplifies this process with a dedicated "Disk image location" setting. To free up space quickly, run `docker system prune -a` and delete large files like `deploy/artifacts/bowlyzer-image.tar.gz`.</details></think>
+
+_**Agent (default)**_
+
+On Windows, `docker compose build` does not use your project folder for layers and images — it uses **Docker Desktop’s disk image** (usually a large file on **C:** under WSL). To build on **D:**, move that disk image (or the whole WSL distro), not the repo path.
+
+## Recommended: move Docker Desktop disk image to D:
+
+1. **Quit Docker Desktop** completely (tray icon → Quit).
+2. Open **Docker Desktop** → **Settings** → **Resources** → **Advanced** (or **Disk** in newer versions).
+3. Set **Disk image location** to something like:
+   ```
+   D:\Docker
+   ```
+4. Apply & restart. Docker will **move** the existing data (can take a while and needs free space on D: for the copy).
+
+After that, builds, images, and build cache all live on D:.
+
+---
+
+## If you don’t see “Disk image location”
+
+Use WSL manually (Docker Desktop uses a distro like `docker-desktop-data`):
+
+```powershell
+wsl --shutdown
+```
+
+Then in **Docker Desktop**: Settings → General → note whether **Use the WSL 2 based engine** is on.
+
+For manual move, Microsoft’s flow is export/import to a folder on D: — only do this if the UI option isn’t available; Docker’s built-in move is safer.
+
+---
+
+## Free space on C: right now (before/after move)
+
+```powershell
+docker system df
+docker system prune -a
+```
+
+Also check deploy artifacts (your script can leave a large tar):
+
+```powershell
+Get-ChildItem deploy\artifacts -ErrorAction SilentlyContinue | Format-Table Name, @{N='MB';E={[math]::Round($_.Length/1MB,1)}}
+```
+
+Remove old `bowlyzer-image.tar` / `.tar.gz` if you don’t need them.
+
+---
+
+## Optional: repo on D: (doesn’t fix Docker disk by itself)
+
+Cloning the repo to `D:\repos\bowlyzer_deploy` saves **source** space on C:, but **image layers** still go to Docker’s disk until you move it as above.
+
+---
+
+## After move
+
+```powershell
+cd D:\path\to\bowlyzer_deploy   # if you moved the repo
+docker compose build
+.\deploy\deploy.ps1
+```
+
+Your earlier **`failed to receive status: EOF`** during **unpacking** often happens when **C: is full** or Docker Desktop crashes under memory/disk pressure — moving the disk image to D: plus `docker system prune` usually fixes it.
+
+If you tell me your Docker Desktop version (Settings → About), I can point to the exact settings tab name (it changed slightly between 4.3x and 4.4x).
+
+---
+
+_**User**_
+
+okay, the deployment transfers the whole database folder, including all intermediate results. we need to have them live outside of the repo. 
+- move all intermediate csvs to c:\tmp\bowlyzer\data
+- adapt eventual paths in exisiting scripts
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants to relocate intermediate CSV data files from the repository to `c:\tmp\bowlyzer\data` and update all relevant scripts and paths to reflect this change.</details></think>
+
+_**Agent (default)**_
+
+Exploring the database folder layout and all references to intermediate data paths.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **901** results in **1** directory</summary>
+
+Directory: **c:\Users\cfell\repositories\bowlyzer_deploy** (901 files)
+
+| File |
+|------|
+| `../.\database\data\player_stats_merged_plus_tournaments.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_unique_teams.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted.csv` |
+| `../.\database\config\team_name_normalization.json` |
+| `../.\database\data\legacy_scrape\legacy_scrape_summary.csv` |
+| `../.\database\data\league_results_merged.csv` |
+| `../.\database\data\league_results_merged_duplicates_non_exact.csv` |
+| `../.\database\data\league_results_merged_duplicates.csv` |
+| `../.\database\relational_csv\league_mapping.csv` |
+| `../.\database\data\extract_excel_analysis_log.json` |
+| `../.\database\data\unique_team_names_after_merge.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_parallel_logs\saison2016-17.log` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_partials\saison2016-17.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_parallel_logs\saison2017-18.log` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_partials\saison2017-18.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_parallel_logs\saison2018-19.log` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_partials\saison2018-19.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_parallel_logs\saison2013-14.log` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_partials\saison2013-14.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2016-17\16_17 LL S (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2017-18\17_18 LL S (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_parallel_logs\saison2014-15.log` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_partials\saison2014-15.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_parallel_logs\saison2009-10.log` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_partials\saison2009-10.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2018-19\18_19 LL S (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2017-18\17_18 LL S.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2016-17\16_17 LL S.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2013-14\13_14 LL S (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_parallel_logs\saison2012-13.log` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_partials\saison2012-13.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_parallel_logs\saison2015-16.log` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_partials\saison2015-16.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2016-17\16_17 LL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2017-18\17_18 LL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2018-19\18_19 LL S.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_parallel_logs\saison2008-09.log` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_partials\saison2008-09.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2013-14\13_14 LL S.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_parallel_logs\saison2010-11.log` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_partials\saison2010-11.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2017-18\17_18 LL N (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2013-14\13_14 LL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2016-17\16_17 LL N (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2009-10\09_10 LL S (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2014-15\14_15 LL S (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2018-19\18_19 LL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_parallel_logs\saison2011-12.log` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_partials\saison2011-12.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2012-13\12_13 LL S (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2015-16\15_16 LL S (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2014-15\14_15 LL S.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2017-18\17_18 KL S4.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2013-14\13_14 LL N (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2009-10\09_10 LL S.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2016-17\16_17 KL S4.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2018-19\18_19 LL N (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2008-09\08_09 LL S (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2012-13\12_13 LL S.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2009-10\09_10 LL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2015-16\15_16 LL S.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2013-14\13_14 KL S4.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2014-15\14_15 LL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2016-17\16_17 KL S3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2017-18\17_18 KL S3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2018-19\18_19 KL S4.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2012-13\12_13 LL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2008-09\08_09 LL S.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2010-11\10_11 LL S (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2009-10\09_10 LL N (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2013-14\13_14 KL S3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2015-16\15_16 LL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2014-15\14_15 LL N (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2011-12\11_12 LL S (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2016-17\16_17 KL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2008-09\08_09 LL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2017-18\17_18 KL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2010-11\10_11 LL S.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2012-13\12_13 LL N (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2018-19\18_19 KL S3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2014-15\14_15 KL S4.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2013-14\13_14 KL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2015-16\15_16 LL N (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2011-12\11_12 LL S.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2009-10\09_10 KL S4.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2008-09\08_09 LL N (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2010-11\10_11 LL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2017-18\17_18 KL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2012-13\12_13 KL S4.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2016-17\16_17 KL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2018-19\18_19 KL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2011-12\11_12 LL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2014-15\14_15 KL S3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2009-10\09_10 KL S3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2013-14\13_14 KL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2015-16\15_16 KL S4.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2010-11\10_11 LL N (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2008-09\08_09 KL S4.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2012-13\12_13 KL S3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2017-18\17_18 KL N4.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2011-12\11_12 LL N (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2018-19\18_19 KL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2010-11\10_11 KL S4.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2009-10\09_10 KL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2013-14\13_14 KL N3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2015-16\15_16 KL S3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2016-17\16_17 KL N3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2014-15\14_15 KL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2008-09\08_09 KL S3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2012-13\12_13 KL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2011-12\11_12 KL S4.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2010-11\10_11 KL S3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2018-19\18_19 KL N4.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2017-18\17_18 KL N3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2009-10\09_10 KL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2013-14\13_14 KL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2014-15\14_15 KL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2012-13\12_13 KL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2015-16\15_16 KL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2008-09\08_09 KL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2010-11\10_11 KL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2011-12\11_12 KL S3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2016-17\16_17 KL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2008-09\08_09 KL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2017-18\17_18 KL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2012-13\12_13 KL N4.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2018-19\18_19 KL N3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2009-10\09_10 KL N4.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2013-14\13_14 KL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2014-15\14_15 KL N3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2015-16\15_16 KL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2010-11\10_11 KL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2011-12\11_12 KL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2016-17\16_17 KL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2008-09\08_09 KL N4.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2012-13\12_13 KL N3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2010-11\10_11 KL N4.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2009-10\09_10 KL N3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2011-12\11_12 KL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2013-14\13_14 BayL (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2014-15\14_15 KL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2015-16\15_16 KL N3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2017-18\17_18 KL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2018-19\18_19 KL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2008-09\08_09 KL N3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2016-17\16_17 BayL (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2010-11\10_11 KL N3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2012-13\12_13 KL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2009-10\09_10 KL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2014-15\14_15 KL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2011-12\11_12 KL N4.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2013-14\13_14 BayL.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2015-16\15_16 KL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2017-18\17_18 BayL (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2018-19\18_19 KL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2008-09\08_09 KL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2010-11\10_11 KL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2016-17\16_17 BayL.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2012-13\12_13 KL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2009-10\09_10 KL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2011-12\11_12 KL N3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2014-15\14_15 Bereichsliga Süd (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2010-11\10_11 KL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2008-09\08_09 KL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2013-14\13_14 BZL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2017-18\17_18 BayL.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2018-19\18_19 BayL (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2016-17\16_17 BZOL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2015-16\15_16 KL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2012-13\12_13 BayL (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2009-10\09_10 BayL (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2011-12\11_12 KL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2010-11\10_11 Bereichsliga Nord (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2013-14\13_14 BZL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2008-09\08_09 BayL (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2014-15\14_15 BayL (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2017-18\17_18 BZOL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2018-19\18_19 BayL.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2012-13\12_13 BayL.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2016-17\16_17 BZOL S1 (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2015-16\15_16 BayL (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2009-10\09_10 BayL.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2011-12\11_12 KL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2010-11\10_11 BayL (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2014-15\14_15 BayL.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2013-14\13_14 BZL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2008-09\08_09 BayL.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2012-13\12_13 BZL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2009-10\09_10 BZL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2018-19\18_19 BZOL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2011-12\11_12 BayL (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2017-18\17_18 BZOL S1 (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2015-16\15_16 BayL.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2010-11\10_11 BayL.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2016-17\16_17 BZOL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2008-09\08_09 BZL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2014-15\14_15 BZL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2012-13\12_13 BZL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2011-12\11_12 BayL.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2013-14\13_14 BZL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2010-11\10_11 BZL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2015-16\15_16 BZL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2009-10\09_10 BZL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2017-18\17_18 BZOL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2018-19\18_19 BZOL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2011-12\11_12 BZL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2012-13\12_13 BZL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2016-17\16_17 BZOL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2008-09\08_09 BZL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2010-11\10_11 BZL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2014-15\14_15 BZL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2013-14\13_14 BL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2009-10\09_10 BZL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2015-16\15_16 BZL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2011-12\11_12 BZL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2017-18\17_18 BZOL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2010-11\10_11 BZL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2008-09\08_09 BZL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2014-15\14_15 BZL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2018-19\18_19 BZOL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2016-17\16_17 BZOL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2009-10\09_10 BZL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2013-14\13_14 BL S1 (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2012-13\12_13 BZL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2015-16\15_16 BZL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2011-12\11_12 BZL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2008-09\08_09 BZL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2010-11\10_11 BZL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2014-15\14_15 BZL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2017-18\17_18 BZOL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2013-14\13_14 BL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2009-10\09_10 BL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2012-13\12_13 BL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2015-16\15_16 BZL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2016-17\16_17 BZL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2018-19\18_19 BZOL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2011-12\11_12 BZL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2010-11\10_11 BL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2008-09\08_09 BL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2014-15\14_15 BL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2012-13\12_13 BL S1 (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2009-10\09_10 BL S1 (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2013-14\13_14 BL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2011-12\11_12 BL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2015-16\15_16 BL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2017-18\17_18 BZL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2010-11\10_11 BL S1 (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2008-09\08_09 BL S1 (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2016-17\16_17 BZL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2018-19\18_19 BZL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2009-10\09_10 BL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2014-15\14_15 BL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2011-12\11_12 BL S1 (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2012-13\12_13 BL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2013-14\13_14 BL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2015-16\15_16 BL S1 (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2010-11\10_11 BL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2008-09\08_09 BL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2017-18\17_18 BZL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2016-17\16_17 BZL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2018-19\18_19 BZL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2011-12\11_12 BL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2009-10\09_10 BL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2012-13\12_13 BL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2010-11\10_11 BL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2008-09\08_09 BL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2014-15\14_15 BL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2015-16\15_16 BL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2013-14\13_14 A S3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2017-18\17_18 BZL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2011-12\11_12 BL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2016-17\16_17 BZL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2010-11\10_11 BL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2009-10\09_10 BL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2012-13\12_13 BL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2018-19\18_19 BZL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2008-09\08_09 BL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2015-16\15_16 BL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2014-15\14_15 BL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2013-14\13_14 A S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2011-12\11_12 BL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2012-13\12_13 A S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2010-11\10_11 A S3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2009-10\09_10 A S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2016-17\16_17 A-Klasse Nord.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2017-18\17_18 BZL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2008-09\08_09 A S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2013-14\13_14 A S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2014-15\14_15 A-Klasse Nord.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2018-19\18_19 BZL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2015-16\15_16 BL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2011-12\11_12 A S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2010-11\10_11 A S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2012-13\12_13 A S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2009-10\09_10 A S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2014-15\14_15 A S3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2008-09\08_09 A S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2013-14\13_14 A N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2017-18\17_18 A S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2011-12\11_12 A S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2016-17\16_17 A S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2010-11\10_11 A S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2018-19\18_19 A S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2015-16\15_16 A S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2012-13\12_13 A N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2009-10\09_10 A N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2008-09\08_09 A N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2014-15\14_15 A S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2010-11\10_11 A N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2011-12\11_12 A N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2013-14\13_14 A N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2018-19\18_19 A S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2017-18\17_18 A S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2016-17\16_17 A S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2015-16\15_16 A S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2015-16\15_16 A N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2012-13\12_13 A N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2009-10\09_10 A N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2008-09\08_09 A N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2010-11\10_11 A N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2011-12\11_12 A N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2014-15\14_15 A S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrape_extracted_combos\saison2014-15\14_15 A N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_0809_unique_teams.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_0809.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_0809_partials\suedbereich.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_0809_parallel_logs\suedbereich.log` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_0809_partials\nordbereich.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_0809_parallel_logs\nordbereich.log` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_0809_combos\suedbereich\08_09 Landesliga Süd 1 (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_0809_combos\suedbereich\08_09 LL S.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_0809_combos\nordbereich\08_09 Landesliga Nord.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_0809_combos\suedbereich\08_09 KL S4.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_0809_combos\nordbereich\08_09 LL N (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_0809_combos\suedbereich\08_09 KL S3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_0809_combos\nordbereich\08_09 KL N4.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_0809_combos\suedbereich\08_09 KL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_0809_combos\nordbereich\08_09 KL N3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_0809_combos\suedbereich\08_09 KL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_0809_combos\nordbereich\08_09 KL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_0809_combos\suedbereich\08_09 BZL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_0809_combos\nordbereich\08_09 KL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_0809_combos\suedbereich\08_09 BZL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_0809_combos\nordbereich\08_09 BZL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_0809_combos\nordbereich\08_09 BZL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_0809_combos\suedbereich\08_09 BL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_0809_combos\nordbereich\08_09 BL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_0809_combos\suedbereich\08_09 BL S1 (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_0809_combos\nordbereich\08_09 BL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_0809_combos\suedbereich\08_09 BL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_0809_parallel_logs\bayernliga.log` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_0809_partials\bayernliga.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_0809_combos\bayernliga\08_09 BayL (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_0809_combos\nordbereich\08_09 A N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_0809_combos\suedbereich\08_09 A S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_0809_combos\nordbereich\08_09 A N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_0809_combos\bayernliga\08_09 BayL.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_0809_combos\suedbereich\08_09 A S1.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_partials\Liga 2022-23.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_parallel_logs\Liga 2022-23.log` |
+| `../.\database\data\legacy_scrape\historical_extracxted_partials\Südbereich 2019-20.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_parallel_logs\Südbereich 2019-20.log` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Liga 2022-23\22_23 LL S.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Liga 2022-23\22_23 LL N2.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Südbereich 2019-20\19_20 LL S (D).csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Liga 2022-23\22_23 LL N1.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Liga 2022-23\22_23 KL S3.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Südbereich 2019-20\19_20 LL S.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_parallel_logs\Nordbereich 2019-20.log` |
+| `../.\database\data\legacy_scrape\historical_extracxted_partials\Nordbereich 2019-20.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Liga 2022-23\22_23 KL S2.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Nordbereich 2019-20\19_20 LL N2.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Liga 2022-23\22_23 KL S1.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Südbereich 2019-20\19_20 KL S4.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Liga 2022-23\22_23 KL N3.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Nordbereich 2019-20\19_20 LL N1.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Liga 2022-23\22_23 KL N2.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Südbereich 2019-20\19_20 KL S3.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Liga 2022-23\22_23 KL N1.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Nordbereich 2019-20\19_20 LL N (D).csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_partials\Ligaprogramme Nord 2023-24.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_parallel_logs\Ligaprogramme Nord 2023-24.log` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Südbereich 2019-20\19_20 KL S2.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Liga 2022-23\22_23 BayL (D).csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme Nord 2023-24\23_24 LL N2.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Nordbereich 2019-20\19_20 KL N3.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme Nord 2023-24\23_24 LL N1.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Liga 2022-23\22_23 BayL.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Südbereich 2019-20\19_20 BZOL S2.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme Nord 2023-24\23_24 LL N (D).csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Nordbereich 2019-20\19_20 KL N2.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Liga 2022-23\22_23 BZOL S3.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme Nord 2023-24\23_24 KL N3.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Südbereich 2019-20\19_20 BZOL S1 (D).csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Liga 2022-23\22_23 BZOL S2.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Nordbereich 2019-20\19_20 KL N1.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme Nord 2023-24\23_24 KL N2.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme Nord 2023-24\23_24 KL N1.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Liga 2022-23\22_23 BZOL S1.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Südbereich 2019-20\19_20 BZOL S1.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_parallel_logs\Ligaprogramme_Nord 2024-25.log` |
+| `../.\database\data\legacy_scrape\historical_extracxted_partials\Ligaprogramme_Nord 2024-25.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme_Nord 2024-25\24_25 LL N2.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme Nord 2023-24\23_24 BayL (D).csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Nordbereich 2019-20\19_20 BZOL N2.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Liga 2022-23\22_23 BZOL N3.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_parallel_logs\Ligaprogramme Süd 2023-24.log` |
+| `../.\database\data\legacy_scrape\historical_extracxted_partials\Ligaprogramme Süd 2023-24.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme_Nord 2024-25\24_25 LL N1.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme Süd 2023-24\23_24 LL S (D).csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Südbereich 2019-20\19_20 BZL S2.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Liga 2022-23\22_23 BZOL N2.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme_Nord 2024-25\24_25 LL N (D).csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme Nord 2023-24\23_24 BayL.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Nordbereich 2019-20\19_20 BZOL N1.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme_Nord 2024-25\24_25 KL N3.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme Süd 2023-24\23_24 LL S.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Liga 2022-23\22_23 BZOL N1.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme_Nord 2024-25\24_25 KL N2.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme Süd 2023-24\23_24 KL S3.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme_Nord 2024-25\24_25 KL N1.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme Nord 2023-24\23_24 BZOL N3.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Liga 2022-23\22_23 BZL S3.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Nordbereich 2019-20\19_20 BZL N4.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme_Nord 2024-25\24_25 BayL (D).csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Südbereich 2019-20\19_20 BZL S1.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme Süd 2023-24\23_24 KL S2.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme Nord 2023-24\23_24 BZOL N2.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Liga 2022-23\22_23 BZL S2.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme_Nord 2024-25\24_25 BayL.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme Süd 2023-24\23_24 KL S1.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Nordbereich 2019-20\19_20 BZL N3.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme Süd 2023-24\23_24 BZOL S3.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme Nord 2023-24\23_24 BZOL N1.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Südbereich 2019-20\19_20 A-Klasse Süd 2.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme_Nord 2024-25\24_25 BZOL N3.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Liga 2022-23\22_23 BZL S1.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_partials\Ligaprogramme Süd 2024-25.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_parallel_logs\Ligaprogramme Süd 2024-25.log` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme Süd 2023-24\23_24 BZOL S1.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme Süd 2024-25\24_25 LL S (D).csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme_Nord 2024-25\24_25 BZOL N2.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_partials\Bayernliga 2019-20.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_parallel_logs\Bayernliga 2019-20.log` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme Nord 2023-24\23_24 BZL N3.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme Süd 2024-25\24_25 LL S.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Liga 2022-23\22_23 BZL N3.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Bayernliga 2019-20\19_20 BayL (D).csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Nordbereich 2019-20\19_20 BZL N2.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme_Nord 2024-25\24_25 BZOL N1.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme Süd 2023-24\23_24 BZL S3.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme Süd 2024-25\24_25 KL S3.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme Süd 2024-25\24_25 KL S2.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme Nord 2023-24\23_24 BZL N2.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme_Nord 2024-25\24_25 BZL N3.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Liga 2022-23\22_23 BZL N2.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Südbereich 2019-20\19_20 A-Klasse Süd 1.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme Süd 2024-25\24_25 KL S1.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme Süd 2023-24\23_24 BZL S2.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme Süd 2024-25\24_25 BZOL S3.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Bayernliga 2019-20\19_20 BayL.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Nordbereich 2019-20\19_20 BZL N1.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme_Nord 2024-25\24_25 BZL N2.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme Süd 2024-25\24_25 BZOL S2.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme Nord 2023-24\23_24 BZL N1.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Liga 2022-23\22_23 BZL N1.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme Süd 2024-25\24_25 BZOL S1.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme Süd 2023-24\23_24 BZL S1.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme_Nord 2024-25\24_25 BZL N1.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme Süd 2024-25\24_25 BZL S3.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme Süd 2024-25\24_25 BZL S2.csv` |
+| `../.\database\data\legacy_scrape\historical_extracxted_combos\Ligaprogramme Süd 2024-25\24_25 BZL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_partials\saison2016-17.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_parallel_logs\saison2016-17.log` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_parallel_logs\saison2017-18.log` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_partials\saison2017-18.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_parallel_logs\saison2013-14.log` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_partials\saison2013-14.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_partials\saison2018-19.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_parallel_logs\saison2018-19.log` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2016-17\16_17 LL S (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2017-18\17_18 LL S (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_parallel_logs\saison2009-10.log` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_partials\saison2009-10.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_parallel_logs\saison2012-13.log` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_partials\saison2012-13.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2018-19\18_19 LL S (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2016-17\16_17 LL S.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2017-18\17_18 LL S.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_parallel_logs\saison2015-16.log` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_partials\saison2015-16.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2013-14\13_14 LL S.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_parallel_logs\saison2014-15.log` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_partials\saison2014-15.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2016-17\16_17 LL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_partials\saison2008-09.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_parallel_logs\saison2008-09.log` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2018-19\18_19 LL S.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2017-18\17_18 LL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_parallel_logs\saison2010-11.log` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_partials\saison2010-11.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2013-14\13_14 LL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_parallel_logs\saison2011-12.log` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_partials\saison2011-12.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2016-17\16_17 LL N (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2009-10\09_10 LL S.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2018-19\18_19 LL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2017-18\17_18 LL N (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2015-16\15_16 LL S.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2012-13\12_13 LL S.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2014-15\14_15 LL S.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2016-17\16_17 KL S4.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2017-18\17_18 Kreisliga Nord 4.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2018-19\18_19 LL N (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2008-09\08_09 LL S.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2009-10\09_10 LL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2012-13\12_13 LL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2013-14\13_14 KL S4.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2016-17\16_17 KL S3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2010-11\10_11 LL S.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2015-16\15_16 LL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2018-19\18_19 Kreisliga Nord 4.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2014-15\14_15 LL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2017-18\17_18 KL S4.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2013-14\13_14 KL S3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2011-12\11_12 LL S.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2008-09\08_09 LL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2016-17\16_17 KL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2018-19\18_19 KL S4.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2013-14\13_14 KL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2017-18\17_18 KL S3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2009-10\09_10 Kreisliga Nord 4.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2012-13\12_13 Kreisliga Nord 4.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2010-11\10_11 LL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2014-15\14_15 KL S4.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2015-16\15_16 KL S4.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2011-12\11_12 LL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2018-19\18_19 KL S3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2016-17\16_17 KL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2013-14\13_14 KL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2012-13\12_13 KL S4.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2009-10\09_10 KL S4.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2017-18\17_18 KL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2014-15\14_15 KL S3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2008-09\08_09 Kreisliga Nord 4.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2015-16\15_16 KL S3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2010-11\10_11 Kreisliga Nord 4.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2012-13\12_13 KL S3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2009-10\09_10 KL S3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2013-14\13_14 KL N3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2017-18\17_18 KL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2018-19\18_19 KL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2016-17\16_17 KL N3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2011-12\11_12 Kreisliga Nord 4.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2008-09\08_09 KL S4.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2014-15\14_15 KL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2010-11\10_11 KL S4.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2012-13\12_13 KL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2015-16\15_16 KL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2009-10\09_10 KL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2013-14\13_14 KL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2018-19\18_19 KL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2017-18\17_18 KL N3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2011-12\11_12 KL S4.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2008-09\08_09 KL S3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2010-11\10_11 KL S3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2014-15\14_15 KL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2012-13\12_13 KL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2016-17\16_17 KL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2015-16\15_16 KL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2009-10\09_10 KL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2011-12\11_12 KL S3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2010-11\10_11 KL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2013-14\13_14 KL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2008-09\08_09 KL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2018-19\18_19 KL N3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2017-18\17_18 KL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2012-13\12_13 KL N3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2014-15\14_15 KL N3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2015-16\15_16 KL N3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2016-17\16_17 KL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2010-11\10_11 KL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2009-10\09_10 KL N3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2008-09\08_09 KL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2011-12\11_12 KL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2013-14\13_14 Bereichsliga Süd 2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2018-19\18_19 KL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2017-18\17_18 KL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2012-13\12_13 KL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2014-15\14_15 KL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2010-11\10_11 KL N3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2011-12\11_12 KL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2008-09\08_09 KL N3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2009-10\09_10 KL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2016-17\16_17 BayL (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2015-16\15_16 KL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2013-14\13_14 Bereichsliga Süd 1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2014-15\14_15 KL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2012-13\12_13 KL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2018-19\18_19 KL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2010-11\10_11 KL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2017-18\17_18 BayL (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2008-09\08_09 KL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2016-17\16_17 BayL.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2009-10\09_10 KL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2011-12\11_12 KL N3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2015-16\15_16 KL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2010-11\10_11 KL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2012-13\12_13 Bereichsliga Süd 2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2008-09\08_09 KL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2014-15\14_15 Bereichsliga Süd 2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2018-19\18_19 BayL (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2016-17\16_17 BZOL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2017-18\17_18 BayL.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2011-12\11_12 KL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2009-10\09_10 Bereichsliga Süd 2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2010-11\10_11 Bereichsliga Süd 2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2015-16\15_16 Bereichsliga Süd 2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2008-09\08_09 Bereichsliga Süd 2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2013-14\13_14 Bereichsliga Nord 2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2012-13\12_13 Bereichsliga Süd 1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2014-15\14_15 Bereichsliga Süd 1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2011-12\11_12 KL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2018-19\18_19 BayL.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2009-10\09_10 Bereichsliga Süd 1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2017-18\17_18 BZOL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2016-17\16_17 BZOL S1 (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2010-11\10_11 Bereichsliga Süd 1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2008-09\08_09 Bereichsliga Süd 1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2013-14\13_14 Bereichsliga Nord 1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2015-16\15_16 Bereichsliga Süd 1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2011-12\11_12 Bereichsliga Süd 2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2018-19\18_19 BZOL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2017-18\17_18 BZOL S1 (D).csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2014-15\14_15 Bereichsliga Süd.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2016-17\16_17 BZOL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2011-12\11_12 Bereichsliga Süd 1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2012-13\12_13 Bereichsliga Nord 2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2013-14\13_14 BayL.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2009-10\09_10 Bereichsliga Nord 2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2010-11\10_11 Bereichsliga Nord 2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2018-19\18_19 BZOL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2017-18\17_18 BZOL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2014-15\14_15 Bereichsliga Nord 2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2008-09\08_09 Bereichsliga Nord 2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2016-17\16_17 BZOL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2012-13\12_13 Bereichsliga Nord 1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2015-16\15_16 Bereichsliga Nord 2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2010-11\10_11 Bereichsliga Nord 1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2009-10\09_10 Bereichsliga Nord 1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2008-09\08_09 Bereichsliga Nord 1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2014-15\14_15 Bereichsliga Nord 1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2017-18\17_18 BZOL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2011-12\11_12 Bereichsliga Nord 2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2012-13\12_13 BayL.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2018-19\18_19 BZOL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2010-11\10_11 Bereichsliga Nord.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2016-17\16_17 BZOL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2015-16\15_16 Bereichsliga Nord 1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2009-10\09_10 BayL.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2013-14\13_14 BZL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2008-09\08_09 BayL.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2011-12\11_12 Bereichsliga Nord 1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2014-15\14_15 BayL.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2010-11\10_11 BayL.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2017-18\17_18 BZOL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2018-19\18_19 BZOL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2013-14\13_14 BZL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2012-13\12_13 BZL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2016-17\16_17 BZL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2015-16\15_16 BayL.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2011-12\11_12 BayL.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2009-10\09_10 BZL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2012-13\12_13 BZL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2010-11\10_11 BZL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2017-18\17_18 BZL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2013-14\13_14 BZL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2014-15\14_15 BZL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2008-09\08_09 BZL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2018-19\18_19 BZL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2016-17\16_17 BZL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2009-10\09_10 BZL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2011-12\11_12 BZL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2012-13\12_13 BZL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2010-11\10_11 BZL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2015-16\15_16 BZL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2008-09\08_09 BZL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2013-14\13_14 BZL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2014-15\14_15 BZL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2017-18\17_18 BZL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2018-19\18_19 BZL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2011-12\11_12 BZL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2009-10\09_10 BZL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2016-17\16_17 BZL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2010-11\10_11 BZL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2015-16\15_16 BZL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2008-09\08_09 BZL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2013-14\13_14 A-Klasse Süd 3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2012-13\12_13 BZL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2014-15\14_15 BZL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2017-18\17_18 BZL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2011-12\11_12 BZL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2010-11\10_11 BZL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2009-10\09_10 BZL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2016-17\16_17 BZL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2018-19\18_19 BZL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2008-09\08_09 BZL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2013-14\13_14 A-Klasse Süd 2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2014-15\14_15 BZL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2015-16\15_16 BZL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2012-13\12_13 A-Klasse Süd 2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2011-12\11_12 BZL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2010-11\10_11 A-Klasse Süd 3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2009-10\09_10 A-Klasse Süd 2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2017-18\17_18 BZL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2008-09\08_09 A-Klasse Süd 2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2016-17\16_17 A-Klasse Süd 2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2018-19\18_19 BZL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2015-16\15_16 BZL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2013-14\13_14 A-Klasse Süd 1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2011-12\11_12 A-Klasse Süd 2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2014-15\14_15 A-Klasse Süd 3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2010-11\10_11 A-Klasse Süd 2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2012-13\12_13 A-Klasse Süd 1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2009-10\09_10 A-Klasse Süd 1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2008-09\08_09 A-Klasse Süd 1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2017-18\17_18 A-Klasse Süd 2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2011-12\11_12 A-Klasse Süd 1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2010-11\10_11 A-Klasse Süd 1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2015-16\15_16 A-Klasse Süd 2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2013-14\13_14 A-Klasse Nord 2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2016-17\16_17 A-Klasse Süd 1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2018-19\18_19 A-Klasse Süd 2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2014-15\14_15 A-Klasse Süd 2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2012-13\12_13 A-Klasse Nord 2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2009-10\09_10 A-Klasse Nord 2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2008-09\08_09 A-Klasse Nord 2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2010-11\10_11 A-Klasse Nord 2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2011-12\11_12 A-Klasse Nord 2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2018-19\18_19 A-Klasse Süd 1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2015-16\15_16 A-Klasse Süd 1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2013-14\13_14 A-Klasse Nord 1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2017-18\17_18 A-Klasse Süd 1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2016-17\16_17 A-Klasse Nord.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2015-16\15_16 A-Klasse Nord 1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2012-13\12_13 A-Klasse Nord 1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2009-10\09_10 A-Klasse Nord 1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2008-09\08_09 A-Klasse Nord 1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2014-15\14_15 A-Klasse Süd 1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2010-11\10_11 A-Klasse Nord 1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2011-12\11_12 A-Klasse Nord 1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2014-15\14_15 A-Klasse Nord 1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\saison2014-15\14_15 A-Klasse Nord.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_partials\suedbereich.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_parallel_logs\suedbereich.log` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_partials\nordbereich.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_parallel_logs\nordbereich.log` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\suedbereich\08_09 LL S.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\nordbereich\08_09 LL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\suedbereich\08_09 KL S4.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\suedbereich\08_09 KL S3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\nordbereich\08_09 Kreisliga Nord 4.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\suedbereich\08_09 KL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\nordbereich\08_09 KL N3.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\suedbereich\08_09 KL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\nordbereich\08_09 KL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\suedbereich\08_09 Bereichsliga Süd 2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\nordbereich\08_09 KL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\nordbereich\08_09 Bereichsliga Nord 2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\suedbereich\08_09 Bereichsliga Süd 1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\nordbereich\08_09 Bereichsliga Nord 1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\suedbereich\08_09 BZL S2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\nordbereich\08_09 BZL N2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\nordbereich\08_09 BZL N1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\suedbereich\08_09 BZL S1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_partials\bayernliga.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_parallel_logs\bayernliga.log` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\nordbereich\08_09 A-Klasse Nord 2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\suedbereich\08_09 A-Klasse Süd 2.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\bayernliga\08_09 BayL.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\nordbereich\08_09 A-Klasse Nord 1.csv` |
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_combos\suedbereich\08_09 A-Klasse Süd 1.csv` |
+| `../.\database\data\historical_league_results.csv` |
+| `../.\database\data\legacy_scrape\saison2008-09\bayernliga\.~lock.LB_BAY-L_D-1.xls#` |
+| `../.\database\data\legacy_scrape\saison2008-09\suedbereich\.~lock.LB_A-Kl_S_1-H-1.xls#` |
+| `../.\database\data\legacy_scrape\scrape_log.jsonl` |
+| `../.\database\data\legacy_scrape\_probe_liga18-19.htm` |
+| `../.\database\data\tournament_manual_postprocessed.csv` |
+| `../.\database\data\tournament_clubmeisterschaft_donaubowler_2026_postprocessed.csv` |
+| `../.\database\config\extract_excel_overrides.csv` |
+| `../.\database\conversion\bowlingbayern_legacy_core.py` |
+| `../.\database\input\import_clubmeisterschaft_donaubowler_xlsx.py` |
+| `../.\database\input\gf_tables_export\gf_tournaments_2026__combined_postprocessed.csv` |
+| `../.\database\data\tournament_bayerische_meisterschaft_2026_postprocessed.csv` |
+| `../.\tests\database\test_import_bayerische_meisterschaft_xlsx.py` |
+| `../.\database\input\import_bayerische_meisterschaft_xlsx.py` |
+| `../.\tests\database\test_generator.py` |
+| `../.\database\relational_csv\venue.csv` |
+| `../.\database\relational_csv\team_season.csv` |
+| `../.\database\sources\__init__.py` |
+| `../.\database\relational_csv\scoring_system.csv` |
+| `../.\database\sources\gf_results_v1_adapter.py` |
+| `../.\database\sources\gf_form_registry.py` |
+| `../.\database\sources\bowlingbayern_liga_csv.py` |
+| `../.\database\relational_csv\player.csv` |
+| `../.\database\schema.json` |
+| `../.\database\relational_csv\league_season.csv` |
+| `../.\database\relational_csv\new\unmatched_event_locations.csv` |
+| `../.\database\relational_csv\new\team_new.csv` |
+| `../.\database\relational_csv\new\player_skipped_report.txt` |
+| `../.\database\relational_csv\new\player_new.csv` |
+| `../.\database\relational_csv\new\league_new.csv` |
+| `../.\database\relational_csv\new\game_result_new.csv` |
+| `../.\database\pipeline\bowling_bayern\legacy_out\latest.csv` |
+| `../.\database\pipeline\bowling_bayern\canonical\merged_gf_canonical.csv` |
+| `../.\database\relational_csv\README.md` |
+| `../.\database\relational_csv\event.csv` |
+| `../.\database\relational_csv\club.csv` |
+| `../.\database\input\postprocess_tournament_results.py` |
+| `../.\database\input\liga_bayl-m_ergebnisse-2026-04-03.csv` |
+| `../.\database\input\liga_ll-s-m_ergebnisse-2026-04-03.csv` |
+| `../.\database\input\liga_ll-s-f_ergebnisse-2026-04-03.csv` |
+| `../.\database\input\liga_krl-s1_ergebnisse-2026-04-03.csv` |
+| `../.\database\input\liga_krl-n2_ergebnisse-2026-04-03.csv` |
+| `../.\database\input\liga_bzol-n1_ergebnisse-2026-04-03.csv` |
+| `../.\database\input\liga_bzol-n2_ergebnisse-2026-04-03.csv` |
+| `../.\database\input\gf_tables_export\gf_player_stats__league_plus_tournaments.csv` |
+| `../.\database\input\gf_tables_export\gf_table_124__sbm_suedbayerische_meisterschaft_2026__canonical_clean.csv` |
+| `../.\database\input\gf_tables_export\gf_table_124__sbm_suedbayerische_meisterschaft_2026.csv` |
+| `../.\database\input\gf_tables_export\gf_table_124__sbm_suedbayerische_meisterschaft_2026__field_map.csv` |
+| `../.\database\input\gf_tables_export\gf_table_124__sbm_suedbayerische_meisterschaft_2026__column_rename_map.csv` |
+| `../.\database\input\gf_tables_export\gf_table_124__sbm_suedbayerische_meisterschaft_2026__labeled.csv` |
+| `../.\database\input\gf_tables_export\gf_table_124__sbm_suedbayerische_meisterschaft_2026__postprocessed.csv` |
+| `../.\database\input\gf_tables_export\gf_table_124__sbm_suedbayerische_meisterschaft_2026__stage_meta.csv` |
+| `../.\database\input\gf_tables_export\gf_table_125__nbm_nordbayerische_meisterschaft_2026.csv` |
+| `../.\database\input\gf_tables_export\gf_table_125__nbm_nordbayerische_meisterschaft_2026__canonical_clean.csv` |
+| `../.\database\input\gf_tables_export\gf_table_125__nbm_nordbayerische_meisterschaft_2026__column_rename_map.csv` |
+| `../.\database\input\gf_tables_export\gf_table_125__nbm_nordbayerische_meisterschaft_2026__field_map.csv` |
+| `../.\database\input\gf_tables_export\gf_table_125__nbm_nordbayerische_meisterschaft_2026__labeled.csv` |
+| `../.\database\input\gf_tables_export\gf_table_125__nbm_nordbayerische_meisterschaft_2026__postprocessed.csv` |
+| `../.\database\input\gf_tables_export\gf_table_125__nbm_nordbayerische_meisterschaft_2026__stage_meta.csv` |
+| `../.\database\input\gf_tables_export\gf_tournaments_2026__combined_canonical_clean.csv` |
+| `../.\database\input\gf_tables_export\gf_tournaments_2026__combined_stage_meta.csv` |
+| `../.\database\input\gf_tournament_stage_definitions.json` |
+| `../.\database\input\bayerische_meisterschaft_xlsx\.gitkeep` |
+| `../.\database\input\generate_geek_tournament_data.py` |
+| `../.\database\input\convert_bowlingbayern_to_legacy.py` |
+| `../.\database\input\generate_tournament_clean_results.py` |
+| `../.\database\input\INPUT_TO_LEGACY_CSV_MAPPING.md` |
+| `../.\database\generator\teams.py` |
+| `../.\database\generator\seed.py` |
+| `../.\database\generator\player.py` |
+| `../.\database\input\gf_table_tournament_map.json` |
+| `../.\database\generator\league.py` |
+| `../.\database\data\tournament_sbm_2026_stage_meta.csv` |
+| `../.\database\data\tournament_sbm_2026_clean_from_gf.csv` |
+| `../.\database\data\tournament_geek_classic_2026_roster.csv` |
+| `../.\database\data\tournament_nordbayerische_2026_postprocessed_via_script.csv` |
+| `../.\database\data\tournament_geek_classic_2026_clean.csv` |
+| `../.\database\data\tournament_geek_classic_2026_postprocessed.csv` |
+| `../.\database\data\tournament_geek_classic_2024_2026_roster.csv` |
+| `../.\database\data\tournament_geek_classic_2024_2026_postprocessed.csv` |
+| `../.\database\data\tournament_geek_classic_2024_2026_clean.csv` |
+| `../.\database\data\tournament_nordbayerische_2026_postprocessed_via_both_scripts.csv` |
+| `../.\database\data\tournament_mythic_legends_2024_2026_postprocessed.csv` |
+| `../.\database\data\tournament_nordbayerische_2026_postprocessed.csv` |
+| `../.\database\data\tournament_ko_config.json` |
+| `../.\database\data\tournament_mythic_legends_2024_2026_clean.csv` |
+| `../.\database\data\tournament_nordbayerische_2026_clean_via_script.csv` |
+| `../.\database\data\tournament_ko_config.example.json` |
+| `../.\database\data\tournament_nordbayerische_2026_clean.csv` |
+| `../.\database\data\tournament_mythic_legends_2024_2026_roster.csv` |
+| `../.\database\data\tournament_combined_2024_2026_postprocessed.csv` |
+| `../.\database\data\tournament_clash_imaginary_entities_2024_2026_clean.csv` |
+| `../.\database\data\tournament_clash_imaginary_entities_2024_2026_postprocessed.csv` |
+| `../.\database\data\tmp\bowling_ergebnisse_real_bak.csv` |
+| `../.\database\data\tmp\bowling_ergebnisse_real_fixed.csv` |
+| `../.\database\data\tmp\bowling_ergebnisse_real_backup.csv` |
+| `../.\database\data\tmp\bowling_ergebnisse_real_lowerleagues.csv` |
+| `../.\database\data\tmp\bowling_ergebnisse_real_prior_to_manual_bayl.csv` |
+| `../.\database\data\tmp\bowling_ergebnisse_real_sorted.csv` |
+| `../.\database\data\tmp\bowling_ergebnisse_real_with_fake_bayl_2024.csv` |
+| `../.\database\data\tmp\bowling_ergebnisse_real_2025.csv` |
+| `../.\database\data\tmp\bowling_ergebnisse_real_2025_fixed.csv` |
+| `../.\database\data\ko_bracket_overrides.json` |
+| `../.\database\data\ko_bracket_overrides.example.json` |
+| `../.\database\data\bowling_ergebnisse_reconstructed.csv` |
+| `../.\database\data\bowling_ergebnisse_ohne_punkte.csv` |
+| `../.\database\data\bowling_ergebnisse_real.csv` |
+| `../.\database\data\bowling_ergebnisse_real_from_bowlingbayern.csv` |
+| `../.\database\data\bowling_ergebnisse_test_errors.csv` |
+| `../.\database\data\bowling_ergebnisse_test_with_errors.csv` |
+| `../.\database\data\bowling_ergebnisse_reconstructed_clean.csv` |
+| `../.\database\data\bowling_ergebnisse.csv` |
+| `../.\database\config.py` |
+| `../.\database\conversion\__init__.py` |
+| `../.\database\config\team_number_overrides.csv` |
+| `../.\database\__init__.py` |
+| `../.\database\data\TEST_ERRORS_SUMMARY.md` |
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.{py,ps1,sh,yml,md,json,env*}",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "database/data|database\\\\\\\\data|bowlyzer.*data|intermediate|legacy_scrape|merged\\.csv"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "database/data|database\\\\\\\\data|bowlyzer.*data|intermediate|legacy_scrape|merged\\.csv",
+  "topFiles": [
+    {
+      "matchCount": 1419,
+      "uri": ".\\.specstory\\history\\2026-05-19_07-58-26Z-exposing-web-service-on-local-network.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\scripts\\merge_league_sources.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": ".\\scripts\\analyze_legacy_scrape_csv.py"
+    },
+    {
+      "matchCount": 578,
+      "uri": ".\\database\\data\\extract_excel_analysis_log.json"
+    }
+  ],
+  "totalFiles": 4,
+  "totalMatches": 8751
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\deploy.ps1</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants to understand the difference between database/data, database/input, and database/relational_csv.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\config\database_config.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\.gitignore</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.{py,sh,ps1,yml,example,md}",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "database/data|DATABASE|DATA_DIR|BOWLYZER"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "database/data|DATABASE|DATA_DIR|BOWLYZER",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "database/data/TEST_ERRORS_SUMMARY.md"
+    },
+    {
+      "matchCount": 6,
+      "uri": ".specstory/history/2026-05-05_22-17-10Z-git-status-changes-and-contract-hardening.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "database/relational_csv/README.md"
+    },
+    {
+      "matchCount": 7,
+      "uri": "data_access\\shared_pandas_store.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "database/input/INPUT_TO_LEGACY_CSV_MAPPING.md"
+    },
+    {
+      "matchCount": 60,
+      "uri": ".specstory/history/2026-05-12_08-34-57Z-tournament-configuration-and-leaderboard-adjustments.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app\\cache\\cache_warmup.py"
+    },
+    {
+      "matchCount": 3,
+      "uri": "extract_excel_data.py"
+    }
+  ],
+  "totalFiles": 8,
+  "totalMatches": 678
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I need a comprehensive plan.
+
+Create `database/paths.py` with `BOWLYZER_DATA_DIR` environment variable. Use `C:\tmp\bowlyzer\data` as default for Windows development, or `database/data` for Linux/docker. For production, keep merged CSVs in external directory or use symlinks.
+
+`BOWLYZER_DATA_DIR` should point to an external data directory, such as `c:\tmp\bowlyzer\data` on Windows. All contents from `database/data/` will be moved there. The repository will maintain `database/data/` as either a symlink or .gitkeep file with a README directing users to the external location.
+
+For deployment, intermediate files like scraped data and logs will be stored externally, while production CSVs such as merged datasets and player configurations remain in the external directory.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: Get-ChildItem "c:\Users\cfell\repositories\bowlyzer_deploy\database\data" -Force | Select-Object Name, Mode, @{N='MB';E={if($_.PSIsContainer){''}else{[math]::Round($_.Length/1MB,1)}}} | Format-Table -AutoSize</summary>
+
+```bash
+Get-ChildItem "c:\Users\cfell\repositories\bowlyzer_deploy\database\data" -Force | Select-Object Name, Mode, @{N='MB';E={if($_.PSIsContainer){''}else{[math]::Round($_.Length/1MB,1)}}} | Format-Table -AutoSize
+```
+
+```
+
+Name                                                              Mode   MB   
+----                                                              ----   --   
+legacy_scrape                                                     d-----      
+tmp                                                               d-----      
+bowling_ergebnisse.csv                                            -a---- 4    
+bowling_ergebnisse_ohne_punkte.csv                                -a---- 3,2  
+bowling_ergebnisse_real.csv                                       -a---- 0,5  
+bowling_ergebnisse_real_from_bowlingbayern.csv                    -a---- 0,7  
+bowling_ergebnisse_reconstructed.csv                              -a---- 0,5  
+bowling_ergebnisse_reconstructed_clean.csv                        -a---- 0,5  
+bowling_ergebnisse_test_errors.csv                                -a---- 0    
+bowling_ergebnisse_test_with_errors.csv                           -a---- 0    
+extract_excel_analysis_log.json                                   -a---- 6,3  
+historical_league_results.csv                                     -a---- 7,6  
+ko_bracket_overrides.example.json                                 -a---- 0    
+ko_bracket_overrides.json                                         -a---- 0    
+league_results_merged.csv                                         -a---- 91,1 
+league_results_merged.parquet                                     -a---- 3,2  
+league_results_merged_duplicates.csv                              -a---- 0,8  
+league_results_merged_duplicates_non_exact.csv                    -a---- 0,3  
+player_stats_merged_plus_tournaments.csv                          -a---- 122,4
+TEST_ERRORS_SUMMARY.md                                            -a---- 0    
+tournament_bayerische_meisterschaft_2026_postprocessed.csv        -a---- 0,2  
+tournament_clash_imaginary_entities_2024_2026_clean.csv           -a---- 0,2  
+tournament_clash_imaginary_entities_2024_2026_postprocessed.csv   -a---- 0,2  
+tournament_clubmeisterschaft_donaubowler_2026_postprocessed.csv   -a---- 0    
+tournament_combined_2024_2026_postprocessed.csv                   -a---- 0,9  
+tournament_geek_classic_2024_2026_clean.csv                       -a---- 0,4  
+tournament_geek_classic_2024_2026_postprocessed.csv               -a---- 0,4  
+tournament_geek_classic_2024_2026_roster.csv                      -a---- 0    
+tournament_geek_classic_2026_clean.csv                            -a---- 0,1  
+tournament_geek_classic_2026_postprocessed.csv                    -a---- 0,1  
+tournament_geek_classic_2026_roster.csv                           -a---- 0    
+tournament_ko_config.example.json                                 -a---- 0    
+tournament_ko_config.json                                         -a---- 0    
+tournament_manual_postprocessed.csv                               -a---- 0    
+tournament_mythic_legends_2024_2026_clean.csv                     -a---- 0,3  
+tournament_mythic_legends_2024_2026_postprocessed.csv             -a---- 0,3  
+tournament_mythic_legends_2024_2026_roster.csv                    -a---- 0    
+tournament_nordbayerische_2026_clean.csv                          -a---- 0    
+tournament_nordbayerische_2026_clean_via_script.csv               -a---- 0    
+tournament_nordbayerische_2026_postprocessed.csv                  -a---- 0    
+tournament_nordbayerische_2026_postprocessed_via_both_scripts.csv -a---- 0    
+tournament_nordbayerische_2026_postprocessed_via_script.csv       -a---- 0    
+tournament_sbm_2026_clean_from_gf.csv                             -a---- 0,2  
+tournament_sbm_2026_stage_meta.csv                                -a---- 0    
+unique_team_names_after_merge.csv                                 -a---- 0    
+
+
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.py",
+  "outputMode": "files_with_matches",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "database/data|DATABASE_DATA_DIR|LEGACY_V1_DIR.*data"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "files_with_matches",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "database/data|DATABASE_DATA_DIR|LEGACY_V1_DIR.*data",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "data_access\\shared_pandas_store.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "playground.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tests/test_process_output_paths.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "database/input/import_clubmeisterschaft_donaubowler_xlsx.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tests\\test_process_output_paths.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/config/database_config.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tests\\test_old_format_date_season.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "data_access\\adapters\\data_adapter_factory.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "check_team_total.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app\\services\\data_manager.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "data_access\\adapters\\data_adapter_pandas.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "data_access/adapters/data_adapter_pandas.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "database/input/import_bayerische_meisterschaft_xlsx.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tests\\app\\test_tournament_summary_netto.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tests/app/test_tournament_summary_netto.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "scripts\\merge_league_sources.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "scripts/merge_league_sources.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "scripts/analyze_missing_league_weeks.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app\\services\\tournament_service.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "database/input/generate_tournament_clean_results.py"
+    }
+  ],
+  "totalFiles": 26,
+  "totalMatches": 26
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The legacy_scrape folder contains 630,000 lines of data in its extracted CSV file.
+
+User wants intermediates moved outside the repository.
+
+The following items are classified as intermediates and should be moved:
+- legacy_scrape/ (entire directory tree)
+- tmp/
+- extract_excel_analysis_log.json
+- league_results_merged_duplicates*.csv
+- unique_team_names_after_merge.csv
+- historical_league_results.csv (intermediate before merge)
+- bowling_ergebnisse*.csv (old test/sample files)
+- tournament_* duplicate versions (clean_via_script, etc.)
+- geek/mythic/clash imaginary (fantasy test data - may stay or move)
+- available_weeks_matrix and related files (gitignored)
+
+Production files needed at runtime remain unchanged.
+
+The production files that need to remain in the repository include league_results_merged.csv and its parquet version, player_stats_merged_plus_tournaments.csv, tournament_ko_config.json, tournament_manual_postprocessed.csv, and the postprocessed Bayerische and Clubmeisterschaft tournament files, along with ko_bracket_overrides.json.
+
+To deploy, the user wants to move all intermediates outside the repository. This can be achieved by either placing all data in an external BOWLYZER_DATA_DIR directory that gets selectively synced during deployment, or by splitting the working directory into separate BOWLYZER_WORK_DIR for intermediates and BOWLYZER_DATA_DIR for production files.
+
+The user wants intermediate CSV files moved to an external directory at `c:\tmp\bowlyzer\data`, while production files may stay in the repository or also be moved with symlinks. The simplest approach is to set `BOWLYZER_DATA_DIR` to this external location, making the repository's `database/data` folder minimal with only placeholder files. Docker Compose would then mount this directory to the container. However, since the user specified moving "all intermediate CSVs," production files are not necessarily included in this move.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\merge_league_sources.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\analyze_legacy_scrape_csv.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **0** results in **1** directory</summary>
+
+Directory: **c:\Users\cfell\repositories\bowlyzer_deploy\database** (0 files)
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I'll create `database/paths.py` as central path resolution.
+
+The file `database/paths.py` defines path resolution for external CSV data. It uses `BOWLYZER_DATA_DIR` for external data locations, defaulting to a `database/data` subdirectory within the repository root. For Windows development, it defaults to `%LOCALAPPDATA%\bowlyzer\data`, while Linux production defaults to the repository data directory unless overridden by an environment variable. The `get_data_dir()` function returns the appropriate data directory path based on these configurations.
+
+The `get_work_dir()` function determines the working directory for intermediate pipeline outputs. It first checks for the `BOWLYZER_WORK_DATA_DIR` environment variable. If set, it uses that path; otherwise, it defaults to `C:\tmp\bowlyzer\data` on Windows when `BOWLYZER_DATA_DIR` isn't set, or a subdirectory named `work` under the data directory on other systems.
+
+The working directory for intermediate pipeline outputs is now configurable via `BOWLYZER_WORK_DATA_DIR` environment variable, defaulting to `c:\tmp\bowlyzer\data` on Windows and a subdirectory under `BOWLYZER_DATA_DIR` on other systems. This allows separating intermediate files from production data, with `database/data` used for Docker bind mounts and `c:\tmp\bowlyzer\data` for temporary files. The structure includes dedicated folders for legacy scrape data, temporary files, analysis logs, duplicates, and historical league results.
+
+The production CSV files like `league_results_merged.csv` and `player_stats_merged_plus_tournaments.csv` should remain in `database/data/`, while intermediate CSV files are moved to `c:\tmp\bowlyzer\data`. For Docker, the compose file maps `./database:/app/database:ro` so production files must stay in `database/data` or the `DATABASE_DATA_DIR` needs to point externally. In the long term, `BOWLYZER_DATA_DIR` should manage all runtime and work data.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\extract_excel_data.py",
+  "pattern": "legacy_scrape|database/data"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\extract_excel_data.py",
+  "pattern": "legacy_scrape|database/data",
+  "topFiles": [
+    {
+      "matchCount": 3,
+      "uri": "extract_excel_data.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 3
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts",
+  "pattern": "legacy_scrape|database/data"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts",
+  "pattern": "legacy_scrape|database/data",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "scripts/merge_league_sources.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "scripts/reimport_bayerische_meisterschaft.ps1"
+    },
+    {
+      "matchCount": 1,
+      "uri": "scripts\\merge_league_sources.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "scripts/analyze_missing_league_weeks.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "scripts\\analyze_legacy_scrape_csv.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "scripts\\scrape_legacy_liga.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "scripts/scrape_legacy_liga.py"
+    }
+  ],
+  "totalFiles": 7,
+  "totalMatches": 9
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\test_process_output_paths.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\extract_excel_data.py",
+  "pattern": "legacy_scrape|resolve_process|DEFAULT_PROCESS|output_dir|output_file"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\extract_excel_data.py",
+  "pattern": "legacy_scrape|resolve_process|DEFAULT_PROCESS|output_dir|output_file",
+  "topFiles": [
+    {
+      "matchCount": 60,
+      "uri": "extract_excel_data.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 85
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\merge_league_sources.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\merge_league_sources.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\config\database_config.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **0** results in **1** directory</summary>
+
+Directory: **c:\Users\cfell\repositories\bowlyzer_deploy** (0 files)
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I'll create a clear architecture:
+
+**`database/paths.py`** - single source of truth:
+```python
+REPO_ROOT = Path(__file__).resolve().parent.parent
+REPO_DATA_DIR = REPO_ROOT / "database" / "data"
+
+def default_work_data_dir() -> Path:
+    if os.name == "nt":
+        return Path(r"C:\tmp\bowlyzer\data")
+    return REPO_DATA_DIR  # Linux: keep in repo unless env set
+
+def get_work_data_dir() -> Path:
+    env = os.environ.get("BOWLYZER_WORK_DATA_DIR", "").strip()
+    if env:
+        return Path(env).expanduser().resolve()
+    return default_work_data_dir()
+
+def get_data_dir() -> Path:
+```
+The code defines a module for managing file paths, establishing a repository root and data directory. It includes functions to determine the working data directory, prioritizing environment variables over defaults, and a function to retrieve the data directory path.
+
+Runtime and published CSV files are managed through a dedicated data directory, with intermediate files stored in the work directory under subfolders like `legacy_scrape/` and `tmp/`, along with temporary files such as `extract_excel_analysis_log.json` and `historical_league_results.csv`.
+
+The production data directory defaults to `database/data` but all intermediate files, including `historical_league_results.csv` and `legacy_scrape/` contents, should be moved to `c:\tmp\bowlyzer\data`. The final merged files like `league_results_merged.csv` and `player_stats_merged_plus_tournaments.csv` remain in the data directory.
+
+Production merged files can remain in the repository for deploy bind mounts or be placed on drive D. For deployment, the `-SyncDatabase` script will sync only specific database folders while excluding subdirectories like `legacy_scrape` and `tmp`. PowerShell's scp lacks easy exclude functionality, so rsync through WSL, tar with excludes, or documentation requiring removal of `legacy_scrape` from the repo are recommended alternatives.
+
+After moving files, the legacy_scrape folder will no longer be in the repository, which is fine for deployment.
+
+A migration script named `scripts/migrate_data_to_work_dir.ps1` will move legacy_scrape and other intermediate files to `C:\tmp\bowlyzer\data`.
+
+The `database/data/README.md` file explains the directory layout.
+
+The `database_config.py` file is updated to use `get_data_dir()` and `get_work_data_dir()` functions, with `HISTORICAL_LEAGUE_RESULTS_CSV` pointing to the work directory since it's an intermediate file.
+
+The `extract_excel_data.py` script will be updated to use these new paths.
+
+The analysis log path is set to the work directory, and the default process output file uses the historical output from the work directory. The merge script duplicates files to the work directory, placing duplicates next to the output file within the work directory. These duplicates are byproducts of the merge process and are stored in the work directory.
+
+The merged CSV file for league results is placed in the work directory, while parquet files remain next to their merged output in the data directory for production.
+
+The `start.sh` script and `.env.example` file set the `BOWLYZER_WORK_DATA_DIR` environment variable for Windows.
+
+Docker Compose uses an optional second volume for the work directory, though it's not required in production; only the `database/data` directory is mounted at runtime.
+
+Flask accesses historical data via database ID, so updating the database configuration path suffices if historical files are moved to the work directory.
+
+Tests are updated to use the paths module, and backward compatibility is maintained through a migration script that moves existing files from the repository to the work directory.
+
+The code includes an optional fallback to check legacy locations when accessing the legacy scrape directory, providing a smooth transition during migration.
+
+The implementation updates all relevant files to use the new paths module, ensuring consistency across the application.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\input",
+  "pattern": "database/data|database\\\\\\\\data"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\input",
+  "pattern": "database/data|database\\\\\\\\data",
+  "topFiles": [
+    {
+      "matchCount": 5,
+      "uri": "database/input/import_clubmeisterschaft_donaubowler_xlsx.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "database/input/INPUT_TO_LEGACY_CSV_MAPPING.md"
+    },
+    {
+      "matchCount": 3,
+      "uri": "database/input/import_bayerische_meisterschaft_xlsx.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "database/input/generate_tournament_clean_results.py"
+    }
+  ],
+  "totalFiles": 4,
+  "totalMatches": 10
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.{py,ps1,sh}",
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "database/data"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "database/data",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "tests/test_process_output_paths.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "scripts/analyze_missing_league_weeks.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "check_team_total.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "scripts\\merge_league_sources.py"
+    },
+    {
+      "matchCount": 3,
+      "uri": "extract_excel_data.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tests/app/test_tournament_summary_netto.py"
+    },
+    {
+      "matchCount": 5,
+      "uri": "database/input/import_clubmeisterschaft_donaubowler_xlsx.py"
+    },
+    {
+      "matchCount": 3,
+      "uri": "database/input/import_bayerische_meisterschaft_xlsx.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "playground.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tests\\test_old_format_date_season.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "scripts/merge_league_sources.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "database/input/generate_tournament_clean_results.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "scripts/reimport_bayerische_meisterschaft.ps1"
+    },
+    {
+      "matchCount": 2,
+      "uri": "scripts\\analyze_legacy_scrape_csv.py"
+    },
+    {
+      "matchCount": 3,
+      "uri": "app\\services\\tournament_service.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tests/test_old_format_date_season.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tests\\test_process_output_paths.py"
+    },
+    {
+      "matchCount": 3,
+      "uri": "app/services/tournament_service.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tests\\app\\test_tournament_summary_netto.py"
+    }
+  ],
+  "totalFiles": 19,
+  "totalMatches": 33
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Tests using legacy_scrape xlsx paths must resolve through designated file paths.
+
+legacy_scrape_dir() function needs to be implemented to handle file path resolution.
+
+For deployment synchronization, the SyncDatabase task will be renamed to sync and will transfer specific directories recursively while excluding subdirectories in database/data. PowerShell will utilize tar with exclude patterns or rsync for efficient file transfers, with a simplified approach using scp for Windows deployments. A paths module will be created along with a migration script to update deploy.ps1 for selective path syncing.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\docker-compose.prod.yml</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\start.sh</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Implement all components, ensuring that extract_excel_data imports paths at the top and uses lazy loading to prevent circular imports, where database.paths should not import extract_excel_data.
+
+database_config importing database.paths is acceptable.  
+extract_excel_data importing database.paths requires confirming database is a package via database/__init__.py.  
+merge script adds REPO_ROOT to path, enabling import of database.paths.  
+scrape_legacy_liga updates SCRAPE_ROOT.  
+analyze_missing uses default work directory.  
+migrate script is created as PowerShell due to Windows environment.  
+.gitignore updated to include database/data/legacy_scrape/ and database/data/tmp/, with additional comment for intermediate pipeline outputs.</details></think>
+
+_**Agent (default)**_
+
+Implementing a central paths module, updating scripts, and adding a migration script to move intermediate data out of the repo.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\database\paths.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\database\data\README.md</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\migrate_work_data.ps1</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\app\config\database_config.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\app\config\database_config.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\merge_league_sources.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\merge_league_sources.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\merge_league_sources.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\analyze_legacy_scrape_csv.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\analyze_legacy_scrape_csv.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\scrape_legacy_liga.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\analyze_missing_league_weeks.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The files scrape_legacy_liga.py and analyze_missing_league_weeks.py have been updated.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\scrape_legacy_liga.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\analyze_missing_league_weeks.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\test_process_output_paths.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\test_process_output_paths.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\test_old_format_date_season.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\deploy.ps1</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Added tests for the paths module and updated the .gitignore file.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\config\database_config.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\.gitignore</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\database\test_paths.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Fix the import order for database_config by moving it to the top of the file, right after pathlib.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\app\config\database_config.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\README.md</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run pytest tests/database/test_paths.py tests/test_process_output_paths.py -q --tb=short 2>&1</summary>
+
+```bash
+cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run pytest tests/database/test_paths.py tests/test_process_output_paths.py -q --tb=short 2>&1
+```
+
+```
+..........                                                               [100%]
+10 passed in 0.62s
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Updated the deploy README to reflect the SyncDatabase change.
+
+Added a note to DEPLOY.md regarding the migrate script. The user needs to run migrate_work_data.ps1 to move their data, as the script is destructive. Verified that merge_league_sources still works with path objects in argparse default=str. Confirmed that extract_excel resolve uses the repository default correctly, with DEFAULT_PROCESS_OUTPUT_FILE now being a dynamic Path, and tested that test_process_scope aligns with historical_league_results_csv().
+
+The `process_scope_cache_key` function now compares against a resolved path using `Path(__file__).resolve().parent / DEFAULT_PROCESS_OUTPUT_FILE`, where `DEFAULT_PROCESS_OUTPUT_FILE` is already a full Path object from `historical_league_results_csv()` at module load, ensuring consistency with the repository default path.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\README.md</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run pytest tests/test_process_output_paths.py -q --tb=short 2>&1</summary>
+
+```bash
+cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run pytest tests/test_process_output_paths.py -q --tb=short 2>&1
+```
+
+```
+......                                                                   [100%]
+6 passed in 0.56s
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **2** results in **1** directory</summary>
+
+Directory: **c:\Users\cfell\repositories\bowlyzer_deploy\deploy** (2 files)
+
+| File |
+|------|
+| `../deploy\deploy.config.ps1` |
+| `../deploy\deploy.config.example.ps1` |
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\deploy.config.example.ps1</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Add an optional WorkDataDir parameter to deploy.ps1 to set the environment before building.</details></think>
+
+_**Agent (default)**_
+
+Here is what was set up.
+
+### Layout
+
+| Location | Contents |
+|----------|----------|
+| **`database/data/`** (in repo) | Published runtime CSVs: `league_results_merged.csv`, `player_stats_merged_plus_tournaments.csv`, tournament configs, etc. — still used by Docker and deploy |
+| **`C:\tmp\bowlyzer\data`** (default work dir on Windows) | Intermediates: `legacy_scrape/`, `historical_league_results.csv`, dedupe reports, analysis log, old `bowling_ergebnisse*.csv`, … |
+
+Override with env vars:
+- `BOWLYZER_WORK_DATA_DIR` — pipeline / scrape data
+- `BOWLYZER_DATA_DIR` — published runtime CSVs (if you want those outside the repo too)
+
+Central module: `database/paths.py` (used by `database_config`, `extract_excel_data`, merge/scrape/analyze scripts).
+
+### What you should run once
+
+```powershell
+cd C:\Users\cfell\repositories\bowlyzer_deploy
+.\scripts\migrate_work_data.ps1
+```
+
+That moves `legacy_scrape/`, `tmp/`, and the intermediate files listed in the script from `database\data` to `C:\tmp\bowlyzer\data`. Use `-WhatIf` first if you want a dry run.
+
+Optional (persistent):
+
+```powershell
+$env:BOWLYZER_WORK_DATA_DIR = "C:\tmp\bowlyzer\data"
+```
+
+### Deploy change
+
+`-SyncDatabase` no longer uploads the whole `database/` tree. It only syncs:
+
+- `database/relational_csv/`
+- `database/config/`
+- **files** directly in `database/data/` (not subfolders like `legacy_scrape`)
+
+So deploy size should drop sharply after you run the migration.
+
+### Docs / tests
+
+- `database/data/README.md` — short explanation
+- `tests/database/test_paths.py` — path resolution tests
+
+After migration, re-run your usual pipeline; outputs go to `C:\tmp\bowlyzer\data` automatically on Windows. Merge still writes `league_results_merged.csv` into `database/data/` unless you set `BOWLYZER_DATA_DIR`.
+
+---
+
+_**User**_
+
+PS C:\Users\cfell\repositories\bowlyzer_deploy> $env:BOWLYZER_WORK_DATA_DIR = "C:\tmp\bowlyzer\data"
+PS C:\Users\cfell\repositories\bowlyzer_deploy> .\scripts\migrate_work_data.ps1
+Work directory: C:\tmp\bowlyzer\data
+C:\Users\cfell\repositories\bowlyzer_deploy\scripts\migrate_work_data.ps1 : Es wurde kein Positionsparameter gefunden, der das Argument
+"destination" akzeptiert.
+In Zeile:1 Zeichen:1
++ .\scripts\migrate_work_data.ps1
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidArgument: (:) [migrate_work_data.ps1], ParameterBindingException
+    + FullyQualifiedErrorId : PositionalParameterNotFound,migrate_work_data.ps1
+
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user encounters a PowerShell error while executing migrate_work_data.ps1.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\migrate_work_data.ps1</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The issue is that in older PowerShell versions, the `ShouldProcess` cmdlet's second parameter is `-Operation` rather than a positional string argument.
+
+In PowerShell 5.1, `ShouldProcess` uses the signature `ShouldProcess(string Target, string Action)` with named parameters, not positional ones. The error indicates that "destination" is being passed positionally, likely from `Move-Item` within a `ShouldProcess` block, but `ShouldProcess` doesn't accept "destination" as a positional parameter.
+
+The issue may stem from using `ShouldProcess` with two arguments where the second parameter should be named `-Action` instead of being positional. In some PowerShell versions, the signature expects `ShouldProcess(Target, Action)` with `Action` as a verb, and potentially `ShouldProcess(Target, Action, Resource)` for more detail. This could explain why "destination" is incorrectly interpreted as a positional parameter.
+
+The `ShouldProcess` cmdlet in PowerShell expects either one or two string arguments: `ShouldProcess(target)` or `ShouldProcess(target, action)`. Using `ShouldProcess($src, "Move to $dst")` should work correctly, where the second parameter is the action string.
+
+However, the error might stem from how PowerShell 5.1 handles this call, especially if `$dst` contains special characters or is interpreted incorrectly. It's also possible that `Move-Item` itself is causing issues, particularly if `$dst` is malformed or contains unexpected values like arrays from `Join-Path`.
+
+Another consideration is that in older PowerShell versions, parameter binding behavior differs slightly, which could lead to incorrect interpretation of arguments passed to `ShouldProcess`, especially when dealing with complex strings or variables containing special characters.
+
+The error likely occurs because `Move-Item`'s `-Destination` parameter is being misinterpreted as a positional "destination" argument due to line break or parsing issues. 
+
+Using `Move-Item -LiteralPath $src -Destination $dst` may resolve problems if `$dst` contains special characters, as `-LiteralPath` prevents wildcard expansion that could interfere with destination paths.
+
+The issue might also stem from how PowerShell 5.1 handles parameter binding in `ShouldProcess`, especially when `$dst` contains characters that affect parsing or when the command structure introduces ambiguity in argument interpretation.
+
+The issue likely lies with `ShouldProcess` expecting only one positional parameter (the target), with "Move to $dst" being interpreted as a separate positional argument. While documentation shows both `$Target` and `$Action` as positional, the error suggests that "Move to $dst" may be treated as an additional positional argument instead of the action description. This could occur if PowerShell 5.1 interprets the second argument differently, especially if it's not strictly following the expected signature. A potential fix would be to ensure proper parameter naming or restructuring the call to avoid ambiguity in argument binding.
+
+The script uses `[CmdletBinding(SupportsShouldProcess = $true)]` and `param()`, so `ShouldProcess` returns `$true` when run without `-WhatIf`, allowing `Move-Item` to execute.  
+
+The error may occur specifically at line 53 with the `ShouldProcess` call:  
+`if ($PSCmdlet.ShouldProcess($src, "Move to $dst")) {`
+
+An alternative theory is that `Move-Item` in Windows PowerShell 5.1 requires different syntax for directories, such as using `-LiteralPath` and ensuring the destination parent directory exists.  
+
+Using `Move-Item -LiteralPath $src -Destination $dst` might resolve issues if `$dst` contains special characters or requires literal path handling.
+
+In PowerShell 5.1, the `ShouldProcess` cmdlet may behave differently in localized environments, where the second parameter could be expected with a different name, potentially causing issues with parameter binding.
+
+The error message showing "destination" as a positional parameter suggests that either the string "destination" or the `-Destination` parameter is being misparsed, possibly due to how `Move-Item` handles its arguments within a `ShouldProcess` block.
+
+There's a possibility that an alias or environment-specific setting is interfering with `Move-Item` when used inside `ShouldProcess`, especially if the user confirms the operation.
+
+If `$dst` is empty, `Move-Item` might receive `-Destination` without a value, and then treat `$dst` as a positional argument, leading to errors.
+
+Additionally, if `$WorkDir` is set but `Join-Path` fails, it could result in an invalid or empty destination path, which may cause `Move-Item` to misinterpret the
+
+$WorkDir should be fine when using `[System.IO.Path]::GetFullPath`.
+
+Another possibility is that `Move-Item` is being called with `-LiteralPath $src -Destination $dst`, but on German Windows systems, PowerShell 5.1 might use different parameter names, causing `-Destination` to be misinterpreted as a positional argument.
+
+It's unlikely that `Move-Item` itself is the issue.
+
+When `Move-Item` is used inside a function with `SupportsShouldProcess`, it does not automatically respect `-WhatIf` unless `-WhatIfPreference` is explicitly passed.
+
+The error occurs at the script level with a "ParameterBindingException" for argument "destination," indicating that the script is incorrectly receiving "-Destination" as a positional parameter. This suggests a parsing issue where the script file may have a BOM or corruption, causing line 58's `-Destination` to be misinterpreted. Alternatively, there could be an issue with how `SupportsShouldProcess` interacts with an empty `param()` block, though this is less likely. The problem stems from how PowerShell parses the script file rather than from `Move-Item` itself.</details></think>
+
+_**Agent (default)**_
+
+Fixing the migration script: `ShouldProcess` is binding incorrectly on Windows PowerShell 5.1.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\migrate_work_data.ps1</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\cfell\repositories\bowlyzer_deploy"; $env:BOWLYZER_WORK_DATA_DIR = "C:\tmp\bowlyzer\data"; powershell -NoProfile -File .\scripts\migrate_work_data.ps1 -WhatIf 2>&1 | Select-Object -First 15</summary>
+
+```bash
+cd "c:\Users\cfell\repositories\bowlyzer_deploy"; $env:BOWLYZER_WORK_DATA_DIR = "C:\tmp\bowlyzer\data"; powershell -NoProfile -File .\scripts\migrate_work_data.ps1 -WhatIf 2>&1 | Select-Object -First 15
+```
+
+```
+Work directory: C:\tmp\bowlyzer\data
+WhatIf: move C:\Users\cfell\repositories\bowlyzer_deploy\database\data\legacy_scrape -&gt; C:\tmp\bowlyzer\data\legacy_scrape
+WhatIf: move C:\Users\cfell\repositories\bowlyzer_deploy\database\data\tmp -&gt; C:\tmp\bowlyzer\data\tmp
+WhatIf: move C:\Users\cfell\repositories\bowlyzer_deploy\database\data\extract_excel_analysis_log.json -&gt; C:\tmp\bowlyzer\data\extract_excel_analysis_log.json
+WhatIf: move C:\Users\cfell\repositories\bowlyzer_deploy\database\data\historical_league_results.csv -&gt; C:\tmp\bowlyzer\data\historical_league_results.csv
+WhatIf: move C:\Users\cfell\repositories\bowlyzer_deploy\database\data\unique_team_names_after_merge.csv -&gt; C:\tmp\bowlyzer\data\unique_team_names_after_merge.csv
+WhatIf: move C:\Users\cfell\repositories\bowlyzer_deploy\database\data\league_results_merged_duplicates.csv -&gt; C:\tmp\bowlyzer\data\league_results_merged_duplicates.csv
+WhatIf: move C:\Users\cfell\repositories\bowlyzer_deploy\database\data\league_results_merged_duplicates_non_exact.csv -&gt; C:\tmp\bowlyzer\data\league_results_merged_duplicates_non_exact.csv
+WhatIf: move C:\Users\cfell\repositories\bowlyzer_deploy\database\data\bowling_ergebnisse.csv -&gt; C:\tmp\bowlyzer\data\bowling_ergebnisse.csv
+WhatIf: move C:\Users\cfell\repositories\bowlyzer_deploy\database\data\bowling_ergebnisse_ohne_punkte.csv -&gt; C:\tmp\bowlyzer\data\bowling_ergebnisse_ohne_punkte.csv
+WhatIf: move C:\Users\cfell\repositories\bowlyzer_deploy\database\data\bowling_ergebnisse_real.csv -&gt; C:\tmp\bowlyzer\data\bowling_ergebnisse_real.csv
+WhatIf: move C:\Users\cfell\repositories\bowlyzer_deploy\database\data\bowling_ergebnisse_real_from_bowlingbayern.csv -&gt; C:\tmp\bowlyzer\data\bowling_ergebnisse_real_from_bowlingbayern.csv
+WhatIf: move C:\Users\cfell\repositories\bowlyzer_deploy\database\data\bowling_ergebnisse_reconstructed.csv -&gt; C:\tmp\bowlyzer\data\bowling_ergebnisse_reconstructed.csv
+WhatIf: move C:\Users\cfell\repositories\bowlyzer_deploy\database\data\bowling_ergebnisse_reconstructed_clean.csv -&gt; C:\tmp\bowlyzer\data\bowling_ergebnisse_reconstructed_clean.csv
+WhatIf: move C:\Users\cfell\repositories\bowlyzer_deploy\database\data\bowling_ergebnisse_test_errors.csv -&gt; C:\tmp\bowlyzer\data\bowling_ergebnisse_test_errors.csv
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+The failure came from `[CmdletBinding(SupportsShouldProcess)]` — on Windows PowerShell 5.1, `ShouldProcess($src, "Move to $dst")` was parsed badly and `"destination"` ended up as a stray argument.
+
+The script now uses a plain `-WhatIf` switch instead. Run:
+
+```powershell
+$env:BOWLYZER_WORK_DATA_DIR = "C:\tmp\bowlyzer\data"
+.\scripts\migrate_work_data.ps1 -WhatIf   # preview
+.\scripts\migrate_work_data.ps1         # actually move
+```
+
+`legacy_scrape` can take a while to move because it is large. If `C:\tmp\bowlyzer\data\legacy_scrape` already exists from a partial run, delete or rename that folder first, or the script will skip with a warning.
+
+---
+
+_**User**_
+
+the remote host is chocking on the docker container and quickly unreposnsive after restart. i want to shut down the docker process and then redeploy
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user intends to stop the Docker container on their remote VPS due to host unresponsiveness, then redeploy it.</details></think>
+
+_**Agent (default)**_
+
+Checking deploy config and remote compose setup for accurate stop/redeploy commands.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\docker-compose.prod.yml</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\deploy.config.example.ps1</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\deploy",
+  "pattern": "RemoteHost|compose down|docker stop"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\deploy",
+  "pattern": "RemoteHost|compose down|docker stop",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "deploy/deploy.config.example.ps1"
+    },
+    {
+      "matchCount": 5,
+      "uri": "deploy/install_clubmeisterschaft_auto_import.ps1"
+    },
+    {
+      "matchCount": 15,
+      "uri": "deploy/deploy.ps1"
+    },
+    {
+      "matchCount": 1,
+      "uri": "deploy\\README.md"
+    },
+    {
+      "matchCount": 15,
+      "uri": "deploy\\deploy.ps1"
+    },
+    {
+      "matchCount": 1,
+      "uri": "deploy/README.md"
+    },
+    {
+      "matchCount": 6,
+      "uri": "deploy/push-vps-maintenance.ps1"
+    }
+  ],
+  "totalFiles": 7,
+  "totalMatches": 44
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\docs\VPS_DISK_AND_USER.md</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user seeks actionable guidance to achieve a specific goal.
+
+To stop the Docker container on an unresponsive remote host, SSH into the host if possible, then run `docker compose -f docker-compose.prod.yml down` or use `docker stop` with the container name. Optionally disable the restart policy first. For redeployment, use the existing `-SkipBuild` deploy option if available.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\gunicorn.conf.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "LEAGUE_CACHE_WARM|mem_limit"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "LEAGUE_CACHE_WARM|mem_limit",
+  "topFiles": [
+    {
+      "matchCount": 12,
+      "uri": ".\\.specstory\\history\\2026-05-19_07-58-26Z-exposing-web-service-on-local-network.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\deploy\\README.md"
+    },
+    {
+      "matchCount": 4,
+      "uri": ".\\scripts\\warm_essential_caches.py"
+    },
+    {
+      "matchCount": 5,
+      "uri": ".\\tests\\app\\test_cache_warmup.py"
+    },
+    {
+      "matchCount": 3,
+      "uri": ".\\app\\cache\\cache_warmup.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\DEPLOY.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\deploy\\docker-compose.prod.yml"
+    },
+    {
+      "matchCount": 9,
+      "uri": ".\\.specstory\\history\\2026-05-18_12-35-26Z-docker-container-build-issues-on-windows-11.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\docs\\planning\\DOCKER_MIGRATION_PLAN.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\docker-compose.yml"
+    }
+  ],
+  "totalFiles": 10,
+  "totalMatches": 38
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I'll create a convenient stop-remote.ps1 script and provide immediate commands for the user.</details></think>
+
+_**Agent (default)**_
+
+Adding a small remote-stop script and giving you the exact commands to run now.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\stop-remote.ps1</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\docker-compose.prod.yml</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\README.md</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The PowerShell script stop-remote.ps1 needs modification because Windows PowerShell does not easily support bash heredoc syntax with @<<<.</details></think>
+
+_**Agent (default)**_
+
+Fixing the stop script — invalid PowerShell heredoc syntax.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\deploy.ps1</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I'll inline a copy of the Invoke-SshBashScript function in stop-remote.ps1 for cleaner implementation, duplicating it from deploy.ps1.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\stop-remote.ps1</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Here is a safe sequence when the VPS is choking.
+
+### 1. Stop the container (from your PC)
+
+```powershell
+cd C:\Users\cfell\repositories\bowlyzer_deploy
+.\deploy\stop-remote.ps1
+```
+
+Uses `deploy.config.ps1` for host/user/dir. Optional: free old image layers:
+
+```powershell
+.\deploy\stop-remote.ps1 -PruneImages
+```
+
+### 2. If SSH hangs — use the VPS console (IONOS / provider panel)
+
+Log in as `bowlyzer` (or root):
+
+```bash
+cd /home/bowlyzer/bowlyzer
+docker compose -f docker-compose.prod.yml down --remove-orphans
+docker ps   # should show no bowlyzer container
+free -h
+```
+
+If that does not respond, as **root**:
+
+```bash
+systemctl stop docker
+```
+
+Wait ~30s, then `free -h`. Start Docker again only when you are ready to redeploy:
+
+```bash
+systemctl start docker
+```
+
+### 3. Redeploy (after the host is calm)
+
+Skip syncing the huge database tree unless CSVs changed:
+
+```powershell
+.\deploy\deploy.ps1
+```
+
+Only if published CSVs under `database/data/` changed:
+
+```powershell
+.\deploy\deploy.ps1 -SyncDatabase
+```
+
+If the image is already built locally:
+
+```powershell
+.\deploy\deploy.ps1 -SkipBuild
+```
+
+### 4. Why it likely OOMs again
+
+On a ~1 GB VPS, loading `league_results_merged.csv` (~91 MB) plus **background cache warmup** can push memory over the 650 MB limit. `deploy/docker-compose.prod.yml` now sets `LEAGUE_CACHE_WARM_ON_START: "0"` so the next deploy does not warm all seasons at startup.
+
+After redeploy, check:
+
+```bash
+ssh bowlyzer@YOUR_HOST 'cd ~/bowlyzer && docker compose -f docker-compose.prod.yml ps && docker compose -f docker-compose.prod.yml logs --tail 30 bowlyzer'
+```
+
+If it still dies, run `deploy/vps/cleanup-disk.sh` on the VPS and avoid `-SyncDatabase` unless needed. I can add a `-StopFirst` flag to `deploy.ps1` if you want stop + deploy in one command.
+
+---
+
+_**User**_
+
+it seems the data is part of the container and then synced to a read only dir on the remote server via -SyncDatabase
+is this likely to casue memory issues?
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants to know if their data is stored inside the container image or mounted externally, and whether SyncDatabase might lead to memory problems.</details></think>
+
+_**Agent (default)**_
+
+Checking how data flows through the image, bind mount, and deploy sync.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\Dockerfile</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\docker-compose.prod.yml</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\deploy.ps1</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\.dockerignore</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+.dockerignore excludes database/data/*.csv but not legacy_scrape, which remains in gitignore; however, any existing local legacy_scrape files would still be copied into the image during build.
+
+.dockerignore controls what files are excluded during Docker build, not gitignore. Since legacy_scrape is not in .dockerignore, it may still be copied into the image if present locally. However, database/data/tmp is excluded while database/data/league_results_merged.csv is not. As a result, all of database/ including large CSV files could be included in the image unless explicitly excluded in .dockerignore.
+
+Image contains database/ with whatever was on build machine unless specifically excluded in .dockerignore.
+2.
+
+At runtime, binding mount ./database:/app/database:ro replaces the image's database layer entirely, so the container only sees host files. This means that at runtime, only the host-mounted data is read, masking the image copy. Since the image includes large CSVs, building with those files makes the image tar huge, wasting disk space when loading the image. However, at runtime, RAM usage isn't doubled because the mount hides the image path, and pandas reads directly from the mounted host files instead.
+
+SyncDatabase copies files to ~/bowlyzer/database on the host machine, not into the container, and the bind mount ensures the container uses the host files on next startup. The sync process uses scp and does not involve container memory.
+
+Memory issues stem from:
+1. Loading large CSV files into pandas (~hundreds of MB RAM)
+2. Cache warmup (now disabled)
+3. Memory limit set to 650m on a 1GB host
+4. Large image load during deployment causes temporary disk I/O and memory spikes on the host, potentially slowing the entire VPS during deployment, though not during steady-state operation.</details></think>
+
+_**Agent (default)**_
+
+**Short answer:** `-SyncDatabase` is not what blows RAM at runtime. What hurts is **pandas loading big CSVs** into memory after the container starts. You do have **two copies on disk** (image + host mount), which wastes space and can make deploys painful, but only the **bind-mounted host folder** is what the running app reads.
+
+### How it actually works
+
+| Layer | What happens |
+|--------|----------------|
+| **Docker build** (`COPY database ./database`) | Whatever is in your local `database/` at build time is **baked into the image** (`.dockerignore` only excludes `database/data/tmp`, not the big CSVs). |
+| **Deploy image** (`docker save` → scp → `docker load`) | That whole image (including embedded CSVs) lands on the VPS **on disk**. |
+| **`-SyncDatabase`** | Copies files to **`~/bowlyzer/database/` on the host** (config, relational CSVs, top-level files in `database/data/`). Does **not** write into the running container. |
+| **Runtime** (`docker-compose.prod.yml`) | `./database:/app/database:ro` **replaces** `/app/database` in the container. The app reads **only the host directory**, not the copy inside the image layer. |
+
+So your mental model should be:
+
+- **Runtime data** = host `~/bowlyzer/database/` (updated by `-SyncDatabase`)
+- **Image data** = hidden by the mount; still makes the **image fat** and `docker load` heavy
+
+`-SyncDatabase` itself is just `scp` — it does not load CSVs into container memory. It can still **fill the VPS disk** if you upload huge files.
+
+### Is that likely to cause memory issues?
+
+**Steady state (site running):** Memory pressure comes from the **app**, not from “sync”:
+
+- Loading `league_results_merged.csv` (~91 MB on disk) and `player_stats_merged_plus_tournaments.csv` (~120 MB) into pandas often means **several hundred MB RAM** per process.
+- With `mem_limit: 650m` on a ~1 GB VPS, that is tight; background cache warmup (now disabled in prod compose) made it worse.
+- The **read-only mount** does not double RAM — you are not reading image + host twice.
+
+**During deploy:** `docker load` of a large image can spike **disk I/O and briefly stress the whole VM** (SSH feels stuck). That is disk/CPU, not “sync holding data in RAM” inside the app.
+
+**If you used to sync the whole `database/` tree** (including `legacy_scrape`): that mainly hurt **disk and deploy time**, not steady RAM — unless those files were also in the image and you had less room for Docker/page cache.
+
+### What to do
+
+1. **Normal redeploys:** `.\deploy\deploy.ps1` **without** `-SyncDatabase` unless published CSVs in `database/data/` changed.
+2. **Shrink the image** (recommended): add to `.dockerignore` so big CSVs are **not** baked in — runtime relies on the host mount only, e.g.:
+
+   ```
+   database/data/*.csv
+   database/data/*.parquet
+   database/data/legacy_scrape
+   ```
+
+   Keep `database/relational_csv`, `database/config`, and small stubs in the image.
+
+3. **OOM on the VPS:** keep `LEAGUE_CACHE_WARM_ON_START=0` (already in prod compose), ensure only the CSVs you need are on the host, and consider swap or a slightly larger instance if merged + player DB must both be hot.
+
+So: **sync + read-only mount is a reasonable pattern**; the risk is **large CSVs in pandas + small RAM**, plus **fat images** if build still includes all of `database/data`. I can add the `.dockerignore` rules and a short note in `deploy/README.md` if you want that wired in.
+
+---
+
+_**User**_
+
+also, the file grew to like 200 mb
+
+---
+
+_**Agent (default)**_
+
+Checking what's driving the ~200 MB size and tightening the build/deploy setup.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: Get-ChildItem "c:\Users\cfell\repositories\bowlyzer_deploy\database\data" -File -ErrorAction SilentlyContinue | Sort-Object Length -Descending | Select-Object -First 15 Name, @{N='MB';E={[math]::Round($_.Length/1MB,1)}} | Format-Table -AutoSize; if (Test-Path "C:\tmp\bowlyzer\data") { Write-Host "`n--- C:\tmp\bowlyzer\data ---"; Get-ChildItem "C:\tmp\bowlyzer\data" -File -ErrorAction SilentlyContinue | Sort-Object Length -Descending | Select-Object -First 5 Name, @{N='MB';E={[math]::Round($_.Length/1MB,1)}} }</summary>
+
+```bash
+Get-ChildItem "c:\Users\cfell\repositories\bowlyzer_deploy\database\data" -File -ErrorAction SilentlyContinue | Sort-Object Length -Descending | Select-Object -First 15 Name, @{N='MB';E={[math]::Round($_.Length/1MB,1)}} | Format-Table -AutoSize; if (Test-Path "C:\tmp\bowlyzer\data") { Write-Host "`n--- C:\tmp\bowlyzer\data ---"; Get-ChildItem "C:\tmp\bowlyzer\data" -File -ErrorAction SilentlyContinue | Sort-Object Length -Descending | Select-Object -First 5 Name, @{N='MB';E={[math]::Round($_.Length/1MB,1)}} }
+```
+
+```
+
+Name                                                                 MB
+----                                                                 --
+player_stats_merged_plus_tournaments.csv                          122,4
+league_results_merged.csv                                          91,1
+league_results_merged.parquet                                       3,2
+tournament_combined_2024_2026_postprocessed.csv                     0,9
+tournament_bayerische_meisterschaft_2026_postprocessed.csv          0,2
+tournament_sbm_2026_clean_from_gf.csv                               0,2
+tournament_nordbayerische_2026_postprocessed_via_both_scripts.csv     0
+tournament_nordbayerische_2026_clean_via_script.csv                   0
+tournament_nordbayerische_2026_postprocessed_via_script.csv           0
+tournament_nordbayerische_2026_postprocessed.csv                      0
+tournament_manual_postprocessed.csv                                   0
+tournament_clubmeisterschaft_donaubowler_2026_postprocessed.csv       0
+tournament_nordbayerische_2026_clean.csv                              0
+TEST_ERRORS_SUMMARY.md                                                0
+tournament_ko_config.example.json                                     0
+
+
+
+--- C:\tmp\bowlyzer\data ---
+
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\.dockerignore",
+  "pattern": "database/data|\\.csv|\\.parquet"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\.dockerignore",
+  "pattern": "database/data|\\.csv|\\.parquet",
+  "topFiles": [
+    {
+      "matchCount": 4,
+      "uri": ".dockerignore"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 4
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **0** results in **1** directory</summary>
+
+Directory: **c:\Users\cfell\repositories\bowlyzer_deploy** (0 files)
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+So locally:
+- player_stats: 122 MB
+- player_stats: 122 MB</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: $art = "c:\Users\cfell\repositories\bowlyzer_deploy\deploy\artifacts"; if (Test-Path $art) { Get-ChildItem $art | Select-Object Name, @{N='MB';E={[math]::Round($_.Length/1MB,1)}} } else { "no artifacts" }; $ls = Get-ChildItem "C:\tmp\bowlyzer\data\legacy_scrape" -ErrorAction SilentlyContinue | Measure-Object; if ($ls) { $sz = (Get-ChildItem "C:\tmp\bowlyzer\data\legacy_scrape" -Recurse -File -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum; Write-Host "legacy_scrape on tmp: $([math]::Round($sz/1GB,2)) GB" }</summary>
+
+```bash
+$art = "c:\Users\cfell\repositories\bowlyzer_deploy\deploy\artifacts"; if (Test-Path $art) { Get-ChildItem $art | Select-Object Name, @{N='MB';E={[math]::Round($_.Length/1MB,1)}} } else { "no artifacts" }; $ls = Get-ChildItem "C:\tmp\bowlyzer\data\legacy_scrape" -ErrorAction SilentlyContinue | Measure-Object; if ($ls) { $sz = (Get-ChildItem "C:\tmp\bowlyzer\data\legacy_scrape" -Recurse -File -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum; Write-Host "legacy_scrape on tmp: $([math]::Round($sz/1GB,2)) GB" }
+```
+
+```
+
+legacy_scrape on tmp: 1.48 GB
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\README.md</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I will update the .dockerignore file comprehensively and add a "Data size" section to the deploy README, explaining that the ~213MB size is due to league and player CSVs, and that the image should not include these files.
+
+Also update database/data/README.md with file sizes and consider excluding tournament geek files from sync since they are small.
+
+For the Docker image, exclude the following files:
+database/data/*.csv
+database/data/*.parquet
+database/data/legacy_scrape
+database/data/tmp
+
+Regarding JSON configs, keep them in the image for nowspecifically tournament_ko_config.json, which is small. However, if excluded, SyncDatabase would need to upload these files from database/data, potentially causing issues during first boot without sync, as the relational mapping is stored in relational_csv rather than the JSON files.</details></think>
+
+_**Agent (default)**_
+
+The ~200 MB is the two published CSVs (~91 MB + ~122 MB), not `legacy_scrape` (now ~1.5 GB on `C:\tmp`). Excluding them from the Docker image so deploys stay smaller.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\.dockerignore</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\deploy\README.md</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\database\data\README.md</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+The **~200 MB** is almost certainly these two files in `database/data/`:
+
+| File | Size (your machine) |
+|------|---------------------|
+| `league_results_merged.csv` | **91 MB** |
+| `player_stats_merged_plus_tournaments.csv` | **122 MB** |
+| **Total** | **~213 MB** |
+
+That matches “grew to like 200 mb” — the player hybrid file is the larger one (league + tournament rows for lifetime stats).
+
+`legacy_scrape` (~**1.5 GB**) is already on `C:\tmp\bowlyzer\data` and is **not** part of that 200 MB if you migrated successfully.
+
+### Why it felt worse on the VPS
+
+1. **Disk:** Those CSVs were also **inside the Docker image** (`COPY database`), so each deploy shipped **code + ~200 MB data** in the tar, on top of `-SyncDatabase` copying the same files to the host.
+2. **RAM:** At runtime the app still **loads** those CSVs into pandas. ~200 MB on disk often becomes **300–600 MB** in memory — that’s what hits the **650 MB** container limit, not the read-only mount.
+
+### What we changed
+
+`.dockerignore` now excludes `database/data/*.csv` and `*.parquet` from the image. Deploy tarballs should drop by **~200 MB**; the VPS keeps using the bind-mounted `~/bowlyzer/database/data/` (updated only with `-SyncDatabase`).
+
+### What you should do
+
+1. **Rebuild** locally (smaller image): `docker compose build`
+2. **Redeploy** without syncing data if nothing changed: `.\deploy\deploy.ps1`
+3. **Only** if CSVs changed: `.\deploy\deploy.ps1 -SyncDatabase` (~200 MB upload)
+
+The 200 MB file size itself is **expected** for the merged dataset; it won’t shrink unless you trim sources or split databases (e.g. player DB optional on the VPS). The win is: **don’t ship it twice** (image + scp) and **don’t load cache warmup** on a 1 GB box.
+
+---
+
+_**User**_
+
+why do i need both csvs? isnt the one a supterset of the other?
+
+---
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\config\database_config.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.{py,ts}",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "db_player_merged_hybrid|db_real_merged|MERGED_PLAYER|MERGED_LEAGUE"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "db_player_merged_hybrid|db_real_merged|MERGED_PLAYER|MERGED_LEAGUE",
+  "topFiles": [
+    {
+      "matchCount": 5,
+      "uri": "scripts/warm_league_cache.py"
+    },
+    {
+      "matchCount": 4,
+      "uri": "app\\utils\\league_player_sources.py"
+    },
+    {
+      "matchCount": 3,
+      "uri": "scripts/rebuild_league_caches.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "tests\\app\\test_cache_warmup.py"
+    },
+    {
+      "matchCount": 3,
+      "uri": "scripts\\warm_essential_caches.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "scripts\\bench_page_apis.py"
+    },
+    {
+      "matchCount": 12,
+      "uri": "app/config/database_config.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/lib/homeExamples.ts"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/routes/tournament_routes.py"
+    },
+    {
+      "matchCount": 7,
+      "uri": "app\\config\\database_config.py"
+    }
+  ],
+  "totalFiles": 10,
+  "totalMatches": 45
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\utils\league_player_sources.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>

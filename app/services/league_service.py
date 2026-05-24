@@ -246,6 +246,7 @@ class LeagueService:
                         "league": league_name,
                         "final_position": int(final_position) if final_position > 0 else None,
                         "team_count": int(team_count) if team_count > 0 else None,
+                        "league_level": get_league_level(league_name),
                     })
                 season_cells[season_key] = {
                     "leagues": leagues_str,
@@ -4359,6 +4360,32 @@ class LeagueService:
                 config={"striped": True, "hover": True, "compact": True, "stickyHeader": True}
             )
 
+    def _latest_week_by_league(self, season: str) -> Dict[str, int]:
+        """One pass over season rows: max week per league (non-computed rows only)."""
+        filters = {
+            Columns.season: {"value": season, "operator": "eq"},
+            Columns.computed_data: {"value": False, "operator": "eq"},
+        }
+        frame = self.adapter.get_filtered_data(
+            columns=[Columns.league_name, Columns.week],
+            filters=filters,
+        )
+        if frame.empty:
+            return {}
+
+        weeks = pd.to_numeric(frame[Columns.week], errors="coerce")
+        frame = frame.assign(_week=weeks).dropna(subset=["_week"])
+        if frame.empty:
+            return {}
+
+        out: Dict[str, int] = {}
+        for league, group in frame.groupby(Columns.league_name, sort=False):
+            league_name = str(league).strip()
+            if not league_name or league_name.lower() in ("nan", "none", "<na>"):
+                continue
+            out[league_name] = int(group["_week"].max())
+        return out
+
     def get_season_league_standings(self, season: str, division: Optional[str] = None) -> Dict[str, Any]:
         """
         Get latest week standings for all leagues in a season.
@@ -4370,43 +4397,22 @@ class LeagueService:
             Dictionary with leagues and their latest week standings
         """
         try:
-            # Get all leagues that have data for this season
-            league_filters = {
-                Columns.season: {'value': season, 'operator': 'eq'},
-                Columns.computed_data: {'value': False, 'operator': 'eq'}
-            }
-            
-            # Get all leagues for this season
-            leagues_data = self.adapter.get_filtered_data(
-                columns=[Columns.league_name], 
-                filters=league_filters
-            )
-            
-            if leagues_data.empty:
+            leagues = self.get_leagues(season=season)
+            if not leagues:
                 return {"leagues": []}
 
-            # Coerce to str so sort never compares float NaN / mixed dtypes (e.g. pipeline GF CSV).
-            _league_col = leagues_data[Columns.league_name].dropna()
-            leagues = sorted(
-                {
-                    str(x).strip()
-                    for x in _league_col.unique()
-                    if str(x).strip() and str(x).strip().lower() not in ("nan", "none", "<na>")
-                }
-            )
-            
-            # Optional division filter (state/south/north) from league mapping
             if division:
                 division_map = get_league_division_map()
                 leagues = [lg for lg in leagues if division_map.get(lg) == division]
+
+            latest_week_by_league = self._latest_week_by_league(season)
 
             # Get standings for each league's latest week
             league_standings = []
             
             for league in leagues:
                 try:
-                    # Get the latest week for this league/season
-                    latest_week = self.get_latest_week(season, league)
+                    latest_week = latest_week_by_league.get(league)
                     
                     if latest_week:
                         # Get the standings for the latest week

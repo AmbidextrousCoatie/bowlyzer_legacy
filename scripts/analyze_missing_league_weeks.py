@@ -115,15 +115,17 @@ def build_tables(rows: List[dict]) -> Tuple[pd.DataFrame, pd.DataFrame, List[str
 
 
 def main():
+    from database.paths import analysis_log_path, get_work_data_dir
+
     parser = argparse.ArgumentParser(description="Analyze missing league weeks from extract analysis log.")
     parser.add_argument(
         "--log",
-        default="database/data/extract_excel_analysis_log.json",
+        default=str(analysis_log_path()),
         help="Path to extract analysis log JSON.",
     )
     parser.add_argument(
         "--outdir",
-        default="database/data",
+        default=str(get_work_data_dir()),
         help="Directory to write output CSV tables.",
     )
     args = parser.parse_args()

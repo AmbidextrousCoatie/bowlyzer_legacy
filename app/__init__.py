@@ -45,4 +45,12 @@ def create_app():
     app.register_blueprint(league_routes.bp)
     app.register_blueprint(tournament_routes.bp)
     register_spa(app)
+
+    try:
+        from app.cache.cache_warmup import start_cache_warmup_background
+
+        start_cache_warmup_background(app)
+    except Exception as exc:
+        print(f"Warning: could not start cache warmup: {exc}")
+
     return app

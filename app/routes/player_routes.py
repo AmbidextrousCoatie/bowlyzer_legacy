@@ -1,40 +1,34 @@
 from flask import Blueprint, jsonify, request
 from app.services.player_service import PlayerService
 from app.config.database_config import database_config
+from app.cache.league_response_cache import league_cache_put, league_cache_try_get
 from app.utils.json_safe import json_safe
+from app.utils.league_player_sources import resolve_player_database_id
 
 bp = Blueprint('player', __name__, url_prefix='/player')
 
 def get_player_service():
     """Helper function to get PlayerService with database parameter"""
-    requested = request.args.get('database')
-    has_combined = database_config.validate_source('db_player_combined_gf')
-    has_merged_hybrid = database_config.validate_source('db_player_merged_hybrid')
-    merged_like_sources = {'db_real_historical_league', 'db_real_merged'}
-    if requested:
-        # Player stats source should follow the selected league scope:
-        # - merged/historical -> merged hybrid (multi-season + tournaments)
-        # - pipeline GF -> GF-combined player source
-        if requested in merged_like_sources and has_merged_hybrid:
-            database = 'db_player_merged_hybrid'
-        elif requested == 'db_real_pipeline_gf' and has_combined:
-            database = 'db_player_combined_gf'
-        else:
-            database = requested
-    elif has_merged_hybrid:
-        database = 'db_player_merged_hybrid'
-    elif has_combined:
-        database = 'db_player_combined_gf'
-    else:
-        database = database_config.get_default_source()
-    return PlayerService(database=database)
+    return PlayerService(database=resolve_player_database_id(request.args.get("database")))
+
+
+def _player_cache_database(player_service: PlayerService) -> str:
+    return str(player_service.database or request.args.get("database") or "")
+
 
 @bp.route('/search')
 def search_players():
     search_term = request.args.get('search', '')
     player_service = get_player_service()
+    cache_db = _player_cache_database(player_service)
+    cache_args = {"database": cache_db, "search": search_term or ""}
+    hit = league_cache_try_get("player_search", cache_db, cache_args)
+    if hit is not None:
+        return jsonify(hit)
     players = player_service.search_players(search_term)
-    return jsonify(json_safe(players))
+    payload = json_safe(players)
+    league_cache_put("player_search", cache_db, cache_args, payload)
+    return jsonify(payload)
 
 @bp.route('/get_available_seasons')
 def get_available_seasons():
@@ -43,8 +37,16 @@ def get_available_seasons():
     if not player_name and not player_id:
         return jsonify([])
     player_service = get_player_service()
+    cache_db = _player_cache_database(player_service)
+    cache_args = dict(request.args)
+    cache_args["database"] = cache_db
+    hit = league_cache_try_get("player_get_available_seasons", cache_db, cache_args)
+    if hit is not None:
+        return jsonify(hit)
     seasons = player_service.get_player_seasons(player_name or '', player_id=player_id)
-    return jsonify(json_safe(seasons))
+    payload = json_safe(seasons)
+    league_cache_put("player_get_available_seasons", cache_db, cache_args, payload)
+    return jsonify(payload)
 
 @bp.route('/get-stats')
 def get_stats():
@@ -63,9 +65,15 @@ def get_lifetime_stats():
     if not player_name and not player_id:
         return jsonify({'error': 'Player name is required'}), 400
     
-    print(f"Player Route: Get Lifetime Stats - Received request with: player_name={player_name}")
-    
     player_service = get_player_service()
-    stats = player_service.get_lifetime_stats(player_name or '', season=season, player_id=player_id)  # Supports optional season scope
-    
-    return jsonify(json_safe(stats))
+    cache_db = _player_cache_database(player_service)
+    cache_args = dict(request.args)
+    cache_args["database"] = cache_db
+    hit = league_cache_try_get("get_lifetime_stats", cache_db, cache_args)
+    if hit is not None:
+        return jsonify(hit)
+
+    stats = player_service.get_lifetime_stats(player_name or '', season=season, player_id=player_id)
+    payload = json_safe(stats)
+    league_cache_put("get_lifetime_stats", cache_db, cache_args, payload)
+    return jsonify(payload)

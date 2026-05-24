@@ -2,6 +2,8 @@ export type ClubMatrixCellItem = {
   league: string;
   final_position?: number | null;
   team_count?: number | null;
+  /** From ``league_mapping.csv`` via API; used for position-history chart bands. */
+  league_level?: number;
 };
 
 export type ClubMatrixSeasonCell =

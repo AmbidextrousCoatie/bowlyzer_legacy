@@ -8,7 +8,9 @@ import extract_excel_data as m
 
 
 def test_infer_season_from_legacy_scrape_folder():
-    path = Path("database/data/legacy_scrape/saison2008-09/nordbereich/LB_LandL_N_D-1.xlsx")
+    from database.paths import legacy_scrape_dir
+
+    path = legacy_scrape_dir() / "saison2008-09/nordbereich/LB_LandL_N_D-1.xlsx"
     info = m.infer_season_from_path(path)
     assert info is not None
     assert info["season_short"] == "08/09"

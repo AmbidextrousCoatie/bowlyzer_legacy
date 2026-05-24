@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from database.paths import historical_league_results_csv
 from extract_excel_data import (
     combo_processing_cache_key,
     process_scope_cache_key,
@@ -34,8 +35,7 @@ def test_resolve_process_output_paths_explicit_combo_dir(tmp_path, monkeypatch):
 
 
 def test_process_scope_cache_key_legacy_default():
-    repo_root = Path(__file__).resolve().parents[1]
-    default = (repo_root / "database/data/historical_league_results.csv").resolve()
+    default = historical_league_results_csv().resolve()
     assert process_scope_cache_key(default) == "historical_league_results"
 
 

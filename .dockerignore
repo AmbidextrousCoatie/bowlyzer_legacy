@@ -15,7 +15,11 @@ frontend/.vite
 tests
 designsystem
 agent-transcripts
-database/data/tmp
+# Runtime CSVs live on the VPS host (bind mount), not in the image — saves ~200MB+ per deploy.
+database/data/*.csv
+database/data/*.parquet
+database/data/legacy_scrape/
+database/data/tmp/
 analysis_report.csv
 report.csv
 xlsx_analysis_report.csv

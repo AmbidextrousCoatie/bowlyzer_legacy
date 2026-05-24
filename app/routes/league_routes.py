@@ -445,12 +445,17 @@ def get_available_seasons():
     try:
         params = dict(request.args)
         debug_config.log_route('league.get_available_seasons', params)
+
+        hit = _league_json_cache_get("get_available_seasons")
+        if hit is not None:
+            return jsonify(hit)
         
         league = request.args.get('league')
         team = request.args.get('team')
-        #print(f"####################### route get_available_seassons - league_name: {league} and team_name: {team}")
         league_service = get_league_service()
         seasons = league_service.get_seasons(league_name=league, team_name=team)
+
+        _league_json_cache_put("get_available_seasons", seasons)
         
         response_size = sys.getsizeof(str(seasons))
         debug_config.log_route('league.get_available_seasons', params, response_size)
@@ -507,6 +512,10 @@ def get_available_leagues():
         season = request.args.get("season")
         division = request.args.get("division")
 
+        hit = _league_json_cache_get("get_available_leagues")
+        if hit is not None:
+            return jsonify(hit)
+
         league_service = get_league_service()
         leagues = league_service.get_leagues(season=season, division=division)
         enriched_leagues = [
@@ -517,6 +526,7 @@ def get_available_leagues():
             }
             for league in leagues
         ]
+        _league_json_cache_put("get_available_leagues", enriched_leagues)
         return jsonify(enriched_leagues)
     except Exception as e:
         print(f"Error in get_available_leagues: {str(e)}")

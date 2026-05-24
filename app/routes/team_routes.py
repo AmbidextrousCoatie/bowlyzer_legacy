@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from app.services.team_service import TeamService
 from app.config.database_config import database_config
+from app.cache.league_response_cache import league_cache_put, league_cache_try_get
 from app.utils.json_safe import json_safe
 
 bp = Blueprint('team', __name__)
@@ -13,12 +14,17 @@ def get_team_service():
 @bp.route('/team/get_teams')
 def get_teams():
     try:
+        hit = league_cache_try_get("team_get_teams", request.args.get("database"), dict(request.args))
+        if hit is not None:
+            return jsonify(hit)
         team_service = get_team_service()
         teams = team_service.get_all_teams(
             league_name=None,
             season=None
         )
-        return jsonify(json_safe(teams))
+        payload = json_safe(teams)
+        league_cache_put("team_get_teams", request.args.get("database"), dict(request.args), payload)
+        return jsonify(payload)
         
     except Exception as e:
         print(f"Error in get_teams: {str(e)}")

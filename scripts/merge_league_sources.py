@@ -13,6 +13,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from database.paths import get_data_dir, merge_duplicates_non_exact_report_csv, merge_duplicates_report_csv
 from extract_excel_data import (
     load_team_number_overrides,
     normalize_extracted_dataframe,
@@ -22,7 +23,7 @@ from extract_excel_data import (
 )
 
 
-DEFAULT_OUT = Path("database/data/league_results_merged.csv")
+DEFAULT_OUT = get_data_dir() / "league_results_merged.csv"
 CSV_SEP = ";"
 # TODO(cfell): Current legacy rows include "Team Total" lines reusing Position==0.
 # Keep "player" in the dedupe key for now to avoid false collisions. Later we should
@@ -194,9 +195,9 @@ def merge_sources(
     duplicate_keys_any = int((grouped_any > 1).sum())
     grouped_cross_source = combined.groupby(dedupe_cols, dropna=False)["__source_idx"].nunique()
     conflict_keys = int((grouped_cross_source > 1).sum())
-    duplicates_out_path = duplicates_out_path or out_path.with_name(f"{out_path.stem}_duplicates{out_path.suffix}")
-    non_exact_duplicates_out_path = non_exact_duplicates_out_path or out_path.with_name(
-        f"{out_path.stem}_duplicates_non_exact{out_path.suffix}"
+    duplicates_out_path = duplicates_out_path or merge_duplicates_report_csv(out_path)
+    non_exact_duplicates_out_path = non_exact_duplicates_out_path or merge_duplicates_non_exact_report_csv(
+        out_path
     )
     duplicates_stats = _write_duplicates_report(
         combined=combined,
@@ -211,6 +212,13 @@ def merge_sources(
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     merged.to_csv(out_path, sep=sep, index=False)
+    parquet_path = None
+    try:
+        from data_access.parquet_sidecar import write_parquet_sidecar
+
+        parquet_path = write_parquet_sidecar(merged, out_path)
+    except Exception as exc:
+        print(f"Warning: could not write Parquet sidecar for {out_path}: {exc}")
 
     per_source_unique: List[Dict] = []
     for idx in range(len(input_paths)):
@@ -251,6 +259,7 @@ def merge_sources(
         },
         "paths": {
             "output": str(out_path),
+            "parquet_output": str(parquet_path) if parquet_path else "",
             "duplicates_report": str(duplicates_out_path),
             "duplicates_non_exact_report": str(non_exact_duplicates_out_path),
         },

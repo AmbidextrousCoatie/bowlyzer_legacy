@@ -9,10 +9,13 @@ from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass
 from pathlib import Path
 
+from database.paths import get_data_dir, historical_league_results_csv
+
 # Get the league_analyzer_v1 directory (parent of app directory)
 APP_DIR = Path(__file__).parent.parent
 LEGACY_V1_DIR = APP_DIR.parent if APP_DIR.name == 'app' else APP_DIR
-DATABASE_DATA_DIR = LEGACY_V1_DIR / 'database' / 'data'
+
+DATABASE_DATA_DIR = get_data_dir()
 PIPELINE_GF_LEGACY_CSV = (
     LEGACY_V1_DIR / "database" / "pipeline" / "bowling_bayern" / "legacy_out" / "latest.csv"
 )
@@ -23,9 +26,9 @@ GF_REGIONAL_COMBINED_POSTPROCESSED_CSV = GF_TOURNAMENT_EXPORT_DIR / "gf_tourname
 # Club / Excel imports that are not produced by the GF tables export pipeline (keeps GF CSV overwrite-safe).
 MANUAL_TOURNAMENT_POSTPROCESSED_CSV = DATABASE_DATA_DIR / "tournament_manual_postprocessed.csv"
 GF_PLAYER_COMBINED_CSV = GF_TOURNAMENT_EXPORT_DIR / "gf_player_stats__league_plus_tournaments.csv"
-HISTORICAL_LEAGUE_RESULTS_CSV = LEGACY_V1_DIR / "database" / "data" / "historical_league_results.csv"
-MERGED_LEAGUE_RESULTS_CSV = LEGACY_V1_DIR / "database" / "data" / "league_results_merged.csv"
-MERGED_PLAYER_HYBRID_CSV = LEGACY_V1_DIR / "database" / "data" / "player_stats_merged_plus_tournaments.csv"
+HISTORICAL_LEAGUE_RESULTS_CSV = historical_league_results_csv()
+MERGED_LEAGUE_RESULTS_CSV = DATABASE_DATA_DIR / "league_results_merged.csv"
+MERGED_PLAYER_HYBRID_CSV = DATABASE_DATA_DIR / "player_stats_merged_plus_tournaments.csv"
 
 
 def _ensure_pipeline_gf_legacy_csv_stub() -> None:

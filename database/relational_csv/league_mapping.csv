@@ -1,11 +1,13 @@
 id,long_name,level,division,gender_scope,aliases
-BayL,Bayernliga,3,state,male,
-BayL (D),Bayernliga Damen,3,state,female,Bayernliga - Frauen
+BayL,Bayernliga,3,state,male,Bayernliga - Herren|Bayernliga Herren
+BayL (D),Bayernliga Damen,3,state,female,Bayernliga - Frauen|Bayernliga - Damen|Bayernliga Damen
 LL N1,Landesliga Nord 1,4,north,male,
+LL N1,Landesliga Nord,4,north,male,
 LL N2,Landesliga Nord 2,4,north,male,
 LL N (D),Landesliga Nord Damen,4,north,female,Landesliga Nord - Frauen
 LL S,Landesliga Süd,4,south,male,
 LL S (D),Landesliga Süd Damen,4,south,female,Landesliga Süd 1 - Frauen
+LL S (D),Landesliga Süd 1 Damen,4,south,female,Landesliga Süd 1 - Frauen
 BZOL N1,Bezirksoberliga Nord 1,5,north,male,
 BZOL N2,Bezirksoberliga Nord 2,5,north,male,
 BZOL N3,Bezirksoberliga Nord 3,5,north,male,
@@ -13,6 +15,20 @@ BZOL S1,Bezirksoberliga Süd 1,5,south,male,
 BZOL S1 (D),Bezirksoberliga Süd 1 Damen,5,south,female,Bezirksoberliga Süd 1 - Frauen
 BZOL S2,Bezirksoberliga Süd 2,5,south,male,
 BZOL S3,Bezirksoberliga Süd 3,5,south,male,
+BL N1,Bereichsliga Nord 1,5,north,male,Bereichsliga Nord 1 - Herren|Bereichsliga Nord 1 Herren
+BL N2,Bereichsliga Nord 2,5,north,male,Bereichsliga Nord 2 - Herren|Bereichsliga Nord 2 Herren
+BL N3,Bereichsliga Nord 3,5,north,male,Bereichsliga Nord 3 - Herren|Bereichsliga Nord 3 Herren
+BL N4,Bereichsliga Nord 4,5,north,male,Bereichsliga Nord 4 - Herren|Bereichsliga Nord 4 Herren
+BL S1,Bereichsliga Süd 1,5,south,male,Bereichsliga Süd 1 - Herren|Bereichsliga Süd 1 Herren
+BL S2,Bereichsliga Süd 2,5,south,male,Bereichsliga Süd 2 - Herren|Bereichsliga Süd 2 Herren
+BL S3,Bereichsliga Süd 3,5,south,male,Bereichsliga Süd 3 - Herren|Bereichsliga Süd 3 Herren
+BL S4,Bereichsliga Süd 4,5,south,male,Bereichsliga Süd 4 - Herren|Bereichsliga Süd 4 Herren
+BL N1 (D),Bereichsliga Nord 1 Damen,5,north,female,Bereichsliga Nord 1 - Frauen|Bereichsliga Nord 1 - Damen|Bereichsliga Nord 1 Damen
+BL N1 (D),Bereichsliga Nord Damen,5,north,female,Bereichsliga Nord 1 - Frauen|Bereichsliga Nord 1 - Damen|Bereichsliga Nord 1 Damen
+BL N2 (D),Bereichsliga Nord 2 Damen,5,north,female,Bereichsliga Nord 2 - Frauen|Bereichsliga Nord 2 - Damen|Bereichsliga Nord 2 Damen
+BL S1 (D),Bereichsliga Süd 1 Damen,5,south,female,Bereichsliga Süd 1 - Frauen|Bereichsliga Süd 1 - Damen|Bereichsliga Süd 1 Damen
+BL S1 (D),Bereichsliga Süd Damen,5,south,female,Bereichsliga Süd 3 - Frauen|Bereichsliga Süd 3 - Damen|Bereichsliga Süd 3 Damen
+BL S2 (D),Bereichsliga Süd 2 Damen,5,south,female,Bereichsliga Süd 2 - Frauen|Bereichsliga Süd 2 - Damen|Bereichsliga Süd 2 Damen
 BZL N1,Bezirksliga Nord 1,6,north,male,
 BZL N2,Bezirksliga Nord 2,6,north,male,
 BZL N3,Bezirksliga Nord 3,6,north,male,
@@ -23,7 +39,16 @@ BZL S3,Bezirksliga Süd 3,6,south,male,
 KL N1,Kreisliga Nord 1,7,north,male,
 KL N2,Kreisliga Nord 2,7,north,male,
 KL N3,Kreisliga Nord 3,7,north,male,
+KL N4,Kreisliga Nord 4,7,north,male,
 KL S1,Kreisliga Süd 1,7,south,male,
 KL S2,Kreisliga Süd 2,7,south,male,
 KL S3,Kreisliga Süd 3,7,south,male,
 KL S4,Kreisliga Süd 4,7,south,male,Kreisliga Süd 4 - Männer
+A N1, A-Klasse Nord 1,8,north,male,
+A N2, A-Klasse Nord 2,8,north,male,
+A N3, A-Klasse Nord 3,8,north,male,
+A N4, A-Klasse Nord 4,8,north,male,
+A S1, A-Klasse Süd 1,8,south,male,
+A S2, A-Klasse Süd 2,8,south,male,
+A S3, A-Klasse Süd 3,8,south,male,
+A S4, A-Klasse Süd 4,8,south,male,

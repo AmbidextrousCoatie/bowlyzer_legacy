@@ -25,9 +25,11 @@ from contextlib import contextmanager, redirect_stdout
 
 dict_of_match_numbers = {}
 
+from database.paths import analysis_log_path, historical_league_results_csv, unique_team_names_after_merge_csv
+
 _LEAGUE_MAPPING_PATH = Path(__file__).resolve().parent / "database" / "relational_csv" / "league_mapping.csv"
 _LEAGUE_MAPPING_CACHE = None
-_ANALYSIS_LOG_PATH = Path(__file__).resolve().parent / "database" / "data" / "extract_excel_analysis_log.json"
+_ANALYSIS_LOG_PATH = analysis_log_path()
 _OVERRIDES_PATH = Path(__file__).resolve().parent / "database" / "config" / "extract_excel_overrides.csv"
 _TEAM_NAME_NORMALIZATION_PATH = Path(__file__).resolve().parent / "database" / "config" / "team_name_normalization.json"
 _TEAM_NUMBER_OVERRIDES_PATH = Path(__file__).resolve().parent / "database" / "config" / "team_number_overrides.csv"
@@ -801,9 +803,11 @@ def normalize_team_numbering_dataframe(df: pd.DataFrame, overrides_df: pd.DataFr
 
 def export_unique_team_names_after_merge(
     merged_df: pd.DataFrame,
-    output_path: Path = Path("database/data/unique_team_names_after_merge.csv"),
+    output_path: Path | None = None,
 ):
     """Export unique normalized team names from merged output."""
+    if output_path is None:
+        output_path = unique_team_names_after_merge_csv()
     if merged_df is None or merged_df.empty:
         print("Unique team names export skipped: merged dataframe is empty.")
         return
@@ -1820,7 +1824,7 @@ def parse_args():
     )
     parser.add_argument(
         "--output-file",
-        default="database/data/historical_league_results.csv",
+        default=str(historical_league_results_csv()),
         help=(
             "Merged CSV path for process mode (all league/season combos in the run scope). "
             "normalize_data: destination when using --input (required if multiple inputs). "
@@ -3441,7 +3445,7 @@ def sanitize_filename_component(value):
     return sanitized or "unknown"
 
 
-DEFAULT_PROCESS_OUTPUT_FILE = Path("database/data/historical_league_results.csv")
+DEFAULT_PROCESS_OUTPUT_FILE = historical_league_results_csv()
 
 
 def _cli_flag_passed(flag: str) -> bool:
@@ -3469,7 +3473,7 @@ def resolve_process_output_paths(args) -> tuple[Path, Path]:
 
 def process_scope_cache_key(continuous_output_file: Path) -> str:
     """Cache bucket id for a process run's merged output file."""
-    repo_default = (Path(__file__).resolve().parent / DEFAULT_PROCESS_OUTPUT_FILE).resolve()
+    repo_default = DEFAULT_PROCESS_OUTPUT_FILE.resolve()
     if continuous_output_file.resolve() == repo_default:
         return "historical_league_results"
     return f"scope::{sanitize_filename_component(continuous_output_file.stem)}"

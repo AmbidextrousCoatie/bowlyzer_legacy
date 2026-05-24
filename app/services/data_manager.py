@@ -6,10 +6,6 @@ import json
 from typing import Optional
 from pathlib import Path
 from app.config.database_config import database_config, DATABASE_DATA_DIR
-from data_access.dtype_normalization import normalize_legacy_dataframe_types
-
-# Read legacy semicolon CSVs as strings to avoid mixed-type chunk inference warnings.
-_LEGACY_CSV_READ_KWARGS = {"sep": ";", "dtype": str, "low_memory": False}
 
 class DataManager:
     _server_instances = []
@@ -226,13 +222,6 @@ class DataManager:
 
     @classmethod
     def _get_cached_or_load_df(cls, file_path: str) -> pd.DataFrame:
-        abs_path = str(Path(file_path).resolve())
-        mtime = os.path.getmtime(abs_path)
-        cache_entry = cls._dataframe_cache.get(abs_path)
-        if cache_entry and cache_entry.get("mtime") == mtime:
-            return cache_entry["df"]
+        from data_access.shared_pandas_store import get_dataframe
 
-        df = pd.read_csv(abs_path, **_LEGACY_CSV_READ_KWARGS)
-        df = normalize_legacy_dataframe_types(df)
-        cls._dataframe_cache[abs_path] = {"mtime": mtime, "df": df}
-        return df
+        return get_dataframe(Path(file_path))

@@ -19,7 +19,7 @@ export function historyFromMatrixRow(
     history[season] = {
       league_name: item.league,
       final_position: pos,
-      league_level: getLeagueLevel(item.league),
+      league_level: item.league_level ?? getLeagueLevel(item.league),
     };
   }
   return history;

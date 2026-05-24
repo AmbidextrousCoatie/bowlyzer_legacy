@@ -26,6 +26,26 @@ No registry and no `docker compose build` on the server (important on 1 GB RAM).
    notepad deploy\deploy.config.ps1
    ```
 
+## Stop on the VPS (host struggling / before redeploy)
+
+```powershell
+.\deploy\stop-remote.ps1
+.\deploy\stop-remote.ps1 -PruneImages   # also docker image prune -f
+```
+
+If SSH is very slow, run on the VPS console as `bowlyzer`:
+
+```bash
+cd ~/bowlyzer
+docker compose -f docker-compose.prod.yml down --remove-orphans
+```
+
+Last resort as **root** (stops all containers):
+
+```bash
+sudo systemctl stop docker
+```
+
 ## Deploy a new version
 
 **Docker Desktop (or another local Docker engine) must be running** — the script builds on your PC.
@@ -36,11 +56,25 @@ From the repo root in PowerShell:
 .\deploy\deploy.ps1
 ```
 
-When CSV data under `database/` changed:
+When **published** CSVs under `database/data/` changed (merged league, player hybrid, tournament configs — not legacy scrape / pipeline work files):
 
 ```powershell
 .\deploy\deploy.ps1 -SyncDatabase
 ```
+
+Pipeline intermediates belong on **`C:\tmp\bowlyzer\data`** (see `database/data/README.md`). `-SyncDatabase` uploads only `database/relational_csv`, `database/config`, and **files** in `database/data/` (no `legacy_scrape/` tree).
+
+### Data size (~200 MB is normal)
+
+| File | Typical size | In Docker image? | On VPS |
+|------|----------------|------------------|--------|
+| `league_results_merged.csv` | ~90 MB | **No** (`.dockerignore`) | Host `~/bowlyzer/database/data/` via mount + `-SyncDatabase` |
+| `player_stats_merged_plus_tournaments.csv` | ~120 MB | **No** | Same |
+| `legacy_scrape/` tree | 1+ GB | **No** | Stay on your PC (`C:\tmp\bowlyzer\data`) |
+
+Together those two CSVs are **~210 MB on disk**. The app loads them into **RAM** at runtime (often 300–600 MB in pandas), which is what stresses a 650 MB container limit — not the read-only mount itself.
+
+**First deploy** (or after wiping `~/bowlyzer/database/data`): run once with `-SyncDatabase`. Later deploys: `.\deploy\deploy.ps1` only (image has code + SPA; data stays on the host).
 
 Build only (no upload):
 
