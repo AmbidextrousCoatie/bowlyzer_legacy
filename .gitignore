@@ -51,3 +51,4 @@ database/data/league_results_merged_duplicates.csv
 database/data/league_results_merged_duplicates_non_exact.csv
 database/data/historical_league_results.csv
 database/data/historical_league_results.csv
+database/data/legacy_scrape/*

@@ -81089,11 +81089,17 @@ show number of weeks and teams per league seasson
 
 _**Agent (default)**_
 
+Analyzing the legacy scrape CSV: checking the file path and column structure, then summarizing weeks and teams per league/season.
+
+
+_**Agent (default)**_
+
 <tool-use data-tool-type="search" data-tool-name="glob_file_search">
 <details>
-<summary>Tool use: **glob_file_search** • Searched codebase "" • **0** results in **0** directories</summary>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **0** results in **1** directory</summary>
 
-No results found
+Directory: **** (0 files)
+
 </details>
 </tool-use>
 
@@ -81105,12 +81111,4747 @@ No results found
 _**Agent (default)**_
 
 <tool-use data-tool-type="read" data-tool-name="read_file_v2">
-<details><summary>Tool use: **read_file_v2** • Read file: </summary>
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\database\data\legacy_scrape\legacy_scrap_extracxted.csv</summary>
 
 </details>
 </tool-use>
 
 <tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
 <summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I will execute a pandas script to group data by League and Season, then count the distinct weeks and teams for each group.
+```</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python -c "
+import pandas as pd
+from pathlib import Path
+
+path = Path('database/data/legacy_scrape/legacy_scrap_extracxted.csv')
+if not path.is_file():
+    path = Path('database/data/legacy_scrape/legacy_scrape_extracted.csv')
+print(f'File: {path.resolve()}')
+print(f'Exists: {path.is_file()}')
+
+df = pd.read_csv(path, sep=';', dtype=str, usecols=['Season', 'League', 'Week', 'Team', 'Position'])
+# normalize
+for c in ['Season', 'League', 'Week', 'Team', 'Position']:
+    df[c] = df[c].fillna('').astype(str).str.strip()
+
+# teams: distinct Team names per group (exclude empty)
+# weeks: distinct Week values
+summary = (
+    df.groupby(['League', 'Season'], dropna=False)
+    .agg(
+        weeks=('Week', lambda s: len({x for x in s if x and x.lower() != 'nan'})),
+        teams=('Team', lambda s: len({x for x in s if x})),
+    )
+    .reset_index()
+    .sort_values(['Season', 'League'])
+)
+
+# also show week list compact optional - user asked count only
+print(f'\nRows: {len(df):,}')
+print(f'League-season combos: {len(summary)}\n')
+print(summary.to_string(index=False))
+
+# totals per season
+print('\n--- By season (totals) ---')
+by_season = summary.groupby('Season').agg(combos=('League', 'count'), min_weeks=('weeks', 'min'), max_weeks=('weeks', 'max'), avg_teams=('teams', 'mean'))
+print(by_season.round(1).to_string())
+"
+</summary>
+
+```bash
+cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python -c "
+import pandas as pd
+from pathlib import Path
+
+path = Path('database/data/legacy_scrape/legacy_scrap_extracxted.csv')
+if not path.is_file():
+    path = Path('database/data/legacy_scrape/legacy_scrape_extracted.csv')
+print(f'File: {path.resolve()}')
+print(f'Exists: {path.is_file()}')
+
+df = pd.read_csv(path, sep=';', dtype=str, usecols=['Season', 'League', 'Week', 'Team', 'Position'])
+# normalize
+for c in ['Season', 'League', 'Week', 'Team', 'Position']:
+    df[c] = df[c].fillna('').astype(str).str.strip()
+
+# teams: distinct Team names per group (exclude empty)
+# weeks: distinct Week values
+summary = (
+    df.groupby(['League', 'Season'], dropna=False)
+    .agg(
+        weeks=('Week', lambda s: len({x for x in s if x and x.lower() != 'nan'})),
+        teams=('Team', lambda s: len({x for x in s if x})),
+    )
+    .reset_index()
+    .sort_values(['Season', 'League'])
+)
+
+# also show week list compact optional - user asked count only
+print(f'\nRows: {len(df):,}')
+print(f'League-season combos: {len(summary)}\n')
+print(summary.to_string(index=False))
+
+# totals per season
+print('\n--- By season (totals) ---')
+by_season = summary.groupby('Season').agg(combos=('League', 'count'), min_weeks=('weeks', 'min'), max_weeks=('weeks', 'max'), avg_teams=('teams', 'mean'))
+print(by_season.round(1).to_string())
+"
+
+```
+
+```
+File: C:\Users\cfell\repositories\bowlyzer_deploy\database\data\legacy_scrape\legacy_scrap_extracxted.csv
+Exists: True
+
+Rows: 630,970
+League-season combos: 259
+
+             League Season  weeks  teams
+    A-Klasse Nord 1  08/09      8      8
+    A-Klasse Nord 2  08/09      8      7
+     A-Klasse S�d 1  08/09      8      6
+     A-Klasse S�d 2  08/09      8      6
+             BZL N1  08/09      8      8
+             BZL N2  08/09      8      8
+             BZL S1  08/09      8      8
+             BZL S2  08/09      8      8
+               BayL  08/09      6     21
+Bereichsliga Nord 1  08/09      8      8
+Bereichsliga Nord 2  08/09      8      8
+ Bereichsliga S�d 1  08/09      8     14
+ Bereichsliga S�d 2  08/09      8      8
+              KL N1  08/09      8      8
+              KL N2  08/09      8      8
+              KL N3  08/09      8      8
+              KL S1  08/09      8      8
+              KL S2  08/09      8      8
+              KL S3  08/09      8     15
+              KL S4  08/09      8      8
+   Kreisliga Nord 4  08/09      8      8
+              LL N1  08/09      9     16
+               LL S  08/09      8     16
+    A-Klasse Nord 1  09/10      8      8
+    A-Klasse Nord 2  09/10      8      8
+     A-Klasse S�d 1  09/10      8      6
+     A-Klasse S�d 2  09/10      8      6
+             BZL N1  09/10      8      8
+             BZL N2  09/10      8      8
+             BZL S1  09/10      8      8
+             BZL S2  09/10      8      8
+               BayL  09/10      6     20
+Bereichsliga Nord 1  09/10      8      8
+Bereichsliga Nord 2  09/10      8      8
+ Bereichsliga S�d 1  09/10      8     12
+ Bereichsliga S�d 2  09/10      8      8
+              KL N1  09/10      8      8
+              KL N2  09/10      8      8
+              KL N3  09/10      8      8
+              KL S1  09/10      9     10
+              KL S2  09/10      9     10
+              KL S3  09/10      8      8
+              KL S4  09/10      8      8
+   Kreisliga Nord 4  09/10      8      8
+              LL N1  09/10      9     17
+               LL S  09/10      8     16
+    A-Klasse Nord 1  10/11      8      8
+    A-Klasse Nord 2  10/11      8      9
+     A-Klasse S�d 1  10/11      8      5
+     A-Klasse S�d 2  10/11      8      5
+     A-Klasse S�d 3  10/11      8      5
+             BZL N1  10/11      8      8
+             BZL N2  10/11      8      8
+             BZL S1  10/11      8      8
+             BZL S2  10/11      8      8
+               BayL  10/11      6     20
+  Bereichsliga Nord  10/11      8      5
+Bereichsliga Nord 1  10/11      8      8
+Bereichsliga Nord 2  10/11      8      9
+ Bereichsliga S�d 1  10/11      8     14
+ Bereichsliga S�d 2  10/11      8      8
+              KL N1  10/11      8      8
+              KL N2  10/11      8      8
+              KL N3  10/11      8      9
+              KL S1  10/11      8      9
+              KL S2  10/11      8      8
+              KL S3  10/11      7      8
+              KL S4  10/11      8      8
+   Kreisliga Nord 4  10/11      8      8
+              LL N1  10/11      8     15
+               LL S  10/11      8     16
+    A-Klasse Nord 1  11/12      7      8
+    A-Klasse Nord 2  11/12      8      7
+     A-Klasse S�d 1  11/12      8      8
+     A-Klasse S�d 2  11/12      8      8
+             BZL N1  11/12      8      8
+             BZL N2  11/12      8      8
+             BZL S1  11/12      8      9
+             BZL S2  11/12      8      9
+               BayL  11/12      6     21
+Bereichsliga Nord 1  11/12      8      8
+Bereichsliga Nord 2  11/12      8      8
+ Bereichsliga S�d 1  11/12      8     13
+ Bereichsliga S�d 2  11/12      8      8
+              KL N1  11/12      8      8
+              KL N2  11/12      8      8
+              KL N3  11/12      8      9
+              KL S1  11/12      9     10
+              KL S2  11/12      8      8
+              KL S3  11/12      8      8
+              KL S4  11/12      8      8
+   Kreisliga Nord 4  11/12      8      8
+              LL N1  11/12      8     16
+               LL S  11/12      8     14
+    A-Klasse Nord 1  12/13      8      8
+    A-Klasse Nord 2  12/13      8      7
+     A-Klasse S�d 1  12/13      8      8
+     A-Klasse S�d 2  12/13      9     10
+             BZL N1  12/13      8      8
+             BZL N2  12/13      8      9
+             BZL S1  12/13      8      8
+             BZL S2  12/13      8      8
+               BayL  12/13      6     20
+Bereichsliga Nord 1  12/13      8      8
+Bereichsliga Nord 2  12/13      8      8
+ Bereichsliga S�d 1  12/13      8     13
+ Bereichsliga S�d 2  12/13      8      8
+              KL N1  12/13      8      8
+              KL N2  12/13      8      8
+              KL N3  12/13      8      6
+              KL S1  12/13      8      7
+              KL S2  12/13      8      6
+              KL S3  12/13      8      8
+              KL S4  12/13      8      8
+   Kreisliga Nord 4  12/13      8      8
+              LL N1  12/13      8     15
+               LL S  12/13      8     15
+    A-Klasse Nord 1  13/14      8      9
+    A-Klasse Nord 2  13/14      8      8
+     A-Klasse S�d 1  13/14      8      8
+     A-Klasse S�d 2  13/14      8      8
+     A-Klasse S�d 3  13/14      8      6
+             BZL N1  13/14      8      8
+             BZL N2  13/14      8      8
+             BZL S1  13/14      8      8
+             BZL S2  13/14      8      8
+               BayL  13/14      6     20
+Bereichsliga Nord 1  13/14      8      8
+Bereichsliga Nord 2  13/14      8      8
+ Bereichsliga S�d 1  13/14      8     13
+ Bereichsliga S�d 2  13/14      8      8
+              KL N1  13/14      8      8
+              KL N2  13/14      8      8
+              KL N3  13/14      8      8
+              KL S1  13/14      8      9
+              KL S2  13/14      9     10
+              KL S3  13/14      8     10
+              KL S4  13/14      8      8
+              LL N1  13/14      8     13
+               LL S  13/14      8     15
+      A-Klasse Nord  14/15      3      8
+    A-Klasse Nord 1  14/15      1      8
+     A-Klasse S�d 1  14/15      2      6
+     A-Klasse S�d 2  14/15      8      7
+     A-Klasse S�d 3  14/15      8      7
+             BZL N1  14/15      8      8
+             BZL N2  14/15      8      8
+             BZL S1  14/15      8      8
+             BZL S2  14/15      8      8
+               BayL  14/15      6     20
+Bereichsliga Nord 1  14/15      8      8
+Bereichsliga Nord 2  14/15      8      8
+   Bereichsliga S�d  14/15      8      7
+ Bereichsliga S�d 1  14/15      8      8
+ Bereichsliga S�d 2  14/15      8      8
+              KL N1  14/15      9     10
+              KL N2  14/15      9     10
+              KL N3  14/15      8      8
+              KL S1  14/15      8      8
+              KL S2  14/15      9      9
+              KL S3  14/15      8      8
+              KL S4  14/15      8      8
+              LL N1  14/15      8     12
+               LL S  14/15      8     15
+    A-Klasse Nord 1  15/16      8      6
+     A-Klasse S�d 1  15/16      1      7
+     A-Klasse S�d 2  15/16      8      8
+             BZL N1  15/16      8      8
+             BZL N2  15/16      7      8
+             BZL S1  15/16      8      8
+             BZL S2  15/16      8      8
+               BayL  15/16      6     20
+Bereichsliga Nord 1  15/16      8      8
+Bereichsliga Nord 2  15/16      8      8
+ Bereichsliga S�d 1  15/16      8     13
+ Bereichsliga S�d 2  15/16      8      8
+              KL N1  15/16      8      7
+              KL N2  15/16      9      9
+              KL N3  15/16      8      8
+              KL S1  15/16      8      7
+              KL S2  15/16      8      8
+              KL S3  15/16      8      8
+              KL S4  15/16      8      8
+              LL N1  15/16      8     12
+               LL S  15/16      8     14
+      A-Klasse Nord  16/17      8      6
+     A-Klasse S�d 1  16/17      8      6
+     A-Klasse S�d 2  16/17      8      6
+             BZL N1  16/17      8      8
+             BZL N2  16/17      8      8
+             BZL S1  16/17      8      8
+             BZL S2  16/17      8      8
+            BZOL N1  16/17      8      8
+            BZOL N2  16/17      8      8
+            BZOL S1  16/17      8      8
+        BZOL S1 (D)  16/17      8      7
+            BZOL S2  16/17      8      8
+               BayL  16/17      6     10
+           BayL (D)  16/17      6      9
+              KL N1  16/17      8      8
+              KL N2  16/17      9     10
+              KL N3  16/17      8      8
+              KL S1  16/17      8      7
+              KL S2  16/17      9      9
+              KL S3  16/17      8      8
+              KL S4  16/17      8      8
+           LL N (D)  16/17      8      5
+              LL N1  16/17      8      8
+               LL S  16/17      8      8
+           LL S (D)  16/17      8      8
+     A-Klasse S�d 1  17/18      8      6
+     A-Klasse S�d 2  17/18      8      7
+             BZL N1  17/18      8      8
+             BZL N2  17/18      8      9
+             BZL S1  17/18      8      8
+             BZL S2  17/18      8      8
+            BZOL N1  17/18      8      8
+            BZOL N2  17/18      8      8
+            BZOL S1  17/18      8      8
+        BZOL S1 (D)  17/18      8      5
+            BZOL S2  17/18      8      8
+               BayL  17/18      6     10
+           BayL (D)  17/18      6     10
+              KL N1  17/18      9      9
+              KL N2  17/18      8      8
+              KL N3  17/18      8      6
+              KL S1  17/18      8      7
+              KL S2  17/18      8      8
+              KL S3  17/18      8      8
+              KL S4  17/18      8      8
+   Kreisliga Nord 4  17/18      8      6
+           LL N (D)  17/18      8      7
+              LL N1  17/18      8      8
+               LL S  17/18      8      8
+           LL S (D)  17/18      8      6
+     A-Klasse S�d 1  18/19      8      8
+     A-Klasse S�d 2  18/19      8      8
+             BZL N1  18/19      8      8
+             BZL N2  18/19      8      8
+             BZL S1  18/19      8      8
+             BZL S2  18/19      8      8
+            BZOL N1  18/19      8      8
+            BZOL N2  18/19      8      8
+            BZOL S1  18/19      9      9
+            BZOL S2  18/19      8      8
+               BayL  18/19      6     10
+           BayL (D)  18/19      6     10
+              KL N1  18/19      8      8
+              KL N2  18/19      8      7
+              KL N3  18/19      8      6
+              KL S1  18/19      8      5
+              KL S2  18/19      8      7
+              KL S3  18/19      8      8
+              KL S4  18/19      8      8
+   Kreisliga Nord 4  18/19      8      6
+           LL N (D)  18/19      8      6
+              LL N1  18/19      8      8
+               LL S  18/19      8      8
+           LL S (D)  18/19      9     10
+
+--- By season (totals) ---
+        combos  min_weeks  max_weeks  avg_teams
+Season                                         
+08/09       23          6          9        9.6
+09/10       23          6          9        9.4
+10/11       25          6          8        9.0
+11/12       23          6          9        9.6
+12/13       23          6          9        9.2
+13/14       23          6          9        9.4
+14/15       24          1          9        9.0
+15/16       21          1          9        9.1
+16/17       25          6          9        7.8
+17/18       25          6          9        7.7
+18/19       24          6          9        7.8
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The team count may be inflated because it includes all Team values, such as player rows, rather than distinct teams only.</details></think>
+
+_**Agent (default)**_
+
+Refining team counts to use team-total rows only and flagging incomplete league-seasons:
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python -c "
+import pandas as pd
+from pathlib import Path
+
+path = Path('database/data/legacy_scrape/legacy_scrap_extracxted.csv')
+df = pd.read_csv(path, sep=';', dtype=str, usecols=['Season', 'League', 'Week', 'Team', 'Position', 'Player'])
+for c in df.columns:
+    df[c] = df[c].fillna('').astype(str).str.strip()
+
+# teams from Team Total rows (Position 0 + Player Team Total)
+team_rows = df[(df['Position'] == '0') & (df['Player'].str.lower() == 'team total')]
+
+summary = (
+    team_rows.groupby(['Season', 'League'], dropna=False)
+    .agg(
+        weeks=('Week', lambda s: sorted({x for x in s if x}, key=lambda w: int(w) if w.isdigit() else w)),
+        teams=('Team', 'nunique'),
+    )
+    .reset_index()
+)
+summary['week_count'] = summary['weeks'].apply(len)
+summary['weeks_list'] = summary['weeks'].apply(lambda ws: ','.join(ws))
+summary = summary.drop(columns=['weeks']).sort_values(['Season', 'League'])
+
+# flag suspicious
+summary['flag'] = ''
+summary.loc[summary['week_count'] < 6, 'flag'] = 'LOW_WEEKS'
+summary.loc[summary['teams'] < 5, 'flag'] = summary.loc[summary['teams'] < 5, 'flag'].apply(lambda f: (f + ' LOW_TEAMS').strip())
+summary.loc[summary['teams'] > 12, 'flag'] = summary.loc[summary['teams'] > 12, 'flag'].apply(lambda f: (f + ' HIGH_TEAMS').strip())
+
+print('=== Per season x league (team totals only) ===')
+print(f'Combos: {len(summary)}  |  flagged: {(summary[\"flag\"] != \"\").sum()}\n')
+
+for season, grp in summary.groupby('Season', sort=True):
+    print(f'--- {season} ({len(grp)} leagues) ---')
+  # compact table
+    sub = grp[['League', 'week_count', 'teams', 'flag']].copy()
+    sub.columns = ['League', 'Wks', 'Teams', 'Note']
+    print(sub.to_string(index=False))
+    print()
+
+# pivot: leagues that appear every season with week counts
+print('=== BayL weeks by season ===')
+bayl = summary[summary['League'].str.startswith('BayL')][['Season', 'League', 'week_count', 'teams']]
+print(bayl.to_string(index=False))
+"
+</summary>
+
+```bash
+cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python -c "
+import pandas as pd
+from pathlib import Path
+
+path = Path('database/data/legacy_scrape/legacy_scrap_extracxted.csv')
+df = pd.read_csv(path, sep=';', dtype=str, usecols=['Season', 'League', 'Week', 'Team', 'Position', 'Player'])
+for c in df.columns:
+    df[c] = df[c].fillna('').astype(str).str.strip()
+
+# teams from Team Total rows (Position 0 + Player Team Total)
+team_rows = df[(df['Position'] == '0') & (df['Player'].str.lower() == 'team total')]
+
+summary = (
+    team_rows.groupby(['Season', 'League'], dropna=False)
+    .agg(
+        weeks=('Week', lambda s: sorted({x for x in s if x}, key=lambda w: int(w) if w.isdigit() else w)),
+        teams=('Team', 'nunique'),
+    )
+    .reset_index()
+)
+summary['week_count'] = summary['weeks'].apply(len)
+summary['weeks_list'] = summary['weeks'].apply(lambda ws: ','.join(ws))
+summary = summary.drop(columns=['weeks']).sort_values(['Season', 'League'])
+
+# flag suspicious
+summary['flag'] = ''
+summary.loc[summary['week_count'] < 6, 'flag'] = 'LOW_WEEKS'
+summary.loc[summary['teams'] < 5, 'flag'] = summary.loc[summary['teams'] < 5, 'flag'].apply(lambda f: (f + ' LOW_TEAMS').strip())
+summary.loc[summary['teams'] > 12, 'flag'] = summary.loc[summary['teams'] > 12, 'flag'].apply(lambda f: (f + ' HIGH_TEAMS').strip())
+
+print('=== Per season x league (team totals only) ===')
+print(f'Combos: {len(summary)}  |  flagged: {(summary[\"flag\"] != \"\").sum()}\n')
+
+for season, grp in summary.groupby('Season', sort=True):
+    print(f'--- {season} ({len(grp)} leagues) ---')
+  # compact table
+    sub = grp[['League', 'week_count', 'teams', 'flag']].copy()
+    sub.columns = ['League', 'Wks', 'Teams', 'Note']
+    print(sub.to_string(index=False))
+    print()
+
+# pivot: leagues that appear every season with week counts
+print('=== BayL weeks by season ===')
+bayl = summary[summary['League'].str.startswith('BayL')][['Season', 'League', 'week_count', 'teams']]
+print(bayl.to_string(index=False))
+"
+
+```
+
+```
+  File "&lt;string&gt;", line 32
+    print(f'Combos: {len(summary)}  |  flagged: {(summary[" flag\]
+                                                          ^
+SyntaxError: unterminated string literal (detected at line 32)
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+PowerShell requires special handling when quotes are involved.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\analyze_legacy_scrape_csv.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python scripts/analyze_legacy_scrape_csv.py</summary>
+
+```bash
+cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python scripts/analyze_legacy_scrape_csv.py
+```
+
+```
+File: C:\Users\cfell\repositories\bowlyzer_deploy\database\data\legacy_scrape\legacy_scrap_extracxted.csv
+Rows (all): 630,970  |  team-total rows: 144,434
+League � season combos: 259  |  flagged: 33
+
+--- 08/09 (23 leagues) ---
+             League  Wks  Teams       Note
+    A-Klasse Nord 1    8      8           
+    A-Klasse Nord 2    8      7           
+     A-Klasse S�d 1    8      6           
+     A-Klasse S�d 2    8      6           
+             BZL N1    8      8           
+             BZL N2    8      8           
+             BZL S1    8      8           
+             BZL S2    8      8           
+               BayL    6     21 HIGH_TEAMS
+Bereichsliga Nord 1    8      8           
+Bereichsliga Nord 2    8      8           
+ Bereichsliga S�d 1    8     14 HIGH_TEAMS
+ Bereichsliga S�d 2    8      8           
+              KL N1    8      8           
+              KL N2    8      8           
+              KL N3    8      8           
+              KL S1    8      8           
+              KL S2    8      8           
+              KL S3    8     15 HIGH_TEAMS
+              KL S4    8      8           
+   Kreisliga Nord 4    8      8           
+              LL N1    9     16 HIGH_TEAMS
+               LL S    8     16 HIGH_TEAMS
+
+--- 09/10 (23 leagues) ---
+             League  Wks  Teams       Note
+    A-Klasse Nord 1    8      8           
+    A-Klasse Nord 2    8      8           
+     A-Klasse S�d 1    8      6           
+     A-Klasse S�d 2    8      6           
+             BZL N1    8      8           
+             BZL N2    8      8           
+             BZL S1    8      8           
+             BZL S2    8      8           
+               BayL    6     20 HIGH_TEAMS
+Bereichsliga Nord 1    8      8           
+Bereichsliga Nord 2    8      8           
+ Bereichsliga S�d 1    8     12           
+ Bereichsliga S�d 2    8      8           
+              KL N1    8      8           
+              KL N2    8      8           
+              KL N3    8      8           
+              KL S1    9     10           
+              KL S2    9     10           
+              KL S3    8      8           
+              KL S4    8      8           
+   Kreisliga Nord 4    8      8           
+              LL N1    9     17 HIGH_TEAMS
+               LL S    8     16 HIGH_TEAMS
+
+--- 10/11 (25 leagues) ---
+             League  Wks  Teams       Note
+    A-Klasse Nord 1    8      8           
+    A-Klasse Nord 2    8      9           
+     A-Klasse S�d 1    8      5           
+     A-Klasse S�d 2    8      5           
+     A-Klasse S�d 3    8      5           
+             BZL N1    8      8           
+             BZL N2    8      8           
+             BZL S1    8      8           
+             BZL S2    8      8           
+               BayL    6     20 HIGH_TEAMS
+  Bereichsliga Nord    8      5           
+Bereichsliga Nord 1    8      8           
+Bereichsliga Nord 2    8      9           
+ Bereichsliga S�d 1    8     14 HIGH_TEAMS
+ Bereichsliga S�d 2    8      8           
+              KL N1    8      8           
+              KL N2    8      8           
+              KL N3    8      9           
+              KL S1    8      9           
+              KL S2    8      8           
+              KL S3    7      8           
+              KL S4    8      8           
+   Kreisliga Nord 4    8      8           
+              LL N1    8     15 HIGH_TEAMS
+               LL S    8     16 HIGH_TEAMS
+
+--- 11/12 (23 leagues) ---
+             League  Wks  Teams       Note
+    A-Klasse Nord 1    7      8           
+    A-Klasse Nord 2    8      7           
+     A-Klasse S�d 1    8      8           
+     A-Klasse S�d 2    8      8           
+             BZL N1    8      8           
+             BZL N2    8      8           
+             BZL S1    8      9           
+             BZL S2    8      9           
+               BayL    6     21 HIGH_TEAMS
+Bereichsliga Nord 1    8      8           
+Bereichsliga Nord 2    8      8           
+ Bereichsliga S�d 1    8     13 HIGH_TEAMS
+ Bereichsliga S�d 2    8      8           
+              KL N1    8      8           
+              KL N2    8      8           
+              KL N3    8      9           
+              KL S1    9     10           
+              KL S2    8      8           
+              KL S3    8      8           
+              KL S4    8      8           
+   Kreisliga Nord 4    8      8           
+              LL N1    8     16 HIGH_TEAMS
+               LL S    8     14 HIGH_TEAMS
+
+--- 12/13 (23 leagues) ---
+             League  Wks  Teams       Note
+    A-Klasse Nord 1    8      8           
+    A-Klasse Nord 2    8      7           
+     A-Klasse S�d 1    8      8           
+     A-Klasse S�d 2    9     10           
+             BZL N1    8      8           
+             BZL N2    8      9           
+             BZL S1    8      8           
+             BZL S2    8      8           
+               BayL    6     20 HIGH_TEAMS
+Bereichsliga Nord 1    8      8           
+Bereichsliga Nord 2    8      8           
+ Bereichsliga S�d 1    8     13 HIGH_TEAMS
+ Bereichsliga S�d 2    8      8           
+              KL N1    8      8           
+              KL N2    8      8           
+              KL N3    8      6           
+              KL S1    8      7           
+              KL S2    8      6           
+              KL S3    8      8           
+              KL S4    8      8           
+   Kreisliga Nord 4    8      8           
+              LL N1    8     15 HIGH_TEAMS
+               LL S    8     15 HIGH_TEAMS
+
+--- 13/14 (23 leagues) ---
+             League  Wks  Teams       Note
+    A-Klasse Nord 1    8      9           
+    A-Klasse Nord 2    8      8           
+     A-Klasse S�d 1    8      8           
+     A-Klasse S�d 2    8      8           
+     A-Klasse S�d 3    8      6           
+             BZL N1    8      8           
+             BZL N2    8      8           
+             BZL S1    8      8           
+             BZL S2    8      8           
+               BayL    6     20 HIGH_TEAMS
+Bereichsliga Nord 1    8      8           
+Bereichsliga Nord 2    8      8           
+ Bereichsliga S�d 1    8     13 HIGH_TEAMS
+ Bereichsliga S�d 2    8      8           
+              KL N1    8      8           
+              KL N2    8      8           
+              KL N3    8      8           
+              KL S1    8      9           
+              KL S2    9     10           
+              KL S3    8     10           
+              KL S4    8      8           
+              LL N1    8     13 HIGH_TEAMS
+               LL S    8     15 HIGH_TEAMS
+
+--- 14/15 (24 leagues) ---
+             League  Wks  Teams       Note
+      A-Klasse Nord    3      8  LOW_WEEKS
+    A-Klasse Nord 1    1      8  LOW_WEEKS
+     A-Klasse S�d 1    2      6  LOW_WEEKS
+     A-Klasse S�d 2    8      7           
+     A-Klasse S�d 3    8      7           
+             BZL N1    8      8           
+             BZL N2    8      8           
+             BZL S1    8      8           
+             BZL S2    8      8           
+               BayL    6     20 HIGH_TEAMS
+Bereichsliga Nord 1    8      8           
+Bereichsliga Nord 2    8      8           
+   Bereichsliga S�d    8      7           
+ Bereichsliga S�d 1    8      8           
+ Bereichsliga S�d 2    8      8           
+              KL N1    9     10           
+              KL N2    9     10           
+              KL N3    8      8           
+              KL S1    8      8           
+              KL S2    9      9           
+              KL S3    8      8           
+              KL S4    8      8           
+              LL N1    8     12           
+               LL S    8     15 HIGH_TEAMS
+
+--- 15/16 (21 leagues) ---
+             League  Wks  Teams       Note
+    A-Klasse Nord 1    8      6           
+     A-Klasse S�d 1    1      7  LOW_WEEKS
+     A-Klasse S�d 2    8      8           
+             BZL N1    8      8           
+             BZL N2    7      8           
+             BZL S1    8      8           
+             BZL S2    8      8           
+               BayL    6     20 HIGH_TEAMS
+Bereichsliga Nord 1    8      8           
+Bereichsliga Nord 2    8      8           
+ Bereichsliga S�d 1    8     13 HIGH_TEAMS
+ Bereichsliga S�d 2    8      8           
+              KL N1    8      7           
+              KL N2    9      9           
+              KL N3    8      8           
+              KL S1    8      7           
+              KL S2    8      8           
+              KL S3    8      8           
+              KL S4    8      8           
+              LL N1    8     12           
+               LL S    8     14 HIGH_TEAMS
+
+--- 16/17 (25 leagues) ---
+        League  Wks  Teams Note
+ A-Klasse Nord    8      6     
+A-Klasse S�d 1    8      6     
+A-Klasse S�d 2    8      6     
+        BZL N1    8      8     
+        BZL N2    8      8     
+        BZL S1    8      8     
+        BZL S2    8      8     
+       BZOL N1    8      8     
+       BZOL N2    8      8     
+       BZOL S1    8      8     
+   BZOL S1 (D)    8      7     
+       BZOL S2    8      8     
+          BayL    6     10     
+      BayL (D)    6      9     
+         KL N1    8      8     
+         KL N2    9     10     
+         KL N3    8      8     
+         KL S1    8      7     
+         KL S2    9      9     
+         KL S3    8      8     
+         KL S4    8      8     
+      LL N (D)    8      5     
+         LL N1    8      8     
+          LL S    8      8     
+      LL S (D)    8      8     
+
+--- 17/18 (25 leagues) ---
+          League  Wks  Teams Note
+  A-Klasse S�d 1    8      6     
+  A-Klasse S�d 2    8      7     
+          BZL N1    8      8     
+          BZL N2    8      9     
+          BZL S1    8      8     
+          BZL S2    8      8     
+         BZOL N1    8      8     
+         BZOL N2    8      8     
+         BZOL S1    8      8     
+     BZOL S1 (D)    8      5     
+         BZOL S2    8      8     
+            BayL    6     10     
+        BayL (D)    6     10     
+           KL N1    9      9     
+           KL N2    8      8     
+           KL N3    8      6     
+           KL S1    8      7     
+           KL S2    8      8     
+           KL S3    8      8     
+           KL S4    8      8     
+Kreisliga Nord 4    8      6     
+        LL N (D)    8      7     
+           LL N1    8      8     
+            LL S    8      8     
+        LL S (D)    8      6     
+
+--- 18/19 (24 leagues) ---
+          League  Wks  Teams Note
+  A-Klasse S�d 1    8      8     
+  A-Klasse S�d 2    8      8     
+          BZL N1    8      8     
+          BZL N2    8      8     
+          BZL S1    8      8     
+          BZL S2    8      8     
+         BZOL N1    8      8     
+         BZOL N2    8      8     
+         BZOL S1    9      9     
+         BZOL S2    8      8     
+            BayL    6     10     
+        BayL (D)    6     10     
+           KL N1    8      8     
+           KL N2    8      7     
+           KL N3    8      6     
+           KL S1    8      5     
+           KL S2    8      7     
+           KL S3    8      8     
+           KL S4    8      8     
+Kreisliga Nord 4    8      6     
+        LL N (D)    8      6     
+           LL N1    8      8     
+            LL S    8      8     
+        LL S (D)    9     10     
+
+--- Season rollup ---
+Season  leagues  min_weeks  max_weeks  avg_teams
+ 08/09       23          6          9   9.608696
+ 09/10       23          6          9   9.434783
+ 10/11       25          6          8   9.000000
+ 11/12       23          6          9   9.565217
+ 12/13       23          6          9   9.217391
+ 13/14       23          6          9   9.434783
+ 14/15       24          1          9   8.958333
+ 15/16       21          1          9   9.095238
+ 16/17       25          6          9   7.800000
+ 17/18       25          6          9   7.680000
+ 18/19       24          6          9   7.833333
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Good analysis. Here is a clear summary for the user.
+```
+
+The file named legacy_scrap_extracxted.csv contains data from the Bayernliga, which normally spans 6 weeks with 20 teams, meaning each week includes all teams in a round-robin format. However, the current scrape shows only 6 weeks, possibly due to an incomplete season or how the league is grouped. Incomplete seasons have been flagged for review.</details></think>
+
+_**Agent (default)**_
+
+Summary of **`database/data/legacy_scrape/legacy_scrap_extracxted.csv`** (630,970 rows, **259** league×season combos, seasons **08/09–18/19**).
+
+Counts use **team-total rows** (`Position = 0`, `Player = Team Total`) so team counts are real teams, not player lines.
+
+### Season rollup
+
+| Season | Leagues | Weeks (min–max) | Avg teams/league |
+|--------|---------|-----------------|------------------|
+| 08/09 | 23 | 6–9 | 9.6 |
+| 09/10 | 23 | 6–9 | 9.4 |
+| 10/11 | 25 | 6–8 | 9.0 |
+| 11/12 | 23 | 6–9 | 9.6 |
+| 12/13 | 23 | 6–9 | 9.2 |
+| 13/14 | 23 | 6–9 | 9.4 |
+| 14/15 | 24 | **1–9** | 9.0 |
+| 15/16 | 21 | **1–9** | 9.1 |
+| 16/17 | 25 | 6–9 | 7.8 |
+| 17/18 | 25 | 6–9 | 7.7 |
+| 18/19 | 24 | 6–9 | 7.8 |
+
+### Typical pattern (most regional leagues)
+
+- **8 weeks**, **8 teams** — BZL, Bereichsliga, most KL, A-Klasse Nord, etc.
+- **BayL**: **6 weeks**, **~10–21 teams** — one workbook per Spieltag but many teams in one “league” label (full Bayernliga field in one season bucket).
+- **LL N/S**: **8–9 weeks**, **12–17 teams** — larger Landesliga groups.
+
+### Incomplete / suspicious (worth re-scrape or merge check)
+
+| Season | League | Wks | Teams | Issue |
+|--------|--------|-----|-------|--------|
+| 14/15 | A-Klasse Nord 1 | **1** | 8 | LOW_WEEKS |
+| 14/15 | A-Klasse Süd 1 | **2** | 6 | LOW_WEEKS |
+| 14/15 | A-Klasse Nord | **3** | 8 | LOW_WEEKS |
+| 15/16 | A-Klasse Süd 1 | **1** | 7 | LOW_WEEKS |
+| 11/12 | A-Klasse Nord 1 | **7** | 8 | 1 week short |
+| 10/11 | KL S3 | **7** | 8 | 1 week short |
+
+**33** combos flagged total (`LOW_WEEKS` &lt; 6, `HIGH_TEAMS` &gt; 12, or both). Most `HIGH_TEAMS` are BayL / LL / large Bereichsliga groups — often expected, not necessarily wrong.
+
+### Later seasons (16/17+)
+
+Extra league labels appear: **BZOL**, **BayL (D)**, **LL N (D)**, **LL S (D)** — Damen/paired divisions; still mostly **8×8** for standard leagues.
+
+---
+
+Re-run anytime:
+
+```powershell
+uv run python scripts/analyze_legacy_scrape_csv.py
+uv run python scripts/analyze_legacy_scrape_csv.py --export database/data/legacy_scrape/legacy_scrape_summary.csv
+```
+
+I can export the full 259-row table to CSV in the repo if you want it checked in or diffed against another extract.
+
+---
+
+_**User**_
+
+first finding: season 08/09, BayL:
+the folder conains both male and female BayL: Bayernliga - Damen and Bayernliga - Herren
+why was that extracted wrongly? this should give 2 x 10 teams
+the same pattern can be sen in Bereichsliga. did we parse only for "Frauen"? extend the female classifier
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user reported an issue where the Bayernliga (BayL) season 08/09 was incorrectly extracted, merging male and female leagues into a single entry instead of separating them into distinct leagues with approximately 10 teams each.</details></think>
+
+_**Agent (default)**_
+
+Tracing how legacy extracts assign league names and gender (Damen/Herren) so we can see why BayL merged male and female.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\extract_excel_data.py",
+  "pattern": "Damen|Herren|Frauen|gender|Bayernliga|BayL"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\extract_excel_data.py",
+  "pattern": "Damen|Herren|Frauen|gender|Bayernliga|BayL",
+  "topFiles": [
+    {
+      "matchCount": 23,
+      "uri": "extract_excel_data.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 23
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.{py,json,csv}",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "Damen|Herren|Frauen|gender|league.*female|league.*male"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "Damen|Herren|Frauen|gender|league.*female|league.*male",
+  "topFiles": [
+    {
+      "matchCount": 5,
+      "uri": "database/relational_csv/league_mapping.csv"
+    },
+    {
+      "matchCount": 3,
+      "uri": "app/services/tournament_service.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tests/app/test_tournament_round_results_ko.py"
+    },
+    {
+      "matchCount": 41,
+      "uri": "database/data/tournament_bayerische_meisterschaft_2026_postprocessed.csv"
+    }
+  ],
+  "totalFiles": 4,
+  "totalMatches": 243
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\database\relational_csv\league_mapping.csv</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\extract_excel_data.py",
+  "pattern": "league|Bayernliga|Ligabericht|read_pre_2022"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\extract_excel_data.py",
+  "pattern": "league|Bayernliga|Ligabericht|read_pre_2022",
+  "topFiles": [
+    {
+      "matchCount": 40,
+      "uri": "extract_excel_data.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 100
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I see the bug now. The flow is:
+
+1.
+
+The issue is in the order of operations within `normalize_league_display_to_canonical`. The gender detection happens after the gender suffix is stripped, so by the time gender is detected, the text has already been cleaned of gender indicators, making gender always appear "neutral".</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\extract_excel_data.py",
+  "pattern": "normalize_league_display_to_canonical|league_raw|debug_league"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\extract_excel_data.py",
+  "pattern": "normalize_league_display_to_canonical|league_raw|debug_league",
+  "topFiles": [
+    {
+      "matchCount": 16,
+      "uri": "extract_excel_data.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 16
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **0** results in **1** directory</summary>
+
+Directory: **** (0 files)
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\data\\legacy_scrape",
+  "pattern": "Bayernliga|BayL|Damen|Herren"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\data\\legacy_scrape",
+  "pattern": "Bayernliga|BayL|Damen|Herren",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **0** results in **1** directory</summary>
+
+Directory: **** (0 files)
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\tests",
+  "pattern": "normalize_league|_detect_league_gender|Bayernliga"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\tests",
+  "pattern": "normalize_league|_detect_league_gender|Bayernliga",
+  "topFiles": [
+    {
+      "matchCount": 3,
+      "uri": "tests\\test_process_output_paths.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "tests\\test_old_format_date_season.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tests\\domain\\test_entities_league.py"
+    }
+  ],
+  "totalFiles": 3,
+  "totalMatches": 6
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The fix involves detecting gender before stripping the suffix.
+
+2. Add aliases to league_mapping.csv for "Bayernliga - Damen" and "Bayernliga - Herren" along with their Bereichsliga variants.
+3. Consider preserving the original string during normalization to avoid stripping when routing to canonical, instead applying gender bias to the raw string.
+
+Refactor normalize_league_display_to_canonical to detect gender before stripping the suffix and use gender bias on the original raw string.
+
+The alias lookup fails because "Bayernliga - Damen" is not found in the alias mapping, which only contains "Bayernliga - Frauen". The code attempts the original string first, but the alias mapping needs to include both variants to match correctly.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\database\relational_csv\league_mapping.csv</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\test_old_format_date_season.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Bereichsliga is not found in league_mapping.csv.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python -c "
+import pandas as pd
+from extract_excel_data import normalize_league_display_to_canonical
+
+samples = [
+    'Bayernliga - Damen',
+    'Bayernliga - Herren',
+    'Bayernliga - Frauen',
+    'Bereichsliga Sued 1 - Damen',
+    'Bereichsliga Nord 1 - Herren',
+    'Bereichsliga Sued 1',
+]
+for s in samples:
+    print(repr(s), '->', repr(normalize_league_display_to_canonical(s)))
+"
+</summary>
+
+```bash
+cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python -c "
+import pandas as pd
+from extract_excel_data import normalize_league_display_to_canonical
+
+samples = [
+    'Bayernliga - Damen',
+    'Bayernliga - Herren',
+    'Bayernliga - Frauen',
+    'Bereichsliga Sued 1 - Damen',
+    'Bereichsliga Nord 1 - Herren',
+    'Bereichsliga Sued 1',
+]
+for s in samples:
+    print(repr(s), '->', repr(normalize_league_display_to_canonical(s)))
+"
+
+```
+
+```
+'Bayernliga - Damen' -&gt; 'BayL'
+'Bayernliga - Herren' -&gt; 'BayL'
+'Bayernliga - Frauen' -&gt; 'BayL (D)'
+'Bereichsliga Sued 1 - Damen' -&gt; 'Bereichsliga Sued 1'
+'Bereichsliga Nord 1 - Herren' -&gt; 'Bereichsliga Nord 1'
+'Bereichsliga Sued 1' -&gt; 'Bereichsliga Sued 1'
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.{csv,py,json}",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "Bereichsliga"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "Bereichsliga",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Confirmed:
+- Bayernliga - Damen  BayL (D)
+
+- Bayernliga - Herren and Bayernliga - Frauen are handled with corrected gender detection and alias normalization.
+- The fix ensures gender is detected early and used consistently during pool matching and alias lookups.
+- Helper function `_league_alias_lookup_candidates` generates multiple cleaned versions for alias matching.
+- Aliases are added to the CSV for proper normalization.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database",
+  "pattern": "Bereichsliga|BLG|bereich"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database",
+  "pattern": "Bereichsliga|BLG|bereich",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+For unmapped leagues such as Bereichsliga, when the gender is detected as female or male from the original raw data, a disambiguated display name should be returned.
+
+For unmapped leagues like "Bereichsliga Sd 1", return the base name stripped of gender indicators; append " (D)" to the stripped name if the gender is female and it does not already end with "(D)".
+
+For unmapped leagues, if the gender is female and the name doesn't already end with "(D)", append "(D)" to the base name. For example, "Bereichsliga Sd 1 (D)" for female or "Bereichsliga Sd 1" for male. Ensure proper handling of special characters like umlauts.
+
+User data reveals an encoding issue with "Bereichsliga Sd 1" in the console. To address this, a `_alias_lookup_candidates` function is added to generate lookup keys by normalizing gender variants and stripping trailing gender suffixes. The `normalize_league_display_to_canonical` function is refactored to handle these cases more effectively.
+
+Gender bias detection is performed on the full title, and lookup keys are generated to match against aliases. If a match is found, it is returned. Otherwise, the title is stripped of gender suffixes, and the original gender bias is used for disambiguation. Matching is then attempted on the stripped text, and if successful, the result is returned. For unmapped leagues, disambiguation based on gender is applied.
+
+The function `_disambiguate_unmapped_league` processes league names by stripping gender suffixes and appending "(D)" for female leagues that don't already end with "(D)". For neutral gender cases like "Bayernliga" without a suffix, it defaults to male mapping in the neutral path, which is acceptable. The analyzer version has been bumped to account for changes in the league field caching.</details></think>
+
+_**Agent (default)**_
+
+Identified the bug: gender is detected after stripping "Damen"/"Herren", so both resolve to neutral and map to male `BayL`. Aliases only include `Frauen`, not `Damen`. Fixing normalization and extending aliases.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\database\relational_csv\league_mapping.csv</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\test_league_gender_normalization.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run pytest tests/test_league_gender_normalization.py tests/test_old_format_date_season.py -q</summary>
+
+```bash
+cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run pytest tests/test_league_gender_normalization.py tests/test_old_format_date_season.py -q
+```
+
+```
+...F.......                                                              [100%]
+================================== FAILURES ===================================
+_________________ test_unmapped_bereichsliga_splits_by_gender _________________
+
+    def test_unmapped_bereichsliga_splits_by_gender():
+        assert m.normalize_league_display_to_canonical("Bereichsliga S�d 1 - Damen") == "Bereichsliga S�d 1 (D)"
+&gt;       assert m.normalize_league_display_to_canonical("Bereichsliga S�d 1 - Herren") == "Bereichsliga S�d 1"
+E       AssertionError: assert 'BL S1' == 'Bereichsliga S�d 1'
+E         
+E         - Bereichsliga S�d 1
+E         + BL S1
+
+tests\test_league_gender_normalization.py:22: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_league_gender_normalization.py::test_unmapped_bereichsliga_splits_by_gender
+1 failed, 10 passed in 0.64s
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The mapping of "Bereichsliga Sd 1 - Herren" to 'BL S1' appears incorrect, likely due to a fuzzy match with Landesliga Sd instead.
+
+The test case used incorrect encoding, causing "Bereichsliga Sd 1 - Herren" to incorrectly map to 'BL S1'. This suggests a fuzzy matching issue where "Bereichsliga Sd 1" may have partially matched "Bezirksliga" or "Landesliga Sd 1". The function `normalize_league_display_to_canonical` was called to investigate this behavior.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python -c "
+import extract_excel_data as m
+for s in ['Bereichsliga Sued 1 - Herren', 'Bereichsliga Sued 1 - Damen', 'Bereichsliga Sued 1']:
+    print(s, '->', m.normalize_league_display_to_canonical(s))
+    print('  clean:', m.clean_league_name(s))
+"
+</summary>
+
+```bash
+cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python -c "
+import extract_excel_data as m
+for s in ['Bereichsliga Sued 1 - Herren', 'Bereichsliga Sued 1 - Damen', 'Bereichsliga Sued 1']:
+    print(s, '->', m.normalize_league_display_to_canonical(s))
+    print('  clean:', m.clean_league_name(s))
+"
+
+```
+
+```
+Bereichsliga Sued 1 - Herren -&gt; Bereichsliga Sued 1
+  clean: Bereichsliga Sued 1 - Herren
+Bereichsliga Sued 1 - Damen -&gt; Bereichsliga Sued 1 (D)
+  clean: Bereichsliga Sued 1 - Damen
+Bereichsliga Sued 1 -&gt; Bereichsliga Sued 1
+  clean: Bereichsliga Sued 1
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\extract_excel_data.py",
+  "pattern": "def clean_league_name"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\extract_excel_data.py",
+  "pattern": "def clean_league_name",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "extract_excel_data.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 1
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+With proper umlaut, the test file works correctly and should use Unicode Sd.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\test_league_gender_normalization.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run pytest tests/test_league_gender_normalization.py -q</summary>
+
+```bash
+cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run pytest tests/test_league_gender_normalization.py -q
+```
+
+```
+...F.                                                                    [100%]
+================================== FAILURES ===================================
+_________________ test_unmapped_bereichsliga_splits_by_gender _________________
+
+    def test_unmapped_bereichsliga_splits_by_gender():
+        assert m.normalize_league_display_to_canonical("Bereichsliga S�d 1 - Damen") == "Bereichsliga S�d 1 (D)"
+&gt;       assert m.normalize_league_display_to_canonical("Bereichsliga S�d 1 - Herren") == "Bereichsliga S�d 1"
+E       AssertionError: assert 'BL S1' == 'Bereichsliga S�d 1'
+E         
+E         - Bereichsliga S�d 1
+E         + BL S1
+
+tests\test_league_gender_normalization.py:22: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_league_gender_normalization.py::test_unmapped_bereichsliga_splits_by_gender
+1 failed, 4 passed in 0.57s
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\test_league_gender_normalization.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The file appears correct with Sd.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python -c "import extract_excel_data as m; s='Bereichsliga S\u00fcd 1 - Herren'; print(repr(s)); print(m.normalize_league_display_to_canonical(s))"</summary>
+
+```bash
+cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python -c "import extract_excel_data as m; s='Bereichsliga S\u00fcd 1 - Herren'; print(repr(s)); print(m.normalize_league_display_to_canonical(s))"
+```
+
+```
+'Bereichsliga S�d 1 - Herren'
+BL S1
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+So the issue persists with special characters like , returning BL S1 in the console due to terminal encoding problems.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "BL S1|Bereichsliga"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "BL S1|Bereichsliga",
+  "topFiles": [
+    {
+      "matchCount": 8,
+      "uri": ".\\database\\relational_csv\\league_mapping.csv"
+    },
+    {
+      "matchCount": 3,
+      "uri": ".\\tests\\test_league_gender_normalization.py"
+    },
+    {
+      "matchCount": 95,
+      "uri": ".\\.specstory\\history\\2026-05-19_07-58-26Z-exposing-web-service-on-local-network.md"
+    }
+  ],
+  "totalFiles": 3,
+  "totalMatches": 106
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python -c "
+import extract_excel_data as m
+# reset cache
+m._LEAGUE_MAPPING_CACHE = None
+raw = 'Bereichsliga S\u00fcd 1 - Herren'
+cleaned = m.clean_league_name(raw)
+cleaned = m.expand_league_region_shorthand(cleaned)
+gender = m._detect_league_gender_bias(cleaned)
+stripped = m._strip_trailing_league_gender_suffix(cleaned) or cleaned
+print('cleaned', repr(cleaned))
+print('gender', gender)
+print('stripped', repr(stripped))
+print('result', m.normalize_league_display_to_canonical(raw))
+"
+</summary>
+
+```bash
+cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python -c "
+import extract_excel_data as m
+# reset cache
+m._LEAGUE_MAPPING_CACHE = None
+raw = 'Bereichsliga S\u00fcd 1 - Herren'
+cleaned = m.clean_league_name(raw)
+cleaned = m.expand_league_region_shorthand(cleaned)
+gender = m._detect_league_gender_bias(cleaned)
+stripped = m._strip_trailing_league_gender_suffix(cleaned) or cleaned
+print('cleaned', repr(cleaned))
+print('gender', gender)
+print('stripped', repr(stripped))
+print('result', m.normalize_league_display_to_canonical(raw))
+"
+
+```
+
+```
+cleaned 'Bereichsliga S�d 1 - Herren'
+gender male
+stripped 'Bereichsliga S�d 1'
+result BL S1
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The league_mapping.csv file already contains rows for Bereichsliga.
+
+The league_mapping.csv file already contains rows for Bereichsliga. For female leagues, "Bereichsliga Sd 1 - Damen" should map to either "BL S1 (D)" or "Bereichsliga Sd 1 (D)" if female rows are added. Since the female pool may not contain "Bereichsliga," disambiguation returns "Bereichsliga Sd 1 (D)," while the male match occurs first for Herren  BL S1. For Damen, gender is female, and matching against the female pool without "Bereichsliga" may work, with disambiguation returning "Bereichsliga Sd 1 (D)."</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\database\relational_csv\league_mapping.csv</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The CSV contains spaces after commas in some rows, such as `BL N1, Bereichsliga`, which could affect parsing accuracy. However, the `long_name` field is trimmed, so this issue may not persist.
+
+Add female Bereichsliga rows with appropriate aliases and ensure proper gender differentiation.  
+Normalize text to remove leading spaces in `long_name` fields.  
+Update tests to reflect changes in BL S1 and BL S1 (D) mappings.  
+Invalidate league mapping cache during testing to ensure accurate results.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\database\relational_csv\league_mapping.csv</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\test_league_gender_normalization.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\test_league_gender_normalization.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Cancelled
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+---
+
+_**User**_
+
+the lookup gets super complicated.: 
+long_name is the first match we are looking for. if we find in a second round "Frauen" or "Damen" we derive female, if we hit "Herren" "Männer" or none of these creiteria, we derive male. the regex must be robust against whitesapces and dashes
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants to simplify the league lookup logic in extract_excel_data.py.</details></think>
+
+_**Agent (default)**_
+
+Simplifying league normalization to: match `long_name` first, then derive gender from Damen/Frauen vs Herren/Männer/none. Reading the current implementation.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\database\relational_csv\league_mapping.csv</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\test_league_gender_normalization.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants a simpler algorithm.
+
+Match the cleaned title against `long_name` in league_mapping, prioritizing the longest match. Then, determine gender from the original title by checking for gender-specific terms like "Frauen," "Damen," "Herren," or "Mnner." If no gender terms are found, default to male.
+
+cleaned = clean + expand shorthand
+
+Round 1: Match `long_name` in `league_mapping` using the cleaned input, prioritizing the longest match.  
+Round 2: If gender-specific terms like "Frauen," "Damen," "Herren," or "Mnner" are present, set gender accordingly; otherwise default to male.
+
+Match the cleaned title against all `long_name` entries, favoring the longest match and handling flexible spacing. Determine gender by checking for terms like "Damen" or "Frauen" in the original title, defaulting to male otherwise. Return the corresponding `league_id` from the appropriate gender-specific row.
+
+The user wants to match the cleaned title against `long_name` in `league_mapping`, prioritizing the longest match, then determine gender from the original title using gender-specific terms. If no gender terms are found, default to male. The process involves building a pool of rows sorted by `long_name` length and finding the best match in the cleaned string.
+
+If a match is found, the system checks if the gender matches the original title's gender scope. If not, it looks for a sibling row with matching gender. If no match is found, it defaults to male.
+
+Gender is determined from the cleaned title, defaulting to male if no gender terms are found. If a match is found, the system checks if the gender matches the original titles gender scope. If not, it looks for a sibling row with matching gender. For "Bayernliga - Damen", the system matches "Bayernliga Damen" as the longest match after cleaning, while for "Bayernliga - Herren", it follows the same logic but with male gender terms.
+
+Matching the cleaned title against `long_name` in `league_mapping` prioritizes the longest match. For "bayernliga herren", the system matches "Bayernliga" and sets gender to male, returning BayL. For "Bayernliga" alone, it also matches and defaults to male. For "Bereichsliga Sd 1 - Damen", it matches "Bereichsliga Sd 1 Damen" if dashes are normalized, defaulting to female due to "Damen". Gender is derived from terms like "Frauen," "Damen," "Herren," or "Mnner," defaulting to male if none are found. If both gender terms exist, the default is male or the first match.
+
+If female markers like "Damen" or "Frauen" are found, set gender to female; otherwise, default to male. If both female and male terms are present, prioritize the explicit "Herren" term. Use regex patterns to detect gender indicators with flexible spacing and normalize separators for consistent matching.
+
+Normalize the input text by converting to lowercase and replacing multiple whitespace or dash characters with a single space, ensuring consistent matching. Use regex to detect gender indicators like "Frauen," "Damen," "Herren," or "Mnner," defaulting to male if none are found. Prioritize explicit gender terms, such as "Herren," when both male and female markers are present.
+
+Normalize the input text by replacing multiple spaces or dashes with a single space, then match the cleaned title against `long_name` entries, prioritizing the longest exact or partial match. Return the corresponding `league_id` and `long_name` if found.
+
+For "bayernliga herren" vs long "bayernliga"  the cleaned version matches the long name.  
+For "bayernliga damen" vs "bayernliga damen"  an exact match occurs.  
+
+Avoid matching "liga" if it's too short; prioritize the longest match.  
+
+After matching, derive gender from the cleaned title and find the corresponding row with matching gender scope. If the match is female but the original is male, look for a male row with the same base.  
+
+A better approach is to match only on the gender-stripped base during round one.  
+
+The algorithm uses all rows (male and female) from the CSV, matching the cleaned title against `long_name` with the longest match prioritized.
+
+2. Find the longest `long_name` where the normalized title contains it as a substring or equals it exactly.  
+3. Set gender to female if "Damen" or "Frauen" is in the title; otherwise, default to male.  
+4. If the matched rows gender scope aligns with the detected gender, return its `league_id`.  
+5. Otherwise, search for another row with the same base name and matching gender scope.
+
+For example, "Bayernliga - Damen" matches "Bayernliga Damen" (female row), returning BL S1 (D).  
+"Bayernliga - Herren" matches "Bayernliga" (male row), returning BayL.
+
+"Bereichsliga Sd 1 - Damen" matches "Bereichsliga Sd 1 Damen" as the longest female match.  
+"Bayernliga - Damen" prefers "Bayernliga Damen" over "Bayernliga" due to longer match.  
+
+Consider flattening league mapping into a single list instead of separate pools.  
+Refactor normalization function to reduce complexity.  
+Simplify or remove alias lookup and disambiguation functions.
+
+For unmapped titles, if no match is found, return the base name with (D) if female or stripped of gender indicators if male. Aliases from the CSVs alias column are treated as additional keys for matching during round one, alongside `long_name`. The simplified approach merges alias strings into the list of candidate strings to match against during the initial round, avoiding a separate alias lookup step. This ensures that both `long_name` and `alias` entries are considered equally during the first matching attempt.
+
+Normalize the input text by converting to lowercase and replacing multiple whitespace or dash characters with a single space. Use regex to detect gender indicators like "Frauen," "Damen," "Herren," or "Mnner," defaulting to male if none are found. Prioritize explicit gender terms, such as "Herren," when both male and female markers are present. Match the cleaned title against `long_name` entries, favoring the longest match and including aliases as additional candidates. If a match is found, verify that the gender scope aligns with the detected gender; otherwise, search for a matching row with the correct gender scope. If no match is found, return the base name with appropriate gender suffix or stripped indicators.
+
+When matching the cleaned title against `long_name`, the system identifies the longest matching entry and retrieves its `league_id`. However, if both male and female rows share the same base name, the wrong gender row may be selected. To address this, the system derives the gender from the original title and verifies whether the matched rows gender scope aligns with the detected gender. If not, it searches for a matching row with the correct gender scope. If no match is found, it defaults to male. This ensures that the final result corresponds to the correct gender scope even when multiple rows share the same base name.
+
+Return the ID of the entry with the matching base key and correct gender scope.  
+To derive the base key, normalize the long name by removing gender-specific terms.  
+Among all entries matching the cleaned title as a substring, select the one with the longest `long_name` and matching gender scope.
+
+If the scope does not match the derived gender, skip to the next entry. For each label including `long_name` and aliases, normalize the text and check for a match with the cleaned title. Track the longest matching `long_name` and return its ID. If no match is found, return the base name with a "(D)" suffix if female, or stripped of gender indicators if male.
+
+Filter by gender first, then match by the longest `long_name`. For example, "Bayernliga - Damen" only considers female rows and matches "Bayernliga Damen" to return BayL (D). Similarly, "Bayernliga - Herren" matches "Bayernliga" to return BayL. If no gender marker is present, default to male. 
+
+The function `_long_name_matches_title` checks if the normalized title exactly matches or is a substring of the normalized long name, using word boundaries and normalized spaces.
+
+return f" {long_name_norm} " in f" {title_norm} " or title_norm.startswith(long_name_norm + " ") or title_norm.endswith(" " + long_name_norm)
+
+For title "bayernliga" and ln "bayernliga" - equal 
+
+Bump ANALYZER_VERSION to v1.2.7
+
+Update tests - change _detect_league_gender_bias to _derive_league_gender_scope returning male/female only
+
+```python
+def test_gender_defaults_male():
+    assert m._derive_league_gender_scope("Bayernliga") == "male"
+    assert m._derive_league_gender_scope("Bayernliga - Damen") == "female"
+```
+
+Remove test for neutral after strip</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "_detect_league_gender_bias|_league_alias_lookup_keys|_disambiguate_unmapped|_match_candidate_to_mapping_pool|_strip_trailing_league_gender"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "_detect_league_gender_bias|_league_alias_lookup_keys|_disambiguate_unmapped|_match_candidate_to_mapping_pool|_strip_trailing_league_gender",
+  "topFiles": [
+    {
+      "matchCount": 11,
+      "uri": ".\\.specstory\\history\\2026-05-19_07-58-26Z-exposing-web-service-on-local-network.md"
+    },
+    {
+      "matchCount": 3,
+      "uri": ".\\tests\\test_league_gender_normalization.py"
+    },
+    {
+      "matchCount": 17,
+      "uri": ".\\extract_excel_data.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\.specstory\\history\\2026-05-06_06-02-50Z-excel-data-processing-pipeline.md"
+    }
+  ],
+  "totalFiles": 4,
+  "totalMatches": 32
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I'll refactor _load_league_mapping to return entries or add a helper that builds entries from cache.
+```</details></think>
+
+_**Agent (default)**_
+
+Refactoring league lookup to a two-step flow: longest `long_name` match within the derived gender pool, then default to male.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\extract_excel_data.py",
+  "pattern": "ANALYZER_VERSION"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\extract_excel_data.py",
+  "pattern": "ANALYZER_VERSION",
+  "topFiles": [
+    {
+      "matchCount": 10,
+      "uri": "extract_excel_data.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 10
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I'll add _LEAGUE_MAPPING_ENTRIES_CACHE alongside or build entries in _load_league_mapping.
+```
+
+The code should be refactored to either add `_LEAGUE_MAPPING_ENTRIES_CACHE` alongside the existing cache or build the entries within `_load_league_mapping`. This involves restructuring the cache to store entries separately to avoid breaking tuple unpacking elsewhere.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Fixed a docstring typo in `_derive_league_gender_scope` by removing the extra space before "Second" in the documentation.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "_load_league_mapping\\(\\)"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "_load_league_mapping\\(\\)",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": ".\\extract_excel_data.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 2
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\test_league_gender_normalization.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run pytest tests/test_league_gender_normalization.py -q</summary>
+
+```bash
+cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run pytest tests/test_league_gender_normalization.py -q
+```
+
+```
+.......                                                                  [100%]
+7 passed in 0.62s
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+The league lookup is simplified to match what you described.
+
+### New algorithm
+
+1. **Normalize** the sheet title (`clean_league_name`, region shorthand like `N1` → `Nord 1`).
+2. **Derive gender** from the raw title (dashes/spaces tolerant):
+   - **Female** if `Frauen` or `Damen` appears as a token (`-`, spaces, `/` OK)
+   - **Male** otherwise (`Herren`, `Männer`, or **no** gender word)
+3. **Match `long_name`** (and CSV **aliases** as extra labels) — **longest match wins**, only among rows with that `gender_scope`.
+4. If nothing matches → fallback display name, with ` (D)` for female.
+
+### Root cause of the BayL bug (unchanged insight)
+
+`Damen` was stripped **before** gender was detected, so both Damen and Herren became “neutral” and fell through to the **male** pool. Gender is now taken from the **original** title; matching runs in the **female** or **male** pool only.
+
+### Code
+
+- `_normalize_league_match_text()` — collapse whitespace/dashes for matching  
+- `_derive_league_gender_scope()` — female vs male (default male)  
+- `_match_league_id_by_long_name()` — round 1  
+- Removed: alias key juggling, dual pools with `lc_no_male`, neutral→male fallback  
+
+`ANALYZER_VERSION` → **v1.2.7** (re-analyze + reprocess to refresh the CSV).
+
+### Re-run extract
+
+```powershell
+uv run python extract_excel_data.py --mode analyze --folder "database/data/legacy_scrape" -r --skip_xls --force_reanalyze
+# then process …
+```
+
+For **08/09 BayL** you should get **`BayL`** (~10 teams) and **`BayL (D)`** (~10 teams), not one merged `BayL` with ~21 teams. Same pattern for **Bereichsliga** → **`BL S1`** / **`BL S1 (D)`**, etc.
+
+---
+
+_**User**_
+
+if you detect a high team count, print all detected team names
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants to modify the analyze_legacy_scrape_csv function.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\analyze_legacy_scrape_csv.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\database\data\legacy_scrape\legacy_scrape_summary.csv</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+When HIGH_TEAMS is detected, meaning teams exceed 12, all team names for that league and season combination will be printed.</details></think>
+
+_**Agent (default)**_
+
+Updating the analysis script to list all team names when team count exceeds the high threshold.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\analyze_legacy_scrape_csv.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\analyze_legacy_scrape_csv.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\analyze_legacy_scrape_csv.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\analyze_legacy_scrape_csv.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python scripts/analyze_legacy_scrape_csv.py --csv "database/data/legacy_scrape/legacy_scrap_extracxted.csv" 2>&1 | Select-Object -First 80</summary>
+
+```bash
+cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python scripts/analyze_legacy_scrape_csv.py --csv "database/data/legacy_scrape/legacy_scrap_extracxted.csv" 2>&1 | Select-Object -First 80
+```
+
+```
+File: database\data\legacy_scrape\legacy_scrap_extracxted.csv
+Rows (all): 630,970  |  team-total rows: 144,434
+League � season combos: 259  |  flagged: 33
+
+--- High team count (&gt;12) � all detected teams ---
+
+08/09 | BayL | 21 teams | HIGH_TEAMS
+   1. 1. DBC Bayreuth 1
+   2. ACC/Ulmer-Spatzen Neu-Ulm 1
+   3. Bayerland M�nchen 1
+   4. BC Comet N�rnberg 1
+   5. Civis M�nchen 1
+   6. DJK Rimpar 1
+   7. DKJ Rimpar 1
+   8. Donaubowler Regensburg 1
+   9. EPA M�nchen 1
+  10. Franken 83 N�rnberg 1
+  11. Frankenpower N�rnberg 1
+  12. Germania Bayreuth 1
+  13. Lechbowler Augsburg 1
+  14. M�nchner Kindl 1
+  15. Ph�nix 03 N�rnberg 1
+  16. Praetoria Regensburg 1
+  17. RW Lichtenhof 69 Stein 1
+  18. SW 77 W�rzburg 1
+  19. SW Mainfranken Bamberg 1
+  20. Wei�-Blau M�nchen 1
+  21. Zirbelnuss Alt-Augsburg 1
+
+08/09 | Bereichsliga S�d 1 | 14 teams | HIGH_TEAMS
+   1. ACC/Ulmer-Spatzen 2
+   2. Bavaria M/L 2
+   3. Bayerland M�nchen 1
+   4. Cosmos M�nchen 1
+   5. EPA M�nchen 2
+   6. Falken Neu-Ulm 1
+   7. HighRoller Rosenheim 1
+   8. Lechbowler Augsburg 1
+   9. Murmels Neu-Ulm 2
+  10. M�nchner Kindl 2
+  11. Pfaffenhofen 1
+  12. Schanzer-Strikers Ingolstadt 1
+  13. Tiger Augsburg 3
+  14. Werdenfels 1
+
+08/09 | KL S3 | 15 teams | HIGH_TEAMS
+   1. Bad Aibling Finest BC 1
+   2. Bad-Aibling 1
+   3. Bajuwaren M�nchen 4
+   4. Bavaria M/L 3
+   5. BC Bajuwaren M�nchen 4
+   6. BC Bavaria M/L 3
+   7. BC Falken M�nchen-Land 1
+   8. BC LA-Bowling 3
+   9. BC Merlin M/L 2
+  10. BC Ph�nix-Hobby 2
+  11. EPA M�nchen 3
+  12. Falken M/L 1
+  13. LA-Bowling Landshut 3
+  14. Merlin M/L 2
+  15. Ph�nix-Hobby 2
+
+08/09 | LL N1 | 16 teams | HIGH_TEAMS
+   1. 1. DBC Bayreuth 2
+   2. 1. DBC Bayreuth 3
+   3. BC Comet N�rnberg 2
+   4. Blue Strikers/Pin Ladies Coburg 1
+   5. DJK Rimpar 1
+   6. Germania Bayreuth 2
+   7. Kings Club Bayreuth Land 1
+   8. Pinkiller 03 Lichtenfels 1
+   9. Ratisbona Regensburg 2
+  10. Raubritter Hallstadt 2
+  11. RW Lichtenhof 69 Stein 1
+  12. SG Rottendorf 1
+  13. Strikers Geldersheim 1
+  14. SW 77 W�rzburg 1
+  15. SW 77 W�rzburg 2
+  16. SW Mainfranken Bamberg 1
+
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The script executes and outputs team names when team counts are high.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\analyze_legacy_scrape_csv.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+`scripts/analyze_legacy_scrape_csv.py` now prints every detected team name when a league×season has more than 12 teams (configurable via `--high-teams-threshold`).
+
+**Behavior**
+- After loading team-total rows, groups collect a sorted unique `team_names` list per `(Season, League)`.
+- Before the per-season tables, a **High team count** section lists each flagged combo with a numbered team list.
+- `HIGH_TEAMS` still uses the same threshold (default 12).
+
+**Example**
+```powershell
+uv run python scripts/analyze_legacy_scrape_csv.py --csv database/data/legacy_scrape/legacy_scrap_extracxted.csv
+```
+
+On your current extract, `08/09 | BayL` still shows 21 teams (male + female merged) — that matches the pre–gender-fix extract. After re-analyze/process with the BayL split fix, you should see separate `BayL` / `BayL (D)` blocks with ~10–11 teams each instead of one 21-team list.
+
+---
+
+_**User**_
+
+normalization step should also accept an input file
+PS C:\Users\cfell\repositories\bowlyzer_deploy> uv run python extract_excel_data.py --mode normalize_data --input .\database\data\legacy_scrape\legacy_scrap_extracxted_0809.csv
+Starting Excel data extraction...
+usage: extract_excel_data.py [-h] [--mode {analyze,process,normalize_data,convert_legacy_xls}] [--normalize_data] [--file EXCEL_FILE]
+                             [--folder FOLDER] [-r] [--team-sheet-prefix TEAM_SHEET_PREFIX] [--season-sheet SEASON_SHEET]
+                             [--output-file OUTPUT_FILE] [--output-dir OUTPUT_DIR] [--weeks WEEKS] [--analysis-output ANALYSIS_OUTPUT]
+                             [--skip_xls] [--old-format-sheet-threshold OLD_FORMAT_SHEET_THRESHOLD] [--force_reanalyze]
+                             [--no-parallel-subdirs] [--force_convert_xls]
+extract_excel_data.py: error: unrecognized arguments: --input .\database\data\legacy_scrape\legacy_scrap_extracxted_0809.csv
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants to add an `--input` argument to the `normalize_data` mode in `extract_excel_data.py`.</details></think>
+
+_**Agent (default)**_
+
+Adding `--input` support for `normalize_data`. Inspecting how that mode is implemented.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "normalize_data"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "normalize_data",
+  "topFiles": [
+    {
+      "matchCount": 3,
+      "uri": "data_access/compare_csv_files.py"
+    },
+    {
+      "matchCount": 18,
+      "uri": "extract_excel_data.py"
+    },
+    {
+      "matchCount": 20,
+      "uri": ".specstory/history/2026-05-06_06-02-50Z-excel-data-processing-pipeline.md"
+    },
+    {
+      "matchCount": 4,
+      "uri": ".specstory/history/2026-05-07_21-35-17Z-data-source-cleanup-and-consolidation.md"
+    }
+  ],
+  "totalFiles": 4,
+  "totalMatches": 45
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\extract_excel_data.py",
+  "pattern": "--input|input.file|INPUT"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\extract_excel_data.py",
+  "pattern": "--input|input.file|INPUT",
+  "topFiles": [
+    {
+      "matchCount": 5,
+      "uri": "extract_excel_data.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 5
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\extract_excel_data.py",
+  "pattern": "normalize_extracted_dataframe|run_normalize"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\extract_excel_data.py",
+  "pattern": "normalize_extracted_dataframe|run_normalize",
+  "topFiles": [
+    {
+      "matchCount": 7,
+      "uri": "extract_excel_data.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 7
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "--input"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "--input",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "scripts/merge_league_sources.py"
+    },
+    {
+      "matchCount": 6,
+      "uri": ".specstory/history/2026-04-22_11-48-04Z-database-schema-for-tournament-results.md"
+    },
+    {
+      "matchCount": 16,
+      "uri": ".specstory/history/2026-05-07_21-35-17Z-data-source-cleanup-and-consolidation.md"
+    },
+    {
+      "matchCount": 2,
+      "uri": "database/input/import_clubmeisterschaft_donaubowler_xlsx.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "database/input/postprocess_tournament_results.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": ".specstory/history/2026-05-12_08-34-57Z-tournament-configuration-and-leaderboard-adjustments.md"
+    }
+  ],
+  "totalFiles": 6,
+  "totalMatches": 28
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I need to refactor `run_normalize_data_mode` to address the identified issues and improve its structure and functionality.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\extract_excel_data.py",
+  "pattern": "export_unique_team_names|resolve_process_output"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\extract_excel_data.py",
+  "pattern": "export_unique_team_names|resolve_process_output",
+  "topFiles": [
+    {
+      "matchCount": 5,
+      "uri": "extract_excel_data.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 5
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+There is already a function `_merge_combo_csvs` that handles normalization.
+
+For input file mode, the process involves reading one or more input CSV files, executing the normalization pipeline, and writing the output to `--output-file`. When only `--input` is provided, the default behavior should either overwrite the input file in place or create a new file with a normalized suffix, such as appending "_normalized" to the input filename. This approach maintains consistency with how process mode handles `--output-file` explicitly.
+
+For normalization with only `--input` specified, the system should follow the same logic as described above.
+
+When only `--input` is provided, the system should default to overwriting the input file in place or creating a new file with a `_normalized` suffix next to the input file. This behavior aligns with typical normalize script practices and maintains consistency with the existing `_merge_combo_csvs` function.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I'll implement adding `--input` with `nargs='+'` to accept one or more CSV paths.
+
+Update `validate_args` to handle data normalization modes: when using `--input`, validate that input files exist and optionally specify an output file; when not using `--input`, operate in cache mode without input files. For multiple inputs, concatenate data before normalization and writing to a single output file.
+
+Refactor `run_normalize_data_mode` to read all input files when `args.input` is provided, concatenate them, normalize the combined data, and write the result to the specified output location.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\extract_excel_data.py",
+  "pattern": "def _resolve_cli_path"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\extract_excel_data.py",
+  "pattern": "def _resolve_cli_path",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "extract_excel_data.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 1
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+A helper function `_normalize_and_write_dataframe` will be extracted to eliminate code duplication between cache mode and input mode, or to follow the `_merge_combo_csvs` pattern.
+
+A helper function `_normalize_merged_frame` can be added to handle normalization tasks, which would be reused in both cache and input modes. This function would apply `normalize_extracted_dataframe` and `normalize_team_numbering_dataframe`, then sort the result. However, since the user requested minimal changes, the focus remains on adding `--input` support without modifying existing logic. The input mode flow checks for input files and processes them accordingly.
+
+Input mode reads CSV files, merges them into a single DataFrame, applies normalization, and writes the result to an output file. If multiple input files are provided without specifying an output file, it raises a validation error. The input mode flow checks for input files and processes them accordingly.
+
+The cache mode should respect `args.output_file` instead of using a hardcoded path. The `--output-file` argument is intended for specifying the output location, and the existing logic in normalize mode does not currently use this argument. Therefore, the cache mode should be updated to utilize `args.output_file` for the `continuous_output_file` path.
+
+User might want `--output-file` for cache mode too, but that is a separate request.
+
+For input mode, only use `--output-file` with default set to the first input file.
+
+Validation for arguments:
+If the mode is `normalize_data`, check that `--file` and `--folder` are not used. If input files are provided, ensure that `--output-file` is specified when multiple input files are given. Validate each input file path.</details></think>
+
+_**Agent (default)**_
+
+Adding `--input` support to `normalize_data` mode and refactoring the normalize path to handle explicit CSV inputs.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+When a user provides only the --input flag without --output-file, the tool should write the output in-place to the first input file specified in input_paths[0].
+
+The current logic incorrectly assumes that `args.output_file` is None when not explicitly set, but it always defaults to `database/data/historical_league_results.csv`. This causes single-input scenarios to always use the default output file instead of writing in-place to the input file.
+
+To fix this, we need to detect whether the user explicitly provided `--output-file` or if it's just the default value. A common approach is to store the default value and compare against it, or use `argparse`'s `const` parameter with `nargs` to distinguish between no argument and an empty argument.
+
+This issue affects how the output file path is determined for single-input cases, where in-place writing should occur when no explicit output file is given.</details></think>
+
+_**Agent (default)**_
+
+Fixing output path logic: `--output-file` has a default, so single-input runs must not write to the historical default unless explicitly passed.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\extract_excel_data.py",
+  "pattern": "^import sys"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\extract_excel_data.py",
+  "pattern": "^import sys",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I'll add a small helper function.
+
+I'll implement a helper function to check CLI flags and adjust the output file path based on input files for the normalize_data mode.
+
+```python
+def _cli_flag_passed(flag: str) -> bool:
+    import sys
+    return flag in sys.argv or any(arg.startswith(f"{flag}=") for arg in sys.argv)
+
+# For normalize_data mode, set output file path based on input file
+if args.mode == "normalize_data" and args.input_files:
+    if len(args.input_files) == 1 and not _cli_flag_passed("--output-file"):
+        args.normalize_output_file = _resolve_cli_path(args.input_files[0])
+```
+
+args.normalize_output_file = _resolve_cli_path(args.output_file)
+
+In validate_args, I'll set normalize_output_file based on output_file when in normalize_data mode.
+
+```python
+def _cli_flag_passed(flag: str) -> bool:
+    import sys
+    prefix = f"{flag}="
+    return flag in sys.argv or any(arg.startswith(prefix) for arg in sys.argv)
+```
+
+For normalize_data mode with input files, if no output-file flag is provided, the output file path will be derived from the first input file.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\extract_excel_data.py",
+  "pattern": "DEFAULT_PROCESS_OUTPUT"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\extract_excel_data.py",
+  "pattern": "DEFAULT_PROCESS_OUTPUT",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "extract_excel_data.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 2
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **1** result in **1** directory</summary>
+
+Directory: **c:\Users\cfell\repositories\bowlyzer_deploy** (1 file)
+
+| File |
+|------|
+| `../.\database\data\legacy_scrape\legacy_scrap_extracxted_0809.csv` |
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python extract_excel_data.py --mode normalize_data --input "database/data/legacy_scrape/legacy_scrap_extracxted_0809.csv" 2>&1 | Select-Object -First 25</summary>
+
+```bash
+cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python extract_excel_data.py --mode normalize_data --input "database/data/legacy_scrape/legacy_scrap_extracxted_0809.csv" 2>&1 | Select-Object -First 25
+```
+
+```
+Starting Excel data extraction...
+Mode: normalize_data
+Unique team names exported: C:\Users\cfell\repositories\bowlyzer_deploy\database\data\legacy_scrape\legacy_scrap_extracxted_0809_unique_teams.csv (198 names)
+
+normalize_data: normalized 1 input file(s) -&gt; C:\Users\cfell\repositories\bowlyzer_deploy\database\data\legacy_scrape\legacy_scrap_extracxted_0809.csv (59364 rows, hash=9cb58a0a7e32...)
+  input: C:\Users\cfell\repositories\bowlyzer_deploy\database\data\legacy_scrape\legacy_scrap_extracxted_0809.csv
+
+Team Name Normalization Summary:
+  replacements total: 2728
+  regex replacements: 2728
+  regex replacement hits:
+    - ^Falken M/L \s*(\d+)$: 710
+    - ^Bavaria M/L\s*(\d+)$: 709
+    - ^BC Bavaria M/L\s*(\d+)$: 426
+    - ^BC LA-Bowling\s*(\d+)$: 426
+    - ^DKJ Rimpar\s*(\d+)$: 173
+    - ^Bad-Aibling\s*(\d+)$: 142
+    - ^Ph�nix-Hobby\s*(\d+)$: 142
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+`normalize_data` now accepts `--input` so you can normalize a CSV without going through the processing cache.
+
+**Usage**
+
+```powershell
+# In-place (overwrites the input file)
+uv run python extract_excel_data.py --mode normalize_data --input database/data/legacy_scrape/legacy_scrap_extracxted_0809.csv
+
+# Write to a different path
+uv run python extract_excel_data.py --mode normalize_data --input database/data/legacy_scrape/legacy_scrap_extracxted_0809.csv --output-file database/data/legacy_scrape/legacy_scrap_extracxted_0809_normalized.csv
+
+# Multiple inputs merged into one output (requires --output-file)
+uv run python extract_excel_data.py --mode normalize_data --input file1.csv file2.csv --output-file merged.csv
+```
+
+**Behavior**
+- With `--input`: reads the CSV(s), runs league/team normalization, writes the result.
+- Single input without `--output-file`: updates the input file in place.
+- Also writes `{stem}_unique_teams.csv` next to the output.
+- Without `--input`: unchanged cache-based merge from combo CSVs (uses `--output-file`, default `historical_league_results.csv`).
+
+---
+
+_**User**_
+
+why is this not normalaized?
+   3. DJK Rimpar 1
+   4. DKJ Rimpar 1
+
+
+@team_name_normalization.json (66-68) ?
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user is questioning why "DJK Rimpar 1" and "DKJ Rimpar 1" are not being normalized despite having a regex rule in team_name_normalization.json that should map `^DKJ Rimpar\s*(\d+)$` to `DJK Rimpar \1`.
+
+So DKJ Rimpar 1 should become DJK Rimpar 1. If DKJ becomes DJK, both should normalize to "DJK Rimpar 1" and be treated as identical. However, the user sees both as separate entries, indicating the normalization isn't working for one or both.
+
+Investigating further:
+1. How team name normalization functions
+2. When it's applied (e.g., only Team column or all rows)
+3. Why DKJ might not match  possibly the regex isn't used in analyze_legacy_scrape_csv vs extract_excel_data
+4. Or normalization may only apply to specific columns or contexts</details></think>
+
+_**Agent (default)**_
+
+Tracing how team-name normalization is applied and why `DKJ Rimpar` might not match.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\database\config\team_name_normalization.json</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\extract_excel_data.py",
+  "pattern": "normalize_team|team_name_normalization|_normalize_team"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\extract_excel_data.py",
+  "pattern": "normalize_team|team_name_normalization|_normalize_team",
+  "topFiles": [
+    {
+      "matchCount": 11,
+      "uri": "extract_excel_data.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 11
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+There are two distinct normalization functions described.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\analyze_legacy_scrape_csv.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+`normalize_team_name` applies the first matching regex in dictionary iteration order and returns after the first match.
+
+So if another pattern matches before DKJ pattern, it won't get DKJ fix.
+
+For "DJK Rimpar 1" - would any earlier pattern match? Unlikely for DJK Rimpar.
+
+For "DKJ Rimpar 1" - the pattern `^DKJ Rimpar\s*(\d+)$` should match and replace with `DJK Rimpar \1`.
+
+The user's run showed DKJ Rimpar had 173 hits in normalization summary - so DKJ IS being normalized when normalize_data runs.
+
+So why do BOTH appear in the high teams list?
+
+Possibilities:
+1. User ran analyze_legacy_scrape_csv on **non-normalized** extract (before normalize_data)
+2.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "contextAfter": 25,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\extract_excel_data.py",
+  "pattern": "def normalize_optional_text"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\extract_excel_data.py",
+  "pattern": "def normalize_optional_text",
+  "topFiles": [
+    {
+      "matchCount": 26,
+      "uri": "extract_excel_data.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 1
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The `normalize_team_name` function applies only one regex replacement per call, using the first matching pattern from the dictionary iteration order.
+
+For the input "DJK Rimpar 1", the DKJ pattern does not match "DJK", so it remains unchanged. The pattern `^DKJ Rimpar\s*(\d+)$` would match "DKJ Rimpar 1" and normalize it to "DJK Rimpar 1". After normalization, both inputs should resolve to the same team name "DJK Rimpar 1". This assumes that the regex patterns are applied in a specific order and that numbering occurs after regex processing. If the user's analysis script reads raw CSV data without applying normalization, discrepancies may arise.
+
+The `normalize_team_name` function applies only one regex replacement per call, returning immediately after the first match. This means that if "DJK Rimpar 1" matches a pattern like `^DKJ Rimpar\s*(\d+)$`, it becomes "DJK Rimpar 1", but other patterns might transform it differently. Since regex processing stops after the first match, the order of patterns matters. If "DKJ Rimpar" without a number were to match a pattern that transforms it into "DJK Rimpar", then adding a number afterward could lead to inconsistencies. The function's behavior depends on the order of dictionary iteration and the first matching pattern.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python -c "
+from extract_excel_data import normalize_team_name, reset_team_normalization_stats
+reset_team_normalization_stats()
+for s in ['DJK Rimpar 1', 'DKJ Rimpar 1', 'DKJ Rimpar  1', 'DJK Rimpar  1']:
+    print(repr(s), '->', repr(normalize_team_name(s)))
+"
+</summary>
+
+```bash
+cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python -c "
+from extract_excel_data import normalize_team_name, reset_team_normalization_stats
+reset_team_normalization_stats()
+for s in ['DJK Rimpar 1', 'DKJ Rimpar 1', 'DKJ Rimpar  1', 'DJK Rimpar  1']:
+    print(repr(s), '->', repr(normalize_team_name(s)))
+"
+
+```
+
+```
+'DJK Rimpar 1' -&gt; 'DJK Rimpar 1'
+'DKJ Rimpar 1' -&gt; 'DJK Rimpar 1'
+'DKJ Rimpar  1' -&gt; 'DJK Rimpar 1'
+'DJK Rimpar  1' -&gt; 'DJK Rimpar  1'
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.csv",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\data\\legacy_scrape",
+  "pattern": "DKJ Rimpar|DJK Rimpar"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\data\\legacy_scrape",
+  "pattern": "DKJ Rimpar|DJK Rimpar",
+  "topFiles": [
+    {
+      "matchCount": 30,
+      "uri": "database\\data\\legacy_scrape\\legacy_scrape_extracted.csv"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 10000
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Interesting finding: Double spaces are not being normalized in the string 'DJK Rimpar  1'.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python -c "
+import pandas as pd
+from pathlib import Path
+p = Path('database/data/legacy_scrape/legacy_scrap_extracxted_0809.csv')
+if not p.is_file():
+    p = Path('database/data/legacy_scrape/legacy_scrap_extracxted.csv')
+df = pd.read_csv(p, sep=';', dtype=str, usecols=['League','Team','Position','Player'])
+tr = df[(df['Position']=='0') & (df['Player']=='Team Total')]
+for league in ['LL N1','KL S3']:
+    sub = tr[tr['League']==league]
+    names = sorted(sub['Team'].dropna().unique(), key=str.casefold)
+    rimpar = [n for n in names if 'impar' in n.lower()]
+    print(league, 'rimpar variants:', rimpar)
+"
+</summary>
+
+```bash
+cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python -c "
+import pandas as pd
+from pathlib import Path
+p = Path('database/data/legacy_scrape/legacy_scrap_extracxted_0809.csv')
+if not p.is_file():
+    p = Path('database/data/legacy_scrape/legacy_scrap_extracxted.csv')
+df = pd.read_csv(p, sep=';', dtype=str, usecols=['League','Team','Position','Player'])
+tr = df[(df['Position']=='0') & (df['Player']=='Team Total')]
+for league in ['LL N1','KL S3']:
+    sub = tr[tr['League']==league]
+    names = sorted(sub['Team'].dropna().unique(), key=str.casefold)
+    rimpar = [n for n in names if 'impar' in n.lower()]
+    print(league, 'rimpar variants:', rimpar)
+"
+
+```
+
+```
+LL N1 rimpar variants: []
+KL S3 rimpar variants: []
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+No rimpar is available in the 0809 file for those leagues.</details></think>
+
+_**Agent (default)**_
+
+Cancelled
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+---
+
+_**User**_
+
+use database\data\legacy_scrape\legacy_scrape_extracted.csv
+
+---
+
+_**Agent (default)**_
+
+Checking `legacy_scrape_extracted.csv` for DJK/DKJ Rimpar variants and whether normalization was applied.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python -c "
+import pandas as pd
+from pathlib import Path
+from extract_excel_data import normalize_team_name, normalize_extracted_dataframe
+
+p = Path('database/data/legacy_scrape/legacy_scrape_extracted.csv')
+df = pd.read_csv(p, sep=';', dtype=str, usecols=['Season','League','Team','Position','Player'])
+tr = df[(df['Position']=='0') & (df['Player']=='Team Total')]
+
+# All Rimpar team-total names in 08/09
+sub = tr[tr['Season']=='08/09']
+rimpar = sorted({n for n in sub['Team'].dropna() if 'impar' in str(n).lower()}, key=str.casefold)
+print('Raw team-total names containing impar (08/09):')
+for n in rimpar:
+    print(' ', repr(n))
+
+print()
+for league in ['LL N1', 'KL S3']:
+    names = sorted({n for n in sub[sub['League']==league]['Team'].dropna() if 'impar' in str(n).lower()}, key=str.casefold)
+    print(f'{league}:', [repr(n) for n in names])
+
+print()
+print('After normalize_team_name:')
+for n in rimpar:
+    print(' ', repr(n), '->', repr(normalize_team_name(n)))
+
+# Check if file was normalized: count DKJ vs DJK in Team column
+team_col = df['Team'].astype(str)
+print()
+print('Row counts in full file Team column:')
+print('  DKJ Rimpar:', team_col.str.contains('DKJ Rimpar', na=False).sum())
+print('  DJK Rimpar:', team_col.str.contains('DJK Rimpar', na=False).sum())
+print('  DKJ (any):', team_col.str.contains('DKJ', na=False).sum())
+"
+</summary>
+
+```bash
+cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python -c "
+import pandas as pd
+from pathlib import Path
+from extract_excel_data import normalize_team_name, normalize_extracted_dataframe
+
+p = Path('database/data/legacy_scrape/legacy_scrape_extracted.csv')
+df = pd.read_csv(p, sep=';', dtype=str, usecols=['Season','League','Team','Position','Player'])
+tr = df[(df['Position']=='0') & (df['Player']=='Team Total')]
+
+# All Rimpar team-total names in 08/09
+sub = tr[tr['Season']=='08/09']
+rimpar = sorted({n for n in sub['Team'].dropna() if 'impar' in str(n).lower()}, key=str.casefold)
+print('Raw team-total names containing impar (08/09):')
+for n in rimpar:
+    print(' ', repr(n))
+
+print()
+for league in ['LL N1', 'KL S3']:
+    names = sorted({n for n in sub[sub['League']==league]['Team'].dropna() if 'impar' in str(n).lower()}, key=str.casefold)
+    print(f'{league}:', [repr(n) for n in names])
+
+print()
+print('After normalize_team_name:')
+for n in rimpar:
+    print(' ', repr(n), '->', repr(normalize_team_name(n)))
+
+# Check if file was normalized: count DKJ vs DJK in Team column
+team_col = df['Team'].astype(str)
+print()
+print('Row counts in full file Team column:')
+print('  DKJ Rimpar:', team_col.str.contains('DKJ Rimpar', na=False).sum())
+print('  DJK Rimpar:', team_col.str.contains('DJK Rimpar', na=False).sum())
+print('  DKJ (any):', team_col.str.contains('DKJ', na=False).sum())
+"
+
+```
+
+```
+Raw team-total names containing impar (08/09):
+  'DJK Rimpar 1'
+  'DJK Rimpar 2'
+  'DJK Rimpar 3'
+  'DJK Rimpar 4'
+  'DJK Rimpar 5'
+  'DKJ Rimpar 1'
+
+LL N1: []
+KL S3: []
+
+After normalize_team_name:
+  'DJK Rimpar 1' -&gt; 'DJK Rimpar 1'
+  'DJK Rimpar 2' -&gt; 'DJK Rimpar 2'
+  'DJK Rimpar 3' -&gt; 'DJK Rimpar 3'
+  'DJK Rimpar 4' -&gt; 'DJK Rimpar 4'
+  'DJK Rimpar 5' -&gt; 'DJK Rimpar 5'
+  'DKJ Rimpar 1' -&gt; 'DJK Rimpar 1'
+
+Row counts in full file Team column:
+  DKJ Rimpar: 83
+  DJK Rimpar: 9205
+  DKJ (any): 83
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\analyze_legacy_scrape_csv.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The file still contains 83 rows with "DKJ Rimpar," indicating that either normalize_data was not executed after the rule was added, or the process output did not normalize the extracted file.
+
+The issue is that the CSV file legacy_scrape_extracted.csv contains unnormalized data with both "DKJ Rimpar 1" and "DJK Rimpar 1" entries, even though the regex rule successfully converts "DKJ" to "DJK". The analyze script reads the raw Team column without normalization, so it shows both variants in the high teams list. To fix this, the user wants either the analyze script to default to using the normalized file or for me to update the resolve order to prioritize the normalized version.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python -c "
+import pandas as pd
+p = 'database/data/legacy_scrape/legacy_scrape_extracted.csv'
+df = pd.read_csv(p, sep=';', dtype=str, usecols=['Season','League','Team','Position','Player'])
+tr = df[(df['Position']=='0') & (df['Player']=='Team Total')]
+for (s,l), g in tr.groupby(['Season','League']):
+    teams = set(g['Team'].dropna())
+    if 'DJK Rimpar 1' in teams and 'DKJ Rimpar 1' in teams:
+        print(f'{s} | {l}: both DJK and DKJ Rimpar 1')
+"
+</summary>
+
+```bash
+cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python -c "
+import pandas as pd
+p = 'database/data/legacy_scrape/legacy_scrape_extracted.csv'
+df = pd.read_csv(p, sep=';', dtype=str, usecols=['Season','League','Team','Position','Player'])
+tr = df[(df['Position']=='0') & (df['Player']=='Team Total')]
+for (s,l), g in tr.groupby(['Season','League']):
+    teams = set(g['Team'].dropna())
+    if 'DJK Rimpar 1' in teams and 'DKJ Rimpar 1' in teams:
+        print(f'{s} | {l}: both DJK and DKJ Rimpar 1')
+"
+
+```
+
+```
+08/09 | BayL: both DJK and DKJ Rimpar 1
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+In BayL 08/09, both entries appeared because the CSV was never normalized a typo from DKJ remained in the file.</details></think>
+
+_**Agent (default)**_
+
+Confirming the rule works; the extract still contains 83 raw `DKJ Rimpar` rows. Updating the analyze script to default to `legacy_scrape_extracted.csv`.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\analyze_legacy_scrape_csv.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python scripts/analyze_legacy_scrape_csv.py 2>&1 | Select-String -Pattern "BayL|Rimpar|High team|File:" -Context 0,25 | Select-Object -First 40</summary>
+
+```bash
+cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python scripts/analyze_legacy_scrape_csv.py 2>&1 | Select-String -Pattern "BayL|Rimpar|High team|File:" -Context 0,25 | Select-Object -First 40
+```
+
+```
+
+&gt; File: C:\Users\cfell\repositories\bowlyzer_deploy\database\data\legacy_scrape\legacy_scrape_extracted.csv
+  Rows (all): 630,970  |  team-total rows: 144,434
+  League � season combos: 290  |  flagged: 8
+  
+&gt; --- High team count (&gt;10) � all detected teams ---
+  
+&gt; 08/09 | BayL | 11 teams | HIGH_TEAMS
+     1. Bayerland M�nchen 1
+     2. BC Comet N�rnberg 1
+&gt;    3. DJK Rimpar 1
+&gt;    4. DKJ Rimpar 1
+     5. Donaubowler Regensburg 1
+     6. Franken 83 N�rnberg 1
+     7. Germania Bayreuth 1
+     8. M�nchner Kindl 1
+     9. SW 77 W�rzburg 1
+    10. SW Mainfranken Bamberg 1
+    11. Zirbelnuss Alt-Augsburg 1
+  
+&gt; 11/12 | BayL (D) | 11 teams | HIGH_TEAMS
+     1. 1. DBC Bayreuth 1
+     2. BK M�nchen 2
+     3. Condor M�nchen 1
+     4. Cosmos M�nchen 1
+     5. EPA M�nchen 1
+     6. Frankenpower N�rnberg 1
+     7. Lechbowler Augsburg 1
+     8. Praetoria Regensburg 1
+     9. Pr�toria Regensburg 1
+    10. Wei�-Blau M�nchen 1
+    11. Wei�-Blau M�nchen 2
+  
+&gt; 15/16 | BayL (D) | 11 teams | HIGH_TEAMS
+     1. 1. DBC Bayreuth 1
+     2. 1. DBC Bayreuth 2
+     3. BK M�nchen 2
+     4. EPA M�nchen 1
+     5. Frankenpower N�rnberg 1
+     6. Lechbowler Augsburg 1
+     7. Ph�nix 03 Lauf 1
+     8. Praetoria Regensburg 1
+     9. Pr�toria Regensburg 1
+    10. Triple X Stein 1
+    11. Wei� Blau M�nchen 2
+  
+  --- 08/09 (27 leagues) ---
+     League  Wks  Teams       Note
+       A N1    8      8           
+       A N2    8      7           
+       A S1    8      6           
+       A S2    8      6           
+      BL N1    8      8           
+      BL N2    8      8           
+      BL S1    8      8           
+  BL S1 (D)    8      6           
+      BL S2    8      8           
+     BZL N1    8      8           
+     BZL N2    8      8           
+&gt;      BayL    6     11 HIGH_TEAMS
+&gt;  BayL (D)    6     10           
+      KL N1    8      8           
+      KL N2    8      8           
+      KL N3    8      8           
+      KL N4    8      8           
+      KL S1    8      8           
+      KL S2    8      8           
+      KL S3    8      9           
+      KL S4    8      8           
+   LL N (D)    9      9           
+      LL N1    8      8           
+       LL S    8      8           
+   LL S (D)    8      8           
+  
+  --- 09/10 (27 leagues) ---
+     League  Wks  Teams Note
+       A N1    8      8     
+       A N2    8      8     
+       A S1    8      6     
+       A S2    8      6     
+      BL N1    8      8     
+      BL N2    8      8     
+      BL S1    8      8     
+  BL S1 (D)    8      5     
+      BL S2    8      8     
+     BZL N1    8      8     
+&gt;      BayL    6     10     
+&gt;  BayL (D)    6     10     
+      KL N1    8      8     
+      KL N2    8      8     
+      KL N3    8      8     
+      KL N4    8      8     
+      KL S1    9     10     
+      KL S2    9     10     
+      KL S3    8      8     
+      KL S4    8      8     
+   LL N (D)    9     10     
+      LL N1    8      8     
+       LL S    8      8     
+   LL S (D)    8      8     
+  
+  --- 10/11 (29 leagues) ---
+                 League  Wks  Teams      Note
+                   A N1    8      8          
+                   A N2    8      9          
+                   A S1    8      5          
+                   A S2    8      5          
+                   A S3    8      5          
+                  BL N1    8      8          
+                  BL N2    8      9          
+                  BL S1    8      8          
+              BL S1 (D)    8      6          
+                  BL S2    8      8          
+&gt;                  BayL    6     10          
+&gt;              BayL (D)    5     10 LOW_WEEKS
+  Bereichsliga Nord (D)    8      5          
+                  KL N1    8      8          
+                  KL N2    8      8          
+                  KL N3    8      9          
+                  KL N4    8      8          
+                  KL S1    8      9          
+                  KL S2    8      8          
+                  KL S3    7      8          
+                  KL S4    8      8          
+               LL N (D)    8      7          
+                  LL N1    8      8          
+                   LL S    8      8          
+               LL S (D)    8      8          
+  
+  --- 11/12 (27 leagues) ---
+     League  Wks  Teams       Note
+       A N1    7      8           
+       A N2    8      7           
+       A S1    8      8           
+       A S2    8      8           
+      BL N1    8      8           
+      BL N2    8      8           
+      BL S1    8      8           
+  BL S1 (D)    8      5           
+      BL S2    8      8           
+&gt;      BayL    6     10           
+&gt;  BayL (D)    6     11 HIGH_TEAMS
+      KL N1    8      8           
+      KL N2    8      8           
+      KL N3    8      9           
+      KL N4    8      8           
+      KL S1    9     10           
+      KL S2    8      8           
+      KL S3    8      8           
+      KL S4    8      8           
+   LL N (D)    8      8           
+      LL N1    8      8           
+       LL S    8      9           
+   LL S (D)    8      6           
+  
+  --- 12/13 (27 leagues) ---
+     League  Wks  Teams Note
+       A N1    8      8     
+       A N2    8      7     
+       A S1    8      8     
+       A S2    9     10     
+      BL N1    8      8     
+      BL N2    8      8     
+      BL S1    8      8     
+  BL S1 (D)    8      7     
+      BL S2    8      8     
+     BZL N1    8      8     
+&gt;      BayL    6     10     
+&gt;  BayL (D)    6     10     
+      KL N1    8      8     
+      KL N2    8      8     
+      KL N3    8      6     
+      KL N4    8      8     
+      KL S1    8      7     
+      KL S2    8      6     
+      KL S3    8      8     
+      KL S4    8      8     
+   LL N (D)    8      7     
+      LL N1    8      8     
+       LL S    8      8     
+   LL S (D)    8      8     
+  
+  --- 13/14 (27 leagues) ---
+     League  Wks  Teams Note
+       A N1    8      9     
+       A N2    8      8     
+       A S1    8      8     
+       A S2    8      8     
+       A S3    8      6     
+      BL N1    8      8     
+      BL N2    8      8     
+      BL S1    8      8     
+  BL S1 (D)    8      6     
+      BL S2    8      8     
+&gt;      BayL    6     10     
+&gt;  BayL (D)    6     10     
+      KL N1    8      8     
+      KL N2    8      8     
+      KL N3    8      8     
+      KL S1    8      9     
+      KL S2    9     10     
+      KL S3    8     10     
+      KL S4    8      8     
+   LL N (D)    8      5     
+      LL N1    8      8     
+       LL S    8      8     
+   LL S (D)    8      8     
+  
+  --- 14/15 (27 leagues) ---
+                League  Wks  Teams      Note
+                  A N1    1      8 LOW_WEEKS
+                  A S1    2      6 LOW_WEEKS
+                  A S2    8      7          
+                  A S3    8      7          
+         A-Klasse Nord    3      8 LOW_WEEKS
+                 BL N1    8      8          
+                 BL N2    8      8          
+                 BL S1    8      8          
+                 BL S2    8      8          
+                BZL N1    8      8          
+                BZL N2    8      8          
+&gt;                 BayL    6     10          
+&gt;             BayL (D)    6     10          
+  Bereichsliga S�d (D)    8      7          
+                 KL N1    9     10          
+                 KL N2    9     10          
+                 KL N3    8      8          
+                 KL S1    8      8          
+                 KL S2    9      9          
+                 KL S3    8      8          
+                 KL S4    8      8          
+              LL N (D)    8      6          
+                 LL N1    8      8          
+                  LL S    8      8          
+              LL S (D)    8      8          
+  
+  --- 15/16 (25 leagues) ---
+     League  Wks  Teams       Note
+       A N1    8      6           
+       A S1    1      7  LOW_WEEKS
+       A S2    8      8           
+      BL N1    8      8           
+      BL N2    8      8           
+      BL S1    8      8           
+  BL S1 (D)    8      7           
+      BL S2    8      8           
+     BZL N1    8      8           
+     BZL N2    7      8           
+&gt;      BayL    6     10           
+&gt;  BayL (D)    6     11 HIGH_TEAMS
+      KL N1    8      7           
+      KL N2    9      9           
+      KL N3    8      8           
+      KL S1    8      7           
+      KL S2    8      8           
+      KL S3    8      8           
+      KL S4    8      8           
+   LL N (D)    8      5           
+      LL N1    8      8           
+       LL S    8      8           
+   LL S (D)    8      8           
+  
+  --- 16/17 (25 leagues) ---
+         League  Wks  Teams Note
+           A S1    8      6     
+           A S2    8      6     
+  A-Klasse Nord    8      6     
+         BZL N1    8      8     
+         BZL N2    8      8     
+         BZL S1    8      8     
+         BZL S2    8      8     
+        BZOL N1    8      8     
+        BZOL N2    8      8     
+        BZOL S1    8      8     
+    BZOL S1 (D)    8      7     
+&gt;          BayL    6     10     
+&gt;      BayL (D)    6      9     
+          KL N1    8      8     
+          KL N2    9     10     
+          KL N3    8      8     
+          KL S1    8      7     
+          KL S2    9      9     
+          KL S3    8      8     
+          KL S4    8      8     
+       LL N (D)    8      5     
+          LL N1    8      8     
+           LL S    8      8     
+       LL S (D)    8      8     
+  
+  --- 17/18 (25 leagues) ---
+       League  Wks  Teams Note
+         A S1    8      6     
+         A S2    8      7     
+       BZL N1    8      8     
+       BZL N2    8      9     
+       BZL S1    8      8     
+       BZL S2    8      8     
+      BZOL N1    8      8     
+      BZOL N2    8      8     
+      BZOL S1    8      8     
+  BZOL S1 (D)    8      5     
+      BZOL S2    8      8     
+&gt;        BayL    6     10     
+&gt;    BayL (D)    6     10     
+        KL N1    9      9     
+        KL N2    8      8     
+        KL N3    8      6     
+        KL N4    8      6     
+        KL S1    8      7     
+        KL S2    8      8     
+        KL S3    8      8     
+        KL S4    8      8     
+     LL N (D)    8      7     
+        LL N1    8      8     
+         LL S    8      8     
+     LL S (D)    8      6     
+  
+  --- 18/19 (24 leagues) ---
+    League  Wks  Teams Note
+      A S1    8      8     
+      A S2    8      8     
+    BZL N1    8      8     
+    BZL N2    8      8     
+    BZL S1    8      8     
+    BZL S2    8      8     
+   BZOL N1    8      8     
+   BZOL N2    8      8     
+   BZOL S1    9      9     
+   BZOL S2    8      8     
+&gt;     BayL    6     10     
+&gt; BayL (D)    6     10     
+     KL N1    8      8     
+     KL N2    8      7     
+     KL N3    8      6     
+     KL N4    8      6     
+     KL S1    8      5     
+     KL S2    8      7     
+     KL S3    8      8     
+     KL S4    8      8     
+  LL N (D)    8      6     
+     LL N1    8      8     
+      LL S    8      8     
+  LL S (D)    9     10     
+  
+  --- Season rollup ---
+  Season  leagues  min_weeks  max_weeks  avg_teams
+   08/09       27          6          9   8.000000
+   09/10       27          6          9   8.111111
+   10/11       29          5          8   7.758621
+   11/12       27          6          9   8.185185
+   12/13       27          6          9   7.962963
+   13/14       27          6          9   8.111111
+   14/15       27          1          9   8.074074
+   15/16       25          1          9   7.880000
+   16/17       25          6          9   7.800000
+   17/18       25          6          9   7.680000
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I have a clear answer; the JSON rule works.</details></think>
+
+_**Agent (default)**_
+
+Using `database/data/legacy_scrape/legacy_scrape_extracted.csv` now (analyzer default updated).
+
+**Why you still see both**
+
+The regex rule is fine — `DKJ Rimpar 1` → `DJK Rimpar 1` when normalization runs:
+
+```text
+'DKJ Rimpar 1' -> 'DJK Rimpar 1'
+'DJK Rimpar 1' -> 'DJK Rimpar 1'   # unchanged (already correct)
+```
+
+In `legacy_scrape_extracted.csv` the typo is still on disk: **83 rows** use `DKJ Rimpar`, **9,205** use `DJK Rimpar`. For `08/09 | BayL` both appear as separate team-total names because **this file has not been through `normalize_data` since that rule was added**.
+
+The analyze script only reads the CSV; it does not apply `team_name_normalization.json`.
+
+**Fix**
+
+```powershell
+uv run python extract_excel_data.py --mode normalize_data --input database/data/legacy_scrape/legacy_scrape_extracted.csv
+```
+
+Then re-run the analyzer (no `--csv` needed; it defaults to `legacy_scrape_extracted.csv`):
+
+```powershell
+uv run python scripts/analyze_legacy_scrape_csv.py
+```
+
+After normalization, `08/09 | BayL` should drop from 11 teams to **10** — only `DJK Rimpar 1`, not both spellings.
+
+---
+
+_**User**_
+
+is it plausible, the extending he data sete from 5 to 15 seasons slowed down the league seasson query by a factor of like 10-20?
+
+---
+
+_**Agent (default)**_
+
+Investigating how league/season queries load and filter data to assess whether a 3× season count could explain a 10–20× slowdown.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app\\services\\league_service.py",
+  "pattern": "season|league.*query|get_league"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app\\services\\league_service.py",
+  "pattern": "season|league.*query|get_league",
+  "topFiles": [
+    {
+      "matchCount": 40,
+      "uri": "app\\services\\league_service.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 100
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.py",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\data_access",
+  "pattern": "season|league"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\data_access",
+  "pattern": "season|league",
+  "topFiles": [
+    {
+      "matchCount": 4,
+      "uri": "data_access/models/raw_data_models.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "data_access/text_norm.py"
+    },
+    {
+      "matchCount": 17,
+      "uri": "data_access/models/league_models.py"
+    },
+    {
+      "matchCount": 15,
+      "uri": "data_access/series_data.py"
+    },
+    {
+      "matchCount": 8,
+      "uri": "data_access/adapters/data_adapter.py"
+    },
+    {
+      "matchCount": 5,
+      "uri": "data_access/reconstruct_flat_csv.py"
+    }
+  ],
+  "totalFiles": 6,
+  "totalMatches": 430
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app",
+  "pattern": "league_response_cache|cache"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app",
+  "pattern": "league_response_cache|cache",
+  "topFiles": [
+    {
+      "matchCount": 30,
+      "uri": "app\\services\\tournament_service.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 222
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
 
 </details></tool-use>

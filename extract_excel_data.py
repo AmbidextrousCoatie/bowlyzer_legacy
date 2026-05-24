@@ -17,6 +17,7 @@ import shutil
 import subprocess
 import io
 import os
+import sys
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from typing import Callable, Dict
 from contextlib import contextmanager, redirect_stdout
@@ -38,7 +39,7 @@ _TEAM_NORMALIZATION_STATS = None
 _LEAGUE_GENDER_SCOPE_CACHE = None
 
 # Bump these when analysis/extraction logic changes in a way that should invalidate prior cache entries.
-ANALYZER_VERSION = "analyzer-v1.2.5"
+ANALYZER_VERSION = "analyzer-v1.2.7"
 EXTRACTOR_VERSION = "extractor-v1.2.6"
 PROCESSOR_VERSION = "processor-v1.2.7"
 
@@ -425,7 +426,7 @@ def _load_league_mapping():
     rows = []
     alias_to_id = {}
     if not _LEAGUE_MAPPING_PATH.is_file():
-        _LEAGUE_MAPPING_CACHE = ([], [], set(), alias_to_id)
+        _LEAGUE_MAPPING_CACHE = ([], [], set(), alias_to_id, [])
         return _LEAGUE_MAPPING_CACHE
 
     mapping_df = pd.read_csv(_LEAGUE_MAPPING_PATH, encoding="utf-8")
@@ -445,8 +446,38 @@ def _load_league_mapping():
                 alias_to_id[alias_key] = lid
     male = [(lid, lng) for lid, lng in rows if not _is_female_league_id(lid)]
     female = [(lid, lng) for lid, lng in rows if _is_female_league_id(lid)]
-    _LEAGUE_MAPPING_CACHE = (male, female, seen_ids, alias_to_id)
+    entries = _build_league_mapping_entries(mapping_df)
+    _LEAGUE_MAPPING_CACHE = (male, female, seen_ids, alias_to_id, entries)
     return _LEAGUE_MAPPING_CACHE
+
+
+def _build_league_mapping_entries(mapping_df: pd.DataFrame) -> list[dict]:
+    """Rows from league_mapping.csv with all labels used for long_name matching."""
+    if "aliases" not in mapping_df.columns:
+        mapping_df = mapping_df.copy()
+        mapping_df["aliases"] = ""
+    entries: list[dict] = []
+    for rec in mapping_df.itertuples(index=False):
+        league_id = normalize_optional_text(getattr(rec, "id", None))
+        long_name = normalize_optional_text(getattr(rec, "long_name", None))
+        if not league_id or not long_name:
+            continue
+        gender_scope = "female" if _is_female_league_id(league_id) else "male"
+        labels = [long_name]
+        alias_field = normalize_optional_text(getattr(rec, "aliases", None)) or ""
+        for alias in alias_field.split("|"):
+            alias = normalize_optional_text(alias)
+            if alias and alias not in labels:
+                labels.append(alias)
+        entries.append(
+            {
+                "id": league_id,
+                "long_name": long_name,
+                "gender_scope": gender_scope,
+                "labels": labels,
+            }
+        )
+    return entries
 
 
 def _squish_league_text(value: str) -> str:
@@ -808,32 +839,66 @@ def compute_team_name_normalization_fingerprint() -> str:
         return ""
 
 
+# Gender tokens in sheet titles — flexible on dashes / whitespace (pre-2022 Ligabericht).
+_LEAGUE_GENDER_FEMALE_RE = re.compile(
+    r"(?:^|[\s\-–—/]+)(?:frauen|damen)(?:[\s\-–—/]+|$)",
+    re.IGNORECASE,
+)
+_LEAGUE_GENDER_MALE_RE = re.compile(
+    r"(?:^|[\s\-–—/]+)(?:herren|männer|maenner)(?:[\s\-–—/]+|$)",
+    re.IGNORECASE,
+)
+
+
+def _normalize_league_match_text(value: str) -> str:
+    """Lowercase title/label with dashes and whitespace collapsed for substring match."""
+    text = normalize_optional_text(value)
+    if not text:
+        return ""
+    text = text.lower()
+    text = re.sub(r"[\s\-–—_/]+", " ", text)
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _derive_league_gender_scope(raw: str) -> str:
+    """Damen/Frauen → female; Herren/Männer or no gender marker → male."""
+    text = normalize_optional_text(raw)
+    if not text:
+        return "male"
+    if _LEAGUE_GENDER_FEMALE_RE.search(text):
+        return "female"
+    return "male"
+
+
+def _long_name_matches_title(long_name_norm: str, title_norm: str) -> bool:
+    if not long_name_norm or not title_norm:
+        return False
+    if title_norm == long_name_norm:
+        return True
+    padded = f" {title_norm} "
+    return f" {long_name_norm} " in padded
+
+
 def _strip_trailing_league_gender_suffix(raw: str) -> str:
-    """Drop trailing ' - Frauen' / ' - Männer' labels from pre-2022 Ligabericht titles."""
+    """Drop trailing gender label from pre-2022 titles (unmapped fallback display only)."""
     text = normalize_optional_text(raw)
     if not text:
         return ""
     stripped = re.sub(
-        r"\s*-\s*(frauen|damen|männer|maenner|herren)\s*$",
+        r"[\s\-–—/]+(?:frauen|damen|männer|maenner|herren)\s*$",
         "",
         text,
         flags=re.IGNORECASE,
-    ).strip()
+    ).strip(" -–—/")
     return stripped or text
 
 
-def _detect_league_gender_bias(raw: str):
-    """Return 'female', 'male', or 'neutral' from explicit gender wording."""
-    lc = raw.lower()
-    has_frauen_or_damen = bool(re.search(r"\b(frauen|damen)\b", lc, re.IGNORECASE))
-    has_herren_or_maenner = bool(re.search(r"\b(herren|männer|maenner)\b", lc, re.IGNORECASE))
-    if has_frauen_or_damen and not has_herren_or_maenner:
-        return "female"
-    if has_herren_or_maenner and not has_frauen_or_damen:
-        return "male"
-    if has_frauen_or_damen and has_herren_or_maenner:
-        return "neutral"
-    return "neutral"
+def _fallback_league_display(display_name: str, gender_scope: str) -> str:
+    base = _strip_trailing_league_gender_suffix(display_name) or display_name
+    if gender_scope == "female" and not _is_female_league_id(base):
+        if not re.search(r"\(D\)\s*$", base, flags=re.IGNORECASE):
+            return f"{base} (D)"
+    return base
 
 
 def expand_league_region_shorthand(league_display: str) -> str:
@@ -860,26 +925,34 @@ def expand_league_region_shorthand(league_display: str) -> str:
     return pattern.sub(repl, text)
 
 
-def _match_candidate_to_mapping_pool(candidate: str, pool):
-    """Longest-long_name-first match against candidate substring rules."""
-    if not candidate or not pool:
+def _match_league_id_by_long_name(title: str, entries: list[dict], gender_scope: str) -> str | None:
+    """Longest long_name (or alias) contained in title, within the derived gender pool."""
+    title_norm = _normalize_league_match_text(title)
+    if not title_norm:
         return None
-    cand = _squish_league_text(candidate)
-    best_match = None
-    best_long_len = -1
-    for league_id, long_name in sorted(pool, key=lambda item: len(item[1]), reverse=True):
-        ln = _squish_league_text(long_name)
-        if not ln:
+
+    best_id = None
+    best_len = -1
+    for entry in entries:
+        if entry.get("gender_scope") != gender_scope:
             continue
-        if cand == ln or ln in cand or cand in ln:
-            if len(ln) > best_long_len:
-                best_long_len = len(ln)
-                best_match = league_id
-    return best_match
+        for label in entry.get("labels") or []:
+            label_norm = _normalize_league_match_text(label)
+            if not _long_name_matches_title(label_norm, title_norm):
+                continue
+            if len(label_norm) > best_len:
+                best_len = len(label_norm)
+                best_id = entry["id"]
+    return best_id
 
 
 def normalize_league_display_to_canonical(raw_league_display):
-    """Map verbose league titles to canonical IDs from relational_csv/league_mapping.csv."""
+    """
+    Map Ligabericht/Spielzettel league titles to canonical ids.
+
+    1. Match longest ``long_name`` (or alias) from league_mapping.csv in the title.
+    2. Derive gender from title wording: Damen/Frauen → female pool; otherwise male.
+    """
     text = normalize_optional_text(raw_league_display)
     if not text:
         return None
@@ -889,57 +962,26 @@ def normalize_league_display_to_canonical(raw_league_display):
         return None
 
     cleaned = expand_league_region_shorthand(cleaned)
+    gender_scope = _derive_league_gender_scope(cleaned)
 
-    male_rows, female_rows, known_ids, alias_to_id = _load_league_mapping()
-    if not male_rows and not alias_to_id:
-        return cleaned
+    cache = _load_league_mapping()
+    entries = cache[4] if len(cache) > 4 else []
+    if not entries:
+        return _fallback_league_display(cleaned, gender_scope)
 
-    for candidate in (cleaned, _strip_trailing_league_gender_suffix(cleaned)):
-        alias_hit = alias_to_id.get(_squish_league_text(candidate))
-        if alias_hit:
-            return alias_hit
-
-    cleaned = _strip_trailing_league_gender_suffix(cleaned) or cleaned
-
+    known_ids = cache[2]
     clean_lower = cleaned.strip().lower()
     if clean_lower in known_ids:
-        for lid, _ in male_rows + female_rows:
-            if lid.lower() == clean_lower:
-                return lid
+        for entry in entries:
+            if entry["id"].lower() == clean_lower:
+                return entry["id"]
         return cleaned
 
-    gender = _detect_league_gender_bias(cleaned)
-    lc_full = _squish_league_text(cleaned)
-    lc_unify_female = re.sub(r"\bfrauen\b", "damen", lc_full, flags=re.IGNORECASE)
-    lc_no_male = re.sub(r"\b(herren|männer|maenner)\b", " ", lc_unify_female, flags=re.IGNORECASE)
-    lc_no_male = re.sub(r"\s+", " ", lc_no_male).strip()
-    lc_no_gender_words = re.sub(r"\b(herren|männer|maenner|frauen|damen)\b", " ", lc_full, flags=re.IGNORECASE)
-    lc_no_gender_words = re.sub(r"\s+", " ", lc_no_gender_words).strip()
+    league_id = _match_league_id_by_long_name(cleaned, entries, gender_scope)
+    if league_id:
+        return league_id
 
-    if gender == "female":
-        hit = _match_candidate_to_mapping_pool(lc_unify_female, female_rows)
-        if hit:
-            return hit
-        hit = _match_candidate_to_mapping_pool(lc_no_male, female_rows)
-        if hit:
-            return hit
-
-    if gender == "male":
-        hit = _match_candidate_to_mapping_pool(lc_no_male, male_rows)
-        if hit:
-            return hit
-
-    if gender == "neutral":
-        hit = _match_candidate_to_mapping_pool(lc_no_gender_words, male_rows)
-        if hit:
-            return hit
-
-    if gender != "female":
-        hit = _match_candidate_to_mapping_pool(lc_unify_female, female_rows)
-        if hit:
-            return hit
-
-    return cleaned
+    return _fallback_league_display(cleaned, gender_scope)
 
 
 # Analyze-mode read bounds (avoid full-sheet loads when metadata / row counts suffice).
@@ -1766,10 +1808,22 @@ def parse_args():
         help="Season sheet name (default: Schiedsrichterinfos).",
     )
     parser.add_argument(
+        "--input",
+        dest="input_files",
+        nargs="+",
+        default=None,
+        help=(
+            "normalize_data mode: one or more semicolon-separated CSVs to normalize "
+            "(skips processing-cache merge). Default output is the first input file "
+            "(in-place); use --output-file to write elsewhere."
+        ),
+    )
+    parser.add_argument(
         "--output-file",
         default="database/data/historical_league_results.csv",
         help=(
             "Merged CSV path for process mode (all league/season combos in the run scope). "
+            "normalize_data: destination when using --input (required if multiple inputs). "
             "Use a dedicated path for legacy scrape batches, then merge sources separately."
         ),
     )
@@ -1835,6 +1889,14 @@ def validate_args(args):
     if args.mode == "normalize_data":
         if args.excel_file or args.folder:
             raise ValueError("normalize_data mode does not accept --file/--folder.")
+        if args.input_files:
+            if len(args.input_files) > 1 and not _cli_flag_passed("--output-file"):
+                raise ValueError(
+                    "normalize_data with multiple --input files requires --output-file."
+                )
+            for input_path in args.input_files:
+                if not Path(input_path).is_file():
+                    raise ValueError(f"Input file not found: {input_path}")
         return
 
     if not args.excel_file and not args.folder:
@@ -3382,6 +3444,12 @@ def sanitize_filename_component(value):
 DEFAULT_PROCESS_OUTPUT_FILE = Path("database/data/historical_league_results.csv")
 
 
+def _cli_flag_passed(flag: str) -> bool:
+    """True if flag appears on the command line (not merely argparse default)."""
+    prefix = f"{flag}="
+    return flag in sys.argv or any(arg.startswith(prefix) for arg in sys.argv)
+
+
 def _resolve_cli_path(path_value: str | Path) -> Path:
     path = Path(path_value)
     if not path.is_absolute():
@@ -3952,9 +4020,50 @@ def run_process_mode_with_analysis(excel_files, args):
     print_team_normalization_summary()
 
 
+def _normalize_merged_extract_frame(merged_df: pd.DataFrame) -> pd.DataFrame:
+    """Apply league/team normalization and standard sort order to extracted rows."""
+    merged_df = normalize_extracted_dataframe(merged_df)
+    merged_df = normalize_team_numbering_dataframe(merged_df, overrides_df=load_team_number_overrides())
+    return merged_df.sort_values(
+        by=["Season", "League", "Week", "Round Number", "Match Number", "Team", "Position"],
+        key=lambda col: col.astype(str),
+    )
+
+
 def run_normalize_data_mode(args):
-    """Rebuild normalized continuous output from existing combo CSVs only."""
+    """Rebuild normalized output from --input CSV(s) or existing combo CSVs in the processing cache."""
     reset_team_normalization_stats()
+
+    if args.input_files:
+        input_paths = [_resolve_cli_path(path_value) for path_value in args.input_files]
+        merged_frames = []
+        for csv_file in input_paths:
+            try:
+                merged_frames.append(pd.read_csv(csv_file, sep=";", dtype=str))
+            except Exception as exc:
+                raise ValueError(f"Failed to read input CSV {csv_file}: {exc}") from exc
+
+        merged_df = _normalize_merged_extract_frame(pd.concat(merged_frames, ignore_index=True))
+        if len(input_paths) > 1 or _cli_flag_passed("--output-file"):
+            continuous_output_file = _resolve_cli_path(args.output_file)
+        else:
+            continuous_output_file = input_paths[0]
+
+        continuous_output_file.parent.mkdir(parents=True, exist_ok=True)
+        merged_df.to_csv(continuous_output_file, sep=";", index=False)
+        output_hash = compute_file_sha256(continuous_output_file)
+        unique_names_path = continuous_output_file.parent / f"{continuous_output_file.stem}_unique_teams.csv"
+        export_unique_team_names_after_merge(merged_df, unique_names_path)
+
+        print(
+            f"\nnormalize_data: normalized {len(input_paths)} input file(s) -> {continuous_output_file} "
+            f"({len(merged_df)} rows, hash={output_hash[:12]}...)"
+        )
+        for input_path in input_paths:
+            print(f"  input: {input_path}")
+        print_team_normalization_summary()
+        return
+
     analysis_log = load_analysis_log()
     process_cache = analysis_log.setdefault("processing_cache", {})
     combo_cache = process_cache.setdefault("league_season_outputs", {})
@@ -3995,15 +4104,9 @@ def run_normalize_data_mode(args):
                 print(f"  - {missing_file}")
         return
 
-    merged_df = pd.concat(merged_frames, ignore_index=True)
-    merged_df = normalize_extracted_dataframe(merged_df)
-    merged_df = normalize_team_numbering_dataframe(merged_df, overrides_df=load_team_number_overrides())
-    merged_df = merged_df.sort_values(
-        by=["Season", "League", "Week", "Round Number", "Match Number", "Team", "Position"],
-        key=lambda col: col.astype(str),
-    )
+    merged_df = _normalize_merged_extract_frame(pd.concat(merged_frames, ignore_index=True))
 
-    continuous_output_file = Path("database/data/historical_league_results.csv")
+    continuous_output_file = _resolve_cli_path(args.output_file)
     continuous_output_file.parent.mkdir(parents=True, exist_ok=True)
     merged_df.to_csv(continuous_output_file, sep=";", index=False)
     output_hash = compute_file_sha256(continuous_output_file)

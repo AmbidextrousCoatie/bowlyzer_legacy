@@ -5,6 +5,7 @@
     "^LA[- ]Bowling(?:\\s+[^\\d]*)?\\s*(\\d+)$": "LA-Bowling Landshut \\1",
     "^LA[- ]Bowling\\s*(\\d+)\\s+Landshut$": "LA-Bowling Landshut \\1",
     "^LA[- ]Bowling\\s*\\d+\\s+Landshut\\s*(\\d+)$": "LA-Bowling Landshut \\1",
+    "^BC LA-Bowling\\s*(\\d+)$": "LA-Bowling Landshut \\1",
     "^Active\\s+Bowler\\s+Brunnthal(\\d+)$": "Active Bowler Brunnthal \\1",
     "^Active\\s+Bowler\\s+Brunnt\\.?\\s*(\\d+)$": "Active Bowler Brunnthal \\1",
     "^Active\\s+Bowler(?:\\s+[^\\d]*)?\\s*(\\d+)$": "Active Bowler Brunnthal \\1",
@@ -37,6 +38,7 @@
     "^Murmels\\s+N-U\\s*(\\d+)?$": "Murmels Neu-Ulm \\1",
     "^Bajuwaren\\s+München(\\d+)$": "Bajuwaren München \\1",
     "^Bajuwaren(?:\\s+[^\\d]*)?\\s*(\\d+)$": "Bajuwaren München \\1",
+    "^BC Bajuwaren München(\\d+)$": "Bajuwaren München \\1",
     "^Bavaria\\s+Unterföhring(\\d+)$": "Bavaria Unterföhring \\1",
     "^Bavaria\\s+(\\d+)$": "Bavaria Unterföhring \\1",
     "^Bavaria\\s+Unterf(?:\\s+[^\\d]*)?\\s*(\\d+)$": "Bavaria Unterföhring \\1",
@@ -59,7 +61,18 @@
     "^Panther Ing\\s+(\\d+)?$": "Panther Ingolstadt \\1",
     "^Panthers Pfarrk\\.\\s+(\\d+)?$": "Panthers Pfarrkirchen \\1",
     "^BC EPA München\\s*(\\d+)$": "EPA München \\1",
-    "^ProfiShop München\\s*(\\d+)$": "Team ProfiShop München \\1"
-
+    "^ProfiShop München\\s*(\\d+)$": "Team ProfiShop München \\1",
+    "^Bavaria M/L\\s*(\\d+)$": "BC Bavaria München/Land \\1",
+    "^BC Bavaria M/L\\s*(\\d+)$": "BC Bavaria München/Land \\1",
+    "^DKJ Rimpar\\s*(\\d+)$": "DJK Rimpar \\1",
+    "^Bad-Aibling\\s*(\\d+)$": "Bad Aibling Finest BC \\1",
+    "^Falken M/L \\s*(\\d+)$": "BC Falken München-Land \\1",
+    "^BC Falken München/Land \\s*(\\d+)$": "BC Falken München-Land \\1",
+    "^Phönix-Hobby\\s*(\\d+)$": "BC Phönix-Hobby \\1",
+    "^Merlin M/L\\s*(\\d+)$": "BC Merlin München-Land \\1",
+    "^BC Merlin M/L\\s*(\\d+)$": "BC Merlin München-Land \\1",
+    "^BC Bavaria München/Land\\s*(\\d+)$": "BC Bavaria München-Land \\1",
+    "^Tiger Aug\\s*(\\d+)$"	: "Tiger Augsburg \\1",
+    "^Prätoria Regensburg\\s*(\\d+)$": "Praetoria Regensburg \\1"
   }
 }
