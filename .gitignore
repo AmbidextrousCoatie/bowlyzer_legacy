@@ -59,3 +59,11 @@ database/data/league_results_merged_duplicates*.csv
 database/data/unique_team_names_after_merge.csv
 database/data/bowling_ergebnisse*.csv
 database/data/legacy_scrape/*
+database/input/clubmeisterschaft_donaubowler/Clubpokal DB 2026_25_05.xlsx
+database/input/clubmeisterschaft_donaubowler/Clubpokal DB 2026_21_05.xlsx
+
+# Excel lock files while a workbook is open
+**/.~lock.*
+
+# Local dataset experiments (not published to VPS)
+database/data/*no scraping*.parquet
