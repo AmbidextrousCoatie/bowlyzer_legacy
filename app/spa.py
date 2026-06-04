@@ -75,7 +75,12 @@ def register_spa(app: Flask) -> None:
     @app.route("/<path:path>", methods=["GET"])
     def spa_fallback(path: str):
         if any(request.path.startswith(prefix) for prefix in _API_PATH_PREFIXES):
-            return jsonify({"error": "Not found"}), 404
+            app.logger.warning(
+                "API path hit SPA fallback (no Flask route matched): %s — "
+                "redeploy bowlyzer:release or check nginx proxy_pass to :8080",
+                request.path,
+            )
+            return jsonify({"error": "Not found", "path": request.path}), 404
 
         if not os.path.isdir(dist):
             return (

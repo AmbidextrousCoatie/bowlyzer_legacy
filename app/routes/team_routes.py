@@ -16,7 +16,9 @@ def get_teams():
     try:
         hit = league_cache_try_get("team_get_teams", request.args.get("database"), dict(request.args))
         if hit is not None:
-            return jsonify(hit)
+            resp = jsonify(hit)
+            resp.headers["X-League-Cache"] = "HIT"
+            return resp
         team_service = get_team_service()
         teams = team_service.get_all_teams(
             league_name=None,
@@ -24,7 +26,9 @@ def get_teams():
         )
         payload = json_safe(teams)
         league_cache_put("team_get_teams", request.args.get("database"), dict(request.args), payload)
-        return jsonify(payload)
+        resp = jsonify(payload)
+        resp.headers["X-League-Cache"] = "MISS"
+        return resp
         
     except Exception as e:
         print(f"Error in get_teams: {str(e)}")

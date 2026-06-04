@@ -7,6 +7,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
+from app.services.i18n_service import i18n_service
 from app.services.tournament_service import TournamentService, _tournament_df_string_series
 from data_access.schema import Columns
 
@@ -35,6 +36,56 @@ def test_cut_position_is_on_cut_rank_not_first_outside(svc: TournamentService) -
     df = _load_sued_df()
     cut = svc._resolved_cut_position_for_round(df, 3, "25/26", "Südbayerische Meisterschaft")
     assert cut == 12
+
+
+def test_gesamt_cut_shade_rank_matches_net_sort_rank(svc: TournamentService) -> None:
+    """Handicap Gesamtwertung: row cut colors follow net sort (#), not qual scratch pins."""
+    csv = Path(__file__).resolve().parents[2] / "database" / "data" / "tournament_manual_postprocessed.csv"
+    if not csv.is_file():
+        pytest.skip("tournament_manual_postprocessed.csv not present")
+    raw = pd.read_csv(csv, sep=";", low_memory=False)
+    raw = raw[raw["Event Type"].astype(str).str.lower().eq("tournament")]
+    raw = raw[raw["Event Name"].astype(str).eq("Clubmeisterschaft Donaubowler 2026")]
+    if raw.empty:
+        pytest.skip("Clubmeisterschaft Donaubowler 2026 not in fixture")
+    season, tournament = "25/26", "Clubmeisterschaft Donaubowler 2026"
+    svc._tournament_df_cache[svc._tournament_cache_key(season, tournament)] = raw
+
+    lb = svc.get_leaderboard_table(season, tournament, round_number=None, df=raw)
+    assert lb.metadata and lb.metadata.get("leaderboard_mode") == "scratch_net_handicap"
+    assert lb.default_sort and lb.default_sort.get("field") == "total_net"
+
+    for i, row in enumerate(lb.data):
+        meta = (lb.row_metadata or [])[i] if i < len(lb.row_metadata or []) else {}
+        assert meta.get("cut_shade_rank") == row[0], (
+            f"row {i}: cut_shade_rank {meta.get('cut_shade_rank')} != displayed rank {row[0]}"
+        )
+
+    group_titles = [g.title for g in lb.columns]
+    assert len(group_titles) == 3
+    net_idx = group_titles.index(i18n_service.get_text("ui.tournament.lb_group_net"))
+    scratch_idx = group_titles.index(i18n_service.get_text("ui.tournament.lb_group_scratch"))
+    spieler_idx = group_titles.index(i18n_service.get_text("ui.tournament.lb_group_players"))
+    assert spieler_idx < net_idx < scratch_idx
+    assert lb.columns[net_idx].highlight_header_only is True
+    assert lb.columns[net_idx].highlighted is not True
+    assert lb.columns[scratch_idx].highlight_header_only is not True
+    assert lb.columns[scratch_idx].style is None
+    assert lb.columns[net_idx].title_key == "ui.tournament.lb_group_net"
+    rank_col = next(c for g in lb.columns for c in g.columns if c.field == "rank")
+    assert rank_col.width == "44px"
+    player_col = next(c for g in lb.columns for c in g.columns if c.field == "player")
+    assert player_col.width == "110px"
+    assert player_col.title_key == "player"
+    hcp_col = next(c for g in lb.columns for c in g.columns if c.field == "handicap_display")
+    assert hcp_col.width == "55px"
+    avg_net_col = next(c for g in lb.columns for c in g.columns if c.field == "avg_net")
+    assert avg_net_col.title_key == "table.header.average"
+    assert avg_net_col.width == "60px"
+
+    flat_fields = [col.field for g in lb.columns for col in g.columns]
+    first_round_field = next(f for f in flat_fields if f.startswith("round_"))
+    assert flat_fields.index("total_net") < flat_fields.index(first_round_field)
 
 
 def test_gesamt_leaderboard_applies_cut_styles(svc: TournamentService) -> None:

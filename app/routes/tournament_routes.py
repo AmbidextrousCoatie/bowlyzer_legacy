@@ -7,9 +7,15 @@ from app.cache.league_response_cache import league_cache_put, league_cache_try_g
 from app.utils.tournament_benchmark import tournament_benchmark_enabled
 from app.config.database_config import database_config
 from app.services.tournament_service import TournamentService
+from app.utils.season_query import normalize_season_query_value
+from data_access.parquet_sidecar import data_file_exists
 
 
 bp = Blueprint("tournament", __name__)
+
+
+def _season_param(name: str = "season") -> str | None:
+    return normalize_season_query_value(request.args.get(name))
 
 # Removed from ``database_config``; old bookmarks still send these IDs.
 _LEGACY_SYNTHETIC_TOURNAMENT_IDS = frozenset(
@@ -47,7 +53,11 @@ def _normalize_requested_tournament_database(requested: str | None) -> str | Non
 
 def _resolve_default_tournament_source() -> str:
     """
-    Prefer the regional combined (+ manual) merge whenever that CSV exists.
+    Prefer the regional combined (+ manual) merge whenever published data exists.
+
+    Uses Parquet-or-CSV resolution (``data_file_exists``) so VPS deploys that ship
+    only ``tournaments_postprocessed.parquet`` still pick the tournament source instead
+    of falling back to ``db_real_merged`` (full league Parquet → OOM on 650m VPS).
 
     Previously we fell back to SBM/NBM when ``get_tournaments()`` on the regional
     source was empty (e.g. stub or load glitch). Those extracts only contain one event
@@ -55,16 +65,16 @@ def _resolve_default_tournament_source() -> str:
     """
     try:
         cfg = database_config.get_source_config(_REGIONAL_TOURNAMENT_SOURCE)
-        if cfg and cfg.file_path:
-            p = Path(cfg.file_path)
-            if p.is_file() and p.stat().st_size > 0:
-                TournamentService(database=_REGIONAL_TOURNAMENT_SOURCE)
-                return _REGIONAL_TOURNAMENT_SOURCE
+        if cfg and cfg.file_path and data_file_exists(Path(cfg.file_path)):
+            return _REGIONAL_TOURNAMENT_SOURCE
     except Exception:
         pass
 
     for source_id in _SINGLE_MEET_TOURNAMENT_SOURCES:
         try:
+            cfg = database_config.get_source_config(source_id)
+            if not cfg or not cfg.file_path or not data_file_exists(Path(cfg.file_path)):
+                continue
             svc = TournamentService(database=source_id)
             if svc.get_tournaments():
                 return source_id
@@ -110,7 +120,7 @@ def get_available_tournaments():
     cached = _tournament_json_cache_get("get_available_tournaments")
     if cached is not None:
         return jsonify(cached)
-    season = request.args.get("season")
+    season = _season_param()
     payload = get_tournament_service().get_tournaments(season=season)
     _tournament_json_cache_put("get_available_tournaments", payload)
     return jsonify(payload)
@@ -118,18 +128,22 @@ def get_available_tournaments():
 
 @bp.route("/tournament/get_available_seasons")
 def get_available_seasons():
-    cached = _tournament_json_cache_get("get_available_seasons")
-    if cached is not None:
-        return jsonify(cached)
-    tournament = request.args.get("tournament")
-    payload = get_tournament_service().get_seasons(tournament=tournament)
-    _tournament_json_cache_put("get_available_seasons", payload)
-    return jsonify(payload)
+    try:
+        cached = _tournament_json_cache_get("get_available_seasons")
+        if cached is not None:
+            return jsonify(cached)
+        tournament = request.args.get("tournament")
+        payload = get_tournament_service().get_seasons(tournament=tournament)
+        _tournament_json_cache_put("get_available_seasons", payload)
+        return jsonify(payload)
+    except Exception as e:
+        print(f"Error in tournament get_available_seasons: {e}")
+        return jsonify({"error": str(e)}), 500
 
 
 @bp.route("/tournament/get_available_rounds")
 def get_available_rounds():
-    season = request.args.get("season")
+    season = _season_param()
     tournament = request.args.get("tournament")
     if not season or not tournament:
         return jsonify({"error": "season and tournament are required"}), 400
@@ -143,7 +157,7 @@ def get_available_rounds():
 
 @bp.route("/tournament/get_tournament_format")
 def get_tournament_format():
-    season = request.args.get("season")
+    season = _season_param()
     tournament = request.args.get("tournament")
     if not season or not tournament:
         return jsonify({"error": "season and tournament are required"}), 400
@@ -159,7 +173,7 @@ def get_tournament_format():
 
 @bp.route("/tournament/get_available_players")
 def get_available_players():
-    season = request.args.get("season")
+    season = _season_param()
     tournament = request.args.get("tournament")
     round_number = request.args.get("round", type=int)
     if not season or not tournament:
@@ -176,7 +190,7 @@ def get_available_players():
 
 @bp.route("/tournament/get_summary_cards")
 def get_summary_cards():
-    season = request.args.get("season")
+    season = _season_param()
     tournament = request.args.get("tournament")
     round_number = request.args.get("round", type=int)
     top_n = request.args.get("n", default=5, type=int)
@@ -188,7 +202,7 @@ def get_summary_cards():
 
 @bp.route("/tournament/get_leaderboard")
 def get_leaderboard():
-    season = request.args.get("season")
+    season = _season_param()
     tournament = request.args.get("tournament")
     round_number = request.args.get("round", type=int)
     if not season or not tournament:
@@ -199,7 +213,7 @@ def get_leaderboard():
 
 @bp.route("/tournament/get_round_results")
 def get_round_results():
-    season = request.args.get("season")
+    season = _season_param()
     tournament = request.args.get("tournament")
     round_number = request.args.get("round", type=int)
     if not season or not tournament:
@@ -210,7 +224,7 @@ def get_round_results():
 
 @bp.route("/tournament/get_section")
 def get_tournament_section():
-    season = request.args.get("season")
+    season = _season_param()
     tournament = request.args.get("tournament")
     round_number = request.args.get("round", type=int)
     top_n = request.args.get("n", default=5, type=int)
@@ -245,7 +259,7 @@ def get_tournament_section():
 
 @bp.route("/tournament/get_player_section")
 def get_player_section():
-    season = request.args.get("season")
+    season = _season_param()
     tournament = request.args.get("tournament")
     player = request.args.get("player")
     if not season or not tournament or not player:

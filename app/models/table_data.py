@@ -9,6 +9,7 @@ class Column:
     """Individual column definition."""
     title: str
     field: str
+    title_key: Optional[str] = None  # i18n key; React resolves via /league/get_translations
     sortable: bool = True
     filterable: bool = True
     width: Optional[str] = None
@@ -26,11 +27,13 @@ class ColumnGroup:
     """Column group with a common header."""
     title: str
     columns: List[Column]
+    title_key: Optional[str] = None
     frozen: Optional[str] = None  # 'left', 'right', or None
     style: Optional[Dict[str, str]] = None  # Custom CSS styles for the group
     header_style: Optional[Dict[str, str]] = None  # Custom CSS for header
     width: Optional[str] = None  # Width for the entire group
     highlighted: bool = False  # Whether this group should be visually highlighted
+    highlight_header_only: bool = False  # Highlight group/column headers only, not body cells
 
 @dataclass
 class TableData:
@@ -66,6 +69,7 @@ class TableData:
                         {
                             "title": col.title,
                             "field": col.field,
+                            **({"title_key": col.title_key} if col.title_key else {}),
                             **({"sortable": col.sortable} if col.sortable is not None else {}),
                             **({"filterable": col.filterable} if col.filterable is not None else {}),
                             **({"width": col.width} if col.width else {}),
@@ -78,11 +82,13 @@ class TableData:
                         }
                         for col in group.columns
                     ],
+                    **({"title_key": group.title_key} if group.title_key else {}),
                     **({"frozen": group.frozen} if group.frozen else {}),
                     **({"style": group.style} if group.style else {}),
                     **({"headerStyle": group.header_style} if group.header_style else {}),
                     **({"width": group.width} if group.width else {}),
                     **({"highlighted": group.highlighted} if group.highlighted else {}),
+                    **({"highlight_header_only": group.highlight_header_only} if group.highlight_header_only else {}),
                 }
                 for group in self.columns
             ],

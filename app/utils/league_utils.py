@@ -22,7 +22,11 @@ def _load_csv_id_long_pairs(csv_path: Path) -> Dict[str, str]:
             lid = (row.get("id") or "").strip()
             long_name = (row.get("long_name") or "").strip()
             if lid and long_name:
-                out[lid] = long_name
+                # Prefer the more specific label when one id has multiple long_names
+                # (e.g. LL N1: "Landesliga Nord 1" over "Landesliga Nord").
+                existing = out.get(lid)
+                if not existing or len(long_name) > len(existing):
+                    out[lid] = long_name
     return out
 
 

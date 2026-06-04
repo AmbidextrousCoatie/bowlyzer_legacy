@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, Response, jsonify, request
 from app.services.league_service import LeagueService
 from data_access.schema import Columns, ColumnsExtra
 from app.services.i18n_service import i18n_service, Language
@@ -16,6 +16,7 @@ from app.utils.league_utils import (
     get_league_long_name_map,
     resolve_league_long_name,
 )
+from app.utils.season_query import normalize_season_query_value
 from app.config.database_config import database_config
 from app.cache.league_response_cache import league_cache_put, league_cache_try_get
 from app.utils.json_safe import json_safe
@@ -31,42 +32,68 @@ def _league_json_cache_put(endpoint_key: str, payload):
         return
     league_cache_put(endpoint_key, request.args.get("database"), dict(request.args), payload)
 
+
+def _jsonify_cached_or_compute(endpoint_key: str, compute):
+    """Return Flask JSON response; set X-League-Cache: HIT|MISS for debugging."""
+    hit = _league_json_cache_get(endpoint_key)
+    if hit is not None:
+        if request.method == "HEAD":
+            resp = Response(status=200)
+            resp.headers["Content-Type"] = "application/json"
+            resp.headers["X-League-Cache"] = "HIT"
+            return resp
+        resp = jsonify(hit)
+        resp.headers["X-League-Cache"] = "HIT"
+        return resp
+    # HEAD must not run heavy compute (curl -I); only pre-warmed disk cache is allowed.
+    if request.method == "HEAD":
+        resp = Response(status=204)
+        resp.headers["X-League-Cache"] = "MISS"
+        return resp
+    payload = compute()
+    _league_json_cache_put(endpoint_key, payload)
+    resp = jsonify(payload)
+    resp.headers["X-League-Cache"] = "MISS"
+    return resp
+
 def get_league_service():
     """Helper function to get LeagueService with database parameter"""
     database = request.args.get('database') or database_config.get_default_source()
     debug_config.log_service('LeagueService', 'create', f"database={database}")
     return LeagueService(database=database)
 
+
+def _season_param(name: str = "season") -> str | None:
+    return normalize_season_query_value(request.args.get(name))
+
 @bp.route("/league/get_club_matrix")
 def get_club_matrix():
     """JSON for React Club Matrix (clubs list + team×season grid)."""
     try:
-        hit = _league_json_cache_get("get_club_matrix")
-        if hit is not None:
-            return jsonify(hit)
-        league_service = get_league_service()
-        selected_club = (request.args.get("club") or "").strip()
-        only_unnumbered = str(request.args.get("only_unnumbered", "")).strip().lower() in {
-            "1",
-            "true",
-            "on",
-            "yes",
-        }
-        clubs = league_service.get_available_clubs(only_with_unnumbered_team=only_unnumbered)
-        if selected_club and selected_club not in clubs:
-            selected_club = ""
-        matrix = {"club": selected_club, "seasons": [], "rows": []}
-        if selected_club:
-            matrix = league_service.get_club_team_season_matrix(selected_club)
-        payload = {
-            "clubs": clubs,
-            "selected_club": selected_club,
-            "only_unnumbered": only_unnumbered,
-            "matrix": matrix,
-            "league_long_names": get_league_long_name_map(),
-        }
-        _league_json_cache_put("get_club_matrix", payload)
-        return jsonify(payload)
+        def _build():
+            league_service = get_league_service()
+            selected_club = (request.args.get("club") or "").strip()
+            only_unnumbered = str(request.args.get("only_unnumbered", "")).strip().lower() in {
+                "1",
+                "true",
+                "on",
+                "yes",
+            }
+            clubs = league_service.get_available_clubs(only_with_unnumbered_team=only_unnumbered)
+            if selected_club:
+                selected_club = league_service.resolve_club_name(selected_club, clubs)
+            matrix = {"club": selected_club, "seasons": [], "rows": []}
+            if selected_club:
+                matrix = league_service.get_club_team_season_matrix(selected_club)
+            return {
+                "clubs": clubs,
+                "selected_club": selected_club,
+                "only_unnumbered": only_unnumbered,
+                "matrix": matrix,
+                "league_long_names": get_league_long_name_map(),
+            }
+
+        return _jsonify_cached_or_compute("get_club_matrix", _build)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -116,7 +143,7 @@ def get_data_oddities():
 @bp.route('/league/get_available_weeks')
 def get_available_weeks():
     try:
-        season = request.args.get('season')
+        season = _season_param()
         league = request.args.get('league')
         
         if not season or not league:
@@ -134,7 +161,7 @@ def get_available_rounds():
         params = dict(request.args)
         debug_config.log_route('league.get_available_rounds', params)
         
-        season = request.args.get('season')
+        season = _season_param()
         league = request.args.get('league')
         week = request.args.get('week')
         
@@ -163,7 +190,7 @@ def get_game_overview():
         params = dict(request.args)
         debug_config.log_route('league.get_game_overview', params)
         
-        season = request.args.get('season')
+        season = _season_param()
         league = request.args.get('league')
         week = request.args.get('week')
         round_number = request.args.get('round')
@@ -207,7 +234,7 @@ def get_game_team_details():
         params = dict(request.args)
         debug_config.log_route('league.get_game_team_details', params)
         
-        season = request.args.get('season')
+        season = _season_param()
         league = request.args.get('league')
         week = request.args.get('week')
         team = request.args.get('team')
@@ -250,7 +277,7 @@ def get_game_team_details():
 @bp.route('/league/get_available_teams')
 def get_available_teams():
     try:
-        season = request.args.get('season')
+        season = _season_param()
         league = request.args.get('league')
         
         if not season or not league:
@@ -269,7 +296,7 @@ def get_league_history():
         params = dict(request.args)
         debug_config.log_route('league.get_league_history', params)
         
-        season = request.args.get('season')
+        season = _season_param()
         league = request.args.get('league')
         
         if not all([season, league]):
@@ -302,7 +329,7 @@ def get_league_week_table():
         params = dict(request.args)
         debug_config.log_route('league.get_league_week_table', params)
         
-        season = request.args.get('season')
+        season = _season_param()
         league = request.args.get('league')
         week = int(request.args.get('week'))
         
@@ -336,28 +363,19 @@ def get_season_league_standings():
     try:
         params = dict(request.args)
         debug_config.log_route('league.get_season_league_standings', params)
-        
-        season = request.args.get('season')
+
+        season = _season_param()
         division = request.args.get('division')
-        
+
         if not season:
             return jsonify({"error": i18n_service.get_text("season_required")}), 400
 
-        hit = _league_json_cache_get("get_season_league_standings")
-        if hit is not None:
-            return jsonify(hit)
+        def _build():
+            return get_league_service().get_season_league_standings(
+                season=season, division=division
+            )
 
-        league_service = get_league_service()
-        standings_data = league_service.get_season_league_standings(season=season, division=division)
-
-        if not standings_data:
-            return jsonify({"message": "No data found for this season"}), 404
-
-        _league_json_cache_put("get_season_league_standings", standings_data)
-        response_size = sys.getsizeof(str(standings_data))
-        debug_config.log_route('league.get_season_league_standings', params, response_size)
-
-        return jsonify(standings_data)
+        return _jsonify_cached_or_compute("get_season_league_standings", _build)
     except Exception as e:
         debug_config.log_route('league.get_season_league_standings', dict(request.args), f"ERROR: {str(e)}")
         if debug_config.is_debug_enabled('routes'):
@@ -367,7 +385,7 @@ def get_season_league_standings():
 @bp.route('/league/get_team_week_details_table')
 def get_team_week_details_table():
     try:
-        season = request.args.get('season')
+        season = _season_param()
         league = request.args.get('league')
         week = int(request.args.get('week'))
         team = request.args.get('team')
@@ -403,7 +421,7 @@ def get_team_week_details_table():
 @bp.route('/league/get_team_week_head_to_head_table')
 def get_team_week_head_to_head_table():
     try:
-        season = request.args.get('season')
+        season = _season_param()
         league = request.args.get('league')
         week_str = request.args.get('week')
         team = request.args.get('team')
@@ -471,7 +489,7 @@ def get_available_divisions():
     Return available divisions for a given season, based on leagues that actually have data.
     """
     try:
-        season = request.args.get("season")
+        season = _season_param()
 
         league_service = get_league_service()
         leagues = league_service.get_leagues(season=season)
@@ -509,7 +527,7 @@ def get_available_divisions():
 @bp.route('/league/get_available_leagues')
 def get_available_leagues():
     try:
-        season = request.args.get("season")
+        season = _season_param()
         division = request.args.get("division")
 
         hit = _league_json_cache_get("get_available_leagues")
@@ -535,7 +553,7 @@ def get_available_leagues():
 @bp.route('/league/get_honor_scores')
 def get_honor_scores():
     try:
-        season = request.args.get('season')
+        season = _season_param()
         league = request.args.get('league')
         week = int(request.args.get('week'))
         
@@ -564,7 +582,7 @@ def get_honor_scores():
 @bp.route('/league/get_team_points')
 def get_team_points():
     try:
-        season = request.args.get('season')
+        season = _season_param()
         league = request.args.get('league')
            
 
@@ -591,7 +609,8 @@ def get_team_points():
 
 
 
-@bp.route('/get_latest_events')
+@bp.route('/league/get_latest_events')
+@bp.route('/get_latest_events')  # legacy path (vite proxy / direct callers)
 def get_latest_events():
     try:
         params = dict(request.args)
@@ -619,7 +638,7 @@ def get_latest_events():
 @bp.route('/league/get_team_positions')
 def get_team_positions():
     try:
-        season = request.args.get('season')
+        season = _season_param()
         league = request.args.get('league')
            
 
@@ -647,7 +666,7 @@ def get_team_positions():
 @bp.route('/league/get_team_averages')
 def get_team_averages():
     try:
-        season = request.args.get('season')
+        season = _season_param()
         league = request.args.get('league')
         
         print(f"Team Averages - Received request with: season={season}, league={league}")
@@ -947,7 +966,7 @@ def get_translations():
 @bp.route('/league/get_team_individual_scores_table')
 def get_team_individual_scores_table():
     try:
-        season = request.args.get('season')
+        season = _season_param()
         league = request.args.get('league')
         week_str = request.args.get('week')
         team = request.args.get('team')
@@ -1163,7 +1182,7 @@ def get_season_timetable():
     """Get season timetable with match day schedule"""
     try:
         league = request.args.get('league')
-        season = request.args.get('season')
+        season = _season_param()
         
         if not all([league, season]):
             return jsonify({'error': 'Missing required parameters: league, season'}), 400
@@ -1188,7 +1207,7 @@ def get_team_analysis():
     """Get detailed team analysis including individual player performance and win percentages"""
     try:
         league = request.args.get('league')
-        season = request.args.get('season')
+        season = _season_param()
         team = request.args.get('team')
 
         if not all([league, season, team]):
@@ -1214,7 +1233,7 @@ def get_team_performance_table():
     """Get team performance table as TableData - can be passed directly to createTableTabulator"""
     try:
         league = request.args.get('league')
-        season = request.args.get('season')
+        season = _season_param()
         team = request.args.get('team')
 
         if not all([league, season, team]):
@@ -1239,7 +1258,7 @@ def get_team_win_percentage_table():
     """Get team win percentage table as TableData - can be passed directly to createTableTabulator"""
     try:
         league = request.args.get('league')
-        season = request.args.get('season')
+        season = _season_param()
         team = request.args.get('team')
 
         if not all([league, season, team]):
@@ -1264,7 +1283,7 @@ def get_individual_averages():
     """Get individual player averages for a season, optionally filtered by week and/or team"""
     try:
         league = request.args.get('league')
-        season = request.args.get('season')
+        season = _season_param()
         week_str = request.args.get('week')  # Optional parameter
         team = request.args.get('team')  # Optional parameter
         
@@ -1304,7 +1323,7 @@ def get_team_vs_team_comparison():
     """Get team vs team comparison matrix with heat map data"""
     try:
         league = request.args.get('league')
-        season = request.args.get('season')
+        season = _season_param()
         week = request.args.get('week')
         
         if not league or not season:

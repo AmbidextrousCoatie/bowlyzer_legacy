@@ -21,6 +21,13 @@ from app.utils.tournament_benchmark import TournamentBenchmark, tournament_bench
 KO_FINALE_SERIES_BO3 = "bo3_pins"
 KO_FINALE_SERIES_SCRATCH_2G = "scratch_total_2g"
 
+# Gesamtwertung Spieler-group column widths (rank/hcp −30%, player −15%).
+_LB_COL_RANK_W = "44px"
+_LB_COL_PLAYER_W = "110px"
+_LB_COL_HCP_W = "55px"
+_LB_COL_TOTAL_W = "90px"  # Gesamt / Ø totals (−15% from 100px)
+_LB_COL_TOTAL_AVG = "60px"
+
 # Individual player stats page: `player_cards` in tournament_ko_config.json (same key as KO block: season||Event Name).
 # Canonical render order when merging with explicit config (unknown ids dropped).
 TOURNAMENT_PLAYER_CARD_ORDER: Tuple[str, ...] = (
@@ -1398,7 +1405,7 @@ class TournamentService:
                     )
                 )
             if include_club:
-                base_columns.append(Column(title=i18n_service.get_text("ui.player.club"), field="club", width="220px", align="left"))
+                base_columns.append(Column(title=i18n_service.get_text("ui.player.club"), field="club", width="220px", align="center"))
 
             t_pin_sc = i18n_service.get_text("ui.tournament.col_pins_scratch")
             t_avg_sc = i18n_service.get_text("ui.tournament.col_avg_scratch")
@@ -1496,7 +1503,10 @@ class TournamentService:
                     row_metadata.append({"styling": {}})
                 else:
                     rank_key = self._leaderboard_row_key(row, group_keys)
-                    rank_for_cut = int(cut_shade_ranks.get(rank_key, row.get("rank", 0)))
+                    if use_hc_round:
+                        rank_for_cut = int(row.get("rank", 0))
+                    else:
+                        rank_for_cut = int(cut_shade_ranks.get(rank_key, row.get("rank", 0)))
                     style = self._cut_row_style_for_rank(rank_for_cut, cut_pos)
                     row_metadata.append({"styling": {}, "cut_shade_rank": rank_for_cut})
                     if style:
@@ -1625,17 +1635,36 @@ class TournamentService:
             hcp_short = i18n_service.get_text("ui.tournament.handicap_col_short")
             hcp_tip = i18n_service.get_text("ui.tournament.handicap_per_game_tooltip")
             tot_sc = i18n_service.get_text("ui.tournament.lb_total_scratch")
-            avg_sc = i18n_service.get_text("ui.tournament.lb_avg_scratch")
+            avg_sym = i18n_service.get_text("table.header.average")
             tot_n = i18n_service.get_text("ui.tournament.lb_total_net")
-            avg_n = i18n_service.get_text("ui.tournament.lb_avg_net")
             spieler_columns = [
-                Column(title="#", field="rank", width="60px", align="center", decimal_places=0, frozen="left"),
-                Column(title=i18n_service.get_text("player"), field="player", width="132px", align="left", frozen="left"),
-                Column(title=hcp_short, field="handicap_display", width="100px", align="center", tooltip=hcp_tip),
+                Column(title="#", field="rank", width=_LB_COL_RANK_W, align="center", decimal_places=0, frozen="left"),
+                Column(
+                    title=i18n_service.get_text("player"),
+                    field="player",
+                    title_key="player",
+                    width=_LB_COL_PLAYER_W,
+                    align="left",
+                    frozen="left",
+                ),
+                Column(
+                    title=hcp_short,
+                    field="handicap_display",
+                    title_key="ui.tournament.handicap_col_short",
+                    width=_LB_COL_HCP_W,
+                    align="center",
+                    tooltip=hcp_tip,
+                ),
             ]
             if include_club:
                 spieler_columns.append(
-                    Column(title=i18n_service.get_text("ui.player.club"), field="club", width="220px", align="left")
+                    Column(
+                        title=i18n_service.get_text("ui.player.club"),
+                        field="club",
+                        title_key="ui.player.club",
+                        width="220px",
+                        align="center",
+                    )
                 )
             scratch_columns: List[Column] = []
             for rn in round_numbers:
@@ -1645,32 +1674,61 @@ class TournamentService:
                 )
             scratch_columns.extend(
                 [
-                    Column(title=tot_sc, field="total_score", width="100px", align="center", decimal_places=0),
-                    Column(title=avg_sc, field="avg_scratch", width="100px", align="center", decimal_places=1),
+                    Column(
+                        title=tot_sc,
+                        field="total_score",
+                        title_key="ui.tournament.lb_total_scratch",
+                        width=_LB_COL_TOTAL_W,
+                        align="center",
+                        decimal_places=0,
+                    ),
+                    Column(
+                        title=avg_sym,
+                        field="avg_scratch",
+                        title_key="table.header.average",
+                        width=_LB_COL_TOTAL_W,
+                        align="center",
+                        decimal_places=1,
+                    ),
                 ]
             )
             net_columns = [
-                Column(title=tot_n, field="total_net", width="100px", align="center", decimal_places=0),
-                Column(title=avg_n, field="avg_net", width="100px", align="center", decimal_places=1),
+                Column(
+                    title=tot_n,
+                    field="total_net",
+                    title_key="ui.tournament.lb_total_net",
+                    width=_LB_COL_TOTAL_W,
+                    align="center",
+                    decimal_places=0,
+                ),
+                Column(
+                    title=avg_sym,
+                    field="avg_net",
+                    title_key="table.header.average",
+                    width=_LB_COL_TOTAL_AVG,
+                    align="center",
+                    decimal_places=1,
+                ),
             ]
             grouped_columns = [
                 ColumnGroup(
                     title=sp_grp,
-                    style={"backgroundColor": "#f8f9fa"},
+                    title_key="ui.tournament.lb_group_players",
                     header_style={"fontWeight": "bold"},
                     columns=spieler_columns,
                 ),
                 ColumnGroup(
-                    title=sc_grp,
-                    style={"backgroundColor": get_theme_color("surface_alt")},
-                    header_style={"fontWeight": "bold"},
-                    columns=scratch_columns,
-                ),
-                ColumnGroup(
                     title=nt_grp,
-                    style={"backgroundColor": "#f0f4f8"},
+                    title_key="ui.tournament.lb_group_net",
+                    highlight_header_only=True,
                     header_style={"fontWeight": "bold"},
                     columns=net_columns,
+                ),
+                ColumnGroup(
+                    title=sc_grp,
+                    title_key="ui.tournament.lb_group_scratch",
+                    header_style={"fontWeight": "bold"},
+                    columns=scratch_columns,
                 ),
             ]
             default_sort_field = "total_net"
@@ -1681,7 +1739,7 @@ class TournamentService:
                 Column(title=i18n_service.get_text("player"), field="player", width="132px", align="left", frozen="left"),
             ]
             if include_club:
-                columns.append(Column(title=i18n_service.get_text("ui.player.club"), field="club", width="220px", align="left"))
+                columns.append(Column(title=i18n_service.get_text("ui.player.club"), field="club", width="220px", align="center"))
             for rn in round_numbers:
                 title = round_name_map.get(rn) or f"Round {rn}"
                 columns.append(Column(title=title, field=f"round_{rn}", width="94px", align="center", decimal_places=0))
@@ -1708,8 +1766,8 @@ class TournamentService:
         data = []
         row_metadata = []
         cell_metadata: Dict[str, Dict[str, Any]] = {}
-        # Gesamtwertung cut shading: cut rank from CSV at end of qualifying; row colors by
-        # cumulative scratch pins through qualifying (overall total), not single-stage results.
+        # Gesamtwertung cut shading: cut position from qualifying config/CSV; row colors use the
+        # same ladder as the table sort (net total when handicap applies, else qual scratch pins).
         latest_qual_rn = self._latest_qualifying_round_number(df)
         cut_pos_gesamt: Optional[int] = None
         if latest_qual_rn is not None:
@@ -1734,12 +1792,12 @@ class TournamentService:
                 entry = [int(row["rank"]), str(row.get(Columns.player_name, "")), hc_lbl]
                 if include_club:
                     entry.append(str(row.get(Columns.club, "")))
+                entry.append(int(row.get("total_net", 0)))
+                entry.append(float(row.get("avg_net", 0.0)))
                 for rn in round_numbers:
                     entry.append(int(row.get(rn, 0)))
                 entry.append(int(row.get("total_score", 0)))
                 entry.append(float(row.get("avg_scratch", 0.0)))
-                entry.append(int(row.get("total_net", 0)))
-                entry.append(float(row.get("avg_net", 0.0)))
                 scratch_for_cut = int(row.get("scratch_rank", 0))
                 row_meta: Dict[str, Any] = {"styling": {}, "scratch_rank": scratch_for_cut}
             else:
@@ -1752,7 +1810,10 @@ class TournamentService:
                 entry.append(float(row.get("total_avg", 0.0)))
                 row_meta = {"styling": {}}
 
-            rank_for_cut_shading = int(row["_cut_shade_rank"])
+            if use_scratch_net:
+                rank_for_cut_shading = int(row.get("rank", 0))
+            else:
+                rank_for_cut_shading = int(row["_cut_shade_rank"])
             row_meta["cut_shade_rank"] = rank_for_cut_shading
             style = self._cut_row_style_for_rank(rank_for_cut_shading, cut_pos_gesamt)
             if style:
@@ -1944,7 +2005,7 @@ class TournamentService:
                     )
                 )
             if include_club:
-                rank_cols.append(Column(title=i18n_service.get_text("ui.player.club"), field="club", width="220px", align="left"))
+                rank_cols.append(Column(title=i18n_service.get_text("ui.player.club"), field="club", width="220px", align="center"))
 
             game_cols_schema = [
                 Column(title=f"{g + 1}", field=f"game_{g}", width="75px", align="center", decimal_places=0)

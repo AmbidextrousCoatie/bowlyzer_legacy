@@ -163,6 +163,18 @@ class LeagueService:
             return pd.DataFrame(columns=[Columns.season, Columns.league_name, Columns.team_name, Columns.team_name_opponent])
         return df
 
+    def resolve_club_name(self, club: str, clubs: Optional[List[str]] = None) -> str:
+        """Map URL/user input to the canonical club label from data (NFC-aware)."""
+        needle = normalize_unicode_label(club)
+        if not needle:
+            return ""
+        if clubs is None:
+            clubs = self.get_available_clubs()
+        for candidate in clubs:
+            if normalize_unicode_label(candidate) == needle:
+                return candidate
+        return str(club or "").strip()
+
     def get_available_clubs(self, only_with_unnumbered_team: bool = False) -> List[str]:
         """Get distinct club base names from Team/Opponent columns."""
         df = self._get_club_source_dataframe()
@@ -214,9 +226,11 @@ class LeagueService:
         long_df["club_name"] = split_values.apply(lambda item: item[0])
         long_df["team_number"] = split_values.apply(lambda item: item[1] if item[1] else "base")
 
-        club_df = long_df[long_df["club_name"] == club].copy()
+        club_norm = normalize_unicode_label(club)
+        club_df = long_df[long_df["club_name"].map(normalize_unicode_label) == club_norm].copy()
         if club_df.empty:
             return {"club": club, "seasons": [], "rows": []}
+        club = str(club_df["club_name"].iloc[0])
 
         seasons = sorted(club_df[Columns.season].astype(str).unique())
         grouped = (
