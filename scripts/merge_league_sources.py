@@ -82,7 +82,15 @@ def _write_duplicates_report(
         with out_path.open("w", encoding="utf-8", newline="") as f:
             writer = csv.writer(f, delimiter=sep)
             writer.writerow([*combined.columns])
-        return {"duplicate_groups": 0, "duplicate_rows": 0}
+        return {
+            "duplicate_groups": 0,
+            "duplicate_rows": 0,
+            "exact_groups_strict": 0,
+            "exact_groups_business": 0,
+            "non_exact_groups_business": 0,
+            "rows_in_exact_groups_business": 0,
+            "rows_in_non_exact_groups_business": 0,
+        }
 
     dup_df["__dup_key"] = dup_df[dedupe_cols].astype(str).agg("|".join, axis=1)
     dup_df = dup_df.sort_values(by=["__dup_key", "__source_idx"], ascending=[True, True])
@@ -159,6 +167,7 @@ def merge_sources(
     duplicates_out_path: Path | None = None,
     non_exact_duplicates_out_path: Path | None = None,
     normalize_team_names: bool = True,
+    write_csv: bool = False,
 ) -> Dict:
     if len(input_paths) < 2:
         raise ValueError("Provide at least two input CSV files.")
@@ -210,15 +219,10 @@ def merge_sources(
     merged = combined.drop_duplicates(subset=dedupe_cols, keep="last")
     merged = merged.drop(columns=dedupe_cols + ["__source_idx"])
 
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    merged.to_csv(out_path, sep=sep, index=False)
-    parquet_path = None
-    try:
-        from data_access.parquet_sidecar import write_parquet_sidecar
+    from data_access.parquet_sidecar import publish_dataframe
 
-        parquet_path = write_parquet_sidecar(merged, out_path)
-    except Exception as exc:
-        print(f"Warning: could not write Parquet sidecar for {out_path}: {exc}")
+    published = publish_dataframe(merged, out_path, write_csv=write_csv, sep=sep)
+    parquet_path = published["parquet"]
 
     per_source_unique: List[Dict] = []
     for idx in range(len(input_paths)):
@@ -259,7 +263,8 @@ def merge_sources(
         },
         "paths": {
             "output": str(out_path),
-            "parquet_output": str(parquet_path) if parquet_path else "",
+            "parquet_output": str(parquet_path),
+            "csv_output": str(published["csv"]) if published.get("csv") else "",
             "duplicates_report": str(duplicates_out_path),
             "duplicates_non_exact_report": str(non_exact_duplicates_out_path),
         },
@@ -314,6 +319,11 @@ def main() -> int:
             "used by extract_excel_data are applied to every input before merge."
         ),
     )
+    parser.add_argument(
+        "--write-csv",
+        action="store_true",
+        help="Also write the merged CSV (default: Parquet only).",
+    )
     args = parser.parse_args()
 
     input_paths = [Path(p).resolve() for p in args.inputs]
@@ -339,6 +349,7 @@ def main() -> int:
         duplicates_out_path=duplicates_out_path,
         non_exact_duplicates_out_path=non_exact_duplicates_out_path,
         normalize_team_names=not args.no_normalize_team_names,
+        write_csv=args.write_csv,
     )
     print(json.dumps(stats, indent=2, ensure_ascii=False))
     return 0

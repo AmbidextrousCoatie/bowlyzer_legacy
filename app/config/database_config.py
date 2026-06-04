@@ -9,7 +9,11 @@ from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass
 from pathlib import Path
 
-from database.paths import get_data_dir, historical_league_results_csv
+from database.paths import (
+    get_data_dir,
+    historical_league_results_csv,
+    tournaments_postprocessed_csv,
+)
 
 # Get the league_analyzer_v1 directory (parent of app directory)
 APP_DIR = Path(__file__).parent.parent
@@ -28,6 +32,7 @@ MANUAL_TOURNAMENT_POSTPROCESSED_CSV = DATABASE_DATA_DIR / "tournament_manual_pos
 GF_PLAYER_COMBINED_CSV = GF_TOURNAMENT_EXPORT_DIR / "gf_player_stats__league_plus_tournaments.csv"
 HISTORICAL_LEAGUE_RESULTS_CSV = historical_league_results_csv()
 MERGED_LEAGUE_RESULTS_CSV = DATABASE_DATA_DIR / "league_results_merged.csv"
+TOURNAMENTS_POSTPROCESSED_CSV = tournaments_postprocessed_csv()
 MERGED_PLAYER_HYBRID_CSV = DATABASE_DATA_DIR / "player_stats_merged_plus_tournaments.csv"
 
 
@@ -109,6 +114,26 @@ def _ensure_merged_league_csv_stub(path: Path) -> None:
     with path.open("w", encoding="utf-8", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=OUTPUT_HEADERS, delimiter=";")
         writer.writeheader()
+
+
+def _should_build_player_merged_hybrid_csv() -> bool:
+    """Skip rebuild when hybrid already exists or startup must not write (e.g. Docker :ro data)."""
+    if (os.environ.get("BOWLYZER_SKIP_HYBRID_BUILD") or "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }:
+        return False
+    try:
+        from data_access.parquet_sidecar import data_file_exists
+
+        if data_file_exists(MERGED_PLAYER_HYBRID_CSV):
+            return False
+    except ImportError:
+        if MERGED_PLAYER_HYBRID_CSV.is_file():
+            return False
+    return True
 
 
 def _build_player_merged_hybrid_csv() -> None:
@@ -232,13 +257,12 @@ class DatabaseConfig:
                 file_path=str(GF_NBM_CANONICAL_CSV),
             ),
             'db_tournament_regions_2026_gf': DataSourceConfig(
-                filename='gf_tournaments_2026__combined_postprocessed.csv',
-                display_name='Tournament Data (SBM+NBM 2026, GF)',
-                description='GF regional tournament export (SBM + NBM + XLS Bayerische). Club Excel imports live in tournament_manual_postprocessed.csv and are merged into player hybrid separately.',
+                filename='tournaments_postprocessed.csv',
+                display_name='Tournament Data (published)',
+                description='Published tournament merge (GF regional + manual club imports). Built by scripts/build_published_dataset.py; deploy with -SyncDatabase.',
                 is_default=False,
                 is_enabled=True,
-                file_path=str(GF_REGIONAL_COMBINED_POSTPROCESSED_CSV),
-                merge_file_paths=(str(MANUAL_TOURNAMENT_POSTPROCESSED_CSV),),
+                file_path=str(TOURNAMENTS_POSTPROCESSED_CSV),
             ),
             'db_player_combined_gf': DataSourceConfig(
                 filename='gf_player_stats__league_plus_tournaments.csv',
@@ -258,30 +282,52 @@ class DatabaseConfig:
             ),
         }
 
-        try:
-            _ensure_pipeline_gf_legacy_csv_stub()
-            _ensure_tournament_postprocessed_csv_stub(GF_SBM_CANONICAL_CSV)
-            _ensure_tournament_postprocessed_csv_stub(GF_NBM_CANONICAL_CSV)
-            _ensure_tournament_postprocessed_csv_stub(GF_REGIONAL_COMBINED_POSTPROCESSED_CSV)
-            _ensure_tournament_postprocessed_csv_stub(MANUAL_TOURNAMENT_POSTPROCESSED_CSV)
-            _ensure_tournament_postprocessed_csv_stub(GF_PLAYER_COMBINED_CSV)
-            _ensure_historical_league_csv_stub(HISTORICAL_LEAGUE_RESULTS_CSV)
-            _ensure_merged_league_csv_stub(MERGED_LEAGUE_RESULTS_CSV)
-            _build_player_merged_hybrid_csv()
-        except (ImportError, OSError) as exc:
-            print(
-                "Warning: could not create pipeline GF legacy stub "
-                f"({PIPELINE_GF_LEGACY_CSV}): {exc}"
-            )
+        for label, fn in (
+            ("pipeline GF legacy stub", _ensure_pipeline_gf_legacy_csv_stub),
+            ("tournament SBM stub", lambda: _ensure_tournament_postprocessed_csv_stub(GF_SBM_CANONICAL_CSV)),
+            ("tournament NBM stub", lambda: _ensure_tournament_postprocessed_csv_stub(GF_NBM_CANONICAL_CSV)),
+            (
+                "tournament published stub",
+                lambda: _ensure_tournament_postprocessed_csv_stub(TOURNAMENTS_POSTPROCESSED_CSV),
+            ),
+            (
+                "tournament GF combined stub",
+                lambda: _ensure_tournament_postprocessed_csv_stub(GF_REGIONAL_COMBINED_POSTPROCESSED_CSV),
+            ),
+            (
+                "tournament manual stub",
+                lambda: _ensure_tournament_postprocessed_csv_stub(MANUAL_TOURNAMENT_POSTPROCESSED_CSV),
+            ),
+            ("player GF combined stub", lambda: _ensure_tournament_postprocessed_csv_stub(GF_PLAYER_COMBINED_CSV)),
+            ("historical league stub", lambda: _ensure_historical_league_csv_stub(HISTORICAL_LEAGUE_RESULTS_CSV)),
+            ("merged league stub", lambda: _ensure_merged_league_csv_stub(MERGED_LEAGUE_RESULTS_CSV)),
+        ):
+            try:
+                fn()
+            except (ImportError, OSError) as exc:
+                print(f"Warning: could not create {label}: {exc}")
+
+        if _should_build_player_merged_hybrid_csv():
+            try:
+                _build_player_merged_hybrid_csv()
+            except (ImportError, OSError) as exc:
+                print(f"Warning: could not build player merged hybrid CSV: {exc}")
 
         # Validate sources on initialization
         self._validate_sources()
     
     def _validate_sources(self):
         """Validate that all enabled sources exist and are accessible"""
+        try:
+            from data_access.parquet_sidecar import data_file_exists as _data_exists
+        except ImportError:
+            _data_exists = None
+
         for source_id, config in self._sources.items():
             if config.is_enabled:
-                if not os.path.exists(config.file_path):
+                path = Path(config.file_path)
+                exists = _data_exists(path) if _data_exists else path.is_file()
+                if not exists:
                     print(f"Warning: Data source file not found: {config.file_path}")
                     config.is_enabled = False
     
@@ -335,7 +381,13 @@ class DatabaseConfig:
         if not config or not config.is_enabled:
             return False
         
-        return os.path.exists(config.file_path) and os.path.isfile(config.file_path)
+        path = Path(config.file_path)
+        try:
+            from data_access.parquet_sidecar import data_file_exists
+
+            return data_file_exists(path)
+        except ImportError:
+            return path.is_file()
     
     def get_source_display_name(self, source_id: str) -> str:
         """Get display name for a data source"""

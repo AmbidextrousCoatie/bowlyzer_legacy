@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict
+from typing import Dict, List
 
 import pandas as pd
 
@@ -72,6 +72,25 @@ def normalize_legacy_dataframe_types(df: pd.DataFrame) -> pd.DataFrame:
             out[col] = _to_boolean_nullable(out[col])
 
     return out
+
+
+def series_to_legacy_str(series: pd.Series) -> pd.Series:
+    """Stringify a column for legacy CSV row dicts (nullable Int64-safe)."""
+    if pd.api.types.is_numeric_dtype(series.dtype) or pd.api.types.is_extension_array_dtype(
+        series.dtype
+    ):
+        return series.astype("string").fillna("").str.strip()
+    return series.fillna("").astype(str).str.strip()
+
+
+def dataframe_to_str_dict_records(df: pd.DataFrame) -> List[Dict[str, str]]:
+    """Convert a normalized dataframe to list-of-dicts with string values (hybrid CSV export)."""
+    if df is None or df.empty:
+        return []
+    frame = df.copy()
+    for col in frame.columns:
+        frame[col] = series_to_legacy_str(frame[col])
+    return [{str(k): str(v) for k, v in row.items()} for row in frame.to_dict(orient="records")]
 
 
 def summarize_type_normalization(df: pd.DataFrame) -> Dict[str, Dict[str, int]]:

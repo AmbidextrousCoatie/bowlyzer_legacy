@@ -122,7 +122,9 @@ class DataAdapterPandas(DataAdapter):
             # Fallback if config not available
             database_path = pathlib.Path("database", "data", self.database).absolute()
         
-        if not database_path.exists():
+        from data_access.parquet_sidecar import data_file_exists
+
+        if not data_file_exists(database_path):
             raise ValueError(f"Database file not found: {database_path}")
         
         self.data_path = database_path
@@ -136,7 +138,7 @@ class DataAdapterPandas(DataAdapter):
         self.df[Columns.week] = w.round(0).astype("Int64")
 
     def _load_data(self):
-        """Load data from CSV file"""
+        """Load data from Parquet (preferred) or CSV"""
         from data_access.shared_pandas_store import get_dataframe
 
         self.df = get_dataframe(pathlib.Path(self.data_path))

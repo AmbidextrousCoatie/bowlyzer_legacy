@@ -7,6 +7,7 @@ One loaded DataFrame + one DataAdapterPandas per database id (until backing file
 from __future__ import annotations
 
 import os
+import threading
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Tuple
@@ -22,6 +23,7 @@ _DATAFRAME_BY_PATH: Dict[str, dict] = {}
 
 # database_id -> (revision, adapter)
 _ADAPTER_BY_DATABASE: Dict[str, Tuple[str, object]] = {}
+_ADAPTER_LOAD_LOCK = threading.Lock()
 
 
 def _file_mtime(path: Path) -> float:
@@ -53,12 +55,14 @@ def compute_database_revision(database_id: str) -> str:
 
 
 def load_dataframe_for_paths(primary: Path, extras: Tuple[Path, ...] = ()) -> pd.DataFrame:
-    """Load or return cached dataframe for primary CSV, optionally merged with extras."""
+    """Load or return cached dataframe for primary dataset, optionally merged with extras."""
+    from data_access.parquet_sidecar import data_file_exists
+
     paths: List[Path] = []
-    if primary.is_file():
+    if data_file_exists(primary):
         paths.append(primary)
     for extra in extras:
-        if extra.is_file():
+        if data_file_exists(extra):
             paths.append(extra)
 
     if not paths:
@@ -75,27 +79,23 @@ def load_dataframe_for_paths(primary: Path, extras: Tuple[Path, ...] = ()) -> pd
 
 
 def get_dataframe(path: Path) -> pd.DataFrame:
-    """Load CSV or newer Parquet sidecar with mtime-based process cache."""
-    from data_access.parquet_sidecar import (
-        parquet_sidecar_path,
-        read_parquet_sidecar,
-        should_load_parquet,
-    )
+    """Load Parquet (preferred) or CSV with mtime-based process cache."""
+    from data_access.parquet_sidecar import read_parquet_sidecar, resolve_load_path
 
-    csv_path = path.resolve()
-    parquet_path = parquet_sidecar_path(csv_path)
-    use_parquet = should_load_parquet(csv_path, parquet_path)
+    logical_path = path.resolve()
+    load_path = resolve_load_path(logical_path)
+    use_parquet = load_path.suffix.lower() == ".parquet"
 
-    cache_key = str(parquet_path if use_parquet else csv_path)
-    mtime = _file_mtime(parquet_path if use_parquet else csv_path)
+    cache_key = str(load_path)
+    mtime = _file_mtime(load_path)
     entry = _DATAFRAME_BY_PATH.get(cache_key)
     if entry and entry.get("mtime") == mtime:
         return entry["df"]
 
     if use_parquet:
-        df = read_parquet_sidecar(parquet_path)
+        df = read_parquet_sidecar(load_path)
     else:
-        df = pd.read_csv(csv_path, **_LEGACY_CSV_READ_KWARGS)
+        df = pd.read_csv(load_path, **_LEGACY_CSV_READ_KWARGS)
         if df.columns.duplicated().any():
             df = df.loc[:, ~df.columns.duplicated()].copy()
         df = normalize_legacy_dataframe_types(df)
@@ -105,10 +105,14 @@ def get_dataframe(path: Path) -> pd.DataFrame:
 
 
 def invalidate_dataframe_cache(path: Path | None = None) -> None:
+    from data_access.parquet_sidecar import parquet_sidecar_path
+
     if path is None:
         _DATAFRAME_BY_PATH.clear()
         return
-    _DATAFRAME_BY_PATH.pop(str(path.resolve()), None)
+    resolved = path.resolve()
+    _DATAFRAME_BY_PATH.pop(str(resolved), None)
+    _DATAFRAME_BY_PATH.pop(str(parquet_sidecar_path(resolved)), None)
 
 
 def invalidate_adapter_cache(database_id: str | None = None) -> None:
@@ -123,16 +127,17 @@ def get_shared_pandas_adapter(database_id: str):
     from data_access.adapters.data_adapter_pandas import DataAdapterPandas
 
     revision = compute_database_revision(database_id)
-    cached = _ADAPTER_BY_DATABASE.get(database_id)
-    if cached and cached[0] == revision:
-        return cached[1]
+    with _ADAPTER_LOAD_LOCK:
+        cached = _ADAPTER_BY_DATABASE.get(database_id)
+        if cached and cached[0] == revision:
+            return cached[1]
 
-    primary, extras = resolve_database_paths(database_id)
-    df = load_dataframe_for_paths(primary, extras)
-    adapter = DataAdapterPandas(df=df)
-    adapter.database = database_id
-    _ADAPTER_BY_DATABASE[database_id] = (revision, adapter)
-    return adapter
+        primary, extras = resolve_database_paths(database_id)
+        df = load_dataframe_for_paths(primary, extras)
+        adapter = DataAdapterPandas(df=df)
+        adapter.database = database_id
+        _ADAPTER_BY_DATABASE[database_id] = (revision, adapter)
+        return adapter
 
 
 @dataclass

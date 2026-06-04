@@ -1,5 +1,5 @@
 {
-  "team_name_regex_map": {
+  "team_name_regex_map_ignored": {
     "^CRAP LA-Bowling\\s+1\\s+Landshut$": "LA-Bowling Landshut 1",
     "^CRAP LA-Bowling\\s+Lands?\\s*(\\d+)$": "LA-Bowling Landshut \\1",
     "^LA[- ]Bowling(?:\\s+[^\\d]*)?\\s*(\\d+)$": "LA-Bowling Landshut \\1",
@@ -74,5 +74,11 @@
     "^BC Bavaria München/Land\\s*(\\d+)$": "BC Bavaria München-Land \\1",
     "^Tiger Aug\\s*(\\d+)$"	: "Tiger Augsburg \\1",
     "^Prätoria Regensburg\\s*(\\d+)$": "Praetoria Regensburg \\1"
+    },
+  "team_name_regex_map": {
+    "7 Schwaben N-U\\s*(\\d+)$": "7 Schwaben Neu-Ulm \\1",
+    "^1\\. DBC Bayreuth.*(\\d+)$": "DBC Bayreuth \\1",
+    "^Ulmer-Spatzen Neu-Ulm\\s*(\\d+)$": "Ulmer-Spatzen Neu-Ulm \\1",
+    "^Active-Bowler Brunnthal\\s*(\\d+)$": "Active Bowler Brunnthal \\1"
   }
 }

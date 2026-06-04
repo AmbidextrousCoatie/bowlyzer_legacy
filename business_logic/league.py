@@ -19,7 +19,13 @@ levels = {
     "KL N1": 7,
     "KL N2": 7,
     "KL S1": 7,
-    "KL S2": 7
+    "KL S2": 7,
+    "AL N1": 8,
+    "AL N2": 8,
+    "AL N3": 8,
+    "AL S1": 8,
+    "AL S2": 8,
+    "AL S3": 8
 }
 
 longNames = {
@@ -41,6 +47,12 @@ longNames = {
     "KL N2": "Kreisliga Nord 2",
     "KL S1": "Kreisliga Süd 1",
     "KL S2": "Kreisliga Süd 2",
+    "AL N1": "A-Klasse Nord 1",
+    "AL N2": "A-Klasse Nord 2",
+    "AL N3": "A-Klasse Nord 3",
+    "AL S1": "A-Klasse Süd 1",
+    "AL S2": "A-Klasse Süd 2",
+    "AL S3": "A-Klasse Süd 3"
 }
 
 class League:
