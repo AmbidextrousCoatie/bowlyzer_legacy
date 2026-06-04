@@ -56,23 +56,65 @@ From the repo root in PowerShell:
 .\deploy\deploy.ps1
 ```
 
-When **published** CSVs under `database/data/` changed (merged league, player hybrid, tournament configs — not legacy scrape / pipeline work files):
+When **published** data under `database/data/` changed (merged league Parquet, tournament configs — not legacy scrape / pipeline work files):
 
 ```powershell
 .\deploy\deploy.ps1 -SyncDatabase
 ```
 
-Pipeline intermediates belong on **`C:\tmp\bowlyzer\data`** (see `database/data/README.md`). `-SyncDatabase` uploads only `database/relational_csv`, `database/config`, and **files** in `database/data/` (no `legacy_scrape/` tree).
+### Data only (no image rebuild)
 
-### Data size (~200 MB is normal)
+After `build_published_dataset.py`, push Parquet/JSON and restart the container (~seconds, no Docker Desktop required):
+
+```powershell
+.\deploy\deploy-data.ps1
+# or: .\deploy\deploy.ps1 -DataOnly
+```
+
+Uploads `database/data/*.parquet`, `*.json`, plus `relational_csv/` and `config/`, then `docker compose restart bowlyzer`. Add `-SyncDatabaseCsv` if you need large CSV copies on the VPS.
+
+### Pre-warmed API cache (club page, league grids, tournaments)
+
+Build the cache on your PC (after published data is built), then ship it:
+
+```powershell
+# Full rebuild including every club matrix (long run with scrape merged in)
+uv run python scripts/rebuild_league_caches.py --database db_real_merged
+
+# Or incremental warm + clubs only
+uv run python scripts/warm_league_cache.py --database db_real_merged --rebuild --warm-clubs --workers 6
+
+# Multi-process warm (tqdm ETA over shards; add --verbose for full child logs)
+uv run python scripts/warm_league_cache_shard.py --database db_real_merged --rebuild --warm-clubs --max-parallel 8
+# Club deploy only (skip heavy league-wide meta charts). Smaller club batches keep CPU busy:
+uv run python scripts/warm_league_cache_shard.py --database db_real_merged --rebuild --warm-clubs --skip-meta --clubs-per-shard 8 --max-parallel 8
+
+# Deploy data + cache (compose mounts ./.cache/league read-only)
+.\deploy\deploy.ps1 -SyncDatabase -SyncCache
+# data-only after warming:
+.\deploy\deploy-data.ps1 -SyncDatabase -SyncCache
+```
+
+Cache root locally: `.cache/league/<database_id>/entries/` (granular revisions). **Revision** must match the Parquet/CSV you deploy — warm **after** `build_published_dataset.py`, then deploy data and cache in the same release. `-SyncCache` packs the tree into `deploy/artifacts/league-cache.tar.gz` (one `scp`, `tar -xzf` on the VPS) instead of copying thousands of JSON files.
+
+**Important:** `deploy-data.ps1` only updates files on the VPS host. The running container must include Python that reads `entries/` (recent `bowlyzer:release` image). Data-only deploy without a new image → cache files sit on disk but the app ignores them. After image + cache deploy, check responses: `curl -sI 'https://www.bowlyzer.online/league/get_club_matrix?database=db_real_merged&club=Donaubowler+Regensburg' | findstr X-League-Cache` should show `HIT`.
+
+Pipeline intermediates belong on **`C:\tmp\bowlyzer\data`** (see `database/data/README.md`). `-SyncDatabase` uploads `database/relational_csv`, `database/config`, and **`*.parquet` / `*.json`** in `database/data/`, plus **`tournament_manual_postprocessed.csv`** (small; used by hybrid rebuild). Use **`-SyncDatabaseCsv`** only if you still need huge CSV copies on the VPS (e.g. full `league_results_merged.csv`).
+
+**Tournament data:** After `build_published_dataset.py`, the app reads **`tournaments_postprocessed.parquet`** on the VPS (GF + manual club imports merged locally). You do **not** need to sync `database/input/gf_tables_export/` — that path is dev-only and baked into the image.
+
+**Compose mount:** prod binds only `database/data`, `relational_csv`, and `config` — not the whole `database/` folder (that would hide `database.paths` from the image and crash Gunicorn with `ModuleNotFoundError`).
+
+### Data size
 
 | File | Typical size | In Docker image? | On VPS |
 |------|----------------|------------------|--------|
-| `league_results_merged.csv` | ~90 MB | **No** (`.dockerignore`) | Host `~/bowlyzer/database/data/` via mount + `-SyncDatabase` |
-| `player_stats_merged_plus_tournaments.csv` | ~120 MB | **No** | Same |
+| `league_results_merged.parquet` | ~3–8 MB | **No** | Host `~/bowlyzer/database/data/` via mount + `-SyncDatabase` |
+| `league_results_merged.csv` (optional) | ~90 MB | **No** | Only with `-SyncDatabaseCsv` |
+| `player_stats_merged_plus_tournaments.parquet` | ~5–15 MB | **No** | Same |
 | `legacy_scrape/` tree | 1+ GB | **No** | Stay on your PC (`C:\tmp\bowlyzer\data`) |
 
-Together those two CSVs are **~210 MB on disk**. The app loads them into **RAM** at runtime (often 300–600 MB in pandas), which is what stresses a 650 MB container limit — not the read-only mount itself.
+The app loads Parquet into **RAM** (often 300–600 MB in pandas for full history), which is what stresses a 650 MB container limit — not the read-only mount itself.
 
 **First deploy** (or after wiping `~/bowlyzer/database/data`): run once with `-SyncDatabase`. Later deploys: `.\deploy\deploy.ps1` only (image has code + SPA; data stays on the host).
 
@@ -94,9 +136,9 @@ Override host without config file:
 |------|--------|
 | 1 | `docker compose build` |
 | 2 | Tag `bowlyzer_deploy-bowlyzer:latest` → `bowlyzer:release` |
-| 3 | `docker save` → gzip → `deploy/artifacts/bowlyzer-image.tar.gz` |
+| 3 | `docker save` → `deploy/artifacts/bowlyzer-image.tar` (add `-ZipContainerImage` for `.tar.gz`) |
 | 4 | `scp` `docker-compose.prod.yml` + image tar to `~/bowlyzer` |
-| 5 | `ssh`: `docker load` + `docker compose -f docker-compose.prod.yml up -d` |
+| 5 | `ssh`: `docker load` + `compose up -d` (bind-mounts `database/data`, `relational_csv`, `config` only) |
 | 6 | `curl` smoke check on `http://127.0.0.1:8080/liga` |
 
 Production compose uses **`mem_limit: 650m`** (fits ~848 MiB VPS). App listens on host **8080**; nginx serves HTTPS on 80/443.
@@ -119,10 +161,15 @@ Enable timer after dry-run: `.\deploy\install_clubmeisterschaft_auto_import.ps1 
 | `Required command not found: ssh` | Install “OpenSSH Client” (Windows optional features) |
 | Wrong image name after build | `docker images` — project must be `bowlyzer_deploy-bowlyzer:latest` (repo folder name) |
 | Site 502 | `ssh root@vps 'docker compose -f ~/bowlyzer/docker-compose.prod.yml logs --tail 30'` |
+| `No module named 'database.paths'` | Prod compose must **not** mount `./database:/app/database` — use subdirs only (see `docker-compose.prod.yml`) |
 | OOM restart | `docker stats`; ensure `flaskapp` is not running |
 | Remote step: `set: invalid option`, `/root/bowlyzer\\r`, `unknown docker command` | Windows CRLF in the piped script; `deploy.ps1` now strips CR. Re-run deploy (e.g. `-SkipBuild` if image is current). |
+| League API **200**, tournament **500** on `:8080` | `ls -la ~/bowlyzer/database/data/tournaments_postprocessed.*` — need Parquet from `build_published_dataset.py` + `-SyncDatabase`. Old images resolved tournament source only when the **CSV** existed, then loaded **league** Parquet → OOM. Redeploy image with the `data_file_exists` fix. |
+| Tournament **404** on HTTPS but **500** on `127.0.0.1:8080` | nginx `proxy_intercept_errors on` + `error_page 500 … /50x.html` turns upstream 500 into **404**. Fix the app error first; compare `curl -s http://127.0.0.1:8080/tournament/get_available_seasons` vs HTTPS body. |
+| Liga API **404** on HTTPS, **500** on `:8080` for `get_available_leagues` | HTTPS 404 is often nginx masking upstream **500** (`proxy_intercept_errors`). On `:8080`, run `curl -s '…/get_available_leagues?season=08-09&database=db_real_merged' | head` for the JSON error. Common: **read-only** `.cache/league` mount + cache miss → old code failed on `league_cache_put` (fixed: serve JSON anyway). Pre-warm filter endpoints and `-SyncCache`. See [`deploy/vps/nginx-season-query.md`](vps/nginx-season-query.md). |
 
 ## Files (gitignored locally)
 
 - `deploy/deploy.config.ps1` — your VPS host/user/path
-- `deploy/artifacts/bowlyzer-image.tar.gz` — exported image (gzip; faster upload than raw `.tar`)
+- `deploy/artifacts/bowlyzer-image.tar` — exported image (default; uncompressed)
+- `deploy/artifacts/bowlyzer-image.tar.gz` — only when `-ZipContainerImage` is set

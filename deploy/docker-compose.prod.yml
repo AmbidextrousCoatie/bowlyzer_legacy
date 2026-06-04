@@ -15,9 +15,17 @@ services:
       LOG_LEVEL: info
       # Avoid OOM on ~1 GB VPS: no background cache warmup at container start.
       LEAGUE_CACHE_WARM_ON_START: "0"
-    # Host ./database must be readable by UID/GID 1000 (image user). Deploy script chmods a+rX before up.
+      # Published data is bind-mounted :ro; hybrid is built offline via build_published_dataset.py
+      BOWLYZER_SKIP_HYBRID_BUILD: "1"
+      # Pre-warmed league JSON (build locally, ship with deploy.ps1 -SyncCache)
+      LEAGUE_CACHE_DIR: /app/.cache/league
+    # Mount only published/runtime subtrees — NOT the whole ./database tree. A full mount
+    # replaces /app/database in the image and drops Python modules baked in (e.g. paths.py).
     volumes:
-      - ./database:/app/database:ro
+      - ./database/data:/app/database/data:ro
+      - ./database/relational_csv:/app/database/relational_csv:ro
+      - ./database/config:/app/database/config:ro
+      - ./.cache/league:/app/.cache/league:ro
     restart: unless-stopped
     mem_limit: 650m
     cpus: 1.0

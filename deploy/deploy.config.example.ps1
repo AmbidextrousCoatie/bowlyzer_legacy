@@ -5,4 +5,5 @@
     RemoteUser = "bowlyzer"
     RemoteDir  = "/home/bowlyzer/bowlyzer"
     ReleaseImage = "bowlyzer:release"
+    # ZipContainerImage = $true   # optional: gzip image tar before scp (default in deploy.ps1: $false)
 }

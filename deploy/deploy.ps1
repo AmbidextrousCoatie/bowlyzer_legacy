@@ -6,7 +6,7 @@
 .DESCRIPTION
   1. docker compose build (repo root)
   2. Tag image as bowlyzer:release
-  3. docker save -> gzip -> deploy/artifacts/bowlyzer-image.tar.gz (smaller/faster scp than raw tar)
+  3. docker save -> deploy/artifacts/bowlyzer-image.tar (default; no gzip)
   4. scp compose file + image to VPS
   5. ssh: docker load && docker compose -f docker-compose.prod.yml up -d
 
@@ -25,10 +25,24 @@
   Skip docker compose build (reuse existing local image). Use -SkipBuild (one hyphen). Do not use --SkipBuild (Git-style); if you do, the script tries to correct it.
 
 .PARAMETER SyncDatabase
-  Also upload ./database (can be large; usually only when CSV data changed).
+  Upload database config and published Parquet/JSON under database/data (not huge CSVs).
+
+.PARAMETER SyncDatabaseCsv
+  With -SyncDatabase, also upload *.csv from database/data (legacy; much larger).
+
+.PARAMETER SyncCache
+  Upload .cache/league/ as league-cache.tar.gz (one scp, extract on VPS). Requires compose mount of ./.cache/league.
+
+.PARAMETER DataOnly
+  Skip image build/upload/load. Upload published database files and restart the container only.
+  Implies -SyncDatabase. Does not require local Docker.
 
 .PARAMETER SkipUpload
   Only build and save image locally (no scp/ssh).
+
+.PARAMETER ZipContainerImage
+  Gzip the docker save tar before scp (legacy). Default: uncompressed bowlyzer-image.tar
+  (faster on small VPS; layer tars rarely shrink much).
 
 .EXAMPLE
   cd C:\Users\cfell\repositories\bowlyzer_deploy
@@ -38,6 +52,10 @@
 
 .EXAMPLE
   .\deploy\deploy.ps1 -RemoteHost 212.227.57.223 -SyncDatabase
+
+.EXAMPLE
+  .\deploy\deploy-data.ps1
+  # same as: .\deploy\deploy.ps1 -DataOnly
 #>
 [CmdletBinding()]
 param(
@@ -47,7 +65,11 @@ param(
     [string] $ReleaseImage = "bowlyzer:release",
     [switch] $SkipBuild,
     [switch] $SyncDatabase,
-    [switch] $SkipUpload
+    [switch] $SyncDatabaseCsv,
+    [switch] $SyncCache,
+    [switch] $DataOnly,
+    [switch] $SkipUpload,
+    [switch] $ZipContainerImage
 )
 
 Set-StrictMode -Version Latest
@@ -76,6 +98,30 @@ function Compress-FileGzip([string] $SourcePath, [string] $DestinationPath) {
         finally { $outStream.Dispose() }
     }
     finally { $inStream.Dispose() }
+}
+
+function Join-BashScript {
+    param([Parameter(Mandatory = $true)][string[]] $Lines)
+    (($Lines | Where-Object { $null -ne $_ }) -join "`n") -replace "`r", ""
+}
+
+function Get-RemoteHealthCheckLines {
+    @(
+        'echo -n "health /liga: "'
+        'HTTP_CODE=""'
+        'for i in {1..30}; do'
+        '  HTTP_CODE=$(curl -sf -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/liga 2>/dev/null || true)'
+        '  if [ "$HTTP_CODE" = "200" ]; then'
+        '    echo "$HTTP_CODE"'
+        '    HEALTH_OK=1'
+        '    break'
+        '  fi'
+        '  sleep 2'
+        'done'
+        'if [ "${HEALTH_OK:-0}" -ne 1 ]; then'
+        '  echo "timeout (waited ~60s; last code ${HTTP_CODE:-000}) - check: docker compose -f docker-compose.prod.yml logs --tail 40 bowlyzer"'
+        'fi'
+    )
 }
 
 function Invoke-SshBashScript {
@@ -120,6 +166,131 @@ function Invoke-SshBashScript {
     }
 }
 
+function Sync-RemoteDatabase {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $RepoRoot,
+        [Parameter(Mandatory = $true)]
+        [string] $Remote,
+        [Parameter(Mandatory = $true)]
+        [string] $RemoteDir,
+        [string[]] $SshOpts,
+        [switch] $IncludeCsv
+    )
+    Write-Host '==> SCP: database config + published Parquet/JSON (+ small published CSVs)'
+    if ($IncludeCsv) {
+        Write-Host '    (-SyncDatabaseCsv: also uploading *.csv from database/data/)'
+    }
+    $databasePath = Join-Path $RepoRoot "database"
+    $remoteDb = "${Remote}:${RemoteDir}/database"
+    & ssh @SshOpts $Remote "mkdir -p '$RemoteDir/database/data' '$RemoteDir/database/relational_csv' '$RemoteDir/database/config'"
+    if (-not $?) { throw "ssh mkdir database failed" }
+    & scp @SshOpts '-r' (Join-Path $databasePath "relational_csv") "${remoteDb}/"
+    if (-not $?) { throw "scp database/relational_csv failed" }
+    & scp @SshOpts '-r' (Join-Path $databasePath "config") "${remoteDb}/"
+    if (-not $?) { throw "scp database/config failed" }
+    $publishedCsvAllowlist = @(
+        'tournament_manual_postprocessed.csv'
+    )
+    $dataFiles = Get-ChildItem -LiteralPath (Join-Path $databasePath "data") -File -ErrorAction SilentlyContinue |
+        Where-Object {
+            $_.Extension -in '.parquet', '.json' -or
+            ($IncludeCsv -and $_.Extension -eq '.csv') -or
+            ($_.Extension -eq '.csv' -and $publishedCsvAllowlist -contains $_.Name)
+        }
+    if ($dataFiles) {
+        foreach ($f in $dataFiles) {
+            & scp @SshOpts $f.FullName "${remoteDb}/data/"
+            if (-not $?) { throw "scp database/data/$($f.Name) failed" }
+        }
+        Write-Host ('    uploaded {0} file(s) from database/data/' -f $dataFiles.Count)
+    } else {
+        Write-Host '    warning: no Parquet/JSON (or CSV with -SyncDatabaseCsv) in database/data/ to upload'
+    }
+}
+
+function Sync-RemoteLeagueCache {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $RepoRoot,
+        [Parameter(Mandatory = $true)]
+        [string] $Remote,
+        [Parameter(Mandatory = $true)]
+        [string] $RemoteDir,
+        [string[]] $SshOpts
+    )
+    Require-Command tar
+    $localCache = Join-Path $RepoRoot ".cache\league"
+    if (-not (Test-Path -LiteralPath $localCache)) {
+        Write-Host ('    warning: {0} not found - run warm_league_cache.py or rebuild_league_caches.py first' -f $localCache)
+        return
+    }
+    $files = @(Get-ChildItem -LiteralPath $localCache -Recurse -File -ErrorAction SilentlyContinue)
+    if (-not $files.Count) {
+        Write-Host "    warning: .cache/league is empty; nothing to upload"
+        return
+    }
+    $bytes = ($files | Measure-Object -Property Length -Sum).Sum
+    $mb = [math]::Round($bytes / 1MB, 1)
+
+    $artifactsDir = Join-Path $PSScriptRoot "artifacts"
+    if (-not (Test-Path -LiteralPath $artifactsDir)) {
+        New-Item -ItemType Directory -Path $artifactsDir -Force | Out-Null
+    }
+    $cacheArchive = Join-Path $artifactsDir "league-cache.tar.gz"
+    $cacheParent = Join-Path $RepoRoot ".cache"
+    if (Test-Path -LiteralPath $cacheArchive) {
+        Remove-Item -LiteralPath $cacheArchive -Force
+    }
+
+    Write-Host ('==> pack .cache/league ({0} files, ~{1} MB) -> tar.gz' -f $files.Count, $mb)
+    & tar -czf $cacheArchive -C $cacheParent league
+    if (-not $?) { throw "tar league-cache failed" }
+
+    $archiveMb = [math]::Round((Get-Item -LiteralPath $cacheArchive).Length / 1MB, 1)
+    $remoteArchive = "$RemoteDir/league-cache.tar.gz"
+    Write-Host ('==> SCP: league-cache.tar.gz (~{0} MB, one file)' -f $archiveMb)
+    & scp @SshOpts $cacheArchive "${Remote}:${remoteArchive}"
+    if (-not $?) { throw "scp league-cache.tar.gz failed" }
+
+    Write-Host "==> remote: extract league cache archive"
+    $extractScript = Join-BashScript @(
+        'set -e'
+        "cd $RemoteDir"
+        'mkdir -p .cache'
+        'rm -rf .cache/league'
+        'tar -xzf league-cache.tar.gz -C .cache'
+        'rm -f league-cache.tar.gz'
+        'chmod -R a+rX .cache/league'
+    )
+    Invoke-SshBashScript -ScriptBody $extractScript -SshTarget $Remote -SshOpts $SshOpts
+    Write-Host "    league cache extracted to $RemoteDir/.cache/league"
+}
+
+function Invoke-RemoteContainerRestart {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $RemoteDir,
+        [Parameter(Mandatory = $true)]
+        [string] $Remote,
+        [string[]] $SshOpts,
+        [switch] $Recreate
+    )
+    $upLine = if ($Recreate) {
+        'docker compose -f docker-compose.prod.yml up -d --remove-orphans --force-recreate'
+    } else {
+        'docker compose -f docker-compose.prod.yml restart bowlyzer'
+    }
+    $remoteScript = Join-BashScript ( @(
+        'set -e'
+        "cd $RemoteDir"
+        'chmod -R a+rX ./database/data ./database/relational_csv ./database/config ./.cache/league 2>/dev/null || true'
+        $upLine
+        'docker compose -f docker-compose.prod.yml ps'
+    ) + (Get-RemoteHealthCheckLines) )
+    Invoke-SshBashScript -ScriptBody $remoteScript -SshTarget $Remote -SshOpts $SshOpts
+}
+
 function Exit-IfDockerDaemonUnreachable {
     # Avoid cryptic "npipe dockerDesktopLinuxEngine" errors when Docker Desktop is off.
     $prevEap = $ErrorActionPreference
@@ -132,18 +303,18 @@ function Exit-IfDockerDaemonUnreachable {
     }
     Write-Host ""
     Write-Host "  DEPLOY ABORTED: Docker engine is not running or not reachable." -ForegroundColor Yellow
-    Write-Host @"
+    Write-Host @'
 
   This script builds the image on your PC and needs a working local Docker daemon.
   On Windows with Docker Desktop:
     1. Start Docker Desktop from the Start menu.
-    2. Wait until it shows ""Engine running"" (whale icon steady).
+    2. Wait until it shows "Engine running" (whale icon steady).
     3. Run: docker version
-       (Client AND Server sections should both print - if Server is missing, the daemon is down.)
+       Client AND Server sections should both print - if Server is missing, the daemon is down.
 
   Then run this deploy script again.
 
-"@ -ForegroundColor Gray
+'@ -ForegroundColor Gray
     exit 1
 }
 
@@ -158,6 +329,10 @@ if (Test-Path $configPath) {
     if ($cfg.RemoteUser -and -not $PSBoundParameters.ContainsKey("RemoteUser")) { $RemoteUser = $cfg.RemoteUser }
     if ($cfg.RemoteDir -and -not $PSBoundParameters.ContainsKey("RemoteDir")) { $RemoteDir = $cfg.RemoteDir }
     if ($cfg.ReleaseImage -and -not $PSBoundParameters.ContainsKey("ReleaseImage")) { $ReleaseImage = $cfg.ReleaseImage }
+    # Optional key — bracket access avoids StrictMode PropertyNotFound on older deploy.config.ps1
+    if (($cfg['ZipContainerImage'] -eq $true) -and -not $PSBoundParameters.ContainsKey("ZipContainerImage")) {
+        $ZipContainerImage = $true
+    }
 }
 
 # Windows PowerShell does not treat '--SwitchName' as a switch; the first '--…' token is often bound as
@@ -168,7 +343,7 @@ if ($RemoteHost -match '^--(.+)$') {
     switch -Regex ($tok) {
         '(?i)^skipbuild$' {
             if (-not $SkipBuild) {
-                Write-Host "==> treating '$RemoteHost' as -SkipBuild (PowerShell: use -SkipBuild, not Unix-style --)"
+                Write-Host ('==> treating {0} as -SkipBuild; on Windows use -SkipBuild, not Unix-style --flags' -f $RemoteHost)
             }
             $SkipBuild = $true
             $handled = $true
@@ -177,8 +352,20 @@ if ($RemoteHost -match '^--(.+)$') {
             $SyncDatabase = $true
             $handled = $true
         }
+        '(?i)^synccache$' {
+            $SyncCache = $true
+            $handled = $true
+        }
         '(?i)^skipupload$' {
             $SkipUpload = $true
+            $handled = $true
+        }
+        '(?i)^dataonly$' {
+            $DataOnly = $true
+            $handled = $true
+        }
+        '(?i)^zipcontainerimage$' {
+            $ZipContainerImage = $true
             $handled = $true
         }
     }
@@ -192,18 +379,53 @@ if ($RemoteHost -match '^--(.+)$') {
 }
 
 if (-not $SkipUpload -and [string]::IsNullOrWhiteSpace($RemoteHost)) {
-    throw @"
+    throw @'
 RemoteHost is required. Either:
   - Copy deploy\deploy.config.example.ps1 to deploy\deploy.config.ps1 and set RemoteHost, or
   - Pass -RemoteHost <ip-or-hostname>
-"@
+'@
 }
 
-Require-Command "docker"
-Exit-IfDockerDaemonUnreachable
+if ($DataOnly) {
+    $SyncDatabase = $true
+}
+
+if (-not $DataOnly) {
+    Require-Command "docker"
+    Exit-IfDockerDaemonUnreachable
+}
 if (-not $SkipUpload) {
     Require-Command "ssh"
     Require-Command "scp"
+}
+
+$SshOpts = @(
+    '-o', 'ConnectTimeout=45'
+    '-o', 'ServerAliveInterval=10'
+    '-o', 'ServerAliveCountMax=3'
+)
+
+if ($DataOnly -and -not $SkipUpload) {
+    $Remote = "${RemoteUser}@${RemoteHost}"
+    Write-Host "==> data-only deploy (no image build/upload)"
+    Write-Host ('    ({0})' -f $Remote)
+    & ssh @SshOpts $Remote "mkdir -p '$RemoteDir'"
+    if (-not $?) { throw "ssh mkdir failed" }
+    Sync-RemoteDatabase -RepoRoot $RepoRoot -Remote $Remote -RemoteDir $RemoteDir -SshOpts $SshOpts -IncludeCsv:$SyncDatabaseCsv
+    if ($SyncCache) {
+        Sync-RemoteLeagueCache -RepoRoot $RepoRoot -Remote $Remote -RemoteDir $RemoteDir -SshOpts $SshOpts
+    }
+    Write-Host '==> remote: restart container + health'
+    if ($SyncCache) {
+        Invoke-RemoteContainerRestart -RemoteDir $RemoteDir -Remote $Remote -SshOpts $SshOpts -Recreate
+    } else {
+        Invoke-RemoteContainerRestart -RemoteDir $RemoteDir -Remote $Remote -SshOpts $SshOpts
+    }
+    Write-Host ""
+    Write-Host "==> data deploy finished"
+    Write-Host '    Site: https://www.bowlyzer.online (nginx must be running)'
+    Write-Host ('    Logs: ssh {0}; then: cd {1}; docker compose -f docker-compose.prod.yml logs --tail 50 bowlyzer' -f $Remote, $RemoteDir)
+    exit 0
 }
 
 $ArtifactsDir = Join-Path $PSScriptRoot "artifacts"
@@ -241,39 +463,42 @@ Write-Host "==> tagging $ComposeProjectImage -> $ReleaseImage"
 docker tag $ComposeProjectImage $ReleaseImage
 if ($LASTEXITCODE -ne 0) { throw "docker tag failed" }
 
-Write-Host "==> docker save -> gzip -> $(Split-Path -Leaf $ImageTarGz)"
 if (Test-Path $ImageTar) { Remove-Item -Force $ImageTar }
 if (Test-Path $ImageTarGz) { Remove-Item -Force $ImageTarGz }
 docker save $ReleaseImage -o $ImageTar
 if ($LASTEXITCODE -ne 0) { throw "docker save failed" }
 $rawMb = [math]::Round((Get-Item $ImageTar).Length / 1MB, 1)
-Write-Host "    uncompressed tar ${rawMb} MB - compressing (gzip)..."
-Write-Host "    (gzip is CPU-bound; 10-40s silence here is normal for this size.)"
-Compress-FileGzip -SourcePath $ImageTar -DestinationPath $ImageTarGz
-Remove-Item -Force $ImageTar
-$gzMb = [math]::Round((Get-Item $ImageTarGz).Length / 1MB, 1)
-$pct = if ($rawMb -gt 0) { [math]::Round(100.0 * $gzMb / $rawMb, 0) } else { 0 }
-Write-Host ('    artifact {0} MB (~{1}% of tar - faster scp than uncompressed)' -f $gzMb, $pct)
+
+if ($ZipContainerImage) {
+    Write-Host "==> docker save -> gzip -> $(Split-Path -Leaf $ImageTarGz)"
+    Write-Host ('    uncompressed tar {0} MB - compressing (gzip)...' -f $rawMb)
+    Write-Host '    (gzip is CPU-bound; 10-40s silence here is normal for this size.)'
+    Compress-FileGzip -SourcePath $ImageTar -DestinationPath $ImageTarGz
+    Remove-Item -Force $ImageTar
+    $ImageArtifact = $ImageTarGz
+    $artifactMb = [math]::Round((Get-Item $ImageArtifact).Length / 1MB, 1)
+    $pct = if ($rawMb -gt 0) { [math]::Round(100.0 * $artifactMb / $rawMb, 0) } else { 0 }
+    Write-Host ('    artifact {0} MB (~{1}% of tar)' -f $artifactMb, $pct)
+} else {
+    Write-Host "==> docker save -> $(Split-Path -Leaf $ImageTar) (uncompressed)"
+    Write-Host ('    artifact {0} MB' -f $rawMb)
+    $ImageArtifact = $ImageTar
+    $artifactMb = $rawMb
+}
 
 if ($SkipUpload) {
     Write-Host "==> SkipUpload set; done."
     exit 0
 }
 
-# ssh/scp share options (slow networks, first DNS lookup, or password prompt can pause 10-60s with no output otherwise)
-$SshOpts = @(
-    '-o', 'ConnectTimeout=45'
-    '-o', 'ServerAliveInterval=10'
-    '-o', 'ServerAliveCountMax=3'
-)
-
 $Remote = "${RemoteUser}@${RemoteHost}"
 $RemoteCompose = "$RemoteDir/docker-compose.prod.yml"
-$RemoteTarGz = "$RemoteDir/bowlyzer-image.tar.gz"
+$RemoteImageName = if ($ZipContainerImage) { 'bowlyzer-image.tar.gz' } else { 'bowlyzer-image.tar' }
+$RemoteImagePath = "$RemoteDir/$RemoteImageName"
 
 Write-Host "==> SSH: ensure deploy directory on VPS"
-Write-Host "    ($Remote : mkdir -p $RemoteDir)"
-Write-Host "    (This step can take 10-60s: DNS, first key auth, or password prompt with no extra lines until it returns.)"
+Write-Host ('    ({0} : mkdir -p {1})' -f $Remote, $RemoteDir)
+Write-Host '    (This step can take 10-60s: DNS, first key auth, or password prompt with no extra lines until it returns.)'
 & ssh @SshOpts $Remote "mkdir -p '$RemoteDir'"
 if (-not $?) { throw "ssh mkdir failed" }
 
@@ -281,67 +506,45 @@ Write-Host "==> SCP: docker-compose.prod.yml -> ${Remote}:$RemoteCompose"
 & scp @SshOpts $ComposeProd "${Remote}:${RemoteCompose}"
 if (-not $?) { throw "scp compose failed" }
 
-Write-Host "==> SCP: $(Split-Path -Leaf $ImageTarGz) (~${gzMb} MB - upload time depends on your uplink)"
-& scp @SshOpts $ImageTarGz "${Remote}:${RemoteTarGz}"
+Write-Host ('==> SCP: {0} (~{1} MB - upload time depends on your uplink)' -f (Split-Path -Leaf $ImageArtifact), $artifactMb)
+& scp @SshOpts $ImageArtifact "${Remote}:${RemoteImagePath}"
 if (-not $?) { throw "scp image failed" }
 
 if ($SyncDatabase) {
-    Write-Host "==> SCP: database config + published CSVs only (no legacy_scrape / work dir)"
-    $databasePath = Join-Path $RepoRoot "database"
-    $remoteDb = "${Remote}:${RemoteDir}/database"
-    & ssh @SshOpts $Remote "mkdir -p '$RemoteDir/database/data' '$RemoteDir/database/relational_csv' '$RemoteDir/database/config'"
-    if (-not $?) { throw "ssh mkdir database failed" }
-    & scp @SshOpts '-r' (Join-Path $databasePath "relational_csv") "${remoteDb}/"
-    if (-not $?) { throw "scp database/relational_csv failed" }
-    & scp @SshOpts '-r' (Join-Path $databasePath "config") "${remoteDb}/"
-    if (-not $?) { throw "scp database/config failed" }
-    $dataFiles = Get-ChildItem -LiteralPath (Join-Path $databasePath "data") -File -ErrorAction SilentlyContinue
-    if ($dataFiles) {
-        foreach ($f in $dataFiles) {
-            & scp @SshOpts $f.FullName "${remoteDb}/data/"
-            if (-not $?) { throw "scp database/data/$($f.Name) failed" }
-        }
-        Write-Host "    uploaded $($dataFiles.Count) file(s) from database/data/"
-    } else {
-        Write-Host "    warning: no files in database/data/ to upload"
-    }
+    Sync-RemoteDatabase -RepoRoot $RepoRoot -Remote $Remote -RemoteDir $RemoteDir -SshOpts $SshOpts -IncludeCsv:$SyncDatabaseCsv
 } else {
-    Write-Host "==> skipping database sync (use -SyncDatabase when published CSV data changed)"
+    Write-Host "==> skipping database sync (use -SyncDatabase when published data changed)"
 }
 
-Write-Host "==> remote: docker load + compose up + health (health loop up to ~60s)"
-$remoteScript = @'
-set -e
-cd '__REMOTE_DIR__'
-# CSVs are bind-mounted read-only; ensure UID 1000 in the container can traverse/read.
-chmod -R a+rX ./database 2>/dev/null || true
-docker load -i bowlyzer-image.tar.gz
-rm -f bowlyzer-image.tar.gz bowlyzer-image.tar
-rm -f /root/bowlyzer-image.tar /root/bowlyzer-image.tar.gz '__REMOTE_DIR__/../bowlyzer-image.tar' '__REMOTE_DIR__/../bowlyzer-image.tar.gz' 2>/dev/null || true
-docker compose -f docker-compose.prod.yml up -d --remove-orphans
-docker image prune -f >/dev/null 2>&1 || true
-docker compose -f docker-compose.prod.yml ps
-echo -n 'health /liga: '
-HTTP_CODE=""
-for i in {1..30}; do
-  HTTP_CODE=$(curl -sf -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/liga 2>/dev/null || true)
-  if [ "$HTTP_CODE" = "200" ]; then
-    echo "$HTTP_CODE"
-    HEALTH_OK=1
-    break
-  fi
-  sleep 2
-done
-if [ "${HEALTH_OK:-0}" -ne 1 ]; then
-  echo "timeout (waited ~60s; last code '${HTTP_CODE:-000}') - check: docker compose -f docker-compose.prod.yml logs --tail 40 bowlyzer"
-fi
-df -h /
-'@ -replace '__REMOTE_DIR__', ($RemoteDir -replace "'", "'\''") -replace "`r`n", "`n" -replace "`r", ""
+if ($SyncCache) {
+    Sync-RemoteLeagueCache -RepoRoot $RepoRoot -Remote $Remote -RemoteDir $RemoteDir -SshOpts $SshOpts
+} else {
+    Write-Host "==> skipping league cache sync (use -SyncCache after warm_league_cache.py)"
+}
+
+Write-Host '==> remote: docker load + compose up + health (health loop up to ~60s)'
+$composeUpLine = if ($SyncCache) {
+    'docker compose -f docker-compose.prod.yml up -d --remove-orphans --force-recreate'
+} else {
+    'docker compose -f docker-compose.prod.yml up -d --remove-orphans'
+}
+$remoteScript = Join-BashScript ( @(
+    'set -e'
+    "cd $RemoteDir"
+    '# Published data bind-mounts (data/, relational_csv/, config/, .cache/league); ensure UID 1000 can read.'
+    'chmod -R a+rX ./database/data ./database/relational_csv ./database/config ./.cache/league 2>/dev/null || true'
+    ('docker load -i {0}' -f $RemoteImageName)
+    'rm -f bowlyzer-image.tar.gz bowlyzer-image.tar'
+    ('rm -f /root/bowlyzer-image.tar /root/bowlyzer-image.tar.gz {0}/../bowlyzer-image.tar {0}/../bowlyzer-image.tar.gz 2>/dev/null || true' -f $RemoteDir)
+    $composeUpLine
+    'docker image prune -f >/dev/null 2>&1 || true'
+    'docker compose -f docker-compose.prod.yml ps'
+) + (Get-RemoteHealthCheckLines) + @('df -h /') )
 
 Invoke-SshBashScript -ScriptBody $remoteScript -SshTarget $Remote -SshOpts $SshOpts
 
 Write-Host ""
 Write-Host "==> deploy finished"
-Write-Host "    Site (if nginx proxies to :8080): https://your-domain"
-Write-Host "    Direct: http://${RemoteHost}:8080/liga"
-Write-Host "    Logs:   ssh $Remote 'cd $RemoteDir && docker compose -f docker-compose.prod.yml logs -f --tail 50'"
+Write-Host '    Site (if nginx proxies to :8080): https://your-domain'
+Write-Host ('    Direct: http://{0}:8080/liga' -f $RemoteHost)
+Write-Host ('    Logs:   ssh {0}; then: cd {1}; docker compose -f docker-compose.prod.yml logs -f --tail 50' -f $Remote, $RemoteDir)

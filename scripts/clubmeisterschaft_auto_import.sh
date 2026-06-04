@@ -152,7 +152,9 @@ fi
 
 log "import via ${DOCKER_IMAGE}"
 docker run --rm \
-  -v "${BOWLYZER_DIR}/database:/app/database" \
+  -v "${BOWLYZER_DIR}/database/data:/app/database/data" \
+  -v "${BOWLYZER_DIR}/database/relational_csv:/app/database/relational_csv:ro" \
+  -v "${BOWLYZER_DIR}/database/config:/app/database/config:ro" \
   -v "${XLSX_WORK}:/in/clubmeisterschaft_import.xlsx:ro" \
   --entrypoint python \
   "${DOCKER_IMAGE}" \
