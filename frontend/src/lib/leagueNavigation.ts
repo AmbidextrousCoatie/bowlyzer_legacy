@@ -1,4 +1,5 @@
 import type { ColumnGroup } from "./datatable/types";
+import { seasonForUrlQuery } from "./api";
 
 export type LeagueNavTarget =
   | { view: "league-season" }
@@ -15,7 +16,7 @@ export type LeagueNavContext = {
 
 export function buildLeagueNavPath(target: LeagueNavTarget, ctx: LeagueNavContext): string {
   const qs = new URLSearchParams();
-  qs.set("season", ctx.season);
+  qs.set("season", seasonForUrlQuery(ctx.season));
   qs.set("league", ctx.league);
   if (target.view === "league-season") {
     return `/liga?${qs.toString()}`;

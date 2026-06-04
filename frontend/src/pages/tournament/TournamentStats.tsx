@@ -11,6 +11,7 @@ import {
   useTournamentSection,
 } from "../../hooks/useTournament";
 import { useTranslations } from "../../hooks/useTranslations";
+import { seasonForUrlQuery } from "../../lib/api";
 import { resolveTournamentPlayerName } from "../../lib/tournamentPlayer";
 import { BestEfforts } from "./blocks/BestEfforts";
 import { KoBracket } from "./blocks/KoBracket";
@@ -64,7 +65,7 @@ export function TournamentStats() {
     if (!latest) return;
     if (season && list.includes(season)) return;
     const next = new URLSearchParams(searchParams);
-    next.set("season", latest);
+    next.set("season", seasonForUrlQuery(latest));
     if (season !== latest) {
       next.delete("tournament");
       next.delete("round");
@@ -120,7 +121,7 @@ export function TournamentStats() {
   function setParam(key: string, value: string, drop: string[] = []) {
     const next = new URLSearchParams(searchParams);
     if (value === "") next.delete(key);
-    else next.set(key, value);
+    else next.set(key, key === "season" ? seasonForUrlQuery(value) : value);
     drop.forEach((k) => next.delete(k));
     setSearchParams(next, { replace: false });
   }

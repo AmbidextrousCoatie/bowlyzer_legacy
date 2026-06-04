@@ -8,6 +8,8 @@
 export type ColumnDef = {
   field?: string;
   title?: string;
+  /** When set, React replaces ``title`` via ``/league/get_translations``. */
+  title_key?: string;
   align?: "left" | "center" | "right";
   width?: number | string;
   decimal_places?: number | string | null;
@@ -22,9 +24,12 @@ export type ColumnDef = {
 
 export type ColumnGroup = {
   title?: string;
+  title_key?: string;
   columns?: ColumnDef[];
   frozen?: "left" | "right" | false | null;
   highlighted?: boolean;
+  /** Stripe/highlight column headers only; body cells stay plain. */
+  highlight_header_only?: boolean;
   cssClass?: string;
 };
 

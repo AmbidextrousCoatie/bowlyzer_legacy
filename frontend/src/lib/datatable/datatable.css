@@ -97,6 +97,21 @@
   font-variant-numeric: tabular-nums;
 }
 
+.ds-tabulator .tabulator-row .tabulator-cell.text-center {
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+.ds-tabulator .tabulator-row .tabulator-cell.text-start {
+  justify-content: flex-start !important;
+  text-align: left !important;
+}
+
+.ds-tabulator .tabulator-row .tabulator-cell.text-end {
+  justify-content: flex-end !important;
+  text-align: right !important;
+}
+
 /* Row accent when position clip is disabled (e.g. player tables without rank badge). */
 .ds-tabulator .tabulator-row.tab-row-accent::before {
   content: "";
@@ -132,6 +147,7 @@
   background-image: none !important;
 }
 
+/* Cut-row wash is row-level; body cells stay transparent so the row gradient shows through. */
 .ds-tabulator .tabulator-row.tab-row-accent:hover {
   background-color: var(--color-surface-subtle);
   background-image: linear-gradient(90deg, var(--row-accent-overlay, transparent), transparent 60%);
@@ -275,6 +291,7 @@
 }
 
 .ds-tabulator.is-striped-column-groups .tabulator-cell.tab-col-highlighted:not(.tab-position-cell) {
+  background-color: color-mix(in srgb, var(--colgroup-stripe-hue) 9%, var(--color-surface)) !important;
   font-weight: var(--highlight-cell-weight, 600) !important;
 }
 
@@ -350,6 +367,18 @@
 .is-striped-column-groups.tabulator .tabulator-cell.col-group-11:not(.tabulator-frozen):not(.tab-position-cell),
 .is-striped-column-groups.tabulator .tabulator-cell.col-group-13:not(.tabulator-frozen):not(.tab-position-cell) {
   background-color: color-mix(in srgb, var(--colgroup-stripe-hue) 9%, var(--color-surface)) !important;
+}
+
+/* Header-only stripe groups: accent headers, plain body cells */
+.ds-tabulator.is-striped-column-groups .tabulator-cell.col-header-stripe-only:not(.tabulator-frozen):not(.tab-position-cell),
+.is-striped-column-groups.tabulator .tabulator-cell.col-header-stripe-only:not(.tabulator-frozen):not(.tab-position-cell) {
+  background-color: var(--color-surface) !important;
+  font-weight: inherit !important;
+}
+
+.ds-tabulator.is-striped-column-groups .tabulator-row.tab-row-accent .tabulator-cell.col-header-stripe-only:not(.tab-position-cell),
+.is-striped-column-groups.tabulator .tabulator-row.tab-row-accent .tabulator-cell.col-header-stripe-only:not(.tab-position-cell) {
+  background-color: transparent !important;
 }
 
 .ds-tabulator.is-striped-column-groups .tabulator-col.col-group-1:not(.tabulator-frozen),

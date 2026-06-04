@@ -1,6 +1,7 @@
 import { useEffect, useMemo, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ClubSearch } from "../../components/ClubSearch";
+import { seasonForUrlQuery } from "../../lib/api";
 import { useClubMatrix } from "../../hooks/useLeague";
 import { useTeamSeasons, useTeams } from "../../hooks/useTeam";
 import { useTranslations } from "../../hooks/useTranslations";
@@ -32,12 +33,25 @@ export function TeamStats() {
   }, [clubParam, teamParam]);
 
   const teamsQuery = useTeams();
-  const clubsQuery = useClubMatrix(null, false);
-  const clubMatrixQuery = useClubMatrix(club || null, false);
+  /** Always load club names so URL / typed labels can resolve to canonical spellings. */
+  const clubsListQuery = useClubMatrix(null, false);
   const teamSeasonsQuery = useTeamSeasons(teamParam || null);
 
+  const resolvedClub = useMemo(() => {
+    if (!club) return "";
+    const list = clubsListQuery.data?.clubs;
+    if (!list?.length) return club;
+    return (
+      list.find((c) => normalizeUnicodeLabel(c) === normalizeUnicodeLabel(club)) ?? club
+    );
+  }, [club, clubsListQuery.data?.clubs]);
+
+  const clubMatrixQuery = useClubMatrix(resolvedClub || null, false, {
+    enabled: !!resolvedClub && clubsListQuery.isFetched,
+  });
+
   const allTeams = teamsQuery.data ?? [];
-  const clubs = clubsQuery.data?.clubs ?? clubMatrixQuery.data?.clubs ?? [];
+  const clubs = clubsListQuery.data?.clubs ?? clubMatrixQuery.data?.clubs ?? [];
 
   const clubTeams = useMemo(
     () => (club ? teamsForClub(allTeams, club) : []),
@@ -58,8 +72,9 @@ export function TeamStats() {
     if (!teamsQuery.isSuccess || !club) return;
     const next = new URLSearchParams(searchParams);
     let changed = false;
-    if (!clubParam && club) {
-      next.set("club", club);
+    const clubForUrl = resolvedClub || club;
+    if (!clubParam && clubForUrl) {
+      next.set("club", clubForUrl);
       changed = true;
     }
     if (teamParam && team && team !== teamParam) {
@@ -67,7 +82,27 @@ export function TeamStats() {
       changed = true;
     }
     if (changed) setSearchParams(next, { replace: true });
-  }, [teamsQuery.isSuccess, clubParam, club, teamParam, team, searchParams, setSearchParams]);
+  }, [
+    teamsQuery.isSuccess,
+    clubParam,
+    club,
+    resolvedClub,
+    teamParam,
+    team,
+    searchParams,
+    setSearchParams,
+  ]);
+
+  useEffect(() => {
+    if (!clubMatrixQuery.isSuccess || !club) return;
+    const canonical = (clubMatrixQuery.data?.selected_club || clubMatrixQuery.data?.matrix.club || "")
+      .trim();
+    if (!canonical) return;
+    if (normalizeUnicodeLabel(canonical) === normalizeUnicodeLabel(clubParam || club)) return;
+    const next = new URLSearchParams(searchParams);
+    next.set("club", canonical);
+    setSearchParams(next, { replace: true });
+  }, [clubMatrixQuery.isSuccess, clubMatrixQuery.data, club, clubParam, searchParams, setSearchParams]);
 
   useEffect(() => {
     if (!teamSeasonsQuery.isSuccess || !team) return;
@@ -92,6 +127,7 @@ export function TeamStats() {
   function selectTeam(value: string) {
     const next = new URLSearchParams(searchParams);
     if (!club) return;
+    next.set("club", clubParam || resolvedClub || club);
     if (value) next.set("team", value);
     else next.delete("team");
     next.delete("season");
@@ -101,13 +137,18 @@ export function TeamStats() {
   function selectSeason(value: string) {
     const next = new URLSearchParams(searchParams);
     if (!value || value === "all") next.delete("season");
-    else next.set("season", value);
+    else next.set("season", seasonForUrlQuery(value));
     setSearchParams(next, { replace: false });
   }
 
-  const matrix = clubMatrixQuery.data?.matrix;
-  const matrixRows = matrix && matrix.club === club ? matrix.rows : [];
-  const matrixSeasons = matrix && matrix.club === club ? matrix.seasons : [];
+  const matrixFetched = clubMatrixQuery.isFetched;
+  const matrixRows =
+    club && matrixFetched ? (clubMatrixQuery.data?.matrix.rows ?? []) : [];
+  const matrixSeasons =
+    club && matrixFetched ? (clubMatrixQuery.data?.matrix.seasons ?? []) : [];
+  const matrixLoading =
+    !!club && (!clubsListQuery.isFetched || !matrixFetched);
+  const matrixError = !!club && matrixFetched && clubMatrixQuery.isError;
 
   const showClubOverview = !!club && !team;
   const showTeamDetail = !!club && !!team;
@@ -141,7 +182,7 @@ export function TeamStats() {
             <ClubSearch
               value={club}
               clubs={clubs}
-              isLoading={clubsQuery.isPending}
+              isLoading={clubsListQuery.isPending}
               placeholder={t("ui.team.select_club", "Club eingeben oder wählen…")}
               ariaLabel={t("ui.team.select_club", "Club wählen")}
               clearAriaLabel={t("ui.team.clear_club", "Club-Auswahl löschen")}
@@ -197,6 +238,8 @@ export function TeamStats() {
             teams={clubTeams}
             matrixRows={matrixRows}
             seasons={matrixSeasons}
+            matrixLoading={matrixLoading}
+            matrixError={matrixError}
             leagueLongNames={clubMatrixQuery.data?.league_long_names ?? {}}
             t={t}
           />

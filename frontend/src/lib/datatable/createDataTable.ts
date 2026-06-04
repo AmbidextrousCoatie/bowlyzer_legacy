@@ -492,19 +492,23 @@ export function createDataTable(
         (c) => c.frozen === "left" || c.frozen === "right",
       );
       const isHighlighted = group.highlighted === true;
+      const headerOnlyHighlight = group.highlight_header_only === true;
+      const highlightCells = isHighlighted && !headerOnlyHighlight;
       group.columns.forEach((column, columnIndex) => {
         const info = columnLookup[`${groupIndex}-${columnIndex}`];
         if (!info) return;
         const def = buildColumnDefinition(
           column,
           info,
-          isHighlighted,
+          highlightCells,
           groupIndex,
           columnIndex,
           settings,
           isCompactLayout,
           transformedData,
-          makeFormatter(column, info, isHighlighted, groupIndex, columnIndex),
+          makeFormatter(column, info, highlightCells, groupIndex, columnIndex),
+          null,
+          headerOnlyHighlight,
         );
         const colFrozen = column.frozen === "left" || column.frozen === "right" ? column.frozen : null;
         if (hasPerColumnFrozen) {
@@ -525,8 +529,12 @@ export function createDataTable(
           (c) => c.frozen === "left" || c.frozen === "right",
         );
         const isHighlighted = group.highlighted === true;
+        const headerOnlyHighlight = group.highlight_header_only === true;
+        const highlightCells = isHighlighted && !headerOnlyHighlight;
         let groupCssClass = group.cssClass ?? "";
-        if (isHighlighted) groupCssClass = (groupCssClass + " tab-group-highlighted").trim();
+        if (highlightCells || headerOnlyHighlight) {
+          groupCssClass = (groupCssClass + " tab-group-highlighted").trim();
+        }
         const childDefs = group.columns
           .map((column, columnIndex) => {
             const info = columnLookup[`${groupIndex}-${columnIndex}`];
@@ -534,14 +542,15 @@ export function createDataTable(
             const def = buildColumnDefinition(
               column,
               info,
-              isHighlighted,
+              highlightCells,
               groupIndex,
               columnIndex,
               settings,
               isCompactLayout,
               transformedData,
-              makeFormatter(column, info, isHighlighted, info.groupIndex, info.columnIndex),
+              makeFormatter(column, info, highlightCells, info.groupIndex, info.columnIndex),
               useStripedColumnGroups ? groupIndex : null,
+              headerOnlyHighlight,
             );
             const colFrozen = column.frozen === "left" || column.frozen === "right" ? column.frozen : null;
             if (hasPerColumnFrozen && colFrozen) {
@@ -924,6 +933,7 @@ function buildColumnDefinition(
   transformedData: RowObject[],
   formatter: (cell: CellComponent) => string | HTMLElement,
   stripeGroupIndex: number | null = null,
+  headerOnlyHighlight = false,
 ): ColumnDefinition {
   const headerAlign = column.align ?? "center";
   const sample = transformedData.length ? transformedData[0][info.field] : null;
@@ -938,6 +948,7 @@ function buildColumnDefinition(
   else if (column.align === "left") cssClasses.push("text-start");
   else cssClasses.push("text-center");
   if (isHighlighted) cssClasses.push("tab-col-highlighted");
+  if (headerOnlyHighlight) cssClasses.push("col-header-stripe-only");
   if (column.cssClass) cssClasses.push(column.cssClass);
   if (stripeGroupIndex !== null) cssClasses.push("col-group-" + stripeGroupIndex);
   if (isRankPositionColumn(info.field, groupIndex, columnIndex, settings)) {
@@ -1060,7 +1071,7 @@ function runPostRender(
 
       const highlightedFields = new Set<string>();
       data.columns.forEach((group) => {
-        if (group.highlighted === true && group.columns) {
+        if (group.highlighted === true && group.highlight_header_only !== true && group.columns) {
           group.columns.forEach((c) => {
             if (c.field) highlightedFields.add(c.field);
           });

@@ -16,6 +16,7 @@ import { Matchday } from "./blocks/Matchday";
 import { SeasonLeagueStandings } from "./blocks/SeasonLeagueStandings";
 import { TeamDetails } from "./blocks/TeamDetails";
 import { TeamPerformance } from "./blocks/TeamPerformance";
+import { seasonForUrlQuery } from "../../lib/api";
 import { LeagueFilterBar } from "./LeagueFilterBar";
 
 export function LeagueStats() {
@@ -40,7 +41,7 @@ export function LeagueStats() {
       ? seasonsQuery.isSuccess
         ? pickLatestSeason(seasonList)
         : null
-      : season;
+      : seasonForUrlQuery(season);
 
   useEffect(() => {
     if (!seasonsQuery.isSuccess) return;
@@ -48,7 +49,7 @@ export function LeagueStats() {
     const latest = pickLatestSeason(seasonList);
     if (!latest) return;
     const next = new URLSearchParams(searchParams);
-    next.set("season", latest);
+    next.set("season", seasonForUrlQuery(latest));
     setSearchParams(next, { replace: true });
   }, [seasonsQuery.isSuccess, seasonsQuery.data, season, searchParams, setSearchParams]);
 
@@ -60,7 +61,7 @@ export function LeagueStats() {
   function setParam(key: string, value: string, drop: string[] = []) {
     const next = new URLSearchParams(searchParams);
     if (value === "") next.delete(key);
-    else next.set(key, value);
+    else next.set(key, key === "season" ? seasonForUrlQuery(value) : value);
     drop.forEach((k) => next.delete(k));
     setSearchParams(next, { replace: false });
   }

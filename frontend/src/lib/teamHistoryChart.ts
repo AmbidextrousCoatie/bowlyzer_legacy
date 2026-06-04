@@ -10,10 +10,13 @@ export const LEAGUE_AXIS_LABELS: Record<number, string> = {
   5: "Bezirksoberliga",
   6: "Bezirksliga",
   7: "Kreisliga",
+  8: "A-Klasse",
 };
 
-const LEAGUE_LABEL_VALUES = [5, 15, 25, 35, 45, 55, 65];
-const LEAGUE_BORDER_VALUES = [10, 20, 30, 40, 50, 60, 70];
+const LEAGUE_LEVEL_MAX = Math.max(...Object.keys(LEAGUE_AXIS_LABELS).map(Number));
+const LEAGUE_LABEL_VALUES = Array.from({ length: LEAGUE_LEVEL_MAX }, (_, i) => i * 10 + 5);
+const LEAGUE_BORDER_VALUES = Array.from({ length: LEAGUE_LEVEL_MAX }, (_, i) => (i + 1) * 10);
+const LEAGUE_AXIS_Y_MAX = LEAGUE_LEVEL_MAX * 10;
 
 function leagueLabelForAxisValue(value: number): string {
   const level = Math.floor((value - 1) / 10) + 1;
@@ -21,7 +24,8 @@ function leagueLabelForAxisValue(value: number): string {
 }
 
 export function combinedPositionValue(row: TeamHistorySeason): number {
-  return (row.league_level - 1) * 10 + row.final_position;
+  const level = Math.min(Math.max(1, row.league_level), LEAGUE_LEVEL_MAX);
+  return (level - 1) * 10 + row.final_position;
 }
 
 export type PositionSeriesInput = {
@@ -88,7 +92,7 @@ export function buildPositionHistoryChartOption(
       position: "left",
       axisLine: { onZero: false },
       min: 0,
-      max: 70,
+      max: LEAGUE_AXIS_Y_MAX,
       interval: 10,
       axisLabel: {
         customValues: LEAGUE_LABEL_VALUES,

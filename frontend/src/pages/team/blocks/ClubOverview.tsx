@@ -20,6 +20,8 @@ type Props = {
   teams: string[];
   matrixRows: ClubMatrixRow[];
   seasons: string[];
+  matrixLoading?: boolean;
+  matrixError?: boolean;
   leagueLongNames: Record<string, string>;
   t: (key: string, fallback?: string) => string;
 };
@@ -55,6 +57,8 @@ export function ClubOverview({
   teams,
   matrixRows,
   seasons,
+  matrixLoading = false,
+  matrixError = false,
   leagueLongNames,
   t,
 }: Props) {
@@ -91,12 +95,25 @@ export function ClubOverview({
             )}
           </p>
         </header>
-        <ClubPositionHistoryChart
-          teams={teams}
-          matrixRows={matrixRows}
-          matrixSeasons={seasons}
-          t={t}
-        />
+        {matrixLoading ? (
+          <p className="text-small text-muted p-4">
+            {t("ui.team.club_matrix_loading", "Platzierungsverlauf wird geladen…")}
+          </p>
+        ) : matrixError ? (
+          <p className="text-small text-muted p-4">
+            {t(
+              "ui.team.club_matrix_error",
+              "Platzierungsverlauf konnte nicht geladen werden.",
+            )}
+          </p>
+        ) : (
+          <ClubPositionHistoryChart
+            teams={teams}
+            matrixRows={matrixRows}
+            matrixSeasons={seasons}
+            t={t}
+          />
+        )}
       </section>
 
       <div className="grid gap-3 sm:grid-cols-3">

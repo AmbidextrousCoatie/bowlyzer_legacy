@@ -5,6 +5,7 @@ import type { DataTableHandle } from "../../../lib/datatable/createDataTable";
 import { TEAM_COLOR_PALETTES } from "../../../lib/color-utils";
 import type { RowMetaEntry, TableData } from "../../../lib/datatable/types";
 import type { PlayerSeasonRow } from "../../../hooks/usePlayer";
+import { seasonForUrlQuery } from "../../../lib/api";
 
 /** rainbowPastel color 1 (1-based) — season “All Events” summary rows. */
 const SEASON_TOTAL_ROW_ACCENT = TEAM_COLOR_PALETTES.rainbowPastel[0];
@@ -205,7 +206,7 @@ function buildEventPath(args: CompetitionCellArgs): string | null {
     return null;
   }
   const qs = new URLSearchParams();
-  qs.set("season", String(args.season ?? ""));
+  qs.set("season", seasonForUrlQuery(String(args.season ?? "")));
   if (args.isTournament) {
     qs.set("tournament", String(args.competition));
     if (args.selectedPlayerName) qs.set("player", args.selectedPlayerName);

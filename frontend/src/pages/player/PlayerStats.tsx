@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { PlayerSearch } from "../../components/PlayerSearch";
+import { seasonForUrlQuery } from "../../lib/api";
 import {
   type PlayerSearchEntry,
   usePlayerLifetimeStats,
@@ -87,7 +88,7 @@ export function PlayerStats() {
   function selectSeason(value: string) {
     const next = new URLSearchParams(searchParams);
     if (!value || value === "all") next.delete("season");
-    else next.set("season", value);
+    else next.set("season", seasonForUrlQuery(value));
     setSearchParams(next, { replace: false });
   }
 

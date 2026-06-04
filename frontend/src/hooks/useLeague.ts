@@ -52,7 +52,7 @@ export function pickLatestSeason(seasons: string[]): string | null {
 export function useAvailableSeasons() {
   return useQuery({
     queryKey: ["league", "seasons"],
-    queryFn: () => fetchJson<Season[]>("/league/get_available_seasons"),
+    queryFn: () => fetchJson<Season[]>(buildUrl("/league/get_available_seasons")),
   });
 }
 
@@ -356,11 +356,16 @@ export type WeekMatrixPayload = {
 
 const DIAGNOSIS_LIST_STALE_MS = 10 * 60 * 1000;
 
-export function useClubMatrix(club: string | null, onlyUnnumbered: boolean) {
+export function useClubMatrix(
+  club: string | null,
+  onlyUnnumbered: boolean,
+  options?: { enabled?: boolean },
+) {
   const database =
     typeof window !== "undefined"
       ? new URLSearchParams(window.location.search).get("database")
       : null;
+  const enabled = options?.enabled ?? true;
   return useQuery({
     queryKey: ["league", "club-matrix", database ?? "", club ?? "", onlyUnnumbered],
     queryFn: () =>
@@ -371,6 +376,7 @@ export function useClubMatrix(club: string | null, onlyUnnumbered: boolean) {
         }),
       ),
     staleTime: DIAGNOSIS_LIST_STALE_MS,
+    enabled,
   });
 }
 

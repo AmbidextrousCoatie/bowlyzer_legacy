@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 import { DataTable } from "../../../lib/datatable/DataTable";
+import { localizeTableData } from "../../../lib/datatable/localizeTableData";
 import type { TableData } from "../../../lib/datatable/types";
 import { tournamentLeaderboardTableOptions } from "../tournamentTableOptions";
 
@@ -12,6 +13,7 @@ type Props = {
 
 export function Leaderboard({ data, stageLabel, onPlayerClick, t }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const localizedData = useMemo(() => localizeTableData(data, t), [data, t]);
   const tableOptions = useMemo(
     () => ({
       ...tournamentLeaderboardTableOptions,
@@ -56,7 +58,7 @@ export function Leaderboard({ data, stageLabel, onPlayerClick, t }: Props) {
         )}
       </div>
       <div ref={containerRef}>
-        <DataTable data={data} options={tableOptions} />
+        <DataTable data={localizedData} options={tableOptions} />
       </div>
     </section>
   );

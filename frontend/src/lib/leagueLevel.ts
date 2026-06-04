@@ -41,6 +41,14 @@ const LEAGUE_LEVEL_BY_ID: Record<string, number> = {
   "KL S2": 7,
   "KL S3": 7,
   "KL S4": 7,
+  "A N1": 8,
+  "A N2": 8,
+  "A N3": 8,
+  "A N4": 8,
+  "A S1": 8,
+  "A S2": 8,
+  "A S3": 8,
+  "A S4": 8,
 };
 
 export function getLeagueLevel(league: string): number {

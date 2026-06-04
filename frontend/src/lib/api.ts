@@ -52,23 +52,65 @@ function resolveDatabaseParam(scope: "league" | "tournament"): string | null {
   return current;
 }
 
+const SEASON_LABEL = /^\d{2}[/-]\d{2}$/;
+
+/** Canonical ``10/11`` for React Router / address bar. Accepts legacy ``10-11`` bookmarks. */
+export function seasonForUrlQuery(season: string): string {
+  const text = season.trim();
+  if (SEASON_LABEL.test(text)) return text.replace("-", "/");
+  return text;
+}
+
+/**
+ * Wire format for ``fetch`` query strings behind nginx.
+ * Uses ``10-11`` so the proxy does not split ``season=10/11`` into an extra path segment.
+ * Flask normalizes back to ``10/11``.
+ */
+export function seasonForApiQuery(season: string): string {
+  const canon = seasonForUrlQuery(season);
+  if (/^\d{2}\/\d{2}$/.test(canon)) return canon.replace("/", "-");
+  return canon;
+}
+
+function isBackendApiPath(path: string): boolean {
+  const p = path.split("?")[0] ?? path;
+  return (
+    p.startsWith("/league/") ||
+    p.startsWith("/team/") ||
+    p.startsWith("/player/") ||
+    p.startsWith("/tournament/") ||
+    p.startsWith("/home/") ||
+    p === "/get-data-sources-info" ||
+    p === "/switch-database"
+  );
+}
+
+function formatQueryPair(key: string, value: string, apiWire: boolean): string {
+  if (key === "season") {
+    const season = apiWire ? seasonForApiQuery(value) : seasonForUrlQuery(value);
+    return `season=${season}`;
+  }
+  return `${encodeURIComponent(key)}=${encodeURIComponent(value)}`;
+}
+
 export function buildUrl(
   path: string,
   params: Record<string, string | number | undefined | null> = {},
   options: { scope?: "league" | "tournament" } = {},
 ): string {
   const scope = options.scope ?? (path.startsWith("/tournament") ? "tournament" : "league");
-  const search = new URLSearchParams();
+  const apiWire = isBackendApiPath(path);
+  const parts: string[] = [];
   Object.entries(params).forEach(([k, v]) => {
     if (v !== undefined && v !== null && v !== "") {
-      search.set(k, String(v));
+      parts.push(formatQueryPair(k, String(v), apiWire));
     }
   });
-  if (!search.has("database")) {
+  if (!parts.some((p) => p.startsWith("database="))) {
     const db = resolveDatabaseParam(scope);
-    if (db) search.set("database", db);
+    if (db) parts.push(formatQueryPair("database", db, apiWire));
   }
-  const qs = search.toString();
+  const qs = parts.join("&");
   return qs ? `${path}?${qs}` : path;
 }
 
