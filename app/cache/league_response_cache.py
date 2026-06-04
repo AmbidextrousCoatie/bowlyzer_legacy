@@ -1,9 +1,12 @@
 """
 Persistent JSON cache for expensive league read endpoints.
 
-Invalidation is driven by a data revision derived from the backing CSV
-(mtime + size + path) plus optional LEAGUE_CACHE_REVISION. Responses that
-embed i18n strings are keyed by current language and translations_version.
+Invalidation uses granular per-season / per-league content fingerprints when
+LEAGUE_CACHE_GRANULAR_REVISION=1 (default), so appending rows to the current
+season does not invalidate caches for older seasons. Set LEAGUE_CACHE_GLOBAL_REVISION=1
+to revert to whole-file mtime revision. Optional LEAGUE_CACHE_REVISION bumps all keys.
+
+Responses that embed i18n strings are keyed by current language and translations_version.
 """
 
 from __future__ import annotations
@@ -13,14 +16,17 @@ import json
 import os
 import re
 from pathlib import Path
-from typing import Any, Dict, Mapping, Optional, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 from app.config.database_config import database_config
 from app.services.i18n_service import i18n_service
+from app.utils.season_query import normalize_season_query_value
 
 _ENV_ENABLED = "LEAGUE_CACHE_ENABLED"
 _ENV_DIR = "LEAGUE_CACHE_DIR"
 _ENV_REVISION = "LEAGUE_CACHE_REVISION"
+_ENV_GLOBAL_REVISION = "LEAGUE_CACHE_GLOBAL_REVISION"
+_ENTRIES_SUBDIR = "entries"
 
 # Bump per endpoint when response shape changes (invalidates disk cache without CSV edits).
 _ENDPOINT_PAYLOAD_VERSION: Dict[str, str] = {
@@ -34,7 +40,7 @@ _ENDPOINT_PAYLOAD_VERSION: Dict[str, str] = {
     "get_week_matrix": "per-league-weeks-v2",
     "get_team_vs_team_comparison": "unplayed-empty-v3",
     "get_club_matrix": "matrix-pos-v2",
-    "get_tournament_section": "round-results-net-rank-v11",
+    "get_tournament_section": "round-results-net-rank-v15",
     "get_player_section": "player-round-hcp-per-game-v1",
     "get_tournament_field_progress": "field-progress-v4",
     # Added handicap block + round names in payload — bump invalidates old disk cache without `handicap`.
@@ -77,6 +83,21 @@ def _file_revision_part(path: Path) -> str:
     return f"{path.resolve()}|{st.st_size}|{int(st.st_mtime_ns)}"
 
 
+def use_global_file_revision() -> bool:
+    v = (os.environ.get(_ENV_GLOBAL_REVISION) or "").strip().lower()
+    return v in {"1", "true", "yes", "on"}
+
+
+def _resolve_data_revision(database_id: str, query_args: Mapping[str, Any]) -> str:
+    if use_global_file_revision():
+        return compute_data_revision(database_id)
+    from app.cache.league_data_revision import effective_data_revision, granular_revision_enabled
+
+    if granular_revision_enabled():
+        return effective_data_revision(database_id, query_args)
+    return compute_data_revision(database_id)
+
+
 def compute_data_revision(database_id: str) -> str:
     """
     Short hash so when backing CSV(s) change (replace or edit), revision changes.
@@ -90,10 +111,11 @@ def compute_data_revision(database_id: str) -> str:
     parts: list[str] = []
     if cfg.file_path:
         csv_path = Path(cfg.file_path)
-        parts.append(_file_revision_part(csv_path))
         parquet_path = csv_path.with_suffix(".parquet")
         if parquet_path.is_file():
             parts.append(_file_revision_part(parquet_path))
+        if csv_path.is_file():
+            parts.append(_file_revision_part(csv_path))
     for extra in getattr(cfg, "merge_file_paths", None) or ():
         parts.append(_file_revision_part(Path(extra)))
     if not parts:
@@ -118,7 +140,10 @@ def normalize_query_for_key(query_args: Mapping[str, Any], database_id: str) -> 
         v = query_args.get(k)
         if v is None:
             continue
-        q[str(k)] = str(v)
+        val = str(v)
+        if str(k) == "season":
+            val = normalize_season_query_value(val) or val
+        q[str(k)] = val
     q["database"] = database_id
     return dict(sorted(q.items()))
 
@@ -146,27 +171,87 @@ def _payload_hash(
 
 def cache_file_path(endpoint: str, database_id: str, query_args: Mapping[str, Any]) -> Tuple[Path, str]:
     db = effective_database_id(database_id)
+    data_rev = _resolve_data_revision(db, query_args)
+    qnorm = normalize_query_for_key(query_args, db)
+    lang = i18n_service.get_current_language().value
+    i18n_ver = i18n_service.get_translations_version()
+    h = _payload_hash(endpoint, db, data_rev, lang, i18n_ver, qnorm)
+    if use_global_file_revision():
+        base = league_cache_dir() / _sanitize_db_id(db) / data_rev
+    else:
+        base = league_cache_dir() / _sanitize_db_id(db) / _ENTRIES_SUBDIR
+    return base / f"{endpoint}__{h}.json", data_rev
+
+
+def _legacy_cache_paths(endpoint: str, database_id: str, query_args: Mapping[str, Any]) -> List[Path]:
+    """Pre-granular layout: .cache/league/<db>/<file-rev>/<endpoint>__<hash>.json"""
+    db = effective_database_id(database_id)
     rev = compute_data_revision(db)
     qnorm = normalize_query_for_key(query_args, db)
     lang = i18n_service.get_current_language().value
     i18n_ver = i18n_service.get_translations_version()
     h = _payload_hash(endpoint, db, rev, lang, i18n_ver, qnorm)
-    base = league_cache_dir() / _sanitize_db_id(db) / rev
-    return base / f"{endpoint}__{h}.json", rev
+    root = league_cache_dir() / _sanitize_db_id(db)
+    if not root.is_dir():
+        return []
+    return [root / rev / f"{endpoint}__{h}.json"]
+
+
+def _warn_stale_disk_cache(endpoint: str, database_id: str, expected_path: Path) -> None:
+    """Log once when warmed JSON exists but revision keys no longer match (data changed without re-warm)."""
+    if expected_path.is_file():
+        return
+    entries = league_cache_dir() / _sanitize_db_id(database_id) / _ENTRIES_SUBDIR
+    if not entries.is_dir():
+        return
+    pattern = f"{endpoint}__*.json"
+    if not any(entries.glob(pattern)):
+        return
+    print(
+        f"League cache MISS for {endpoint!r} ({database_id}): "
+        f"expected {expected_path.name} — other {pattern} files exist. "
+        "Published data likely changed; run scripts/warm_league_cache.py (or deploy -SyncCache).",
+        flush=True,
+    )
+
+
+def preload_league_revision_indexes() -> None:
+    """Load revision_index.json at startup so first API cache lookup is not ~10s."""
+    if not is_league_cache_enabled() or use_global_file_revision():
+        return
+    try:
+        from app.cache.league_data_revision import granular_revision_enabled, ensure_revision_index
+    except ImportError:
+        return
+    if not granular_revision_enabled():
+        return
+    for db_id in (database_config.get_default_source(),):
+        try:
+            ensure_revision_index(db_id)
+        except Exception as exc:
+            print(f"Warning: revision index preload failed for {db_id!r}: {exc}", flush=True)
 
 
 def league_cache_try_get(endpoint: str, database_id: Optional[str], query_args: Mapping[str, Any]) -> Optional[Any]:
     if not is_league_cache_enabled():
         return None
     db = effective_database_id(database_id)
-    path, _rev = cache_file_path(endpoint, db, query_args)
-    if not path.is_file():
-        return None
-    try:
-        raw = path.read_text(encoding="utf-8")
-        return json.loads(raw)
-    except (OSError, json.JSONDecodeError):
-        return None
+    candidates: List[Path] = []
+    if not use_global_file_revision():
+        candidates.extend(_legacy_cache_paths(endpoint, db, query_args))
+    primary = cache_file_path(endpoint, db, query_args)[0]
+    if primary not in candidates:
+        candidates.append(primary)
+    for path in candidates:
+        if not path.is_file():
+            continue
+        try:
+            raw = path.read_text(encoding="utf-8")
+            return json.loads(raw)
+        except (OSError, json.JSONDecodeError):
+            continue
+    _warn_stale_disk_cache(endpoint, db, primary)
+    return None
 
 
 def league_cache_put(endpoint: str, database_id: Optional[str], query_args: Mapping[str, Any], payload: Any) -> None:
@@ -174,17 +259,32 @@ def league_cache_put(endpoint: str, database_id: Optional[str], query_args: Mapp
         return
     db = effective_database_id(database_id)
     path, _rev = cache_file_path(endpoint, db, query_args)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    data = json.dumps(payload, ensure_ascii=False, separators=(",", ":"), default=str)
-    tmp.write_text(data, encoding="utf-8")
-    tmp.replace(path)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_suffix(path.suffix + ".tmp")
+        data = json.dumps(payload, ensure_ascii=False, separators=(",", ":"), default=str)
+        tmp.write_text(data, encoding="utf-8")
+        tmp.replace(path)
+    except OSError as exc:
+        # Production compose mounts LEAGUE_CACHE_DIR :ro — serve computed JSON, skip write.
+        print(
+            f"Warning: league cache put skipped for {endpoint!r} ({db}): {exc}",
+            flush=True,
+        )
 
 
 def league_cache_invalidate_database(database_id: Optional[str] = None) -> int:
     """
     Remove all cached entries for a database id (all revisions). Returns files deleted.
     """
+    from app.cache.league_data_revision import invalidate_revision_index
+
+    db_id = effective_database_id(database_id) if database_id else None
+    if db_id:
+        invalidate_revision_index(db_id)
+    else:
+        invalidate_revision_index(None)
+
     db = _sanitize_db_id(effective_database_id(database_id))
     root = league_cache_dir() / db
     if not root.is_dir():

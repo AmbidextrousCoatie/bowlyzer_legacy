@@ -47,6 +47,13 @@ def create_app():
     register_spa(app)
 
     try:
+        from app.cache.league_response_cache import preload_league_revision_indexes
+
+        preload_league_revision_indexes()
+    except Exception as exc:
+        print(f"Warning: could not preload league revision index: {exc}")
+
+    try:
         from app.cache.cache_warmup import start_cache_warmup_background
 
         start_cache_warmup_background(app)

@@ -29,6 +29,7 @@ trap cleanup EXIT
 
 echo "==> backend: uv run flask on :$BACKEND_PORT"
 cd "$ROOT"
+export LEAGUE_CACHE_WARM_ON_START=0
 uv run flask --app wsgi run --port "$BACKEND_PORT" --no-debug &
 BE_PID=$!
 

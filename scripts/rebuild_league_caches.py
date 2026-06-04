@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
 """
-Invalidate persisted league caches for a database, then warm everything:
+Invalidate persisted league caches for a database, then warm everything.
+
+For routine updates (new weeks in the current season only), prefer incremental warm
+without --rebuild so unchanged seasons stay on disk cache:
+  uv run python scripts/warm_league_cache.py --database db_real_merged --workers 8
 
 - All seasons in the source
 - For each season: get_season_league_standings without division= (all divisions)
   and one cached response per division code that has data that season
   (same combinations the UI uses when switching division filters)
 - All league-scoped endpoints per (season, league) and league-wide aggregation tables
+- With --warm-clubs (default): team list + get_club_matrix for every club (club page / Platzierungsverlauf)
 
 Usage:
   uv run python scripts/rebuild_league_caches.py --database db_real_merged
@@ -43,6 +48,11 @@ def main() -> int:
         help="Comma-separated i18n languages (default: de,en)",
     )
     parser.add_argument("--dry-run", action="store_true", help="Print jobs only; no delete, no write")
+    parser.add_argument(
+        "--no-warm-clubs",
+        action="store_true",
+        help="Skip club matrix + team_get_teams cache jobs (faster; smaller cache)",
+    )
     args = parser.parse_args()
 
     warm_path = Path(__file__).resolve().parent / "warm_league_cache.py"
@@ -65,6 +75,8 @@ def main() -> int:
         ]
         if args.dry_run:
             sys.argv.append("--dry-run")
+        if not args.no_warm_clubs:
+            sys.argv.append("--warm-clubs")
         return int(mod.main())
     finally:
         sys.argv = argv_bak
