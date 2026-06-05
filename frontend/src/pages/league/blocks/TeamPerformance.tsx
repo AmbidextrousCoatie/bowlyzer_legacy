@@ -1,11 +1,16 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { EChart } from "../../../lib/charts/EChart";
 import {
   buildWeekLabels,
   mutedTrendOption,
   scatterMultiAxisOption,
+  type SeriesData,
 } from "../../../lib/charts/options";
-import { seedPlayerColorsFromPerformanceOrder } from "../../../lib/color-utils";
+import {
+  getTeamPerformanceHighlightColor,
+  seedPlayerColorsFromPerformanceOrder,
+} from "../../../lib/color-utils";
+import { normalizeUnicodeLabel } from "../../../lib/teamUtils";
 import { DataTable } from "../../../lib/datatable/DataTable";
 import type { DataTableOptions } from "../../../lib/datatable/types";
 import {
@@ -16,6 +21,55 @@ import {
   useTeamWinPercentageTable,
 } from "../../../hooks/useLeague";
 import { useTranslations } from "../../../hooks/useTranslations";
+
+const TEAM_PERFORMANCE_ALIASES = (teamName: string) => [
+  teamName,
+  `${teamName} (Team)`,
+  `${teamName} (Team Average)`,
+];
+
+/** Key used in SeriesData payloads (must match backend team row). */
+function resolveTeamDataKey(seriesData: SeriesData, teamKey: string): string {
+  const keys = Object.keys(seriesData);
+  const normalized = normalizeUnicodeLabel(teamKey);
+  if (keys.includes(teamKey)) return teamKey;
+  const match = keys.find((k) => normalizeUnicodeLabel(k) === normalized);
+  return match ?? teamKey;
+}
+
+/** Players first (by average rank), team summary row last — matches performance tables. */
+function buildTeamPerformanceChartOrder(
+  seriesData: SeriesData,
+  playerOrder: string[] | undefined,
+  teamKey: string,
+): string[] {
+  const dataTeamKey = resolveTeamDataKey(seriesData, teamKey);
+  const dataKeys = new Set(Object.keys(seriesData));
+  const players =
+    playerOrder?.filter((name) => dataKeys.has(name)) ??
+    [...dataKeys].filter((name) => name !== dataTeamKey).sort((a, b) => a.localeCompare(b));
+  const order = [...players];
+  if (dataKeys.has(dataTeamKey) && !order.includes(dataTeamKey)) {
+    order.push(dataTeamKey);
+  }
+  return order;
+}
+
+function scatterPerformanceOptions(
+  playerOrder: string[] | undefined,
+  teamKey: string,
+  tooltipValueLabel: string,
+) {
+  const perfColors =
+    playerOrder?.length && teamKey
+      ? { playerOrder, teamKey }
+      : undefined;
+  return {
+    tooltipValueLabel,
+    usePlayerColors: true as const,
+    performanceColors: perfColors,
+  };
+}
 
 type Props = {
   season: string;
@@ -35,6 +89,18 @@ export function TeamPerformance({ season, league, team }: Props) {
   const positions = useTeamPositions(season, league);
 
   const playerOrder = analysis.data?.player_order_by_average;
+  const teamKey = normalizeUnicodeLabel(analysis.data?.team ?? team);
+
+  const teamHighlightColor = useMemo(() => {
+    if (!playerOrder?.length || !teamKey) return undefined;
+    return getTeamPerformanceHighlightColor(playerOrder, teamKey);
+  }, [playerOrder, teamKey]);
+
+  useEffect(() => {
+    if (playerOrder?.length) {
+      seedPlayerColorsFromPerformanceOrder(playerOrder, teamKey, TEAM_PERFORMANCE_ALIASES(teamKey));
+    }
+  }, [playerOrder, teamKey]);
 
   const teamPerformanceTableOptions = useMemo((): DataTableOptions => {
     const base: DataTableOptions = {
@@ -42,29 +108,28 @@ export function TeamPerformance({ season, league, team }: Props) {
       enableSpecialRowStyling: true,
       tooltips: true,
       disableTeamColorUpdate: true,
-      performanceTeamName: team,
+      performanceTeamName: teamKey,
     };
     if (playerOrder?.length) {
       return { ...base, playerColorOrder: playerOrder };
     }
     return base;
-  }, [team, playerOrder]);
+  }, [teamKey, playerOrder]);
 
   const scoreBubbleOption = useMemo(() => {
     const perf = analysis.data?.performance_data?.data;
     if (!perf) return null;
-    const order = playerOrder ?? Object.keys(perf);
     if (playerOrder?.length) {
-      seedPlayerColorsFromPerformanceOrder(playerOrder, team, [
-        team,
-        `${team} (Team)`,
-        `${team} (Team Average)`,
-      ]);
+      seedPlayerColorsFromPerformanceOrder(playerOrder, teamKey, TEAM_PERFORMANCE_ALIASES(teamKey));
     }
-    return scatterMultiAxisOption(perf, order, buildWeekLabels(perf, weekLabel), {
-      tooltipValueLabel: t("score", "Score"),
-    });
-  }, [analysis.data, playerOrder, team, weekLabel, t]);
+    const order = buildTeamPerformanceChartOrder(perf, playerOrder, teamKey);
+    return scatterMultiAxisOption(
+      perf,
+      order,
+      buildWeekLabels(perf, weekLabel),
+      scatterPerformanceOptions(playerOrder, teamKey, t("score", "Score")),
+    );
+  }, [analysis.data, playerOrder, teamKey, weekLabel, t]);
 
   const winPercentageBubbleOption = useMemo(() => {
     const wpRaw = analysis.data?.win_percentage_data;
@@ -76,36 +141,46 @@ export function TeamPerformance({ season, league, team }: Props) {
       wp = wpRaw as Record<string, number[]>;
     }
     if (!wp) return null;
-    const order = playerOrder ?? Object.keys(wp);
     if (playerOrder?.length) {
-      seedPlayerColorsFromPerformanceOrder(playerOrder, team, [
-        team,
-        `${team} (Team)`,
-        `${team} (Team Average)`,
-      ]);
+      seedPlayerColorsFromPerformanceOrder(playerOrder, teamKey, TEAM_PERFORMANCE_ALIASES(teamKey));
     }
-    return scatterMultiAxisOption(wp, order, buildWeekLabels(wp, weekLabel), {
-      tooltipValueLabel: t("win_percentage", "Win %"),
-    });
-  }, [analysis.data, playerOrder, team, weekLabel, t]);
+    const order = buildTeamPerformanceChartOrder(wp, playerOrder, teamKey);
+    return scatterMultiAxisOption(
+      wp,
+      order,
+      buildWeekLabels(wp, weekLabel),
+      scatterPerformanceOptions(playerOrder, teamKey, t("win_percentage", "Win %")),
+    );
+  }, [analysis.data, playerOrder, teamKey, weekLabel, t]);
 
   const pointsTrendOption = useMemo(() => {
     const data = points.data?.data_accumulated ?? points.data?.data;
     if (!data) return null;
-    return mutedTrendOption(data, team, {
+    const teamOrder = points.data?.sorted_by_total ?? Object.keys(data);
+    return mutedTrendOption(data, teamKey, {
       yAxisName: t("points", "Punkte"),
       weekLabel,
+      teamOrder,
+      league,
+      selectedColor: teamHighlightColor,
     });
-  }, [points.data, team, t, weekLabel]);
+  }, [points.data, teamKey, t, weekLabel, league, teamHighlightColor]);
 
   const positionTrendOption = useMemo(() => {
     if (!positions.data?.data) return null;
-    return mutedTrendOption(positions.data.data, team, {
+    const teamOrder =
+      positions.data.sorted_by_best ??
+      positions.data.sorted_by_total ??
+      Object.keys(positions.data.data);
+    return mutedTrendOption(positions.data.data, teamKey, {
       invertY: true,
       yAxisName: t("position", "Tabellenplatz"),
       weekLabel,
+      teamOrder,
+      league,
+      selectedColor: teamHighlightColor,
     });
-  }, [positions.data, team, t, weekLabel]);
+  }, [positions.data, teamKey, t, weekLabel, league, teamHighlightColor]);
 
   return (
     <div className="space-y-12">

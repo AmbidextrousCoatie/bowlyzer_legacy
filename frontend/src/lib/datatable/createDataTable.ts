@@ -21,6 +21,7 @@ import {
   extractTeamNamesFromTablePayload,
   isTeamVsTeamComparisonTable,
   seedTeamColorsFromTablePayload,
+  getTeamPerformanceEntityColor,
   updateTeamColorMap,
 } from "../color-utils";
 import {
@@ -472,7 +473,14 @@ export function createDataTable(
         );
         if (teamName) {
           const normalized = teamName.trim();
-          const color = getTeamColor(normalized, { league: settings.teamColorLeague });
+          const color =
+            rawOptions.playerColorOrder?.length && rawOptions.performanceTeamName
+              ? getTeamPerformanceEntityColor(
+                  normalized,
+                  rawOptions.playerColorOrder,
+                  rawOptions.performanceTeamName,
+                )
+              : getTeamColor(normalized, { league: settings.teamColorLeague });
           pinPositionCell(element);
           return positionClipHtml(displayValue, color, false);
         }

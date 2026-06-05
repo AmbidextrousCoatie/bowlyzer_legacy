@@ -67,3 +67,6 @@ database/input/clubmeisterschaft_donaubowler/Clubpokal DB 2026_21_05.xlsx
 
 # Local dataset experiments (not published to VPS)
 database/data/*no scraping*.parquet
+database/data/team_name_clusters_report.csv
+database/data/team_name_regex_proposals.json
+database/data/team_name_roster_pairs.csv

@@ -564,6 +564,70 @@ export function getTeamColorMap(): Record<string, string> {
   return teamColorMap;
 }
 
+function normalizeUnicodeLabel(text: string): string {
+  return String(text ?? "").trim().normalize("NFC");
+}
+
+export function performanceTeamAliases(teamKey: string): string[] {
+  const key = normalizeUnicodeLabel(teamKey);
+  if (!key) return [];
+  return [key, `${key} (Team)`, `${key} (Team Average)`];
+}
+
+function isPerformanceTeamAlias(name: string, teamKey: string): boolean {
+  const normalized = normalizeUnicodeLabel(name);
+  return performanceTeamAliases(teamKey).some((alias) => normalizeUnicodeLabel(alias) === normalized);
+}
+
+/** Distinct players in chart/table order (team aliases excluded). */
+export function performancePlayersFromOrder(
+  playerOrder: string[],
+  teamKey: string,
+): string[] {
+  return [
+    ...new Set(
+      playerOrder
+        .map((p) => normalizeUnicodeLabel(p))
+        .filter((p) => p && !isPerformanceTeamAlias(p, teamKey)),
+    ),
+  ];
+}
+
+/**
+ * Deterministic palette slot for team-performance tables/charts (no map timing).
+ * Team summary row always uses palette index = player count.
+ */
+export function getTeamPerformanceEntityColor(
+  entityName: string,
+  playerOrder: string[],
+  teamKey: string,
+): string {
+  const name = normalizeUnicodeLabel(entityName);
+  const team = normalizeUnicodeLabel(teamKey);
+  if (!name) return getPaletteColor(0);
+
+  const players = performancePlayersFromOrder(playerOrder, team);
+
+  if (team && isPerformanceTeamAlias(name, team)) {
+    return getPaletteColor(players.length);
+  }
+
+  const playerIdx = players.indexOf(name);
+  if (playerIdx >= 0) {
+    return getPaletteColor(playerIdx);
+  }
+
+  return getTeamColor(name);
+}
+
+/** Highlight color for the team row in performance / league-context charts on this page. */
+export function getTeamPerformanceHighlightColor(
+  playerOrder: string[],
+  teamKey: string,
+): string {
+  return getTeamPerformanceEntityColor(teamKey, playerOrder, teamKey);
+}
+
 /**
  * Team performance view: palette index follows `player_order_by_average` so tables
  * and scatter charts share the same player colors (legacy initializeLocalColorOrder).
@@ -573,31 +637,26 @@ export function seedPlayerColorsFromPerformanceOrder(
   teamName: string,
   teamAliases: string[] = [],
 ): void {
-  const aliasSet = new Set(
-    [teamName, ...teamAliases].map((a) => String(a).trim()).filter(Boolean),
+  const team = normalizeUnicodeLabel(teamName);
+  const aliases = (teamAliases.length ? teamAliases : performanceTeamAliases(team)).map(
+    normalizeUnicodeLabel,
   );
-  const players = [
-    ...new Set(
-      playerOrder.map((p) => String(p).trim()).filter((p) => p && !aliasSet.has(p)),
-    ),
-  ];
+  const aliasSet = new Set(aliases.filter(Boolean));
+  const players = performancePlayersFromOrder(playerOrder, team);
   if (!players.length) return;
 
+  const writeColor = (key: string, color: string) => {
+    if (!key) return;
+    playerColorMap[key] = color;
+    teamColorMap[key] = color;
+  };
+
   players.forEach((name, idx) => {
-    const color = getPaletteColor(idx);
-    playerColorMap[name] = color;
-    teamColorMap[name] = color;
-    const leagueKey = teamColorMapKey(name, null);
-    if (leagueKey) teamColorMap[leagueKey] = color;
+    writeColor(name, getPaletteColor(idx));
   });
 
   const teamColor = getPaletteColor(players.length);
-  aliasSet.forEach((alias) => {
-    playerColorMap[alias] = teamColor;
-    teamColorMap[alias] = teamColor;
-    const leagueKey = teamColorMapKey(alias, null);
-    if (leagueKey) teamColorMap[leagueKey] = teamColor;
-  });
+  aliasSet.forEach((alias) => writeColor(alias, teamColor));
 }
 
 export function updatePlayerColorMap(currentPlayers: string[] = []): void {

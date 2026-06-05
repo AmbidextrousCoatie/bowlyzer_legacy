@@ -1,5 +1,9 @@
 import type { EChartsOption } from "echarts";
-import { getTeamColor, updateTeamColorMap } from "../color-utils";
+import {
+  getTeamColor,
+  getTeamPerformanceEntityColor,
+  updateTeamColorMap,
+} from "../color-utils";
 
 export type SeriesData = Record<string, number[]>;
 
@@ -97,6 +101,9 @@ export function scatterMultiAxisOption(
     maxCircleSize?: number;
     hideNaValues?: boolean;
     league?: string | null;
+    /** Team performance view: colors match pos circles in performance tables. */
+    usePlayerColors?: boolean;
+    performanceColors?: { playerOrder: string[]; teamKey: string };
   } = {},
 ): EChartsOption {
   const {
@@ -107,10 +114,26 @@ export function scatterMultiAxisOption(
     maxCircleSize = 45,
     hideNaValues = true,
     league = null,
+    usePlayerColors = false,
+    performanceColors = undefined,
   } = opts;
 
+  const resolveSeriesColor = (seriesName: string): string => {
+    if (performanceColors?.playerOrder?.length && performanceColors.teamKey) {
+      return getTeamPerformanceEntityColor(
+        seriesName,
+        performanceColors.playerOrder,
+        performanceColors.teamKey,
+      );
+    }
+    return getTeamColor(seriesName, { league });
+  };
+
   const teams = order ?? Object.keys(data);
-  updateTeamColorMap(teams, league);
+  const seriesColors = teams.map((seriesName) => resolveSeriesColor(seriesName));
+  if (!usePlayerColors) {
+    updateTeamColorMap(teams, league);
+  }
 
   // Compute global value bounds if not given
   let valueMin = minValue;
@@ -144,6 +167,7 @@ export function scatterMultiAxisOption(
   const series: NonNullable<EChartsOption["series"]> = [];
 
   teams.forEach((team, idx) => {
+    const seriesColor = seriesColors[idx] ?? resolveSeriesColor(team);
     const isLast = idx === teams.length - 1;
     singleAxis.push({
       left: 40,
@@ -180,22 +204,30 @@ export function scatterMultiAxisOption(
       singleAxisIndex: idx,
       coordinateSystem: "singleAxis",
       type: "scatter",
-      data: seriesData,
-      symbolSize: (d: number[]) => d[2] || minCircleSize,
-      itemStyle: { color: getTeamColor(team, { league }) },
+      data: seriesData.map((point) => ({
+        value: point,
+        itemStyle: { color: seriesColor },
+      })),
+      symbolSize: (d: number[] | { value: number[] }) => {
+        const tuple = Array.isArray(d) ? d : d.value;
+        return tuple[2] || minCircleSize;
+      },
+      itemStyle: { color: seriesColor },
     });
   });
 
   return {
+    color: seriesColors,
     tooltip: {
       position: "top",
       formatter: (params: unknown) => {
         const p = params as {
-          data: number[];
+          data: number[] | { value: number[] };
           seriesIndex: number;
         };
-        const value = p.data[1];
-        const week = labels[p.data[0]] ?? "";
+        const tuple = Array.isArray(p.data) ? p.data : p.data.value;
+        const value = tuple[1];
+        const week = labels[tuple[0]] ?? "";
         const team = teams[p.seriesIndex] ?? "";
         if (value === null || value === undefined || Number.isNaN(value)) {
           return `${team}<br/>${week}<br/>N/A`;
@@ -221,6 +253,23 @@ export function scatterMultiAxisOption(
  * other team is muted gray. Used inside team-performance to show where the
  * selected team sits in the league context.
  */
+function resolveTeamOrder(data: SeriesData, order?: string[]): string[] {
+  const keys = Object.keys(data);
+  if (!order?.length) return keys;
+  const seen = new Set<string>();
+  const resolved: string[] = [];
+  for (const team of order) {
+    if (data[team] && !seen.has(team)) {
+      resolved.push(team);
+      seen.add(team);
+    }
+  }
+  for (const team of keys) {
+    if (!seen.has(team)) resolved.push(team);
+  }
+  return resolved;
+}
+
 export function mutedTrendOption(
   seriesData: SeriesData,
   selectedTeam: string,
@@ -228,15 +277,26 @@ export function mutedTrendOption(
     invertY?: boolean;
     yAxisName?: string;
     weekLabel?: string;
+    teamOrder?: string[];
+    league?: string | null;
+    /** Overrides league standings color (team-performance view uses table team-row color). */
+    selectedColor?: string;
   } = {},
 ): EChartsOption {
-  const { invertY = false, yAxisName = "", weekLabel = "Spieltag" } = opts;
-  const teamNames = Object.keys(seriesData);
+  const {
+    invertY = false,
+    yAxisName = "",
+    weekLabel = "Spieltag",
+    teamOrder,
+    league = null,
+    selectedColor: selectedColorOverride,
+  } = opts;
+  const teamNames = resolveTeamOrder(seriesData, teamOrder);
   const labels = buildWeekLabels(seriesData, weekLabel);
   const selectedNorm = selectedTeam.trim().toLowerCase();
-  updateTeamColorMap(teamNames.map((n) => n.trim()));
+  updateTeamColorMap(teamNames.map((n) => n.trim()), league);
 
-  const selectedColor = getTeamColor(selectedTeam.trim());
+  const selectedColor = selectedColorOverride ?? getTeamColor(selectedTeam.trim(), { league });
   const muted = "rgba(120, 120, 120, 0.45)";
 
   const series = teamNames.map((team) => {
@@ -261,7 +321,11 @@ export function mutedTrendOption(
 
   return {
     animation: false,
-    tooltip: { trigger: "axis" },
+    tooltip: {
+      trigger: "axis",
+      // Match league-season line charts: sort by value at hovered week, not series order.
+      order: invertY ? "valueAsc" : "valueDesc",
+    },
     grid: { top: 20, left: 45, right: 20, bottom: 40 },
     xAxis: {
       type: "category",

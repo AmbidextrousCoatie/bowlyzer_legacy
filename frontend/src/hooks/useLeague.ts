@@ -343,6 +343,8 @@ export type WeekMatrixCell = {
   /** Expected matchdays for this league/season (Bayernliga=6, else team count). */
   expected_weeks?: number;
   team_count?: number;
+  /** Short league id for deep links when row label merges BL/BZOL. */
+  league_id?: string;
 };
 
 export type WeekMatrixPayload = {

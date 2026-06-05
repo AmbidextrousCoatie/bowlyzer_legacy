@@ -11,6 +11,15 @@ const STATUS_BG: Record<string, string> = {
   critical: "bg-rose-100 dark:bg-rose-950/50",
 };
 
+/** Sticky header + league column; scrollport is flush (no inner padding) so cells never bleed into gutters. */
+const STICKY_CORNER_TH =
+  "sticky top-0 left-0 z-30 border border-border bg-surface-subtle px-3 py-2 text-left font-semibold shadow-[inset_-1px_0_0_var(--color-border),inset_0_-1px_0_var(--color-border)]";
+const STICKY_HEAD_TH =
+  "sticky top-0 z-20 border border-border bg-surface-subtle px-3 py-2 text-left font-semibold whitespace-nowrap shadow-[inset_0_-1px_0_var(--color-border)]";
+const STICKY_ROW_TD =
+  "sticky left-0 z-10 border border-border bg-surface px-3 py-2 font-semibold whitespace-nowrap shadow-[inset_-1px_0_0_var(--color-border)]";
+const DATA_TD = "relative z-0 border border-border px-3 py-2";
+
 function cellClass(cell: WeekMatrixCell | undefined): string {
   const status = cell?.status ?? "";
   return STATUS_BG[status] ?? "";
@@ -73,23 +82,18 @@ export function LeagueWeekMatrix() {
 
       {matrix && (
         <section className="rounded-sm border border-border bg-surface overflow-hidden">
-          <div className="overflow-x-auto p-4 lg:p-5">
-            {matrix.rows.length === 0 ? (
-              <p className="text-small text-muted">
-                {t("ui.diagnosis.no_week_matrix", "Keine Wochen-Matrix-Daten.")}
-              </p>
-            ) : (
-              <table className="w-full min-w-[480px] border-collapse text-small">
-                <thead>
+          {matrix.rows.length === 0 ? (
+            <p className="p-4 text-small text-muted lg:p-5">
+              {t("ui.diagnosis.no_week_matrix", "Keine Wochen-Matrix-Daten.")}
+            </p>
+          ) : (
+            <div className="isolate max-h-[min(70vh,720px)] overflow-auto bg-surface">
+              <table className="w-full min-w-[480px] border-separate border-spacing-0 text-small">
+                <thead className="bg-surface-subtle">
                   <tr>
-                    <th className="border border-border bg-surface-subtle px-3 py-2 text-left font-semibold">
-                      {t("league", "Liga")}
-                    </th>
+                    <th className={STICKY_CORNER_TH}>{t("league", "Liga")}</th>
                     {matrix.seasons.map((season) => (
-                      <th
-                        key={season}
-                        className="border border-border bg-surface-subtle px-3 py-2 text-left font-semibold whitespace-nowrap"
-                      >
+                      <th key={season} className={STICKY_HEAD_TH}>
                         {season}
                       </th>
                     ))}
@@ -98,23 +102,22 @@ export function LeagueWeekMatrix() {
                 <tbody>
                   {matrix.rows.map((row) => (
                     <tr key={row.league}>
-                      <td className="border border-border px-3 py-2 font-semibold whitespace-nowrap">
-                        {row.league}
-                      </td>
+                      <td className={STICKY_ROW_TD}>{row.league}</td>
                       {matrix.seasons.map((season) => {
                         const cell = row.seasons[season];
                         const label = cell?.label ?? "";
-                        const href = weekMatrixCellPath(season, row.league, cell, longNames);
+                        const linkLeague = cell?.league_id ?? row.league;
+                        const href = weekMatrixCellPath(season, linkLeague, cell, longNames);
                         return (
                           <td
                             key={season}
-                            className={`border border-border px-3 py-2 ${cellClass(cell)}`}
+                            className={`${DATA_TD} ${cellClass(cell) || "bg-surface"}`}
                           >
                             {label ? (
                               <Link
                                 to={href}
                                 className="block text-accent hover:text-accent-hover hover:underline"
-                                title={cellTitle(cell, row.league, season)}
+                                title={cellTitle(cell, linkLeague, season)}
                               >
                                 {label}
                               </Link>
@@ -126,8 +129,8 @@ export function LeagueWeekMatrix() {
                   ))}
                 </tbody>
               </table>
-            )}
-          </div>
+            </div>
+          )}
         </section>
       )}
     </div>
