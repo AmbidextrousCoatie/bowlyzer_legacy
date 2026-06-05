@@ -1,4 +1,4 @@
-from typing import List, Dict, Any, Optional, Union
+from typing import List, Dict, Any, Optional, Tuple, Union
 import datetime
 import pandas as pd
 import re
@@ -11,6 +11,7 @@ from app.models.table_data import TableData, ColumnGroup, Column, PlotData, Tile
 from app.services.statistics_service import StatisticsService
 from app.models.statistics_models import LeagueStatistics, LeagueResults
 from app.models.series_data import SeriesData
+from data_access.dtype_normalization import BOOL_FALSE_TOKENS, BOOL_TRUE_TOKENS
 from data_access.schema import Columns
 from data_access.text_norm import normalize_unicode_label, safe_rank_int
 from data_access.score_utils import (
@@ -34,6 +35,12 @@ from app.utils.league_utils import (
     resolve_league_long_name,
 )
 from app.utils.json_safe import json_safe
+from app.utils.league_level5_merge import (
+    get_level5_merge_registry,
+    merge_key_for_league,
+    merged_league_label,
+    resolve_league_id_for_season,
+)
 from app.utils.league_week_expectations import expected_weeks_for_league
 # from data_access.series_data import calculate_series_data, get_player_series_data, get_team_series_data
 
@@ -121,6 +128,12 @@ class LeagueService:
         if team_number.isdigit():
             return f"{club} {team_number}"
         return f"{club} {team_number}"
+
+    @staticmethod
+    def _computed_data_mask(series: pd.Series, *, want_true: bool) -> pd.Series:
+        normalized = series.fillna("").astype(str).str.strip().str.lower()
+        tokens = BOOL_TRUE_TOKENS if want_true else BOOL_FALSE_TOKENS
+        return normalized.isin(tokens)
 
     def _league_team_count(self, league_name: str, season: str) -> int:
         filters = {
@@ -292,32 +305,43 @@ class LeagueService:
         - missing weeks -> comma-separated week numbers
         """
         _ = expected_weeks  # deprecated global override
+        empty = {"seasons": [], "rows": [], "expected_weeks_rule": "bayernliga=6,else=team_count"}
 
-        filters = {
-            Columns.computed_data: {"value": True, "operator": "eq"},
-        }
-        df = self.adapter.get_filtered_data(filters=filters)
+        matrix_cols = [
+            Columns.season,
+            Columns.league_name,
+            Columns.week,
+            Columns.team_name,
+            Columns.computed_data,
+        ]
+        df = self.adapter.get_filtered_data(filters={}, columns=matrix_cols)
         if df is None or df.empty:
-            return {"seasons": [], "rows": [], "expected_weeks_rule": "bayernliga=6,else=team_count"}
+            return empty
 
-        required = [Columns.season, Columns.league_name, Columns.week]
-        for col in required:
+        for col in matrix_cols:
             if col not in df.columns:
-                return {"seasons": [], "rows": [], "expected_weeks_rule": "bayernliga=6,else=team_count"}
+                return empty
 
-        matrix_df = df[required].copy()
-        matrix_df[Columns.season] = matrix_df[Columns.season].astype(str).str.strip()
-        matrix_df[Columns.league_name] = matrix_df[Columns.league_name].astype(str).str.strip()
+        df = df.copy()
+        df[Columns.season] = df[Columns.season].astype(str).str.strip()
+        df[Columns.league_name] = df[Columns.league_name].astype(str).str.strip()
+
+        computed_mask = self._computed_data_mask(df[Columns.computed_data], want_true=True)
+        raw_mask = self._computed_data_mask(df[Columns.computed_data], want_true=False)
+
+        matrix_df = df.loc[computed_mask, [Columns.season, Columns.league_name, Columns.week]].copy()
         matrix_df[Columns.week] = pd.to_numeric(matrix_df[Columns.week], errors="coerce")
         matrix_df = matrix_df.dropna(subset=[Columns.week])
         matrix_df[Columns.week] = matrix_df[Columns.week].astype(int)
         matrix_df = matrix_df[matrix_df[Columns.week] > 0]
+        matrix_df = matrix_df.drop_duplicates(
+            subset=[Columns.season, Columns.league_name, Columns.week]
+        )
 
         if matrix_df.empty:
-            return {"seasons": [], "rows": [], "expected_weeks_rule": "bayernliga=6,else=team_count"}
+            return empty
 
         seasons = sorted(matrix_df[Columns.season].unique())
-        leagues = sorted(matrix_df[Columns.league_name].unique())
 
         grouped = (
             matrix_df.groupby([Columns.league_name, Columns.season])[Columns.week]
@@ -325,14 +349,68 @@ class LeagueService:
             .to_dict()
         )
 
+        team_counts = (
+            df.loc[raw_mask, [Columns.league_name, Columns.season, Columns.team_name]]
+            .groupby([Columns.league_name, Columns.season])[Columns.team_name]
+            .nunique()
+            .to_dict()
+        )
+
+        _, merge_members = get_level5_merge_registry()
+        merge_groups: Dict[str, Dict[str, Any]] = {}
+        for league in sorted(matrix_df[Columns.league_name].unique()):
+            merge_key = merge_key_for_league(league)
+            bucket = merge_groups.setdefault(
+                merge_key,
+                {"members": merge_members.get(merge_key, [league])},
+            )
+            if league not in bucket["members"]:
+                bucket["members"] = sorted(set(bucket["members"]) | {league})
+
         rows: List[Dict[str, Any]] = []
-        for league in leagues:
+        def _merge_row_sort_key(item: Tuple[str, Dict[str, Any]]) -> Tuple[int, str]:
+            key, bucket = item
+            members = bucket["members"]
+            level = min(get_league_level(member) for member in members)
+            return level, merged_league_label(members)
+
+        for merge_key, _bucket in sorted(merge_groups.items(), key=_merge_row_sort_key):
+            members: List[str] = _bucket["members"]
+            row_label = merged_league_label(members)
             season_cells: Dict[str, Dict[str, Any]] = {}
             for season in seasons:
-                available_weeks = grouped.get((league, season), [])
+                available_weeks = sorted(
+                    {
+                        int(w)
+                        for member in members
+                        for w in grouped.get((member, season), [])
+                        if int(w) > 0
+                    }
+                )
                 available_set = set(available_weeks)
-                team_count = self._league_team_count(league, season)
-                expected_count = expected_weeks_for_league(league, team_count)
+                team_count = max(
+                    (int(team_counts.get((member, season), 0)) for member in members),
+                    default=0,
+                )
+                link_league = resolve_league_id_for_season(
+                    members,
+                    season,
+                    weeks_by_league_season=grouped,
+                    team_counts_by_league_season=team_counts,
+                )
+                expected_count = expected_weeks_for_league(link_league or row_label, team_count)
+                if team_count == 0 and not available_weeks:
+                    season_cells[season] = {
+                        "label": "",
+                        "status": "",
+                        "missing_weeks": [],
+                        "available_weeks": [],
+                        "expected_weeks": 0,
+                        "team_count": 0,
+                        "league_id": link_league,
+                    }
+                    continue
+
                 expected_set = set(range(1, expected_count + 1))
                 missing_weeks = sorted(expected_set - available_set)
                 coverage_ratio = (
@@ -360,9 +438,10 @@ class LeagueService:
                     "available_weeks": available_weeks,
                     "expected_weeks": expected_count,
                     "team_count": team_count,
+                    "league_id": link_league,
                 }
 
-            rows.append({"league": league, "seasons": season_cells})
+            rows.append({"league": row_label, "seasons": season_cells})
 
         return {
             "seasons": seasons,

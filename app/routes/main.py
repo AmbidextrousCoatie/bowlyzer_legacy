@@ -2,6 +2,7 @@ from flask import Blueprint, session, redirect, request, jsonify
 from data_access.pd_dataframes import fetch_column
 from app.services.data_manager import DataManager
 from app.config.database_config import database_config
+from app.cache.league_response_cache import league_cache_put, league_cache_try_get
 import datetime
 
 bp = Blueprint('main', __name__)
@@ -11,10 +12,20 @@ bp = Blueprint('main', __name__)
 def home_stats():
     """Aggregate counts for the React landing page."""
     try:
-        database = request.args.get('database')
+        database = request.args.get('database') or database_config.get_default_source()
+        cache_args = dict(request.args)
+        hit = league_cache_try_get("home_stats", database, cache_args)
+        if hit is not None:
+            resp = jsonify(hit)
+            resp.headers["X-League-Cache"] = "HIT"
+            return resp
         from app.services.home_service import get_home_stats
 
-        return jsonify(get_home_stats(database))
+        payload = get_home_stats(database)
+        league_cache_put("home_stats", database, cache_args, payload)
+        resp = jsonify(payload)
+        resp.headers["X-League-Cache"] = "MISS"
+        return resp
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

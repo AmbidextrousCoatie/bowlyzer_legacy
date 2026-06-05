@@ -675,6 +675,46 @@ def _job_combo_line(endpoint: str, query: Dict[str, str]) -> str:
     return " | ".join(parts)
 
 
+def _build_week_matrix_payload(ls) -> Dict[str, Any]:
+    """Same JSON as GET /league/get_week_matrix."""
+    from app.utils.league_utils import get_league_long_name_map
+
+    return {
+        "matrix": ls.get_league_week_matrix(),
+        "league_long_names": get_league_long_name_map(),
+    }
+
+
+def collect_global_page_jobs(ls, database: str) -> List[Job]:
+    """
+    Landing page + Liga-Wochen diagnosis (database-wide, not per season/league).
+
+    Matches React:
+      - /  -> /home/stats, /league/get_latest_events?limit=8
+      - /diagnose/liga-wochen -> /league/get_week_matrix
+    """
+    from app.services.home_service import get_home_stats
+    from app.utils.json_safe import json_safe
+
+    dbq = {"database": database}
+    jobs: List[Job] = [
+        ("get_week_matrix", dict(dbq), lambda: _build_week_matrix_payload(ls)),
+        ("home_stats", dict(dbq), lambda: get_home_stats(database)),
+    ]
+    for limit in (8, 10):
+        jobs.append(
+            (
+                "get_latest_events",
+                {**dbq, "limit": str(limit)},
+                lambda lim=limit: json_safe(ls.get_latest_events(limit=lim)),
+            )
+        )
+    return jobs
+
+
+GLOBAL_PAGE_JOB_COUNT = 4
+
+
 def collect_filter_dropdown_jobs(
     ls,
     database: str,
@@ -1406,13 +1446,16 @@ def main() -> int:
             season_job_n = sum(len(v) for v in season_job_map.values())
             league_wide_job_n = sum(len(v) for v in league_job_map.values())
             club_job_n = len(club_job_list)
-            jobs_per_lang = season_job_n + league_wide_job_n + club_job_n
+            global_job_n = len(collect_global_page_jobs(ls0, database)) if phase in ("all", "seasons") else 0
+            filter_job_n = len(collect_filter_dropdown_jobs(ls0, database, seasons)) if phase in ("all", "seasons") else 0
+            jobs_per_lang = season_job_n + league_wide_job_n + club_job_n + global_job_n + filter_job_n
             grand_total = jobs_per_lang * len(langs)
             workers = 1 if args.sequential else args.workers
             _warm_log(
                 f"Plan: {jobs_per_lang} logical endpoint(s) → {grand_total} cache file(s) "
                 f"({len(langs)} lang(s)) "
                 f"(database={database!r}, seasons={len(seasons)}, leagues={len(all_leagues)}, "
+                f"global={global_job_n}, filters={filter_job_n}, "
                 f"season_jobs={season_job_n}, league_wide={league_wide_job_n}, clubs={club_job_n})",
                 quiet=quiet,
             )
@@ -1483,6 +1526,25 @@ def main() -> int:
                     executor.shutdown(wait=False, cancel_futures=True)
 
             if phase in ("all", "seasons"):
+                global_jobs = collect_global_page_jobs(ls0, database)
+                if global_jobs and not args.dry_run:
+                    _warm_log(
+                        f"Warming landing + Liga-Wochen ({len(global_jobs)} endpoint(s)) …",
+                        quiet=quiet,
+                    )
+                    _warm_season_worker(
+                        app,
+                        database,
+                        "global",
+                        langs,
+                        global_jobs,
+                        dry_run=args.dry_run,
+                        progress=progress,
+                        verbose=args.verbose,
+                        benchmark=benchmark,
+                        quiet=quiet,
+                    )
+
                 filter_jobs = collect_filter_dropdown_jobs(ls0, database, seasons)
                 if filter_jobs and not args.dry_run:
                     _warm_log(

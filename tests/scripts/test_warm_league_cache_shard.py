@@ -63,6 +63,27 @@ def test_build_warm_shards_season_meta_clubs():
     assert by_label["clubs:2/3"].extra_argv == ("--skip-club-shared",)
 
 
+def test_collect_global_page_jobs_endpoints():
+    class _FakeLs:
+        def get_league_week_matrix(self):
+            return {"seasons": [], "rows": []}
+
+        def get_latest_events(self, limit: int = 5):
+            return [{"Season": "25/26", "limit": limit}]
+
+    jobs = warm.collect_global_page_jobs(_FakeLs(), "db_real_merged")
+    endpoints = [j[0] for j in jobs]
+    assert endpoints == [
+        "get_week_matrix",
+        "home_stats",
+        "get_latest_events",
+        "get_latest_events",
+    ]
+    assert jobs[0][1] == {"database": "db_real_merged"}
+    assert jobs[2][1]["limit"] == "8"
+    assert jobs[3][1]["limit"] == "10"
+
+
 def test_build_warm_shards_meta_monolith():
     catalog = {"seasons": ["25/26"], "leagues": ["BayL"], "clubs": []}
     shards = warm.build_warm_shards(

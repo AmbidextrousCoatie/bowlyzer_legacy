@@ -104,7 +104,9 @@ def get_week_matrix():
     try:
         hit = _league_json_cache_get("get_week_matrix")
         if hit is not None:
-            return jsonify(hit)
+            resp = jsonify(hit)
+            resp.headers["X-League-Cache"] = "HIT"
+            return resp
         league_service = get_league_service()
         matrix = league_service.get_league_week_matrix()
         payload = {
@@ -112,7 +114,9 @@ def get_week_matrix():
             "league_long_names": get_league_long_name_map(),
         }
         _league_json_cache_put("get_week_matrix", payload)
-        return jsonify(payload)
+        resp = jsonify(payload)
+        resp.headers["X-League-Cache"] = "MISS"
+        return resp
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -620,14 +624,23 @@ def get_latest_events():
         
         if limit <= 0:
             return jsonify({'error': 'Limit must be greater than 0'}), 400
-            
+
+        hit = _league_json_cache_get("get_latest_events")
+        if hit is not None:
+            resp = jsonify(hit)
+            resp.headers["X-League-Cache"] = "HIT"
+            return resp
+
         league_service = get_league_service()
-        events = league_service.get_latest_events(limit=limit)
-        
+        events = json_safe(league_service.get_latest_events(limit=limit))
+        _league_json_cache_put("get_latest_events", events)
+
         response_size = sys.getsizeof(str(events))
         debug_config.log_route('league.get_latest_events', params, response_size)
-        
-        return jsonify(events)
+
+        resp = jsonify(events)
+        resp.headers["X-League-Cache"] = "MISS"
+        return resp
         
     except Exception as e:
         debug_config.log_route('league.get_latest_events', dict(request.args), f"ERROR: {str(e)}")

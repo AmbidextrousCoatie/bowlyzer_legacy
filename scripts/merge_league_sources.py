@@ -168,6 +168,7 @@ def merge_sources(
     non_exact_duplicates_out_path: Path | None = None,
     normalize_team_names: bool = True,
     write_csv: bool = False,
+    show_progress: bool = True,
 ) -> Dict:
     if len(input_paths) < 2:
         raise ValueError("Provide at least two input CSV files.")
@@ -181,8 +182,18 @@ def merge_sources(
     for idx, path in enumerate(input_paths):
         df = pd.read_csv(path, sep=sep, dtype=str, keep_default_na=False)
         if normalize_team_names and not df.empty:
-            df = normalize_extracted_dataframe(df)
-            df = normalize_team_numbering_dataframe(df, overrides_df)
+            source_label = path.name
+            df = normalize_extracted_dataframe(
+                df,
+                show_progress=show_progress,
+                progress_desc=f"normalize [{idx + 1}/{len(input_paths)}] {source_label}",
+            )
+            df = normalize_team_numbering_dataframe(
+                df,
+                overrides_df,
+                show_progress=show_progress,
+                progress_desc=f"team numbers [{idx + 1}/{len(input_paths)}] {source_label}",
+            )
         df["__source_idx"] = str(idx)
         frames.append(df)
         input_dims.append(
@@ -324,6 +335,11 @@ def main() -> int:
         action="store_true",
         help="Also write the merged CSV (default: Parquet only).",
     )
+    parser.add_argument(
+        "--no-progress",
+        action="store_true",
+        help="Disable tqdm progress bars during per-source team normalization",
+    )
     args = parser.parse_args()
 
     input_paths = [Path(p).resolve() for p in args.inputs]
@@ -350,6 +366,7 @@ def main() -> int:
         non_exact_duplicates_out_path=non_exact_duplicates_out_path,
         normalize_team_names=not args.no_normalize_team_names,
         write_csv=args.write_csv,
+        show_progress=not args.no_progress,
     )
     print(json.dumps(stats, indent=2, ensure_ascii=False))
     return 0

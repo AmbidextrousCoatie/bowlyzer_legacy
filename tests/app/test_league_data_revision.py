@@ -85,9 +85,19 @@ def test_effective_data_revision_uses_season_slice(monkeypatch):
     assert effective_data_revision("db_x", {"season": "08-09"}) == rev_0809
 
 
-def test_shipped_revision_index_valid_without_matching_file_mtime():
-    index = build_revision_index_from_dataframe(_sample_df(), source_fp="old-mtime-fp")
+def test_revision_index_invalid_when_published_file_fingerprint_differs():
+    index = build_revision_index_from_dataframe(_sample_df(), source_fp="")
     index.source_fingerprint = _index_content_fingerprint(index)
-    assert _index_on_disk_is_valid(index)
-    # Content-based validity does not depend on backing file mtime fingerprint.
-    assert source_fingerprint("db_x") != index.source_fingerprint or True
+    index.data_file_revision = "stale-file-rev"
+    assert not _index_on_disk_is_valid(index, "db_real_merged")
+
+
+def test_revision_index_valid_when_published_file_fingerprint_matches(monkeypatch):
+    index = build_revision_index_from_dataframe(_sample_df(), source_fp="")
+    index.source_fingerprint = _index_content_fingerprint(index)
+    index.data_file_revision = "current-rev"
+    monkeypatch.setattr(
+        "app.cache.league_data_revision.compute_data_revision",
+        lambda _db: "current-rev",
+    )
+    assert _index_on_disk_is_valid(index, "db_real_merged")

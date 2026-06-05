@@ -27,7 +27,7 @@ from data_access.schema import Columns
 from data_access.text_norm import normalize_unicode_label
 
 _ENV_GRANULAR = "LEAGUE_CACHE_GRANULAR_REVISION"
-_INDEX_VERSION = "granular-v1"
+_INDEX_VERSION = "granular-v2"
 
 # Stable row identity (aligned with merge_league_sources dedupe keys).
 _REVISION_COLUMNS: tuple[str, ...] = (
@@ -70,8 +70,18 @@ def source_fingerprint(database_id: str) -> str:
     return compute_data_revision(database_id)
 
 
-def _index_on_disk_is_valid(index: LeagueRevisionIndex) -> bool:
+def _index_matches_published_data_file(index: LeagueRevisionIndex, database_id: str) -> bool:
+    """True when revision_index.json was built from the current parquet/CSV on disk."""
+    on_disk = (index.data_file_revision or "").strip()
+    if not on_disk:
+        return False
+    return on_disk == compute_data_revision(database_id)
+
+
+def _index_on_disk_is_valid(index: LeagueRevisionIndex, database_id: str) -> bool:
     if index.version != _INDEX_VERSION:
+        return False
+    if not _index_matches_published_data_file(index, database_id):
         return False
     return index.source_fingerprint == _index_content_fingerprint(index)
 
@@ -122,12 +132,15 @@ class LeagueRevisionIndex:
     leagues: Dict[str, str] = field(default_factory=dict)
     clubs: Dict[str, str] = field(default_factory=dict)
     version: str = _INDEX_VERSION
+    # Mtime/size fingerprint of published league file(s); invalidates index when data is replaced.
+    data_file_revision: str = ""
 
     def to_dict(self) -> Dict[str, object]:
         return {
             "version": self.version,
             "source_fingerprint": self.source_fingerprint,
             "global_revision": self.global_revision,
+            "data_file_revision": self.data_file_revision,
             "seasons": dict(sorted(self.seasons.items())),
             "leagues": dict(sorted(self.leagues.items())),
             "clubs": dict(sorted(self.clubs.items())),
@@ -139,6 +152,7 @@ class LeagueRevisionIndex:
             version=str(raw.get("version") or ""),
             source_fingerprint=str(raw.get("source_fingerprint") or ""),
             global_revision=str(raw.get("global_revision") or "unknown"),
+            data_file_revision=str(raw.get("data_file_revision") or ""),
             seasons={str(k): str(v) for k, v in (raw.get("seasons") or {}).items()},
             leagues={str(k): str(v) for k, v in (raw.get("leagues") or {}).items()},
             clubs={str(k): str(v) for k, v in (raw.get("clubs") or {}).items()},
@@ -186,9 +200,11 @@ def build_revision_index(database_id: str) -> LeagueRevisionIndex:
     if df is None:
         empty = LeagueRevisionIndex(source_fingerprint="empty", global_revision="empty")
         empty.source_fingerprint = _index_content_fingerprint(empty)
+        empty.data_file_revision = compute_data_revision(database_id)
         return empty
     index = build_revision_index_from_dataframe(df, source_fp="")
     index.source_fingerprint = _index_content_fingerprint(index)
+    index.data_file_revision = compute_data_revision(database_id)
     return index
 
 
@@ -226,10 +242,10 @@ def ensure_revision_index(database_id: str, *, force: bool = False) -> LeagueRev
     with _INDEX_LOCK:
         if not force:
             cached = _INDEX_BY_DATABASE.get(database_id)
-            if cached and _index_on_disk_is_valid(cached):
+            if cached and _index_on_disk_is_valid(cached, database_id):
                 return cached
             disk = _load_index_from_disk(database_id)
-            if disk and _index_on_disk_is_valid(disk):
+            if disk and _index_on_disk_is_valid(disk, database_id):
                 _INDEX_BY_DATABASE[database_id] = disk
                 return disk
 

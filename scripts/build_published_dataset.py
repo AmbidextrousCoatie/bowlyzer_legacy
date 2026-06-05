@@ -272,6 +272,11 @@ def main() -> int:
         action="store_true",
         help="Do not fail when legacy/extra league CSVs collapse Damen into male league ids.",
     )
+    parser.add_argument(
+        "--no-progress",
+        action="store_true",
+        help="Disable tqdm progress bars during team-name normalization (merge step)",
+    )
     args = parser.parse_args()
 
     historical = (args.historical or historical_league_results_csv()).resolve()
@@ -342,6 +347,7 @@ def main() -> int:
             out_path=league_out,
             key_names=list(DEFAULT_KEYS),
             write_csv=args.write_csv,
+            show_progress=not args.no_progress,
         )
 
     if not args.league_only:

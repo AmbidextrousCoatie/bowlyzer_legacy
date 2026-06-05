@@ -19,7 +19,8 @@ import io
 import os
 import sys
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from typing import Callable, Dict
+from functools import lru_cache
+from typing import Callable, Dict, List, Tuple
 from contextlib import contextmanager, redirect_stdout
 
 
@@ -34,6 +35,7 @@ _OVERRIDES_PATH = Path(__file__).resolve().parent / "database" / "config" / "ext
 _TEAM_NAME_NORMALIZATION_PATH = Path(__file__).resolve().parent / "database" / "config" / "team_name_normalization.json"
 _TEAM_NUMBER_OVERRIDES_PATH = Path(__file__).resolve().parent / "database" / "config" / "team_number_overrides.csv"
 _TEAM_NAME_NORMALIZATION_CACHE = None
+_TEAM_NAME_REGEX_RULES_CACHE: List[Tuple[str, re.Pattern[str], str]] | None = None
 _TEAM_NAME_PREFIX_NORMALIZATION_CACHE = None
 _TEAM_NAME_PREFIX_OPTIONS_CACHE = None
 _TEAM_NAME_SUFFIX_NORMALIZATION_CACHE = None
@@ -528,6 +530,22 @@ def _load_team_name_regex_map() -> Dict[str, str]:
     return _TEAM_NAME_NORMALIZATION_CACHE
 
 
+def _load_team_name_regex_rules() -> List[Tuple[str, re.Pattern[str], str]]:
+    """Compiled (pattern_str, regex, replacement) in map order — built once per process."""
+    global _TEAM_NAME_REGEX_RULES_CACHE
+    if _TEAM_NAME_REGEX_RULES_CACHE is not None:
+        return _TEAM_NAME_REGEX_RULES_CACHE
+
+    rules: List[Tuple[str, re.Pattern[str], str]] = []
+    for pattern, replacement in _load_team_name_regex_map().items():
+        try:
+            rules.append((pattern, re.compile(pattern), replacement))
+        except re.error as exc:
+            print(f"Warning: skip invalid team name regex {pattern!r}: {exc}")
+    _TEAM_NAME_REGEX_RULES_CACHE = rules
+    return _TEAM_NAME_REGEX_RULES_CACHE
+
+
 def _load_team_name_prefix_normalization_map() -> Dict[str, str]:
     global _TEAM_NAME_PREFIX_NORMALIZATION_CACHE
     if _TEAM_NAME_PREFIX_NORMALIZATION_CACHE is not None:
@@ -609,9 +627,14 @@ def _load_team_name_suffix_normalization_map() -> Dict[str, str]:
 def reset_team_normalization_stats():
     global _TEAM_NORMALIZATION_STATS
     _TEAM_NORMALIZATION_STATS = {
+        # Distinct input strings that matched a regex rule (memoized; not row count).
+        "regex_distinct_strings": 0,
         "regex_total": 0,
         "regex_by_source": {},
+        # Rows in Team/Opponent columns where regex normalization changed the cell.
+        "regex_cells_changed": 0,
     }
+    _normalize_team_name_text.cache_clear()
 
 
 def _bump_team_normalization_stat(kind: str, source_key: str):
@@ -619,45 +642,143 @@ def _bump_team_normalization_stat(kind: str, source_key: str):
     if _TEAM_NORMALIZATION_STATS is None:
         reset_team_normalization_stats()
     if kind == "regex":
-        total_key, map_key = "regex_total", "regex_by_source"
+        _TEAM_NORMALIZATION_STATS["regex_total"] += 1
+        _TEAM_NORMALIZATION_STATS["regex_distinct_strings"] += 1
+        by_source = _TEAM_NORMALIZATION_STATS["regex_by_source"]
+        by_source[source_key] = by_source.get(source_key, 0) + 1
+    elif kind == "regex_cells":
+        _TEAM_NORMALIZATION_STATS["regex_cells_changed"] += int(source_key)
     else:
         return
-    _TEAM_NORMALIZATION_STATS[total_key] += 1
-    _TEAM_NORMALIZATION_STATS[map_key][source_key] = _TEAM_NORMALIZATION_STATS[map_key].get(source_key, 0) + 1
 
 
 def print_team_normalization_summary():
     stats = _TEAM_NORMALIZATION_STATS or {}
-    regex_total = int(stats.get("regex_total", 0))
-    total = regex_total
+    distinct = int(stats.get("regex_distinct_strings", stats.get("regex_total", 0)))
+    cells = int(stats.get("regex_cells_changed", 0))
     print("\nTeam Name Normalization Summary:")
-    print(f"  replacements total: {total}")
-    print(f"  regex replacements: {regex_total}")
-    if regex_total:
-        print("  regex replacement hits:")
+    print(f"  regex: {cells:,} cells updated in Team/Opponent columns")
+    print(f"  regex: {distinct:,} distinct team strings rewritten (cached; not row count)")
+    if distinct:
+        print("  regex rules hit (by distinct string, not by cell):")
         for source, count in sorted((stats.get("regex_by_source") or {}).items(), key=lambda item: (-item[1], item[0])):
             print(f"    - {source}: {count}")
+
+
+@lru_cache(maxsize=131072)
+def _normalize_team_name_text(text: str) -> str:
+    """Apply regex map to already-normalized whitespace text (memoized)."""
+    for pattern, compiled, replacement in _load_team_name_regex_rules():
+        updated = compiled.sub(replacement, text, count=1)
+        if updated != text:
+            updated = re.sub(r"\s+", " ", updated).strip()
+            _bump_team_normalization_stat("regex", pattern)
+            return updated
+    return text
 
 
 def normalize_team_name(value):
     text = normalize_optional_text(value)
     if not text:
         return value
-    regex_map = _load_team_name_regex_map()
-    for pattern, replacement in regex_map.items():
-        try:
-            updated = re.sub(pattern, replacement, text, count=1)
-        except re.error:
-            continue
-        if updated != text:
-            updated = re.sub(r"\s+", " ", updated).strip()
-            _bump_team_normalization_stat("regex", pattern)
-            return updated
-
-    return text
+    return _normalize_team_name_text(text)
 
 
-def normalize_extracted_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+def _normalize_team_name_series(
+    series: pd.Series,
+    *,
+    desc: str,
+    show_progress: bool,
+) -> pd.Series:
+    """Normalize Team/Opponent columns via unique values (few regex runs on big frames)."""
+    if len(series) == 0:
+        return series
+
+    unique_vals = series.drop_duplicates()
+    if show_progress:
+        from tqdm import tqdm
+
+        mapping = {}
+        with tqdm(
+            total=len(unique_vals),
+            desc=desc,
+            unit="unique",
+            dynamic_ncols=True,
+            mininterval=0.3,
+            file=sys.stdout,
+        ) as pbar:
+            for raw in unique_vals:
+                mapping[raw] = normalize_team_name(raw)
+                pbar.update(1)
+    else:
+        mapping = {raw: normalize_team_name(raw) for raw in unique_vals}
+
+    mapped = series.map(mapping)
+    changed_mask = mapped != series
+    cells_changed = int(changed_mask.sum())
+    if cells_changed:
+        _bump_team_normalization_stat("regex_cells", str(cells_changed))
+    return mapped
+
+
+def _map_series_with_progress(
+    series: pd.Series,
+    func: Callable,
+    *,
+    desc: str,
+    show_progress: bool,
+) -> pd.Series:
+    if not show_progress or len(series) == 0:
+        return series.map(func)
+    from tqdm import tqdm
+
+    out: list = []
+    with tqdm(
+        total=len(series),
+        desc=desc,
+        unit="cell",
+        dynamic_ncols=True,
+        mininterval=0.3,
+        file=sys.stdout,
+    ) as pbar:
+        for value in series:
+            out.append(func(value))
+            pbar.update(1)
+    return pd.Series(out, index=series.index, dtype=series.dtype)
+
+
+def _apply_rows_with_progress(
+    df: pd.DataFrame,
+    row_func: Callable,
+    *,
+    desc: str,
+    show_progress: bool,
+) -> pd.Series:
+    if not show_progress or len(df) == 0:
+        return df.apply(row_func, axis=1)
+    from tqdm import tqdm
+
+    out: list = []
+    with tqdm(
+        total=len(df),
+        desc=desc,
+        unit="row",
+        dynamic_ncols=True,
+        mininterval=0.3,
+        file=sys.stdout,
+    ) as pbar:
+        for i in range(len(df)):
+            out.append(row_func(df.iloc[i]))
+            pbar.update(1)
+    return pd.Series(out, index=df.index)
+
+
+def normalize_extracted_dataframe(
+    df: pd.DataFrame,
+    *,
+    show_progress: bool = False,
+    progress_desc: str | None = None,
+) -> pd.DataFrame:
     """
     Separate normalization stage:
     extracted rows -> normalized rows.
@@ -669,9 +790,14 @@ def normalize_extracted_dataframe(df: pd.DataFrame) -> pd.DataFrame:
         normalized["Bonus Points"] = "0"
     else:
         normalized["Bonus Points"] = normalized["Bonus Points"].fillna("0")
+    label = progress_desc or "team names"
     for col in ["Team", "Opponent"]:
         if col in normalized.columns:
-            normalized[col] = normalized[col].apply(normalize_team_name)
+            normalized[col] = _normalize_team_name_series(
+                normalized[col],
+                desc=f"{label} | {col}",
+                show_progress=show_progress,
+            )
     if "League" in normalized.columns:
         normalized["League"] = normalized["League"].apply(
             lambda value: normalize_league_display_to_canonical(value)
@@ -737,7 +863,13 @@ def load_league_gender_scope_map(path: Path = _LEAGUE_MAPPING_PATH) -> Dict[str,
     return _LEAGUE_GENDER_SCOPE_CACHE
 
 
-def normalize_team_numbering_dataframe(df: pd.DataFrame, overrides_df: pd.DataFrame = None) -> pd.DataFrame:
+def normalize_team_numbering_dataframe(
+    df: pd.DataFrame,
+    overrides_df: pd.DataFrame = None,
+    *,
+    show_progress: bool = False,
+    progress_desc: str | None = None,
+) -> pd.DataFrame:
     """
     Post-normalization stage:
     - default unnumbered teams to team 1.
@@ -795,8 +927,14 @@ def normalize_team_numbering_dataframe(df: pd.DataFrame, overrides_df: pd.DataFr
 
         return f"{base} 1"
 
+    label = progress_desc or "team numbers"
     for col in applicable_cols:
-        normalized[col] = normalized.apply(lambda row: _normalize_team_cell(row, col), axis=1)
+        normalized[col] = _apply_rows_with_progress(
+            normalized,
+            lambda row, col_name=col: _normalize_team_cell(row, col_name),
+            desc=f"{label} | {col}",
+            show_progress=show_progress,
+        )
 
     return normalized
 
@@ -805,7 +943,10 @@ def export_unique_team_names_after_merge(
     merged_df: pd.DataFrame,
     output_path: Path | None = None,
 ):
-    """Export unique normalized team names from merged output."""
+    """Export unique normalized team names from merged output.
+
+    For club clustering and regex proposals, run ``scripts/audit_team_name_clusters.py``.
+    """
     if output_path is None:
         output_path = unique_team_names_after_merge_csv()
     if merged_df is None or merged_df.empty:
