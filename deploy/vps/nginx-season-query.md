@@ -43,4 +43,4 @@ curl -s 'http://127.0.0.1:8080/league/get_available_leagues?season=08-09&databas
 docker compose -f ~/bowlyzer/docker-compose.prod.yml logs --tail 40 bowlyzer
 ```
 
-Production mounts `.cache/league` **read-only**. After a cache **miss**, the app must still return JSON (new images tolerate failed cache writes). Ship pre-warmed `get_available_seasons` + `get_available_leagues` via `warm_league_cache.py` and `deploy.ps1 -SyncCache`.
+Production mounts `.cache/league` **read-only** (pre-warmed tarball) and `.cache/league-runtime` **read-write** (`LEAGUE_CACHE_RUNTIME_DIR`). Cache **misses** are written to the runtime overlay so repeat requests hit disk. Ship pre-warmed endpoints via `warm_league_cache.py` / `rebuild_league_caches.py --all-published` and `deploy.ps1 -SyncCache` (deploy clears the runtime overlay when replacing the shipped cache).

@@ -70,6 +70,61 @@ def _warm_one(
     return "built"
 
 
+def warm_player_catalog_cache(
+    player_database: str = "db_player_merged_hybrid",
+    *,
+    rebuild: bool = False,
+    log: Callable[[str], None] = print,
+) -> Dict[str, int]:
+    """
+    Pre-build ``player_search`` (empty query) for Spieler dropdown.
+
+    Uses ``db_player_merged_hybrid`` by default — the backing id for ``?database=db_real_merged``.
+    """
+    from app.cache.league_response_cache import (
+        is_league_cache_enabled,
+        league_cache_invalidate_database,
+    )
+    from app.services.player_service import PlayerService
+    from data_access.shared_pandas_store import get_shared_pandas_adapter
+
+    stats = {"built": 0, "hit": 0, "skip_empty": 0, "errors": 0}
+    if not is_league_cache_enabled():
+        log("Player cache warmup skipped: LEAGUE_CACHE_ENABLED is off.")
+        return stats
+
+    if rebuild:
+        n = league_cache_invalidate_database(player_database)
+        log(f"Rebuild: removed {n} cached file(s) under database={player_database!r}")
+
+    log(f"Player cache warmup: loading {player_database!r} …")
+    get_shared_pandas_adapter(player_database)
+    player_service = PlayerService(database=player_database)
+    player_query = {"database": player_database, "search": ""}
+
+    for lang in (Language.GERMAN, Language.ENGLISH):
+        i18n_service.set_language(lang)
+        try:
+            status = _warm_one(
+                "player_search",
+                player_database,
+                player_query,
+                lambda: json_safe(player_service.get_all_players()),
+            )
+            if status == "built":
+                stats["built"] += 1
+            elif status == "hit":
+                stats["hit"] += 1
+            elif status == "skip-empty":
+                stats["skip_empty"] += 1
+            log(f"  [{lang.value}] player_search -> {status}")
+        except Exception as exc:
+            stats["errors"] += 1
+            log(f"  [{lang.value}] player_search ERROR: {exc}")
+
+    return stats
+
+
 def warm_essential_caches(
     league_database: str,
     *,

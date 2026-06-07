@@ -6,15 +6,24 @@ For routine updates (new weeks in the current season only), prefer incremental w
 without --rebuild so unchanged seasons stay on disk cache:
   uv run python scripts/warm_league_cache.py --database db_real_merged --workers 8
 
+Published stack (league + scrape merge + tournaments + player hybrid):
+
+  # 1) Build data (scrape + tournaments + player hybrid)
+  uv run python scripts/build_published_dataset.py --with-legacy-scrape --with-player-hybrid
+
+  # 2) Rebuild all API disk caches
+  uv run python scripts/rebuild_league_caches.py --all-published --workers 8
+
 - All seasons in the source
 - For each season: get_season_league_standings without division= (all divisions)
   and one cached response per division code that has data that season
-  (same combinations the UI uses when switching division filters)
 - All league-scoped endpoints per (season, league) and league-wide aggregation tables
-- With --warm-clubs (default): team list + get_club_matrix for every club (club page / Platzierungsverlauf)
+- With --warm-clubs (default): team list + get_club_matrix for every club (club page)
+- With --all-published: also player_search (db_player_merged_hybrid) + tournament caches
 
 Usage:
   uv run python scripts/rebuild_league_caches.py --database db_real_merged
+  uv run python scripts/rebuild_league_caches.py --all-published --workers 8
   uv run python scripts/rebuild_league_caches.py --database db_real_merged --dry-run
 
 Equivalent to:
@@ -36,16 +45,121 @@ for _p in (LEGACY, ROOT):
     if _p.is_dir():
         sys.path.insert(0, str(_p))
 
+PUBLISHED_LEAGUE_DATABASE = "db_real_merged"
+PUBLISHED_PLAYER_DATABASE = "db_player_merged_hybrid"
+PUBLISHED_TOURNAMENT_DATABASE = "db_tournament_regions_2026_gf"
+
+
+def _load_warm_module():
+    warm_path = Path(__file__).resolve().parent / "warm_league_cache.py"
+    spec = importlib.util.spec_from_file_location("warm_league_cache_run", warm_path)
+    if spec is None or spec.loader is None:
+        print("Could not load warm_league_cache.py", file=sys.stderr)
+        return None
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _run_league_rebuild(
+    database: str,
+    *,
+    languages: str,
+    dry_run: bool,
+    warm_clubs: bool,
+    workers: int,
+) -> int:
+    mod = _load_warm_module()
+    if mod is None:
+        return 1
+
+    argv_bak = sys.argv[:]
+    try:
+        sys.argv = [
+            str(Path(__file__).resolve().parent / "warm_league_cache.py"),
+            "--database",
+            database.strip(),
+            "--languages",
+            languages,
+            "--rebuild",
+        ]
+        if dry_run:
+            sys.argv.append("--dry-run")
+        if warm_clubs:
+            sys.argv.append("--warm-clubs")
+        if workers > 0:
+            sys.argv.extend(["--workers", str(workers)])
+        return int(mod.main())
+    finally:
+        sys.argv = argv_bak
+
+
+def _run_player_rebuild(*, dry_run: bool) -> int:
+    if dry_run:
+        print(f"[dry-run] warm player_search for {PUBLISHED_PLAYER_DATABASE!r}")
+        return 0
+
+    import os
+
+    os.environ.setdefault("LEAGUE_CACHE_ENABLED", "1")
+    os.environ.setdefault("LEAGUE_CACHE_WARM_ON_START", "0")
+
+    from app import create_app
+    from app.cache.cache_warmup import warm_player_catalog_cache
+
+    app = create_app()
+    with app.app_context():
+        stats = warm_player_catalog_cache(PUBLISHED_PLAYER_DATABASE, rebuild=True)
+    return 1 if stats.get("errors") else 0
+
+
+def _run_tournament_rebuild(*, dry_run: bool) -> int:
+    import os
+
+    os.environ.setdefault("LEAGUE_CACHE_ENABLED", "1")
+    os.environ.setdefault("LEAGUE_CACHE_WARM_ON_START", "0")
+
+    tour_path = Path(__file__).resolve().parent / "warm_tournament_cache.py"
+    spec = importlib.util.spec_from_file_location("warm_tournament_cache_run", tour_path)
+    if spec is None or spec.loader is None:
+        print("Could not load warm_tournament_cache.py", file=sys.stderr)
+        return 1
+    tour_mod = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = tour_mod
+    spec.loader.exec_module(tour_mod)
+
+    from app import create_app
+
+    app = create_app()
+    with app.app_context():
+        stats = tour_mod.warm_tournament_caches(
+            PUBLISHED_TOURNAMENT_DATABASE,
+            rebuild=True,
+            dry_run=dry_run,
+        )
+    return 1 if stats.get("errors") else 0
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Rebuild league response caches (invalidate + full warm including season×division standings)."
     )
-    parser.add_argument("--database", required=True, help="Source id, e.g. db_real_merged")
+    target = parser.add_mutually_exclusive_group(required=True)
+    target.add_argument("--database", help="Single league source id, e.g. db_real_merged")
+    target.add_argument(
+        "--all-published",
+        action="store_true",
+        help=(
+            "Warm full published stack: league (db_real_merged + clubs), "
+            f"player ({PUBLISHED_PLAYER_DATABASE}), "
+            f"tournament ({PUBLISHED_TOURNAMENT_DATABASE})"
+        ),
+    )
     parser.add_argument(
         "--languages",
         default="de,en",
-        help="Comma-separated i18n languages (default: de,en)",
+        help="Comma-separated i18n languages to warm (default: de,en)",
     )
     parser.add_argument("--dry-run", action="store_true", help="Print jobs only; no delete, no write")
     parser.add_argument(
@@ -53,33 +167,60 @@ def main() -> int:
         action="store_true",
         help="Skip club matrix + team_get_teams cache jobs (faster; smaller cache)",
     )
+    parser.add_argument(
+        "--skip-player",
+        action="store_true",
+        help="With --all-published: skip player_search warm",
+    )
+    parser.add_argument(
+        "--skip-tournament",
+        action="store_true",
+        help="With --all-published: skip tournament warm",
+    )
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=0,
+        help="Parallel season/league workers for league warm (0 = warm_league_cache default)",
+    )
     args = parser.parse_args()
 
-    warm_path = Path(__file__).resolve().parent / "warm_league_cache.py"
-    spec = importlib.util.spec_from_file_location("warm_league_cache_run", warm_path)
-    if spec is None or spec.loader is None:
-        print("Could not load warm_league_cache.py", file=sys.stderr)
-        return 1
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
+    warm_clubs = not args.no_warm_clubs
 
-    argv_bak = sys.argv[:]
-    try:
-        sys.argv = [
-            str(warm_path),
-            "--database",
-            args.database.strip(),
-            "--languages",
-            args.languages,
-            "--rebuild",
-        ]
-        if args.dry_run:
-            sys.argv.append("--dry-run")
-        if not args.no_warm_clubs:
-            sys.argv.append("--warm-clubs")
-        return int(mod.main())
-    finally:
-        sys.argv = argv_bak
+    if args.all_published:
+        print("=== published league cache (db_real_merged + clubs) ===")
+        code = _run_league_rebuild(
+            PUBLISHED_LEAGUE_DATABASE,
+            languages=args.languages,
+            dry_run=args.dry_run,
+            warm_clubs=warm_clubs,
+            workers=args.workers,
+        )
+        if code != 0:
+            return code
+
+        if not args.skip_player:
+            print(f"=== player catalog cache ({PUBLISHED_PLAYER_DATABASE}) ===")
+            code = _run_player_rebuild(dry_run=args.dry_run)
+            if code != 0:
+                return code
+
+        if not args.skip_tournament:
+            print(f"=== tournament cache ({PUBLISHED_TOURNAMENT_DATABASE}) ===")
+            code = _run_tournament_rebuild(dry_run=args.dry_run)
+            if code != 0:
+                return code
+
+        print("=== all published caches done ===")
+        return 0
+
+    return _run_league_rebuild(
+        args.database.strip(),
+        languages=args.languages,
+        dry_run=args.dry_run,
+        warm_clubs=warm_clubs,
+        workers=args.workers,
+    )
 
 
 if __name__ == "__main__":

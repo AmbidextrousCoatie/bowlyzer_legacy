@@ -1,19 +1,10 @@
 from flask import Flask, request
 import os
 
+from app.analytics.request_log import LOGGED_API_PREFIXES
 from app.spa import register_spa
 
-_API_PATH_PREFIXES = (
-    "/league/",
-    "/player/",
-    "/team/",
-    "/tournament/",
-    "/switch-database",
-    "/get-data-sources-info",
-    "/home/",
-    "/data-source-changed",
-    "/set-season/",
-)
+_API_PATH_PREFIXES = LOGGED_API_PREFIXES
 
 
 def create_app():
@@ -45,6 +36,13 @@ def create_app():
     app.register_blueprint(league_routes.bp)
     app.register_blueprint(tournament_routes.bp)
     register_spa(app)
+
+    try:
+        from app.analytics.middleware import register_request_analytics
+
+        register_request_analytics(app)
+    except Exception as exc:
+        print(f"Warning: could not register request analytics: {exc}")
 
     try:
         from app.cache.league_response_cache import preload_league_revision_indexes

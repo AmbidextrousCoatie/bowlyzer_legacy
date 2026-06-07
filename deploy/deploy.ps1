@@ -257,11 +257,14 @@ function Sync-RemoteLeagueCache {
     $extractScript = Join-BashScript @(
         'set -e'
         "cd $RemoteDir"
-        'mkdir -p .cache'
+        'mkdir -p .cache .cache/league-runtime'
         'rm -rf .cache/league'
         'tar -xzf league-cache.tar.gz -C .cache'
         'rm -f league-cache.tar.gz'
         'chmod -R a+rX .cache/league'
+        '# Fresh shipped cache: drop stale runtime overlay (orphan hashes are harmless but waste disk).'
+        'find .cache/league-runtime -mindepth 1 -delete 2>/dev/null || rm -rf .cache/league-runtime/*'
+        'chmod -R u+rwX,go+rX .cache/league-runtime 2>/dev/null || true'
     )
     Invoke-SshBashScript -ScriptBody $extractScript -SshTarget $Remote -SshOpts $SshOpts
     Write-Host "    league cache extracted to $RemoteDir/.cache/league"
@@ -284,7 +287,9 @@ function Invoke-RemoteContainerRestart {
     $remoteScript = Join-BashScript ( @(
         'set -e'
         "cd $RemoteDir"
+        'mkdir -p .cache/league-runtime /home/bowlyzer/logs/analytics'
         'chmod -R a+rX ./database/data ./database/relational_csv ./database/config ./.cache/league 2>/dev/null || true'
+        'chmod -R u+rwX,go+rX ./.cache/league-runtime /home/bowlyzer/logs/analytics 2>/dev/null || true'
         $upLine
         'docker compose -f docker-compose.prod.yml ps'
     ) + (Get-RemoteHealthCheckLines) )
@@ -531,8 +536,12 @@ $composeUpLine = if ($SyncCache) {
 $remoteScript = Join-BashScript ( @(
     'set -e'
     "cd $RemoteDir"
-    '# Published data bind-mounts (data/, relational_csv/, config/, .cache/league); ensure UID 1000 can read.'
+    '# Published data bind-mounts; shipped cache ro, league-runtime rw (UID 1000).'
+    'mkdir -p .cache/league-runtime'
+    'mkdir -p /home/bowlyzer/logs/analytics'
+    'chmod -R u+rwX,go+rX /home/bowlyzer/logs/analytics 2>/dev/null || true'
     'chmod -R a+rX ./database/data ./database/relational_csv ./database/config ./.cache/league 2>/dev/null || true'
+    'chmod -R u+rwX,go+rX ./.cache/league-runtime 2>/dev/null || true'
     ('docker load -i {0}' -f $RemoteImageName)
     'rm -f bowlyzer-image.tar.gz bowlyzer-image.tar'
     ('rm -f /root/bowlyzer-image.tar /root/bowlyzer-image.tar.gz {0}/../bowlyzer-image.tar {0}/../bowlyzer-image.tar.gz 2>/dev/null || true' -f $RemoteDir)

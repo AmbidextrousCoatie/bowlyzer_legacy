@@ -24,6 +24,7 @@ from app.utils.season_query import normalize_season_query_value
 
 _ENV_ENABLED = "LEAGUE_CACHE_ENABLED"
 _ENV_DIR = "LEAGUE_CACHE_DIR"
+_ENV_RUNTIME_DIR = "LEAGUE_CACHE_RUNTIME_DIR"
 _ENV_REVISION = "LEAGUE_CACHE_REVISION"
 _ENV_GLOBAL_REVISION = "LEAGUE_CACHE_GLOBAL_REVISION"
 _ENTRIES_SUBDIR = "entries"
@@ -62,10 +63,44 @@ def _repo_root() -> Path:
 
 
 def league_cache_dir() -> Path:
+    """Pre-warmed / shipped cache root (read-only on production VPS)."""
     raw = (os.environ.get(_ENV_DIR) or "").strip()
     if raw:
         return Path(raw).expanduser().resolve()
     return (_repo_root() / ".cache" / "league").resolve()
+
+
+def league_cache_runtime_dir() -> Optional[Path]:
+    """
+    Optional read-write overlay for cache entries created at runtime.
+
+    When set, ``league_cache_try_get`` checks here before ``LEAGUE_CACHE_DIR``,
+    and ``league_cache_put`` writes only here (so a read-only shipped mount still works).
+    """
+    raw = (os.environ.get(_ENV_RUNTIME_DIR) or "").strip()
+    if not raw:
+        return None
+    return Path(raw).expanduser().resolve()
+
+
+def league_cache_read_roots() -> List[Path]:
+    """Search order for disk cache hits (runtime overlay first, then shipped)."""
+    roots: List[Path] = []
+    runtime = league_cache_runtime_dir()
+    if runtime is not None:
+        roots.append(runtime)
+    shipped = league_cache_dir()
+    if runtime is None or runtime != shipped:
+        roots.append(shipped)
+    return roots
+
+
+def league_cache_write_root() -> Path:
+    """Directory for new cache files (runtime overlay when configured)."""
+    runtime = league_cache_runtime_dir()
+    if runtime is not None:
+        return runtime
+    return league_cache_dir()
 
 
 def is_league_cache_enabled() -> bool:
@@ -171,7 +206,12 @@ def _payload_hash(
     return hashlib.sha256(blob).hexdigest()[:20]
 
 
-def cache_file_path(endpoint: str, database_id: str, query_args: Mapping[str, Any]) -> Tuple[Path, str]:
+def cache_entry_relative_path(
+    endpoint: str,
+    database_id: str,
+    query_args: Mapping[str, Any],
+) -> Tuple[Path, str]:
+    """Path relative to any cache root, plus resolved data revision."""
     db = effective_database_id(database_id)
     data_rev = _resolve_data_revision(db, query_args)
     qnorm = normalize_query_for_key(query_args, db)
@@ -179,31 +219,59 @@ def cache_file_path(endpoint: str, database_id: str, query_args: Mapping[str, An
     i18n_ver = i18n_service.get_translations_version()
     h = _payload_hash(endpoint, db, data_rev, lang, i18n_ver, qnorm)
     if use_global_file_revision():
-        base = league_cache_dir() / _sanitize_db_id(db) / data_rev
+        rel = Path(_sanitize_db_id(db)) / data_rev / f"{endpoint}__{h}.json"
     else:
-        base = league_cache_dir() / _sanitize_db_id(db) / _ENTRIES_SUBDIR
-    return base / f"{endpoint}__{h}.json", data_rev
+        rel = Path(_sanitize_db_id(db)) / _ENTRIES_SUBDIR / f"{endpoint}__{h}.json"
+    return rel, data_rev
 
 
-def _legacy_cache_paths(endpoint: str, database_id: str, query_args: Mapping[str, Any]) -> List[Path]:
-    """Pre-granular layout: .cache/league/<db>/<file-rev>/<endpoint>__<hash>.json"""
+def cache_file_path(endpoint: str, database_id: str, query_args: Mapping[str, Any]) -> Tuple[Path, str]:
+    """Primary cache file path under the write root (for misses / logging)."""
+    rel, data_rev = cache_entry_relative_path(endpoint, database_id, query_args)
+    return league_cache_write_root() / rel, data_rev
+
+
+def _legacy_cache_paths_for_root(
+    root: Path,
+    endpoint: str,
+    database_id: str,
+    query_args: Mapping[str, Any],
+) -> List[Path]:
+    """Pre-granular layout: <root>/<db>/<file-rev>/<endpoint>__<hash>.json"""
     db = effective_database_id(database_id)
     rev = compute_data_revision(db)
     qnorm = normalize_query_for_key(query_args, db)
     lang = i18n_service.get_current_language().value
     i18n_ver = i18n_service.get_translations_version()
     h = _payload_hash(endpoint, db, rev, lang, i18n_ver, qnorm)
-    root = league_cache_dir() / _sanitize_db_id(db)
-    if not root.is_dir():
+    base = root / _sanitize_db_id(db)
+    if not base.is_dir():
         return []
-    return [root / rev / f"{endpoint}__{h}.json"]
+    return [base / rev / f"{endpoint}__{h}.json"]
+
+
+def league_cache_read_paths(endpoint: str, database_id: str, query_args: Mapping[str, Any]) -> List[Path]:
+    """All candidate paths for a cache lookup (runtime overlay, then shipped)."""
+    rel, _rev = cache_entry_relative_path(endpoint, database_id, query_args)
+    candidates: List[Path] = []
+    seen: set[str] = set()
+    for root in league_cache_read_roots():
+        for path in (root / rel, *_legacy_cache_paths_for_root(root, endpoint, database_id, query_args)):
+            key = str(path)
+            if key in seen:
+                continue
+            seen.add(key)
+            candidates.append(path)
+    return candidates
 
 
 def _warn_stale_disk_cache(endpoint: str, database_id: str, expected_path: Path) -> None:
     """Log once when warmed JSON exists but revision keys no longer match (data changed without re-warm)."""
     if expected_path.is_file():
         return
-    entries = league_cache_dir() / _sanitize_db_id(database_id) / _ENTRIES_SUBDIR
+    entries = league_cache_write_root() / _sanitize_db_id(database_id) / _ENTRIES_SUBDIR
+    if not any(entries.glob(f"{endpoint}__*.json")):
+        entries = league_cache_dir() / _sanitize_db_id(database_id) / _ENTRIES_SUBDIR
     if not entries.is_dir():
         return
     pattern = f"{endpoint}__*.json"
@@ -238,12 +306,8 @@ def league_cache_try_get(endpoint: str, database_id: Optional[str], query_args: 
     if not is_league_cache_enabled():
         return None
     db = effective_database_id(database_id)
-    candidates: List[Path] = []
-    if not use_global_file_revision():
-        candidates.extend(_legacy_cache_paths(endpoint, db, query_args))
+    candidates = league_cache_read_paths(endpoint, db, query_args)
     primary = cache_file_path(endpoint, db, query_args)[0]
-    if primary not in candidates:
-        candidates.append(primary)
     for path in candidates:
         if not path.is_file():
             continue
@@ -260,7 +324,8 @@ def league_cache_put(endpoint: str, database_id: Optional[str], query_args: Mapp
     if not is_league_cache_enabled():
         return
     db = effective_database_id(database_id)
-    path, _rev = cache_file_path(endpoint, db, query_args)
+    rel, _rev = cache_entry_relative_path(endpoint, db, query_args)
+    path = league_cache_write_root() / rel
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
         tmp = path.with_suffix(path.suffix + ".tmp")
@@ -268,11 +333,38 @@ def league_cache_put(endpoint: str, database_id: Optional[str], query_args: Mapp
         tmp.write_text(data, encoding="utf-8")
         tmp.replace(path)
     except OSError as exc:
-        # Production compose mounts LEAGUE_CACHE_DIR :ro — serve computed JSON, skip write.
         print(
             f"Warning: league cache put skipped for {endpoint!r} ({db}): {exc}",
             flush=True,
         )
+
+
+def league_cache_clear_runtime(database_id: Optional[str] = None) -> int:
+    """Remove runtime overlay JSON (optional wipe after shipping a new pre-warmed cache)."""
+    runtime = league_cache_runtime_dir()
+    if runtime is None or not runtime.is_dir():
+        return 0
+    if database_id:
+        targets = [runtime / _sanitize_db_id(effective_database_id(database_id))]
+    else:
+        targets = [runtime]
+    n = 0
+    for root in targets:
+        if not root.is_dir():
+            continue
+        for p in root.rglob("*.json"):
+            try:
+                p.unlink()
+                n += 1
+            except OSError:
+                pass
+        for p in sorted(root.rglob("*"), reverse=True):
+            if p.is_dir():
+                try:
+                    p.rmdir()
+                except OSError:
+                    pass
+    return n
 
 
 def league_cache_invalidate_database(database_id: Optional[str] = None) -> int:

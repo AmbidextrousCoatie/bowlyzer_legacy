@@ -78,7 +78,13 @@ Uploads `database/data/*.parquet`, `*.json`, plus `relational_csv/` and `config/
 Build the cache on your PC (after published data is built), then ship it:
 
 ```powershell
-# Full rebuild including every club matrix (long run with scrape merged in)
+# 1) Published data: historical + legacy scrape + GF + tournaments + player hybrid
+uv run python scripts/build_published_dataset.py --with-legacy-scrape --with-player-hybrid
+
+# 2) Full API cache rebuild (league + clubs + Spieler + Turnier)
+uv run python scripts/rebuild_league_caches.py --all-published --workers 8
+
+# League only (same as before)
 uv run python scripts/rebuild_league_caches.py --database db_real_merged
 
 # Or incremental warm + clubs only
@@ -89,13 +95,20 @@ uv run python scripts/warm_league_cache_shard.py --database db_real_merged --reb
 # Club deploy only (skip heavy league-wide meta charts). Smaller club batches keep CPU busy:
 uv run python scripts/warm_league_cache_shard.py --database db_real_merged --rebuild --warm-clubs --skip-meta --clubs-per-shard 8 --max-parallel 8
 
-# Deploy data + cache (compose mounts ./.cache/league read-only)
+# Deploy data + cache (shipped cache :ro + ./.cache/league-runtime :rw for cache misses)
 .\deploy\deploy.ps1 -SyncDatabase -SyncCache
 # data-only after warming:
 .\deploy\deploy-data.ps1 -SyncDatabase -SyncCache
 ```
 
-Cache root locally: `.cache/league/<database_id>/entries/` (granular revisions). **Revision** must match the Parquet/CSV you deploy — warm **after** `build_published_dataset.py`, then deploy data and cache in the same release. `-SyncCache` packs the tree into `deploy/artifacts/league-cache.tar.gz` (one `scp`, `tar -xzf` on the VPS) instead of copying thousands of JSON files.
+Cache roots:
+
+| Path | Role |
+|------|------|
+| `.cache/league/` | Pre-warmed JSON (local build + VPS **read-only** mount) |
+| `.cache/league-runtime/` | VPS **read-write** overlay — cache misses, `revision_index.json` patches, hot queries |
+
+Locally only `.cache/league/` is used unless you set `LEAGUE_CACHE_RUNTIME_DIR`. **Revision** must match the Parquet/CSV you deploy — warm **after** `build_published_dataset.py`, then deploy data and cache in the same release. `-SyncCache` packs shipped cache into `deploy/artifacts/league-cache.tar.gz` and clears `league-runtime/` on the VPS.
 
 **Important:** `deploy-data.ps1` only updates files on the VPS host. The running container must include Python that reads `entries/` (recent `bowlyzer:release` image). Data-only deploy without a new image → cache files sit on disk but the app ignores them. After image + cache deploy, check responses: `curl -sI 'https://www.bowlyzer.online/league/get_club_matrix?database=db_real_merged&club=Donaubowler+Regensburg' | findstr X-League-Cache` should show `HIT`.
 
@@ -104,6 +117,28 @@ Pipeline intermediates belong on **`C:\tmp\bowlyzer\data`** (see `database/data/
 **Tournament data:** After `build_published_dataset.py`, the app reads **`tournaments_postprocessed.parquet`** on the VPS (GF + manual club imports merged locally). You do **not** need to sync `database/input/gf_tables_export/` — that path is dev-only and baked into the image.
 
 **Compose mount:** prod binds only `database/data`, `relational_csv`, and `config` — not the whole `database/` folder (that would hide `database.paths` from the image and crash Gunicorn with `ModuleNotFoundError`).
+
+### Request analytics (anonymized)
+
+API requests are appended as **JSONL** to **`~/logs/analytics/requests.log`** on the VPS (bind-mount `/home/bowlyzer/logs/analytics`).
+
+| Field | Meaning |
+|-------|---------|
+| `visitor_id` | SHA-256(truncated IP + daily salt)[:16] — no raw IP stored |
+| `path`, `params` | Route + query string (`season`, `league`, `database`, …) |
+| `cache_status` | `X-League-Cache` when present (`HIT` / `MISS`) |
+| `duration_ms` | Server time for the request |
+
+Env (in `docker-compose.prod.yml`): `ANALYTICS_ENABLED=1`, `ANALYTICS_REQUEST_LOG=/app/logs/analytics/requests.log`. Optional `ANALYTICS_SALT` (defaults to `FLASK_SECRET_KEY`). Set `ANALYTICS_ENABLED=0` to disable.
+
+One-time on an existing VPS:
+
+```bash
+mkdir -p ~/logs/analytics
+chmod 755 ~/logs/analytics
+# redeploy image + updated compose, then:
+docker compose -f ~/bowlyzer/docker-compose.prod.yml up -d --force-recreate
+```
 
 ### Data size
 

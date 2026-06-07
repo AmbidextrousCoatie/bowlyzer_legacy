@@ -10,15 +10,20 @@ services:
       - "${BOWLYZER_HOST_PORT:-8080}:8000"
     environment:
       FLASK_SECRET_KEY: ${FLASK_SECRET_KEY:-change-me-in-production}
-      GUNICORN_WORKERS: "1"
+      GUNICORN_WORKERS: "2"
       GUNICORN_THREADS: "2"
       LOG_LEVEL: info
       # Avoid OOM on ~1 GB VPS: no background cache warmup at container start.
       LEAGUE_CACHE_WARM_ON_START: "0"
       # Published data is bind-mounted :ro; hybrid is built offline via build_published_dataset.py
       BOWLYZER_SKIP_HYBRID_BUILD: "1"
-      # Pre-warmed league JSON (build locally, ship with deploy.ps1 -SyncCache)
+      # Pre-warmed JSON (build locally, ship with deploy.ps1 -SyncCache) — read-only.
       LEAGUE_CACHE_DIR: /app/.cache/league
+      # Read-write overlay: cache misses + revision_index patches persist here.
+      LEAGUE_CACHE_RUNTIME_DIR: /app/.cache/league-runtime
+      # Anonymized API request log (JSONL); host path ~/logs/analytics/requests.log
+      ANALYTICS_ENABLED: "1"
+      ANALYTICS_REQUEST_LOG: /app/logs/analytics/requests.log
     # Mount only published/runtime subtrees — NOT the whole ./database tree. A full mount
     # replaces /app/database in the image and drops Python modules baked in (e.g. paths.py).
     volumes:
@@ -26,6 +31,8 @@ services:
       - ./database/relational_csv:/app/database/relational_csv:ro
       - ./database/config:/app/database/config:ro
       - ./.cache/league:/app/.cache/league:ro
+      - ./.cache/league-runtime:/app/.cache/league-runtime
+      - /home/bowlyzer/logs/analytics:/app/logs/analytics
     restart: unless-stopped
-    mem_limit: 650m
-    cpus: 1.0
+    mem_limit: 3000m
+    cpus: 3.0

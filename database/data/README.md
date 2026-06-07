@@ -51,6 +51,21 @@ Writes `league_results_merged.parquet`, `tournaments_postprocessed.parquet` by d
 
 
 
+### Full published rebuild (scrape + tournaments + player hybrid)
+
+
+
+```powershell
+uv run python scripts/build_published_dataset.py --with-legacy-scrape --with-player-hybrid
+uv run python scripts/rebuild_league_caches.py --all-published --workers 8
+```
+
+
+
+Warms `db_real_merged` (liga + clubs), `db_player_merged_hybrid` (Spieler dropdown), and `db_tournament_regions_2026_gf` (Turnier). Then deploy data + cache together.
+
+
+
 ### League API disk cache (incremental warm)
 
 

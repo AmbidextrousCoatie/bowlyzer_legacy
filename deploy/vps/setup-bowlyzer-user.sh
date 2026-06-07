@@ -52,7 +52,8 @@ if ! getent group docker >/dev/null; then
 fi
 usermod -aG docker "${BOWLYZER_USER}"
 
-mkdir -p "${DEPLOY_DIR}"
+mkdir -p "${DEPLOY_DIR}" "${DEPLOY_DIR}/.cache/league-runtime"
+mkdir -p "${BOWLYZER_HOME}/logs/analytics"
 mkdir -p /var/lib/bowlyzer/clubmeisterschaft/{inbox,work}
 chown -R "${BOWLYZER_USER}:${BOWLYZER_USER}" "${BOWLYZER_HOME}" /var/lib/bowlyzer
 

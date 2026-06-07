@@ -4,9 +4,11 @@ import os
 import stat
 
 from app.cache.league_response_cache import (
+    cache_entry_relative_path,
     compute_data_revision,
     effective_database_id,
     league_cache_put,
+    league_cache_try_get,
     normalize_query_for_key,
 )
 
@@ -31,13 +33,40 @@ def test_data_revision_shape():
     assert rev in ("unknown", "missing")
 
 
-def test_league_cache_put_tolerates_read_only_dir(tmp_path, monkeypatch):
-    ro = tmp_path / "ro"
-    ro.mkdir()
-    os.chmod(ro, stat.S_IREAD | stat.S_IEXEC)
-    monkeypatch.setenv("LEAGUE_CACHE_DIR", str(ro))
+def test_league_cache_put_tolerates_read_only_shipped_dir(tmp_path, monkeypatch):
+    shipped = tmp_path / "shipped"
+    runtime = tmp_path / "runtime"
+    shipped.mkdir()
+    runtime.mkdir()
+    os.chmod(shipped, stat.S_IREAD | stat.S_IEXEC)
+    monkeypatch.setenv("LEAGUE_CACHE_DIR", str(shipped))
+    monkeypatch.setenv("LEAGUE_CACHE_RUNTIME_DIR", str(runtime))
     monkeypatch.setenv("LEAGUE_CACHE_ENABLED", "1")
-    from app.cache import league_response_cache as mod
+    monkeypatch.setenv("LEAGUE_CACHE_GLOBAL_REVISION", "1")
 
-    mod._LEAGUE_CACHE_DIR = None
-    league_cache_put("get_available_seasons", "db_x", {"database": "db_x"}, ["08/09"])
+    payload = ["08/09"]
+    league_cache_put("get_available_seasons", "db_x", {"database": "db_x"}, payload)
+
+    rel, _ = cache_entry_relative_path("get_available_seasons", "db_x", {"database": "db_x"})
+    assert (runtime / rel).is_file()
+    assert league_cache_try_get("get_available_seasons", "db_x", {"database": "db_x"}) == payload
+
+
+def test_runtime_overlay_overrides_shipped(tmp_path, monkeypatch):
+    shipped = tmp_path / "shipped"
+    runtime = tmp_path / "runtime"
+    shipped.mkdir(parents=True)
+    runtime.mkdir(parents=True)
+    monkeypatch.setenv("LEAGUE_CACHE_DIR", str(shipped))
+    monkeypatch.setenv("LEAGUE_CACHE_RUNTIME_DIR", str(runtime))
+    monkeypatch.setenv("LEAGUE_CACHE_ENABLED", "1")
+    monkeypatch.setenv("LEAGUE_CACHE_GLOBAL_REVISION", "1")
+
+    query = {"database": "db_x"}
+    rel, _ = cache_entry_relative_path("player_search", "db_x", query)
+    (shipped / rel).parent.mkdir(parents=True, exist_ok=True)
+    (runtime / rel).parent.mkdir(parents=True, exist_ok=True)
+    (shipped / rel).write_text('["shipped"]', encoding="utf-8")
+    (runtime / rel).write_text('["runtime"]', encoding="utf-8")
+
+    assert league_cache_try_get("player_search", "db_x", query) == ["runtime"]

@@ -20,7 +20,11 @@ from typing import Dict, List, Mapping, Optional
 
 import pandas as pd
 
-from app.cache.league_response_cache import compute_data_revision, league_cache_dir
+from app.cache.league_response_cache import (
+    compute_data_revision,
+    league_cache_read_roots,
+    league_cache_write_root,
+)
 from app.config.database_config import database_config
 from app.utils.season_query import normalize_season_query_value
 from data_access.schema import Columns
@@ -91,8 +95,17 @@ def _sanitize_db_id(database_id: str) -> str:
     return s[:120] or "default"
 
 
-def _index_path(database_id: str) -> Path:
-    return league_cache_dir() / _sanitize_db_id(database_id) / "revision_index.json"
+def _index_relative_path(database_id: str) -> Path:
+    return Path(_sanitize_db_id(database_id)) / "revision_index.json"
+
+
+def _index_write_path(database_id: str) -> Path:
+    return league_cache_write_root() / _index_relative_path(database_id)
+
+
+def _index_read_paths(database_id: str) -> List[Path]:
+    rel = _index_relative_path(database_id)
+    return [root / rel for root in league_cache_read_roots()]
 
 
 def _revision_columns(df: pd.DataFrame) -> List[str]:
@@ -209,27 +222,34 @@ def build_revision_index(database_id: str) -> LeagueRevisionIndex:
 
 
 def _load_index_from_disk(database_id: str) -> Optional[LeagueRevisionIndex]:
-    path = _index_path(database_id)
-    if not path.is_file():
-        return None
-    try:
-        raw = json.loads(path.read_text(encoding="utf-8"))
-        if not isinstance(raw, dict):
-            return None
-        idx = LeagueRevisionIndex.from_dict(raw)
-        if idx.version != _INDEX_VERSION:
-            return None
-        return idx
-    except (OSError, json.JSONDecodeError, TypeError, ValueError):
-        return None
+    for path in _index_read_paths(database_id):
+        if not path.is_file():
+            continue
+        try:
+            raw = json.loads(path.read_text(encoding="utf-8"))
+            if not isinstance(raw, dict):
+                continue
+            idx = LeagueRevisionIndex.from_dict(raw)
+            if idx.version != _INDEX_VERSION:
+                continue
+            return idx
+        except (OSError, json.JSONDecodeError, TypeError, ValueError):
+            continue
+    return None
 
 
 def _save_index_to_disk(index: LeagueRevisionIndex, database_id: str) -> None:
-    path = _index_path(database_id)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(".tmp")
-    tmp.write_text(json.dumps(index.to_dict(), indent=2, ensure_ascii=False), encoding="utf-8")
-    tmp.replace(path)
+    path = _index_write_path(database_id)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_suffix(".tmp")
+        tmp.write_text(json.dumps(index.to_dict(), indent=2, ensure_ascii=False), encoding="utf-8")
+        tmp.replace(path)
+    except OSError as exc:
+        print(
+            f"Warning: revision index save skipped for {database_id!r}: {exc}",
+            flush=True,
+        )
 
 
 def ensure_revision_index(database_id: str, *, force: bool = False) -> LeagueRevisionIndex:
@@ -263,11 +283,11 @@ def invalidate_revision_index(database_id: str | None = None) -> None:
             _INDEX_BY_DATABASE.pop(database_id, None)
     if database_id is None:
         return
-    path = _index_path(database_id)
-    try:
-        path.unlink(missing_ok=True)
-    except OSError:
-        pass
+    for path in _index_read_paths(database_id):
+        try:
+            path.unlink(missing_ok=True)
+        except OSError:
+            pass
 
 
 def effective_data_revision(
