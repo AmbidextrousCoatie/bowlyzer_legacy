@@ -178,6 +178,63 @@ class I18nService:
                 "en": "Overview — select a team for detailed analysis.",
                 "de": "Übersicht — wähle eine Mannschaft für die Detailanalyse.",
             },
+            "ui.team.club_legends_heading": {"en": "Club legends", "de": "Club-Legenden"},
+            "ui.team.club_legends_hint": {
+                "en": "Player highlights for this club — league games, all seasons.",
+                "de": "Spieler-Highlights für diesen Club — Liga-Spiele, alle Saisons.",
+            },
+            "ui.team.club_legends_loading": {
+                "en": "Loading club legends…",
+                "de": "Club-Legenden werden geladen…",
+            },
+            "ui.team.club_legends_error": {
+                "en": "Could not load club legends.",
+                "de": "Club-Legenden konnten nicht geladen werden.",
+            },
+            "ui.team.club_legends_empty": {
+                "en": "No player data for this club.",
+                "de": "Keine Spielerdaten für diesen Club.",
+            },
+            "ui.team.club_legends_most_seasons": {"en": "Most seasons", "de": "Meiste Saisons"},
+            "ui.team.club_legends_most_games": {"en": "Most games", "de": "Meiste Spiele"},
+            "ui.team.club_legends_highest_avg": {
+                "en": "Highest average",
+                "de": "Höchster Durchschnitt",
+            },
+            "ui.team.club_legends_best_seasons": {"en": "Best seasons", "de": "Beste Saisons"},
+            "ui.team.club_legends_seasons_count": {"en": "{n} seasons", "de": "{n} Saisons"},
+            "ui.team.club_legends_most_teams": {
+                "en": "Most teams represented",
+                "de": "Meiste Mannschaften",
+            },
+            "ui.team.club_legends_most_leagues": {"en": "Most leagues seen", "de": "Meiste Ligen"},
+            "ui.team.club_legends_teams_list": {"en": "Teams", "de": "Mannschaften"},
+            "ui.team.club_player_results_heading": {
+                "en": "Club player results",
+                "de": "Spielerergebnisse im Club",
+            },
+            "ui.team.club_player_results_hint": {
+                "en": "League games while at this club — one row per player.",
+                "de": "Liga-Spiele in dieser Club-Zugehörigkeit — eine Zeile pro Spieler.",
+            },
+            "ui.team.club_player_group": {"en": "Player", "de": "Spieler"},
+            "ui.team.club_alltime_group": {"en": "All time", "de": "Gesamt"},
+            "ui.team.club_best_season_group": {"en": "Best season", "de": "Beste Saison"},
+            "ui.team.club_membership_group": {"en": "Membership", "de": "Zugehörigkeit"},
+            "ui.team.club_membership_years": {"en": "Seasons", "de": "Saisons"},
+            "ui.team.player_id_col": {"en": "ID", "de": "ID"},
+            "ui.team.club_player_results_loading": {
+                "en": "Loading player table…",
+                "de": "Spielertabelle wird geladen…",
+            },
+            "ui.team.club_player_results_error": {
+                "en": "Could not load player table.",
+                "de": "Spielertabelle konnte nicht geladen werden.",
+            },
+            "ui.team.club_player_results_empty": {
+                "en": "No player data for this club.",
+                "de": "Keine Spielerdaten für diesen Club.",
+            },
             "ui.player.games": {"en": "Games", "de": "Spiele"},
             "ui.player.total_pins_col": {"en": "Total Pins", "de": "Pins gesamt"},
             "ui.player.average_col": {"en": "Average", "de": "Durchschnitt"},

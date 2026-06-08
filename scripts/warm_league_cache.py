@@ -499,6 +499,41 @@ def collect_club_matrix_jobs(
     return jobs
 
 
+def collect_club_legends_jobs(
+    ls,
+    database: str,
+    clubs: List[str],
+) -> List[Tuple[str, Dict[str, str], Callable[[], Any]]]:
+    """Club page player highlights + roster table — separate from club matrix (expensive per club)."""
+    from app.services.club_player_results_service import ClubPlayerResultsService
+    from app.utils.json_safe import json_safe
+    from app.utils.league_player_sources import resolve_player_database_id
+
+    dbq = {"database": database}
+    player_db = resolve_player_database_id(database)
+    holder: Dict[str, Any] = {"service": None}
+
+    def _service() -> ClubPlayerResultsService:
+        if holder["service"] is None:
+            holder["service"] = ClubPlayerResultsService(
+                league_database=database,
+                player_database=player_db,
+            )
+        return holder["service"]
+
+    jobs: List[Tuple[str, Dict[str, str], Callable[[], Any]]] = []
+    for club in clubs:
+        def _legends(c: str = club) -> Any:
+            return json_safe(_service().get_club_legends(c))
+
+        def _results(c: str = club) -> Any:
+            return json_safe(_service().get_club_player_results_table(c))
+
+        jobs.append(("get_club_legends", {**dbq, "club": club}, _legends))
+        jobs.append(("get_club_player_results", {**dbq, "club": club}, _results))
+    return jobs
+
+
 def _load_club_names_from_file(path: Path) -> List[str]:
     lines: List[str] = []
     for raw in path.read_text(encoding="utf-8").splitlines():
@@ -509,7 +544,7 @@ def _load_club_names_from_file(path: Path) -> List[str]:
     return lines
 
 
-WARM_PHASES = ("all", "seasons", "league-wide", "clubs")
+WARM_PHASES = ("all", "seasons", "league-wide", "clubs", "club-legends")
 
 
 def normalize_warm_phase(phase: str) -> str:
@@ -578,9 +613,11 @@ def build_warm_shards(
     catalog: Dict[str, Any],
     *,
     warm_clubs: bool,
+    warm_club_legends: bool = False,
     skip_seasons: bool,
     skip_meta: bool,
     skip_clubs: bool,
+    skip_club_legends: bool = False,
     meta_per_league: bool,
     clubs_per_shard: int,
     season_filter: Optional[str] = None,
@@ -653,6 +690,39 @@ def build_warm_shards(
                         str(limit),
                     ],
                     extra_argv=extra,
+                )
+            )
+
+    if warm_club_legends and not skip_club_legends:
+        ranges = club_shard_ranges(len(clubs), clubs_per_shard)
+        if not ranges:
+            shards.append(
+                WarmShard(
+                    label="club-legends:0",
+                    argv=[
+                        "--phase",
+                        "club-legends",
+                        "--warm-club-legends",
+                        "--clubs-offset",
+                        "0",
+                        "--clubs-limit",
+                        "0",
+                    ],
+                )
+            )
+        for idx, (offset, limit) in enumerate(ranges):
+            shards.append(
+                WarmShard(
+                    label=f"club-legends:{idx + 1}/{len(ranges)}",
+                    argv=[
+                        "--phase",
+                        "club-legends",
+                        "--warm-club-legends",
+                        "--clubs-offset",
+                        str(offset),
+                        "--clubs-limit",
+                        str(limit),
+                    ],
                 )
             )
 
@@ -1190,6 +1260,46 @@ def _warm_clubs_worker(
         )
 
 
+def _warm_club_legends_worker(
+    app,
+    database: str,
+    langs: List[Any],
+    jobs: List[Job],
+    *,
+    dry_run: bool,
+    progress: Optional["WarmProgress"],
+    verbose: bool,
+    benchmark: Optional[Any],
+    club_workers: int = 0,
+    quiet: bool = False,
+) -> List[WarmResult]:
+    from app.services.i18n_service import i18n_service
+    from app.utils.league_player_sources import resolve_player_database_id
+    from data_access.shared_pandas_store import get_shared_pandas_adapter
+
+    with app.app_context():
+        i18n_service.set_language(_primary_warm_language())
+        player_db = resolve_player_database_id(database)
+        if not dry_run:
+            _warm_log(f"  worker start: club-legends preload player data ({player_db!r}) …", quiet=quiet)
+            get_shared_pandas_adapter(player_db)
+        _warm_log(f"  worker start: club-legends ({len(jobs)} endpoints)", quiet=quiet)
+        parallel_workers = club_workers
+        return _warm_job_list(
+            database,
+            jobs,
+            dry_run=dry_run,
+            label="club-legends",
+            langs=langs,
+            progress=progress,
+            verbose=verbose,
+            benchmark=benchmark,
+            parallel_workers=parallel_workers,
+            parallel_after=0,
+            quiet=quiet,
+        )
+
+
 def main() -> int:
     if hasattr(sys.stdout, "reconfigure"):
         try:
@@ -1221,6 +1331,11 @@ def main() -> int:
         "--warm-clubs",
         action="store_true",
         help="Also warm /team/get_teams and /league/get_club_matrix (all clubs + club page payloads)",
+    )
+    parser.add_argument(
+        "--warm-club-legends",
+        action="store_true",
+        help="Also warm /league/get_club_legends per club (separate from --warm-clubs; expensive)",
     )
     parser.add_argument(
         "--warm-clubs-file",
@@ -1316,8 +1431,11 @@ def main() -> int:
     if phase == "clubs" and not args.warm_clubs:
         print("--phase clubs requires --warm-clubs", file=sys.stderr)
         return 1
-    if (args.clubs_offset or args.clubs_limit is not None) and phase != "clubs":
-        print("--clubs-offset/--clubs-limit require --phase clubs", file=sys.stderr)
+    if phase == "club-legends" and not args.warm_club_legends:
+        print("--phase club-legends requires --warm-club-legends", file=sys.stderr)
+        return 1
+    if (args.clubs_offset or args.clubs_limit is not None) and phase not in ("clubs", "club-legends"):
+        print("--clubs-offset/--clubs-limit require --phase clubs or club-legends", file=sys.stderr)
         return 1
 
     os.environ.setdefault("LEAGUE_CACHE_ENABLED", "1")
@@ -1412,7 +1530,9 @@ def main() -> int:
             )
 
             club_names: List[str] = []
-            if args.warm_clubs and phase in ("all", "clubs"):
+            if (args.warm_clubs and phase in ("all", "clubs")) or (
+                args.warm_club_legends and phase in ("all", "club-legends")
+            ):
                 if args.warm_clubs_file:
                     club_path = Path(args.warm_clubs_file).expanduser().resolve()
                     if not club_path.is_file():
@@ -1427,7 +1547,10 @@ def main() -> int:
                     offset=args.clubs_offset,
                     limit=args.clubs_limit,
                 )
-                _warm_log(f"  [plan] club matrix jobs for {len(club_names)} club(s) …", quiet=quiet)
+                if args.warm_clubs and phase in ("all", "clubs"):
+                    _warm_log(f"  [plan] club matrix jobs for {len(club_names)} club(s) …", quiet=quiet)
+                if args.warm_club_legends and phase in ("all", "club-legends"):
+                    _warm_log(f"  [plan] club legends jobs for {len(club_names)} club(s) …", quiet=quiet)
 
             _warm_log("Building job plan …", quiet=quiet)
             season_job_map, league_job_map, club_job_list = build_job_plan(
@@ -1446,9 +1569,15 @@ def main() -> int:
             season_job_n = sum(len(v) for v in season_job_map.values())
             league_wide_job_n = sum(len(v) for v in league_job_map.values())
             club_job_n = len(club_job_list)
+            club_legends_job_list: List[Job] = []
+            if args.warm_club_legends and phase in ("all", "club-legends") and club_names:
+                club_legends_job_list = collect_club_legends_jobs(ls0, database, club_names)
+            club_legends_job_n = len(club_legends_job_list)
             global_job_n = len(collect_global_page_jobs(ls0, database)) if phase in ("all", "seasons") else 0
             filter_job_n = len(collect_filter_dropdown_jobs(ls0, database, seasons)) if phase in ("all", "seasons") else 0
-            jobs_per_lang = season_job_n + league_wide_job_n + club_job_n + global_job_n + filter_job_n
+            jobs_per_lang = (
+                season_job_n + league_wide_job_n + club_job_n + club_legends_job_n + global_job_n + filter_job_n
+            )
             grand_total = jobs_per_lang * len(langs)
             workers = 1 if args.sequential else args.workers
             _warm_log(
@@ -1456,7 +1585,8 @@ def main() -> int:
                 f"({len(langs)} lang(s)) "
                 f"(database={database!r}, seasons={len(seasons)}, leagues={len(all_leagues)}, "
                 f"global={global_job_n}, filters={filter_job_n}, "
-                f"season_jobs={season_job_n}, league_wide={league_wide_job_n}, clubs={club_job_n})",
+                f"season_jobs={season_job_n}, league_wide={league_wide_job_n}, "
+                f"clubs={club_job_n}, club_legends={club_legends_job_n})",
                 quiet=quiet,
             )
             use_progress = not args.no_progress and grand_total > 0
@@ -1619,6 +1749,25 @@ def main() -> int:
                         )
                     ],
                     f"clubs (1 task, {len(club_names)} clubs)",
+                )
+
+            if phase in ("all", "club-legends") and args.warm_club_legends and club_legends_job_list:
+                _run_pool(
+                    [
+                        lambda: _warm_club_legends_worker(
+                            app,
+                            database,
+                            langs,
+                            club_legends_job_list,
+                            dry_run=args.dry_run,
+                            progress=progress,
+                            verbose=args.verbose,
+                            benchmark=benchmark,
+                            club_workers=args.club_workers,
+                            quiet=quiet,
+                        )
+                    ],
+                    f"club-legends (1 task, {len(club_names)} clubs)",
                 )
 
             if _SHUTDOWN.is_set():

@@ -2,7 +2,7 @@ import { useEffect, useMemo, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ClubSearch } from "../../components/ClubSearch";
 import { seasonForUrlQuery } from "../../lib/api";
-import { useClubMatrix } from "../../hooks/useLeague";
+import { useClubMatrix, type ClubMatrixPayload } from "../../hooks/useLeague";
 import { useTeamSeasons, useTeams } from "../../hooks/useTeam";
 import { useTranslations } from "../../hooks/useTranslations";
 import {
@@ -141,14 +141,19 @@ export function TeamStats() {
     setSearchParams(next, { replace: false });
   }
 
-  const matrixFetched = clubMatrixQuery.isFetched;
-  const matrixRows =
-    club && matrixFetched ? (clubMatrixQuery.data?.matrix.rows ?? []) : [];
-  const matrixSeasons =
-    club && matrixFetched ? (clubMatrixQuery.data?.matrix.seasons ?? []) : [];
+  const activeClub = resolvedClub || club;
+  const matrixForClub =
+    clubMatrixQuery.isSuccess &&
+    clubMatrixQuery.data &&
+    matrixPayloadMatchesClub(clubMatrixQuery.data, activeClub)
+      ? clubMatrixQuery.data
+      : undefined;
+  const matrixRows = matrixForClub?.matrix.rows ?? [];
+  const matrixSeasons = matrixForClub?.matrix.seasons ?? [];
   const matrixLoading =
-    !!club && (!clubsListQuery.isFetched || !matrixFetched);
-  const matrixError = !!club && matrixFetched && clubMatrixQuery.isError;
+    !!club &&
+    (!clubsListQuery.isFetched || clubMatrixQuery.isFetching || !matrixForClub);
+  const matrixError = !!club && clubMatrixQuery.isError;
 
   const showClubOverview = !!club && !team;
   const showTeamDetail = !!club && !!team;
@@ -258,6 +263,12 @@ export function TeamStats() {
       </div>
     </div>
   );
+}
+
+function matrixPayloadMatchesClub(data: ClubMatrixPayload, clubLabel: string): boolean {
+  const fromApi = (data.selected_club || data.matrix.club || "").trim();
+  if (!fromApi || !clubLabel) return false;
+  return normalizeUnicodeLabel(fromApi) === normalizeUnicodeLabel(clubLabel);
 }
 
 function FilterField({ label, children }: { label: string; children: ReactNode }) {

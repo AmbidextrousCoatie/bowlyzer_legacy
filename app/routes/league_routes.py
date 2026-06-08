@@ -98,6 +98,60 @@ def get_club_matrix():
         return jsonify({"error": str(e)}), 500
 
 
+@bp.route("/league/get_club_legends")
+def get_club_legends():
+    """JSON for React club page player highlights (top seasons/games/averages)."""
+    try:
+        def _build():
+            from app.services.club_legends_service import ClubLegendsService
+
+            league_service = get_league_service()
+            selected_club = (request.args.get("club") or "").strip()
+            clubs = league_service.get_available_clubs()
+            if selected_club:
+                selected_club = league_service.resolve_club_name(selected_club, clubs)
+            if not selected_club:
+                return {
+                    "club": "",
+                    "most_seasons": [],
+                    "most_games": [],
+                    "highest_average": [],
+                    "best_seasons": [],
+                    "most_teams_represented": [],
+                    "most_leagues_seen": [],
+                }
+            database = request.args.get("database") or database_config.get_default_source()
+            return ClubLegendsService(league_database=database).get_club_legends(selected_club)
+
+        return _jsonify_cached_or_compute("get_club_legends", _build)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@bp.route("/league/get_club_player_results")
+def get_club_player_results():
+    """JSON TableData: one row per player with club-tenure league stats."""
+    try:
+        def _build():
+            from app.services.club_player_results_service import ClubPlayerResultsService
+
+            league_service = get_league_service()
+            selected_club = (request.args.get("club") or "").strip()
+            clubs = league_service.get_available_clubs()
+            if selected_club:
+                selected_club = league_service.resolve_club_name(selected_club, clubs)
+            if not selected_club:
+                return {"club": "", "table": {"columns": [], "data": []}}
+            database = request.args.get("database") or database_config.get_default_source()
+            return ClubPlayerResultsService(league_database=database).get_club_player_results_table(
+                selected_club
+            )
+
+        return _jsonify_cached_or_compute("get_club_player_results", _build)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @bp.route("/league/get_week_matrix")
 def get_week_matrix():
     """JSON for React League Week Matrix."""

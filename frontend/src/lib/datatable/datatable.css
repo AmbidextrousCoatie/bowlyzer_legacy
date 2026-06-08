@@ -468,3 +468,12 @@
 .ds-tabulator .tabulator-tableholder::-webkit-scrollbar-thumb:hover {
   background: var(--color-muted);
 }
+
+.club-player-results-table .tabulator-cell[tabulator-field="player_name"] {
+  cursor: pointer;
+  color: var(--color-accent);
+  font-weight: 500;
+}
+.club-player-results-table .tabulator-cell[tabulator-field="player_name"]:hover {
+  text-decoration: underline;
+}

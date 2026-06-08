@@ -13,6 +13,8 @@ import {
   teamDisplayLabel,
 } from "../../../lib/teamUtils";
 import { buildTeamNavPath } from "../../../lib/teamNavigation";
+import { ClubLegends } from "./ClubLegends";
+import { ClubPlayerResults } from "./ClubPlayerResults";
 import { ClubPositionHistoryChart } from "./ClubPositionHistoryChart";
 
 type Props = {
@@ -32,7 +34,7 @@ function latestSeasonWithLeague(
 ): { season: string; cell: ClubMatrixSeasonCell } | null {
   for (let i = seasons.length - 1; i >= 0; i--) {
     const s = seasons[i];
-    const cell = row.seasons[s];
+    const cell = row.seasons?.[s];
     const { label } = normalizeClubMatrixCell(cell);
     if (label.trim()) return { season: s, cell };
   }
@@ -42,7 +44,7 @@ function latestSeasonWithLeague(
 function countDistinctLeagues(rows: ClubMatrixRow[]): number {
   const leagues = new Set<string>();
   for (const row of rows) {
-    for (const cell of Object.values(row.seasons)) {
+    for (const cell of Object.values(row.seasons ?? {})) {
       const { items } = normalizeClubMatrixCell(cell);
       for (const item of items) {
         if (item.league) leagues.add(item.league);
@@ -72,7 +74,7 @@ export function ClubOverview({
     const latest = matrixRow ? latestSeasonWithLeague(matrixRow, seasons) : null;
     const latestLeague = latest ? normalizeClubMatrixCell(latest.cell).label : null;
     const seasonCount = matrixRow
-      ? Object.values(matrixRow.seasons).filter((c) => normalizeClubMatrixCell(c).label.trim())
+      ? Object.values(matrixRow.seasons ?? {}).filter((c) => normalizeClubMatrixCell(c).label.trim())
           .length
       : 0;
     const color = getClubTeamColor(fullName);
@@ -115,6 +117,8 @@ export function ClubOverview({
           />
         )}
       </section>
+
+      <ClubLegends club={club} t={t} />
 
       <div className="grid gap-3 sm:grid-cols-3">
         <StatTile
@@ -218,7 +222,7 @@ export function ClubOverview({
                           : row.team_number}
                       </td>
                       {seasons.map((s) => {
-                        const { items } = normalizeClubMatrixCell(row.seasons[s]);
+                        const { items } = normalizeClubMatrixCell(row.seasons?.[s]);
                         return (
                           <td
                             key={s}
@@ -256,6 +260,8 @@ export function ClubOverview({
           </div>
         </section>
       )}
+
+      <ClubPlayerResults club={club} t={t} />
     </div>
   );
 }

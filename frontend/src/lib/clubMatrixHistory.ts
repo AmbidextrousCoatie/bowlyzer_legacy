@@ -9,8 +9,9 @@ export function historyFromMatrixRow(
   matrixSeasons: string[],
 ): TeamHistory {
   const history: TeamHistory = {};
+  const seasonsByYear = row.seasons ?? {};
   for (const season of matrixSeasons) {
-    const { items } = normalizeClubMatrixCell(row.seasons[season]);
+    const { items } = normalizeClubMatrixCell(seasonsByYear[season]);
     const item =
       items.find((i) => i.final_position != null && i.final_position > 0) ?? items[0];
     if (!item?.league) continue;

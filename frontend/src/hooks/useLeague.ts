@@ -358,6 +358,81 @@ export type WeekMatrixPayload = {
 
 const DIAGNOSIS_LIST_STALE_MS = 10 * 60 * 1000;
 
+export type ClubLegendEntry = {
+  player_id: string;
+  player_name: string;
+  value: number;
+  games?: number;
+  average?: number;
+  season?: string;
+  teams?: string[];
+  leagues?: string[];
+};
+
+export type ClubLegendsPayload = {
+  club: string;
+  most_seasons: ClubLegendEntry[];
+  most_games: ClubLegendEntry[];
+  highest_average: ClubLegendEntry[];
+  best_seasons: ClubLegendEntry[];
+  most_teams_represented: ClubLegendEntry[];
+  most_leagues_seen: ClubLegendEntry[];
+};
+
+export function normalizeClubLegendsPayload(
+  raw: Partial<ClubLegendsPayload> | null | undefined,
+): ClubLegendsPayload {
+  return {
+    club: raw?.club ?? "",
+    most_seasons: raw?.most_seasons ?? [],
+    most_games: raw?.most_games ?? [],
+    highest_average: raw?.highest_average ?? [],
+    best_seasons: raw?.best_seasons ?? [],
+    most_teams_represented: raw?.most_teams_represented ?? [],
+    most_leagues_seen: raw?.most_leagues_seen ?? [],
+  };
+}
+
+export type ClubPlayerResultsPayload = {
+  club: string;
+  table: TableData;
+};
+
+export function useClubPlayerResults(club: string | null, options?: { enabled?: boolean }) {
+  const database =
+    typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("database")
+      : null;
+  const enabled = options?.enabled ?? true;
+  return useQuery({
+    queryKey: ["league", "club-player-results", database ?? "", club ?? ""],
+    queryFn: () =>
+      fetchJson<ClubPlayerResultsPayload>(
+        buildUrl("/league/get_club_player_results", { club: club || undefined }),
+      ),
+    staleTime: DIAGNOSIS_LIST_STALE_MS,
+    enabled: enabled && Boolean(club),
+  });
+}
+
+export function useClubLegends(club: string | null, options?: { enabled?: boolean }) {
+  const database =
+    typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("database")
+      : null;
+  const enabled = options?.enabled ?? true;
+  return useQuery({
+    queryKey: ["league", "club-legends", database ?? "", club ?? ""],
+    queryFn: () =>
+      fetchJson<ClubLegendsPayload>(
+        buildUrl("/league/get_club_legends", { club: club || undefined }),
+      ),
+    select: normalizeClubLegendsPayload,
+    staleTime: DIAGNOSIS_LIST_STALE_MS,
+    enabled: enabled && Boolean(club),
+  });
+}
+
 export function useClubMatrix(
   club: string | null,
   onlyUnnumbered: boolean,

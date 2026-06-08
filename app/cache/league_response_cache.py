@@ -43,6 +43,8 @@ _ENDPOINT_PAYLOAD_VERSION: Dict[str, str] = {
     "get_latest_events": "latest-events-v1",
     "get_team_vs_team_comparison": "unplayed-empty-v3",
     "get_club_matrix": "matrix-pos-v2",
+    "get_club_legends": "club-legends-v2",
+    "get_club_player_results": "club-player-results-v2",
     "get_tournament_section": "round-results-net-rank-v15",
     "get_player_section": "player-round-hcp-per-game-v1",
     "get_tournament_field_progress": "field-progress-v4",

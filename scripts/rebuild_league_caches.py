@@ -19,6 +19,8 @@ Published stack (league + scrape merge + tournaments + player hybrid):
   and one cached response per division code that has data that season
 - All league-scoped endpoints per (season, league) and league-wide aggregation tables
 - With --warm-clubs (default): team list + get_club_matrix for every club (club page)
+- With --warm-club-legends (default with --all-published): get_club_legends per club
+  (separate warm phase from club matrix — expensive player aggregations)
 - With --all-published: also player_search (db_player_merged_hybrid) + tournament caches
 
 Usage:
@@ -68,6 +70,7 @@ def _run_league_rebuild(
     languages: str,
     dry_run: bool,
     warm_clubs: bool,
+    warm_club_legends: bool,
     workers: int,
 ) -> int:
     mod = _load_warm_module()
@@ -88,6 +91,8 @@ def _run_league_rebuild(
             sys.argv.append("--dry-run")
         if warm_clubs:
             sys.argv.append("--warm-clubs")
+        if warm_club_legends:
+            sys.argv.append("--warm-club-legends")
         if workers > 0:
             sys.argv.extend(["--workers", str(workers)])
         return int(mod.main())
@@ -168,6 +173,16 @@ def main() -> int:
         help="Skip club matrix + team_get_teams cache jobs (faster; smaller cache)",
     )
     parser.add_argument(
+        "--no-warm-club-legends",
+        action="store_true",
+        help="Skip get_club_legends per club (player highlight aggregations)",
+    )
+    parser.add_argument(
+        "--warm-club-legends",
+        action="store_true",
+        help="Warm get_club_legends per club (default with --all-published)",
+    )
+    parser.add_argument(
         "--skip-player",
         action="store_true",
         help="With --all-published: skip player_search warm",
@@ -186,14 +201,18 @@ def main() -> int:
     args = parser.parse_args()
 
     warm_clubs = not args.no_warm_clubs
+    warm_club_legends = args.warm_club_legends or (
+        args.all_published and not args.no_warm_club_legends
+    )
 
     if args.all_published:
-        print("=== published league cache (db_real_merged + clubs) ===")
+        print("=== published league cache (db_real_merged + clubs + club legends) ===")
         code = _run_league_rebuild(
             PUBLISHED_LEAGUE_DATABASE,
             languages=args.languages,
             dry_run=args.dry_run,
             warm_clubs=warm_clubs,
+            warm_club_legends=warm_club_legends,
             workers=args.workers,
         )
         if code != 0:
@@ -219,6 +238,7 @@ def main() -> int:
         languages=args.languages,
         dry_run=args.dry_run,
         warm_clubs=warm_clubs,
+        warm_club_legends=warm_club_legends,
         workers=args.workers,
     )
 

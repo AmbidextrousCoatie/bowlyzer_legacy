@@ -8,6 +8,7 @@ Shards:
   - one process per season (--phase seasons)
   - one process per league for meta / league-wide charts (--phase league-wide)
   - club matrix split into batches (--phase clubs --clubs-offset/--clubs-limit)
+  - club legends split into batches (--phase club-legends --warm-club-legends)
 
 Usage:
   uv run python scripts/warm_league_cache_shard.py --database db_real_merged --rebuild --warm-clubs
@@ -202,6 +203,11 @@ def main() -> int:
     parser.add_argument("--rebuild", action="store_true", help="Invalidate cache once before shards")
     parser.add_argument("--warm-clubs", action="store_true")
     parser.add_argument(
+        "--warm-club-legends",
+        action="store_true",
+        help="Shard get_club_legends per club (separate from --warm-clubs)",
+    )
+    parser.add_argument(
         "--clubs-per-shard",
         type=int,
         default=12,
@@ -222,6 +228,7 @@ def main() -> int:
     parser.add_argument("--skip-seasons", action="store_true")
     parser.add_argument("--skip-meta", action="store_true")
     parser.add_argument("--skip-clubs", action="store_true")
+    parser.add_argument("--skip-club-legends", action="store_true")
     parser.add_argument(
         "--standings-no-division-grid",
         action="store_true",
@@ -267,9 +274,11 @@ def main() -> int:
     shards = build_warm_shards(
         catalog,
         warm_clubs=args.warm_clubs,
+        warm_club_legends=args.warm_club_legends,
         skip_seasons=args.skip_seasons,
         skip_meta=args.skip_meta,
         skip_clubs=args.skip_clubs,
+        skip_club_legends=args.skip_club_legends,
         meta_per_league=not args.meta_monolith,
         clubs_per_shard=args.clubs_per_shard,
         season_filter=args.season,
