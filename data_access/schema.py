@@ -6,7 +6,8 @@ class Columns:
     season: str = 'Season'
     week: str = 'Week'
     date: str = 'Date'
-    league_name: str = 'League'
+    event: str = 'Event'  # Unified competition id (league code or tournament title)
+    league_name: str = 'Event'  # Semantic alias — same column as event on league rows
     players_per_team: str = 'Players per Team'
     location: str = 'Location'
     round_number: str = 'Round Number'
@@ -24,7 +25,7 @@ class Columns:
     
     # New tournament-specific fields
     event_type: str = 'Event Type'  # 'league' or 'tournament'
-    event_name: str = 'Event Name'  # Generic event name (league or tournament)
+    event_name: str = 'Event Name'  # Legacy tournament column; published v2 uses event ('Event')
     round_name: str = 'Round Name'  # Tournament stage name (Vorlauf, Zwischenlauf, Finale)
     club: str = 'Club'  # Player club/team label
     game_number: str = 'Game Number'  # Game within series (reuses round_number concept)
@@ -40,7 +41,7 @@ class Columns:
 
     def get_column_names(self, selection=None):
         if selection is None:
-            return [self.season, self.week, self.date, self.league_name, self.players_per_team, self.location, self.round_number, 
+            return [self.season, self.week, self.date, self.event, self.league_name, self.players_per_team, self.location, self.round_number, 
                     self.match_number, self.team_name, self.position, self.player_name, self.player_id, self.team_name_opponent,
                     self.score, self.points, self.bonus_points, self.input_data, self.computed_data, self.event_type, self.event_name, 
                     self.round_name, self.club, self.game_number, self.handicap, self.apriori_average,

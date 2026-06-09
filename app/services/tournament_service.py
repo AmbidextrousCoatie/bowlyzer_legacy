@@ -545,9 +545,13 @@ class TournamentService:
             col = df[Columns.season].astype(str).str.strip()
             df = df[col.isin(tokens)]
 
-        if tournament and Columns.event_name in df.columns:
-            tournament_norm = str(tournament).strip()
-            df = df[df[Columns.event_name].astype(str).str.strip().eq(tournament_norm)]
+        if tournament:
+            from data_access.competition_schema import competition_event_column
+
+            event_col = competition_event_column(df)
+            if event_col:
+                tournament_norm = str(tournament).strip()
+                df = df[df[event_col].astype(str).str.strip().eq(tournament_norm)]
 
         # Normalize frequently used tournament keys so downstream groupby/pivot
         # logic is stable even when source CSV has empty cells (read as NaN).
@@ -564,9 +568,12 @@ class TournamentService:
 
     def get_tournaments(self, season: Optional[str] = None) -> List[str]:
         df = self._get_tournament_df(season=season, tournament=None)
-        if df.empty or Columns.event_name not in df.columns:
+        from data_access.competition_schema import competition_event_column
+
+        event_col = competition_event_column(df)
+        if df.empty or not event_col:
             return []
-        return sorted([x for x in df[Columns.event_name].dropna().astype(str).unique().tolist() if x.strip()])
+        return sorted([x for x in df[event_col].dropna().astype(str).unique().tolist() if x.strip()])
 
     def get_seasons(self, tournament: Optional[str] = None) -> List[str]:
         df = self._get_tournament_df(season=None, tournament=tournament)

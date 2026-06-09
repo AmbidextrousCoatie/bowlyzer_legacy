@@ -8,15 +8,20 @@ By default **does not** include legacy web-scrape data. Add ``--with-legacy-scra
 GF pipeline is always last among the built-in sources).
 
 Outputs (under ``BOWLYZER_DATA_DIR`` / ``database/data`` by default):
+  - ``players_registry.parquet`` — EDV ids + canonical names (Aktive Mitglieder + configs)
   - ``league_results_merged.csv``  — historical + GF pipeline league (deduped)
   - ``tournaments_postprocessed.csv`` — GF regional tournaments + manual imports
+
+League/tournament jobs automatically run ``players_registry`` first unless
+``--skip-players-registry`` is passed.
 
 Intermediate / duplicate reports go to ``BOWLYZER_WORK_DATA_DIR`` (e.g. ``C:\\tmp\\bowlyzer\\data``).
 
 Usage:
   uv run python scripts/build_published_dataset.py
+  uv run python scripts/build_published_dataset.py --job league,tournament
+  uv run python scripts/build_players_registry.py
   uv run python scripts/build_published_dataset.py --dry-run
-  uv run python scripts/build_published_dataset.py --with-player-hybrid
 """
 
 from __future__ import annotations
@@ -50,8 +55,39 @@ from scripts.audit_player_id_names import audit_player_id_names, format_summary,
 from scripts.merge_league_sources import CSV_SEP, DEFAULT_KEYS, merge_sources
 
 PLAYER_ID_NAME_CONFLICTS_CSV = "player_id_name_conflicts.csv"
+VALID_JOBS = frozenset({"league", "tournament", "player_hybrid", "players_registry"})
+_REGISTRY_PREREQUISITE_JOBS = frozenset({"league", "tournament", "player_hybrid"})
 
 CSV_READ_KW = {"sep": CSV_SEP, "dtype": str, "low_memory": False}
+
+
+def parse_job_names(raw: str) -> List[str]:
+    jobs = [part.strip() for part in str(raw or "").split(",") if part.strip()]
+    unknown = sorted(set(jobs) - VALID_JOBS)
+    if unknown:
+        raise ValueError(f"Unknown --job value(s): {unknown}. Valid: {sorted(VALID_JOBS)}")
+    if not jobs:
+        raise ValueError("--job must list at least one of: league, tournament, player_hybrid")
+    return jobs
+
+
+def order_publish_jobs(
+    job_names: List[str],
+    *,
+    auto_players_registry: bool,
+) -> List[str]:
+    """Run ``players_registry`` before league/tournament parsing when needed."""
+    ordered: List[str] = []
+    if auto_players_registry and "players_registry" not in job_names:
+        if any(job in _REGISTRY_PREREQUISITE_JOBS for job in job_names):
+            ordered.append("players_registry")
+    for job in job_names:
+        if job == "players_registry" and "players_registry" not in ordered:
+            ordered.append(job)
+            continue
+        if job != "players_registry":
+            ordered.append(job)
+    return ordered
 
 
 def _existing(paths: List[Path]) -> List[Path]:
@@ -111,8 +147,10 @@ def merge_tournament_sources(
     if combined.columns.duplicated().any():
         combined = combined.loc[:, ~combined.columns.duplicated()].copy()
 
+    from data_access.competition_schema import apply_tournament_competition_schema_v2
     from data_access.parquet_sidecar import publish_dataframe
 
+    combined = apply_tournament_competition_schema_v2(combined)
     published = publish_dataframe(combined, out_path, write_csv=write_csv, sep=CSV_SEP)
 
     return {
@@ -152,14 +190,7 @@ def build_player_hybrid(
 
     out_rows: List[Dict[str, str]] = []
     for row in league_rows:
-        merged = {h: str(row.get(h, "")) for h in headers}
-        if not str(merged.get("Event Type", "")).strip():
-            merged["Event Type"] = "league"
-        if not str(merged.get("Event Name", "")).strip():
-            merged["Event Name"] = str(merged.get("League", "")).strip()
-        if not str(merged.get("Club", "")).strip():
-            merged["Club"] = str(merged.get("Team", "")).strip()
-        out_rows.append(merged)
+        out_rows.append({h: str(row.get(h, "")) for h in headers})
 
     for row in tournament_rows:
         merged = {h: str(row.get(h, "")) for h in headers}
@@ -172,17 +203,20 @@ def build_player_hybrid(
         apply_player_id_name_normalization,
         format_normalization_summary as format_player_id_normalization_summary,
     )
-    from data_access.player_name_normalization_config import (
-        apply_player_name_normalization,
-        format_normalization_summary as format_player_name_normalization_summary,
+    from data_access.players_registry import (
+        apply_players_registry,
+        format_registry_apply_summary,
+        load_players_registry_df,
     )
 
-    hybrid_df, player_id_stats = apply_player_id_name_normalization(hybrid_df)
+    hybrid_df, player_id_stats = apply_player_id_name_normalization(hybrid_df, id_only=True)
     if player_id_stats:
         print(format_player_id_normalization_summary(player_id_stats))
-    hybrid_df, player_name_stats = apply_player_name_normalization(hybrid_df)
-    if player_name_stats:
-        print(format_player_name_normalization_summary(player_name_stats))
+    registry_df = load_players_registry_df()
+    if registry_df is not None and not registry_df.empty:
+        hybrid_df, registry_stats = apply_players_registry(hybrid_df, registry_df)
+        if registry_stats:
+            print(format_registry_apply_summary(registry_stats))
 
     published = publish_dataframe(hybrid_df, out_path, write_csv=write_csv, sep=CSV_SEP)
     if write_csv:
@@ -243,19 +277,24 @@ def main() -> int:
         help=f"Merged tournaments output (default: {tournaments_postprocessed_csv()})",
     )
     parser.add_argument(
+        "--job",
+        default="league,tournament",
+        help="Comma-separated publish jobs: league, tournament, player_hybrid (default: league,tournament).",
+    )
+    parser.add_argument(
         "--with-player-hybrid",
         action="store_true",
-        help="Also write player_stats_merged_plus_tournaments.csv (league copy + tournaments).",
+        help="Deprecated: use --job player_hybrid. Writes legacy single-file Spieler artifact.",
     )
     parser.add_argument(
         "--league-only",
         action="store_true",
-        help="Only merge league sources; skip tournaments.",
+        help="Deprecated: use --job league.",
     )
     parser.add_argument(
         "--tournaments-only",
         action="store_true",
-        help="Only merge tournament sources; skip league.",
+        help="Deprecated: use --job tournament.",
     )
     parser.add_argument(
         "--dry-run",
@@ -301,7 +340,52 @@ def main() -> int:
         action="store_true",
         help="Disable tqdm progress bars during team-name normalization (merge step)",
     )
+    parser.add_argument(
+        "--no-write-manifest",
+        action="store_true",
+        help="Skip writing database/data/runs/latest.json (default: write manifest).",
+    )
+    parser.add_argument(
+        "--no-strict-audit",
+        action="store_true",
+        help="Allow publish when player ID/name audit reports conflicts (default: block).",
+    )
+    parser.add_argument(
+        "--force-publish",
+        action="store_true",
+        help="Publish despite blocking audits; records forced=true in manifest.",
+    )
+    parser.add_argument(
+        "--skip-players-registry",
+        action="store_true",
+        help=(
+            "Do not build players_registry before league/tournament jobs "
+            "(default: import Aktive Mitglieder + configs first)."
+        ),
+    )
     args = parser.parse_args()
+
+    if args.league_only:
+        job_names = ["league"]
+    elif args.tournaments_only:
+        job_names = ["tournament"]
+    else:
+        try:
+            job_names = parse_job_names(args.job)
+        except ValueError as exc:
+            print(f"Error: {exc}", file=sys.stderr)
+            return 2
+    if args.with_player_hybrid and "player_hybrid" not in job_names:
+        job_names.append("player_hybrid")
+    job_names = order_publish_jobs(
+        job_names,
+        auto_players_registry=not args.skip_players_registry,
+    )
+
+    run_league = "league" in job_names
+    run_tournament = "tournament" in job_names
+    run_player_hybrid = "player_hybrid" in job_names
+    run_players_registry = "players_registry" in job_names
 
     historical = (args.historical or historical_league_results_csv()).resolve()
     gf_league = (args.gf_league or pipeline_gf_league_csv()).resolve()
@@ -330,16 +414,19 @@ def main() -> int:
     print(f"  manual:         {manual_tournaments}")
     tournament_inputs = _existing([gf_tournaments, manual_tournaments])
     print(f"  output:         {tournaments_out}")
-    if args.with_player_hybrid:
-        print()
-        print("Player hybrid:")
-        print(f"  output:         {player_stats_merged_hybrid_csv().resolve()}")
+    print()
+    print(f"Jobs: {', '.join(job_names)}")
+    if run_player_hybrid:
+        print(f"  player_hybrid (deprecated): {player_stats_merged_hybrid_csv().resolve()}")
 
     if args.dry_run:
         return 0
 
-    summary: Dict[str, Any] = {"paths": {"data_dir": str(get_data_dir()), "work_dir": str(get_work_data_dir())}}
+    data_dir = get_data_dir()
+    work_dir = get_work_data_dir()
+    summary: Dict[str, Any] = {"paths": {"data_dir": str(data_dir), "work_dir": str(work_dir)}}
     player_id_audit_paths: List[Path] = []
+    jobs_run: List[str] = []
 
     if not args.skip_female_league_audit:
         audit_paths = [
@@ -358,7 +445,18 @@ def main() -> int:
                 )
                 return 2
 
-    if not args.tournaments_only:
+    if run_players_registry:
+        from data_access.players_registry import build_and_publish_players_registry
+
+        print("==> building players registry (Aktive Mitglieder + configs) …")
+        registry_summary = build_and_publish_players_registry(write_csv=args.write_csv)
+        aktive_line = registry_summary.get("aktive_import_summary")
+        if aktive_line:
+            print(aktive_line)
+        summary["players_registry"] = registry_summary
+        jobs_run.append("players_registry")
+
+    if run_league:
         if len(league_inputs) < 2:
             print(
                 "Error: need at least two league input files after resolving paths. "
@@ -374,9 +472,10 @@ def main() -> int:
             write_csv=args.write_csv,
             show_progress=not args.no_progress,
         )
+        jobs_run.append("league")
         player_id_audit_paths.append(league_out)
 
-    if not args.league_only:
+    if run_tournament:
         if not tournament_inputs:
             print("Error: no tournament input files found.", file=sys.stderr)
             return 2
@@ -386,8 +485,9 @@ def main() -> int:
             tournaments_out,
             write_csv=args.write_csv,
         )
+        jobs_run.append("tournament")
 
-    if args.with_player_hybrid:
+    if run_player_hybrid:
         from data_access.parquet_sidecar import data_file_exists
 
         if not data_file_exists(league_out):
@@ -401,6 +501,7 @@ def main() -> int:
             hybrid_out,
             write_csv=args.write_csv,
         )
+        jobs_run.append("player_hybrid")
         player_id_audit_paths.append(hybrid_out)
 
     if not args.skip_player_id_name_audit and player_id_audit_paths:
@@ -432,6 +533,60 @@ def main() -> int:
                 "detail_rows": 0,
             }
             print(f"Player ID/name audit: no conflicts; empty report at {report_path}")
+
+    from data_access.publish_gate import evaluate_publish_gate, rollback_published_outputs
+
+    gate = evaluate_publish_gate(
+        summary,
+        strict_audit=not args.no_strict_audit,
+        force_publish=bool(args.force_publish),
+        skip_player_id_name_audit=bool(args.skip_player_id_name_audit),
+    )
+    summary["publish_gate"] = gate
+
+    if gate["blocked"]:
+        removed = rollback_published_outputs(summary)
+        summary["publish_gate"]["rolled_back_paths"] = removed
+        print(
+            "Error: publish blocked by strict audit "
+            f"({', '.join(gate['blocking_audit_ids'])}). "
+            "Resolve conflicts, use --force-publish, or pass --no-strict-audit.",
+            file=sys.stderr,
+        )
+        if removed:
+            print("Rolled back:", ", ".join(removed), file=sys.stderr)
+        print()
+        print(json.dumps(summary, indent=2, ensure_ascii=False))
+        return 1
+
+    if gate["blocking_audit_ids"] and args.force_publish:
+        print(
+            "Warning: --force-publish overriding blocking audits: "
+            + ", ".join(gate["blocking_audit_ids"]),
+            file=sys.stderr,
+        )
+
+    if not args.no_write_manifest and jobs_run:
+        from data_access.publish_manifest import build_publish_manifest, write_publish_manifest
+
+        manifest = build_publish_manifest(
+            summary=summary,
+            data_dir=data_dir,
+            work_dir=work_dir,
+            jobs_run=jobs_run,
+            forced=bool(args.force_publish and gate["blocking_audit_ids"]),
+            skip_female_league_audit=bool(args.skip_female_league_audit),
+            blocking_audit_ids=gate["blocking_audit_ids"] if args.force_publish else (),
+            deferred_audit_ids=gate.get("deferred_audit_ids") or (),
+        )
+        manifest_paths = write_publish_manifest(manifest, data_dir=data_dir)
+        summary["manifest"] = {
+            **manifest_paths,
+            "run_id": manifest["run_id"],
+            "published_at": manifest["published_at"],
+            "artifact_count": len(manifest.get("artifacts") or []),
+        }
+        print(f"==> manifest: {manifest_paths['latest']}")
 
     print()
     print(json.dumps(summary, indent=2, ensure_ascii=False))

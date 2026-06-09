@@ -1,41 +1,97 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchJson } from "../lib/api";
+
+import { useLanguage } from "../context/LanguageContext";
+
+import { buildUrl, fetchJson } from "../lib/api";
+
+
 
 type TranslationsPayload = {
+
   success: boolean;
+
   current_language?: string;
+
   translations?: Record<string, string>;
+
   translations_version?: string;
+
   message?: string;
+
 };
 
+
+
 /**
- * Server-driven i18n. Mirrors the legacy `/league/get_translations` flow:
- * one fetch returns the active language + translation map. We don't touch
- * sessionStorage caching here — TanStack Query handles in-memory caching.
+
+ * Server-driven i18n via ``/league/get_translations?language=…``.
+
+ * Language preference is also stored in a cookie by ``/league/set_language``.
+
  */
+
 export function useTranslations() {
+
+  const { language, setLanguage, toggleLanguage } = useLanguage();
+
+
+
   const query = useQuery({
-    queryKey: ["translations"],
-    queryFn: () => fetchJson<TranslationsPayload>("/league/get_translations"),
+
+    queryKey: ["translations", language] as const,
+
+    queryFn: () =>
+
+      fetchJson<TranslationsPayload>(
+
+        buildUrl("/league/get_translations", { language }),
+
+      ),
+
     staleTime: 60 * 60_000,
+
     gcTime: 24 * 60 * 60_000,
+
   });
 
-  const translations = query.data?.translations ?? {};
-  const language = query.data?.current_language ?? "de";
 
-  /**
-   * Look up a translation key. Returns the fallback if the key is missing or
-   * translations haven't loaded yet.
-   */
+
+  const translations = query.data?.translations ?? {};
+
+
+
   function t(key: string, fallback?: string): string {
+
     const value = translations[key];
+
     if (typeof value === "string" && value.length > 0 && value !== key) {
+
       return value;
+
     }
+
     return fallback ?? key;
+
   }
 
-  return { t, language, translations, query };
+
+
+  return {
+
+    t,
+
+    language,
+
+    translations,
+
+    query,
+
+    setLanguage,
+
+    toggleLanguage,
+
+  };
+
 }
+
+

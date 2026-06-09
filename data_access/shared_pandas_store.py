@@ -148,18 +148,22 @@ class LeagueMetadataIndex:
     teams_all: List[str] = field(default_factory=list)
 
 
+def _csv_flag_series(series: pd.Series) -> pd.Series:
+    if pd.api.types.is_bool_dtype(series.dtype):
+        work = series.astype("string")
+    else:
+        work = series.fillna("").astype(str)
+    return work.str.strip().str.lower()
+
+
 def _player_input_rows_mask(df: pd.DataFrame) -> pd.Series:
     from data_access.schema import Columns
 
     mask = pd.Series(True, index=df.index)
     if Columns.input_data in df.columns:
-        mask &= df[Columns.input_data].fillna("").astype(str).str.strip().str.lower().isin(
-            {"true", "1", "yes", "y", "on"}
-        )
+        mask &= _csv_flag_series(df[Columns.input_data]).isin({"true", "1", "yes", "y", "on"})
     if Columns.computed_data in df.columns:
-        mask &= df[Columns.computed_data].fillna("").astype(str).str.strip().str.lower().isin(
-            {"false", "0", "no", "n", "off", ""}
-        )
+        mask &= _csv_flag_series(df[Columns.computed_data]).isin({"false", "0", "no", "n", "off", ""})
     return mask
 
 

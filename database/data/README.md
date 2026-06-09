@@ -26,7 +26,8 @@ The app loads **`*.parquet`** when present (config paths still use the historica
 
 | Tournaments | `tournaments_postprocessed.csv` | small | varies |
 
-| Player hybrid | `player_stats_merged_plus_tournaments.csv` | ~5–15 MB | up to ~120 MB |
+| Spieler (runtime) | `league_results_merged` + `tournaments_postprocessed` | — | — |
+| ~~Player hybrid~~ (deprecated) | `player_stats_merged_plus_tournaments.csv` | optional | optional |
 
 
 
@@ -40,7 +41,7 @@ The app loads **`*.parquet`** when present (config paths still use the historica
 $env:BOWLYZER_WORK_DATA_DIR = "C:\tmp\bowlyzer\data"
 uv run python scripts/build_published_dataset.py --dry-run
 uv run python scripts/build_published_dataset.py
-# optional: --with-player-hybrid
+# optional: --job league  or  --job tournament  (default: league,tournament)
 # optional: --with-legacy-scrape  (merge legacy_scrape_extracted.csv from work dir)
 # optional: --extra-league C:\path\to\other.csv  (repeatable; before GF in priority)
 ```
@@ -51,12 +52,12 @@ Writes `league_results_merged.parquet`, `tournaments_postprocessed.parquet` by d
 
 
 
-### Full published rebuild (scrape + tournaments + player hybrid)
+### Full published rebuild (scrape + tournaments)
 
 
 
 ```powershell
-uv run python scripts/build_published_dataset.py --with-legacy-scrape --with-player-hybrid
+uv run python scripts/build_published_dataset.py --with-legacy-scrape
 uv run python scripts/rebuild_league_caches.py --all-published --workers 8
 ```
 

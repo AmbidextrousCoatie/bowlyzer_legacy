@@ -79,8 +79,13 @@ def test_merge_preserves_female_league_id(tmp_path: Path) -> None:
         & (merged["Player"].str.lower() == "team total")
         & (merged["Position"] == "0")
     ]
-    counts = sub.groupby("League")["Team"].nunique().to_dict()
+    counts = sub.groupby("Event")["Team"].nunique().to_dict()
     assert counts.get("BayL") == 10
     assert counts.get("BayL (D)") == 10
     assert counts.get("LL N1") == 8
     assert counts.get("LL N (D)") == 10
+    assert "League" not in merged.columns
+    assert "Event Type" in merged.columns
+    assert "Event" in merged.columns
+    assert "Club" in merged.columns
+    assert merged.loc[merged["Team"] == "Male Club 1 1", "Club"].iloc[0] == "Male Club 1"

@@ -4,6 +4,7 @@ from typing import Dict, List
 
 import pandas as pd
 
+from data_access.competition_schema import ensure_competition_core_columns_for_read
 from data_access.schema import Columns
 
 
@@ -12,7 +13,9 @@ BOOL_FALSE_TOKENS = {"false", "0", "no", "n", "off", ""}
 
 
 def _to_boolean_nullable(series: pd.Series) -> pd.Series:
-    normalized = series.fillna("").astype(str).str.strip().str.lower()
+    if pd.api.types.is_bool_dtype(series.dtype):
+        return series.astype("boolean")
+    normalized = series.astype("string").fillna("").str.strip().str.lower()
     mapped = normalized.map(
         lambda v: True if v in BOOL_TRUE_TOKENS else (False if v in BOOL_FALSE_TOKENS else pd.NA)
     )
@@ -31,7 +34,7 @@ def normalize_legacy_dataframe_types(df: pd.DataFrame) -> pd.DataFrame:
     if df is None or df.empty:
         return df
 
-    out = df.copy()
+    out = ensure_competition_core_columns_for_read(df.copy())
 
     numeric_int_cols = [
         Columns.week,

@@ -182,3 +182,17 @@ def tournaments_postprocessed_csv() -> Path:
 
 def player_stats_merged_hybrid_csv() -> Path:
     return get_data_dir() / "player_stats_merged_plus_tournaments.csv"
+
+
+def players_registry_csv() -> Path:
+    """Published player identity registry (logical CSV path; Parquet is primary)."""
+    return get_data_dir() / "players_registry.csv"
+
+
+def publish_runs_dir() -> Path:
+    """Per-publish manifest directory under published data (synced to VPS)."""
+    return get_data_dir() / "runs"
+
+
+def publish_latest_manifest() -> Path:
+    return publish_runs_dir() / "latest.json"

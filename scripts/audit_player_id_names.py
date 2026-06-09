@@ -40,7 +40,7 @@ import csv
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Iterable, List, Sequence, Tuple
+from typing import Dict, Iterable, List, Mapping, Sequence, Tuple
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
@@ -291,7 +291,7 @@ def _prepare_pair_stats(
     apply_normalization: bool = True,
 ) -> Tuple[str, Dict[Tuple[str, str], Dict[str, object]], Dict[str, set[str]], Dict[str, set[str]]] | None:
     from data_access.player_id_name_normalization import apply_player_id_name_normalization
-    from data_access.player_name_normalization_config import apply_player_name_normalization
+    from data_access.players_registry import apply_players_registry, load_players_registry_df
 
     path = data_path.resolve()
     label = source_file or path.name
@@ -309,8 +309,10 @@ def _prepare_pair_stats(
         work[Columns.season] = ""
 
     if apply_normalization:
-        work, _stats = apply_player_id_name_normalization(work)
-        work, _name_stats = apply_player_name_normalization(work)
+        work, _stats = apply_player_id_name_normalization(work, id_only=True)
+        registry_df = load_players_registry_df()
+        if registry_df is not None and not registry_df.empty:
+            work, _registry_stats = apply_players_registry(work, registry_df)
 
     work["name"] = work[name_col].map(normalize_player_name)
     work["pid"] = work[id_col].map(normalize_player_id)
@@ -488,6 +490,24 @@ def _name_reassembly_autoresolve_for_id_group(
     return out
 
 
+def _registry_proposals_for_id_name_group(
+    player_id: str,
+    names: Iterable[str],
+    lookup: Mapping[str, Mapping[str, str]],
+) -> Dict[str, Tuple[str, str, str]]:
+    """Per raw name: (autoresolve_rule, proposed_name, canonical_name) from registry only."""
+    from data_access.players_registry import resolve_player_name_for_id
+
+    out: Dict[str, Tuple[str, str, str]] = {}
+    for name in names:
+        resolved, kind = resolve_player_name_for_id(name, player_id, lookup)
+        if resolved and kind != "unresolved" and normalize_player_label(resolved) != normalize_player_label(name):
+            out[name] = ("registry", resolved, resolved)
+        else:
+            out[name] = ("", "", canonicalize_player_name(name))
+    return out
+
+
 def _audit_multi_name(
     label: str,
     pair_stats: Dict[Tuple[str, str], Dict[str, object]],
@@ -495,20 +515,30 @@ def _audit_multi_name(
     *,
     apply_normalization: bool = True,
 ) -> List[PlayerIdNameConflict]:
-    from data_access.player_name_normalization_config import is_same_person_name_group
+    from data_access.players_registry import load_players_registry_df, registry_accepts_all_names_for_id
 
     conflicts: List[PlayerIdNameConflict] = []
+    registry_df = load_players_registry_df() if apply_normalization else None
+    lookup = {}
+    if registry_df is not None and not registry_df.empty:
+        from data_access.players_registry import registry_lookup_by_id
+
+        lookup = registry_lookup_by_id(registry_df)
 
     for pid, names in sorted(id_to_names.items()):
         if len(names) < 2:
             continue
-        if apply_normalization and is_same_person_name_group(pid, set(names)):
+        if apply_normalization and lookup and registry_accepts_all_names_for_id(pid, names, lookup):
             continue
         sorted_names = sorted(names, key=lambda n: n.lower())
         counts_by_name = {
             name: int(pair_stats[(name, pid)]["row_count"]) for name in sorted_names
         }
-        autoresolve_by_name = _merge_autoresolve_for_id_name_group(sorted_names, counts_by_name)
+        autoresolve_by_name = (
+            _registry_proposals_for_id_name_group(pid, sorted_names, lookup)
+            if lookup
+            else {name: ("", "", canonicalize_player_name(name)) for name in sorted_names}
+        )
         for name in sorted_names:
             stats = pair_stats[(name, pid)]
             peer_names = [x for x in sorted_names if x != name]

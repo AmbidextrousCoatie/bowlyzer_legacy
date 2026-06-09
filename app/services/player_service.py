@@ -70,6 +70,11 @@ class PlayerService:
         cleaned = [str(n).strip() for n in names if str(n).strip()]
         if not cleaned:
             return ""
+        from data_access.players_registry import canonical_name_for_player_id
+
+        registry_name = canonical_name_for_player_id(player_id)
+        if registry_name:
+            return registry_name
         if len(set(cleaned)) == 1:
             return cleaned[0]
 
@@ -190,10 +195,14 @@ class PlayerService:
             base = base.loc[
                 base[Columns.league_name].astype(str).str.strip().eq(str(league_value).strip())
             ]
-        if event_value and Columns.event_name in base.columns:
-            base = base.loc[
-                base[Columns.event_name].astype(str).str.strip().eq(str(event_value).strip())
-            ]
+        if event_value:
+            from data_access.competition_schema import competition_event_column
+
+            event_col = competition_event_column(base)
+            if event_col:
+                base = base.loc[
+                    base[event_col].astype(str).str.strip().eq(str(event_value).strip())
+                ]
         if tournament_only and Columns.event_type in base.columns:
             base = base.loc[base[Columns.event_type].astype(str).str.strip().str.lower().eq("tournament")]
         return self._safe_player_rows(base)
@@ -336,8 +345,11 @@ class PlayerService:
             return re.sub(r"\s+\d+$", "", label)
 
         def competition_name(df: pd.DataFrame) -> str:
-            if Columns.event_name in df.columns:
-                vals = [str(x).strip() for x in df[Columns.event_name].dropna().tolist() if str(x).strip()]
+            from data_access.competition_schema import competition_event_column
+
+            event_col = competition_event_column(df)
+            if event_col:
+                vals = [str(x).strip() for x in df[event_col].dropna().tolist() if str(x).strip()]
                 if vals:
                     return vals[0]
             if Columns.league_name in df.columns:
@@ -366,7 +378,9 @@ class PlayerService:
 
         def event_label(row: pd.Series) -> str:
             event = ""
-            if Columns.event_name in row and pd.notna(row.get(Columns.event_name)):
+            if Columns.event in row.index and pd.notna(row.get(Columns.event)):
+                event = str(row.get(Columns.event)).strip()
+            elif Columns.event_name in row.index and pd.notna(row.get(Columns.event_name)):
                 event = str(row.get(Columns.event_name)).strip()
             if not event and Columns.league_name in row and pd.notna(row.get(Columns.league_name)):
                 event = str(row.get(Columns.league_name)).strip()
@@ -549,7 +563,12 @@ class PlayerService:
             })
 
             # Add competition-specific rows inside the selected season timeframe.
-            comp_group_col = Columns.event_name if Columns.event_name in data.columns else Columns.league_name
+            if Columns.event in data.columns:
+                comp_group_col = Columns.event
+            elif Columns.event_name in data.columns:
+                comp_group_col = Columns.event_name
+            else:
+                comp_group_col = Columns.league_name
             if comp_group_col in data.columns:
                 group_cols = [comp_group_col]
                 if Columns.team_name in data.columns:

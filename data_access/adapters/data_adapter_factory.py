@@ -23,25 +23,13 @@ class DataAdapterFactory:
         import pandas as pd
 
         merge_paths = getattr(config, "merge_file_paths", None) or ()
-        if merge_paths:
-            paths: List[pathlib.Path] = []
-            if config.file_path:
-                primary = pathlib.Path(config.file_path)
-                if primary.is_file():
-                    paths.append(primary)
-            for extra in merge_paths:
-                p = pathlib.Path(extra)
-                if p.is_file():
-                    paths.append(p)
-            if paths:
-                dfs = [
-                    pd.read_csv(p, sep=";", dtype=str, low_memory=False) for p in paths
-                ]
-                merged = pd.concat(dfs, ignore_index=True)
-                # Duplicate header names (e.g. BOM-prefixed "Season") break filters; keep first column each.
-                merged = merged.loc[:, ~merged.columns.duplicated()].copy()
-                return DataAdapterPandas(df=merged)
-            return None
+        if merge_paths and config.file_path:
+            from data_access.shared_pandas_store import load_dataframe_for_paths
+
+            primary = pathlib.Path(config.file_path)
+            extras = tuple(pathlib.Path(p) for p in merge_paths)
+            df = load_dataframe_for_paths(primary, extras)
+            return DataAdapterPandas(df=df)
 
         if config.file_path:
             return DataAdapterPandas(path_to_csv_data=pathlib.Path(config.file_path))

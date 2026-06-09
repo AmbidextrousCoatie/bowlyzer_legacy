@@ -26,14 +26,50 @@ export type PipelineAppSource = PipelineArtifact & {
   filename: string;
 };
 
+export type ManifestAuditEntry = {
+  status?: string;
+  report?: string;
+  detail_rows?: number;
+};
+
+export type ManifestArtifactSummary = {
+  job?: string;
+  stream?: string;
+  source_id?: string;
+  row_count?: number | null;
+  columns_hash?: string;
+  schema_version?: number;
+  input_source_count?: number;
+  deprecated?: boolean;
+};
+
+export type ManifestSummary = {
+  present: boolean;
+  run_id?: string;
+  published_at?: string;
+  forced?: boolean;
+  data_schema_version?: number;
+  jobs_run?: string[];
+  artifact_count?: number;
+  artifacts?: ManifestArtifactSummary[];
+  audits?: Record<string, ManifestAuditEntry>;
+  blocking_audit_ids?: string[];
+  audit_overall?: "ok" | "warn" | "blocked" | "forced" | "deferred";
+  deferred_audit_ids?: string[];
+};
+
 export type PipelineStatusResponse = {
   generated_at_utc: string;
+  expose_operator_paths: boolean;
   paths: {
-    published_data_dir: string;
-    work_data_dir: string;
+    published_data_dir?: string;
+    work_data_dir?: string;
     work_dir_readable: boolean;
+    latest_manifest?: string;
   };
   last_publish_mtime_utc: string | null;
+  manifest_summary: ManifestSummary;
+  latest_manifest?: Record<string, unknown> | null;
   published_artifacts: PipelineArtifact[];
   app_sources: PipelineAppSource[];
   config_fingerprints: Record<string, string | Record<string, unknown>>;

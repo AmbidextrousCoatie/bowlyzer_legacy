@@ -762,21 +762,27 @@ def get_team_averages():
 def set_language():
     """Set the current language"""
     try:
-        data = request.get_json()
+        data = request.get_json(silent=True) or {}
         language_code = data.get('language')
-        
-        if language_code == 'en':
-            i18n_service.set_language(Language.ENGLISH)
-        elif language_code == 'de':
-            i18n_service.set_language(Language.GERMAN)
-        else:
+        resolved = i18n_service.language_from_code(language_code)
+        if resolved is None:
             return jsonify({"error": "Invalid language code"}), 400
-        
-        return jsonify({
+
+        i18n_service.set_language(resolved)
+        payload = {
             "success": True,
             "language": language_code,
             "available_languages": i18n_service.get_available_languages()
-        })
+        }
+        response = jsonify(payload)
+        response.set_cookie(
+            "bowlyzer_lang",
+            language_code,
+            max_age=365 * 24 * 3600,
+            path="/",
+            samesite="Lax",
+        )
+        return response
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -784,6 +790,8 @@ def set_language():
 def get_translations():
     """Get all translations for the current language"""
     try:
+        lang_code = request.args.get("language") or request.cookies.get("bowlyzer_lang")
+        active_lang = i18n_service.apply_language_code(lang_code)
         # Include exposure-layer fingerprint in version so frontend cache invalidates
         # when this endpoint's exported key list changes (even if catalog keys don't).
         exposure_fingerprint = hashlib.md5(
@@ -791,11 +799,11 @@ def get_translations():
         ).hexdigest()[:8]
         return jsonify({
             "success": True,
-            "current_language": i18n_service.get_current_language().value,
+            "current_language": active_lang.value,
             "available_languages": i18n_service.get_available_languages(),
             "translations_version": f"{i18n_service.get_translations_version()}-exp-{exposure_fingerprint}",
             "translations": {
-                key: i18n_service.get_text(key) 
+                key: i18n_service.get_text_for_language(key, active_lang)
                 for key in [
                     # Common table headers
                     "points", "points_long", "score", "both", "average", "position", "team", "name", "week", "total",
@@ -847,6 +855,9 @@ def get_translations():
 
                     # Namespaced: UI languages
                     "ui.language.english", "ui.language.german",
+                    "ui.nav.home", "ui.nav.search", "ui.nav.impressum",
+                    "ui.nav.group_start", "ui.nav.group_play", "ui.nav.group_actors",
+                    "ui.nav.group_diagnosis",
 
                     # Namespaced: actions and status
                     "action.refresh", "action.update", "action.dismiss",
@@ -997,6 +1008,9 @@ def get_translations():
                     "ui.tournament.lb_group_players",
                     "ui.tournament.lb_group_scratch",
                     "ui.tournament.lb_group_net",
+                    "ui.tournament.lb_sort_mode",
+                    "ui.tournament.lb_sort_total",
+                    "ui.tournament.lb_sort_average",
                     "ui.tournament.lb_total_scratch",
                     "ui.tournament.lb_avg_scratch",
                     "ui.tournament.lb_total_net",

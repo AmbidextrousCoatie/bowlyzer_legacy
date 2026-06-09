@@ -320,7 +320,7 @@ def _build_player_combined_rows(
         if not str(merged.get("Event Type", "")).strip():
             merged["Event Type"] = "league"
         if not str(merged.get("Event Name", "")).strip():
-            merged["Event Name"] = str(merged.get("League", "")).strip()
+            merged["Event Name"] = str(merged.get("Event", merged.get("League", ""))).strip()
         if not str(merged.get("Club", "")).strip():
             merged["Club"] = str(merged.get("Team", "")).strip()
         out.append(merged)

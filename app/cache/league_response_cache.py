@@ -54,9 +54,9 @@ _ENDPOINT_PAYLOAD_VERSION: Dict[str, str] = {
     "get_available_seasons": "metadata-index-v1",
     "get_available_leagues": "metadata-index-v1",
     "team_get_teams": "metadata-index-v1",
-    "player_search": "player-catalog-v1",
-    "player_get_available_seasons": "player-subset-v1",
-    "get_lifetime_stats": "player-lifetime-v1",
+    "player_search": "player-catalog-v2-runtime-merge",
+    "player_get_available_seasons": "player-subset-v2-runtime-merge",
+    "get_lifetime_stats": "player-lifetime-v2-runtime-merge",
 }
 
 

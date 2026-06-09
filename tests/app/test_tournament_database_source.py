@@ -9,6 +9,16 @@ from app.config.database_config import database_config
 from app.routes import tournament_routes
 
 
+def test_player_merged_hybrid_uses_runtime_league_plus_tournament_merge() -> None:
+    cfg = database_config.get_source_config("db_player_merged_hybrid")
+    assert cfg is not None
+    assert cfg.is_enabled
+    assert cfg.filename == "league_results_merged.csv"
+    assert len(cfg.merge_file_paths) == 1
+    assert Path(cfg.merge_file_paths[0]).name == "tournaments_postprocessed.csv"
+    assert Path(cfg.file_path or "").name == "league_results_merged.csv"
+
+
 def test_tournament_regions_uses_published_merge_file() -> None:
     cfg = database_config.get_source_config("db_tournament_regions_2026_gf")
     assert cfg is not None

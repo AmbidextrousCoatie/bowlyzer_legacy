@@ -10,7 +10,7 @@
 |-------|----------|
 | **Artifact manifest** | **Required** — every publish run must document exactly what is in each Parquet (schema, row counts, inputs, era). |
 | **League vs tournament Parquets** | **Strict separation** — league job and tournament job each publish their own Parquet; no mixed “do everything” artifact except an explicit optional player view. |
-| **Publish on audit failure** | **Strict by default** — unresolved ID/name audits block publish; **`--force-publish`** override for operator emergencies. |
+| **Publish on audit failure** | **Strict by default** — female-league split and future audits block publish; **player ID/name deferred** until Phase 2b (`players_registry`); **`--force-publish`** for other emergencies. |
 | **PDF intake** | **Super low priority** — completionist / archaeologist feature for specific gaps or pre-2009; not on the critical path. |
 
 ---
@@ -58,6 +58,29 @@ Resolution: `database/paths.py`. GF stage dirs use a second module: `pipeline/pa
 
 **Reference data (not row pipelines):** `database/relational_csv/`, `database/config/*.json` (team/player name & ID normalization).
 
+#### Legacy league sources A & B — same treatment, different provenance
+
+Sources **A** (Excel archive) and **B** (web-scraped `.xls`) are **different provenance** (who collected, which years dominate) but **identical pipeline treatment** once intake completes:
+
+- Same stage ladder: intake → raw → sanitized → canonical → league merge.
+- Same flat legacy schema (`Columns` / per-game rows).
+- Same merge keys and normalization hooks (team + player ID/name JSON).
+
+**Do not model them as separate pipeline families.** Register both under one logical family, e.g. `legacy_league_workbook`, with a `provenance` tag (`excel_archive` | `web_scrape`) on each run manifest row.
+
+The **meaningful split is format era**, not A vs B:
+
+| Era | Approx. seasons | Workbook / sheet shape | Adapter branch |
+|-----|-----------------|------------------------|----------------|
+| **Pre-2022** | through 21/22 | Older Excel / `.xls` layout (pre-GF-style columns) | `legacy_format_pre2022` |
+| **Post-2022** | 22/23 onward | Newer layout (closer to current GF flat export) | `legacy_format_post2022` |
+
+GF pipeline (C) is effectively **post-2022 live** data; historical Excel may span both eras in one tree. Adapters should tag each canonical row with `format_era` (`pre2022` | `post2022`) for debugging and for audits — not for separate publish artifacts.
+
+```text
+provenance (excel | scrape | gf)  ×  format_era (pre2022 | post2022)  →  same canonical league schema
+```
+
 ### 1.3 Processing graph (production)
 
 ```mermaid
@@ -79,7 +102,11 @@ flowchart TB
   subgraph publish [Published database/data]
     LRM[league_results_merged.parquet]
     TPM[tournaments_postprocessed.parquet]
-    HYB[player_stats_merged_plus_tournaments.parquet]
+    MAN[runs/latest.json manifest]
+  end
+
+  subgraph runtime [App runtime]
+    SPIELER[Spieler: league + tournament concat]
   end
 
   A --> MERGE[merge_league_sources / build_published_dataset]
@@ -92,8 +119,10 @@ flowchart TB
   F --> TMERGE
   TMERGE --> TPM
 
-  LRM --> HYB
-  TPM --> HYB
+  LRM --> MAN
+  TPM --> MAN
+  LRM --> SPIELER
+  TPM --> SPIELER
 
   LRM --> CACHE[warm_league_cache / rebuild_league_caches]
   HYB --> CACHE
@@ -116,17 +145,35 @@ flowchart TB
 
 **GF tournament export (batch):** `scripts/export_gf_tables.py` → `database/input/gf_tables_export/` (dev tree; not on VPS).
 
-### 1.4 App-facing artifacts
+### 1.4 Published Parquet artifacts (target contract)
 
-| Logical dataset | Published file | App source id | Required on VPS? |
-|-----------------|----------------|---------------|------------------|
-| Merged league | `league_results_merged.parquet` | `db_real_merged` (default) | **Yes** |
-| Tournaments | `tournaments_postprocessed.parquet` | `db_tournament_regions_2026_gf` | Recommended |
-| Player hybrid | `player_stats_merged_plus_tournaments.parquet` | `db_player_merged_hybrid` | For Spieler |
-| Manual tournaments | `tournament_manual_postprocessed.csv` | merged into above | If club imports |
-| KO config | `tournament_ko_config.json` | bracket UI | Per event |
+**Principle:** one **job** → one **primary Parquet**. League and tournament pipelines never share a published file. The player hybrid is a **derived** artifact (optional third job), not a substitute for keeping league and tournament separate.
 
-Runtime prefers Parquet when present (`data_access/parquet_sidecar.py`); config paths keep historical `.csv` names.
+| Job | Published Parquet | Logical name (config) | App source id | Stream | Required on VPS? |
+|-----|-------------------|----------------------|---------------|--------|------------------|
+| **League merge** | `league_results_merged.parquet` | `league_results_merged.csv` | `db_real_merged` (default Liga) | `league` | **Yes** |
+| **Tournament merge** | `tournaments_postprocessed.parquet` | `tournaments_postprocessed.csv` | `db_tournament_regions_2026_gf` | `tournament` | Recommended |
+| ~~Player hybrid~~ **deprecated** | ~~`player_stats_merged_plus_tournaments.parquet`~~ | — | Spieler uses league + tournament via `merge_file_paths` | — | **Drop** after schema v2 |
+
+**What each Parquet contains (must be in manifest):**
+
+| Artifact | Row grain | Includes | Excludes |
+|----------|-----------|----------|----------|
+| `league_results_merged` | Per game, league match | All merged league sources (A+B+C+extras); `Event Type` = league; Input rows only after normalization | Tournament rows, computed team totals as player rows |
+| `tournaments_postprocessed` | Per game, tournament event | GF regional + manual club imports; cuts/ranks postprocessed | League match rows |
+| `player_stats_merged_plus_tournaments` | Per game | Copy of league input rows + tournament input rows (denormalized for Spieler search) | Must be rebuilt from the two Parquets above, never from dev `gf_tables_export/` |
+
+**Sidecar files (not Parquet):**
+
+| File | Role |
+|------|------|
+| `tournament_manual_postprocessed.csv` | Input to tournament merge job (may remain CSV until manual import path moves to Parquet) |
+| `tournament_ko_config.json` | KO bracket UI |
+| `players_registry.parquet` | **Planned** — central id + canonical name (see §2.6) |
+
+Runtime prefers Parquet when present (`data_access/parquet_sidecar.py`); config paths keep historical `.csv` stems.
+
+**Manifest:** `runs/latest.json` lists every artifact with `job`, `path`, `row_count`, `columns_hash`, `input_sources[]`, `format_era_breakdown` (league only), `audit_status`, `published_at`.
 
 ### 1.5 Diagnosis today (content quality, not pipeline ops)
 
@@ -182,26 +229,30 @@ intake → raw → sanitized → canonical → merged → published → cached
 
 ### 2.2 Source registry (target)
 
-Each source gets a stable **source id** and **stream** (`league` | `tournament` | `player`):
+Each source gets a stable **source id**, **stream** (`league` | `tournament` | `player`), and **provenance** (for league legacy only).
 
-| Source id | Stream | Adapter (current → target) | Intake format |
-|-----------|--------|----------------------------|---------------|
-| `historical_excel` | league | `extract_excel_data.py` | `.xls` / `.xlsx` |
-| `legacy_scrape` | league | `scrape_legacy_liga.py` + extract | HTTP `.xls` |
-| `gf_league` | league | `run_gf_pipeline.py` | GF REST JSON |
+| Source id | Stream | Provenance | Adapter | Intake format |
+|-----------|--------|------------|---------|---------------|
+| `legacy_league_excel` | league | `excel_archive` | `extract_excel_data.py` | `.xls` / `.xlsx` |
+| `legacy_league_scrape` | league | `web_scrape` | `scrape_legacy_liga.py` + extract | HTTP `.xls` |
+| `gf_league` | league | `gf_api` | `run_gf_pipeline.py` | GF REST JSON |
 | `gf_tournament` | tournament | `export_gf_tables.py` | GF REST tables |
 | `bowlingbayern_csv` | league | `convert_bowlingbayern_to_legacy.py` | static CSV |
 | `tournament_xlsx` | tournament | club/bayerische import scripts | `.xlsx` |
-| `pdf_sheet` | league | **planned** | `.pdf` (score sheets) |
-| `google_sheets` | league | **planned** | Sheets export / API |
+| `pdf_sheet` | league | `pdf_archive` | **planned, low priority** | `.pdf` (score sheets) |
+| `google_sheets` | league | `google_sheets` | **planned** | Sheets export / API |
 
-**Future PDF workflow (sketch):**
+**Format-era adapters** (orthogonal to source id): `legacy_format_pre2022`, `legacy_format_post2022` — selected by sheet inspection, not by whether the file came from A or B.
+
+**PDF workflow (archaeologist / completionist — not critical path):**
+
+Priority: **super low**. Use only to close specific gaps or explore pre-2009 where no workbook exists.
 
 1. `intake/pdf/{season}/{league}/` — scanned or born-digital sheets.
 2. `scripts/extract_pdf_sheet.py` (new) — OCR / table detection → `raw` CSV with confidence scores.
 3. Human review queue in Diagnose UI (low-confidence cells flagged).
-4. On approval → `sanitized` → same canonical adapter as Excel extract.
-5. Merge via `--extra-league` until GF covers that season.
+4. On approval → `sanitized` → same canonical adapter as legacy workbook (era-appropriate branch).
+5. Merge via `--extra-league` until GF or Excel covers that season.
 
 **Future Google Sheets workflow (sketch):**
 
@@ -239,13 +290,15 @@ Each source gets a stable **source id** and **stream** (`league` | `tournament` 
     {run_id}.json         # orchestrator log
 
 database/data/            # published only (synced to VPS)
-  league_results_merged.parquet
-  tournaments_postprocessed.parquet
-  player_stats_merged_plus_tournaments.parquet
+  league_results_merged.parquet      # job: league_merge
+  tournaments_postprocessed.parquet  # job: tournament_merge
+  player_stats_merged_plus_tournaments.parquet  # job: player_hybrid (optional)
+  players_registry.parquet           # job: players_registry (planned)
+  runs/latest.json                   # manifest for all artifacts
   *.json configs
 ```
 
-**Migration strategy:** keep existing paths working; add `sources/` + `runs/` incrementally; `build_published_dataset.py` writes a `runs/latest.json` manifest.
+**Migration strategy:** keep existing paths working; add `sources/` + `runs/` incrementally; enforce **job-separated** publishes (already mostly true — formalize in manifest and CLI flags).
 
 ### 2.4 Orchestrator (target)
 
@@ -253,23 +306,45 @@ Single CLI entry (evolve current script):
 
 ```bash
 uv run python scripts/build_published_dataset.py \
-  --sources historical_excel,gf_league \
+  --job league,tournament \
   --with-legacy-scrape \
   --with-player-hybrid \
   --audit all \
   --write-manifest
+# strict default — blocked if audits fail:
+uv run python scripts/build_published_dataset.py --job league
+# operator override (logs reason):
+uv run python scripts/build_published_dataset.py --job league --force-publish
 ```
 
-Phases inside one run:
+**Jobs** (each writes exactly one primary Parquet unless skipped):
+
+| `--job` flag | Output | Depends on |
+|--------------|--------|------------|
+| `league` | `league_results_merged.parquet` | historical + optional scrape + GF |
+| `tournament` | `tournaments_postprocessed.parquet` | GF combined + manual |
+| ~~`player_hybrid`~~ | *removed* — Spieler loads league + tournament Parquets at runtime |
+| `players_registry` | `players_registry.parquet` | all league + tournament rows (planned) |
+
+Phases inside one orchestrator run:
 
 1. **Preflight** — resolve paths, fingerprint configs, list missing inputs.
 2. **Ingest** (optional flags) — run GF incremental, export tournaments, etc.
-3. **Canonicalize** — per-source adapters → canonical CSV/parquet in work dir.
-4. **Merge** — league + tournament streams with documented priority.
-5. **Normalize** — team + player ID + player name JSON rules.
-6. **Audit** — female split, ID/name conflicts; fail or warn based on flags.
-7. **Publish** — write Parquet to `database/data/`, emit `runs/{run_id}.json`.
-8. **Cache** (optional `--warm-cache`) — invoke warm scripts.
+3. **Canonicalize** — per-source adapters → canonical CSV/parquet in work dir (`format_era` tagged).
+4. **Merge (per job)** — league job and tournament job are independent; no shared output file.
+5. **Normalize** — team + player ID + player name JSON rules (league job; registry job when added).
+6. **Audit** — female split, ID/name conflicts; **block publish by default**.
+7. **Publish** — write job Parquet(s) to `database/data/`, emit `runs/{run_id}.json` + `runs/latest.json`.
+8. **Cache** (optional `--warm-cache`) — invoke warm scripts for affected app sources only.
+
+**Publish gate:**
+
+```text
+if audit_has_blocking_issues and not --force-publish:
+    exit 1  # no Parquet write
+```
+
+`--force-publish` records `manifest.forced = true` and lists skipped audit ids — visible in Diagnose Datenpipeline.
 
 ### 2.5 Config & human-in-the-loop
 
@@ -280,6 +355,159 @@ Phases inside one run:
 | `player_name_normalization.json` | `import_player_name_normalization_from_audit.py` | merge + audit |
 
 Workflow: audit CSV → annotate (`manual_rule`, `assigned name` / `assigned_id`) → import → rebuild publish.
+
+### 2.6 Unified competition schema (flat row v2)
+
+**Principle:** every published per-game row carries the same **core** columns. No derived labels at read time (no “fill Event from League in the hybrid”). League and tournament Parquets share the core; each stream adds **extension** columns that may be empty on the other stream.
+
+**Row grain:** one row = one player, one game (input row), within a competition context.
+
+#### Core columns (all competitions)
+
+Present on **every** row in `league_results_merged` and `tournaments_postprocessed`:
+
+| Column | Type / values | Role |
+|--------|---------------|------|
+| **Event Type** | `league` \| `tournament` | Stream discriminator |
+| **Event** | string | Competition identifier — league id (`BayL`, `LL S`, …) or tournament title (`Südbayerische Meisterschaft`, …) |
+| **Season** | string | Season label (`24/25`, …) |
+| **Date** | string (ISO or legacy) | Match / playing day |
+| **Player** | string | Display name on the sheet (normalized via registry + rules) |
+| **Player ID** | string | EDV id |
+| **Score** | numeric string | Pins for this game |
+| **Location** | string | Venue (empty allowed) |
+| **Input Data** | bool string | Player input row (`True` / `False`) |
+| **Computed Data** | bool string | Aggregated / team-total row (`False` for player games) |
+
+**Rename (league publish job):**
+
+- `League` → **`Event`** (same values, e.g. `BayL`, `BayL (D)`).
+- Add **`Event Type`** = `league` on every league row at **canonical** stage (not at hybrid concat).
+
+**Rename (tournament publish job):**
+
+- `Event Name` → **`Event`** (one column name across streams).
+- **`Event Type`** = `tournament` (already present).
+
+**Why these core fields:** they are the minimum to place a score in time and competition without inference. Everything else is scheduling, matchup, or scoring rules.
+
+**Optional core (recommend including):**
+
+| Column | Notes |
+|--------|--------|
+| **Club** | Player’s club label. League: derive from `Team` base name at publish (strip trailing team number) **once**, store explicitly. Tournament: already on sheet. Avoids Spieler/UI guessing from `Team`. |
+| **Round Number** | Shared column name; **semantics differ** by Event Type (see extensions). Keep in core only if both streams populate it; otherwise treat as extension with documented meaning per type. |
+
+**Not core** (stay stream-specific): `Week`, `Match Number`, `Opponent`, `Points`, `Team`, `Position`, handicap/cut/stage columns, etc.
+
+#### League extensions (`Event Type` = `league`)
+
+Columns present on league Parquet; empty or absent on tournament rows:
+
+| Column | Role |
+|--------|------|
+| Week | League matchday |
+| Match Number | Match within week |
+| Team | Mannschaft (club + number, e.g. `Donaubowler Regensburg 2`) |
+| Position | Lineup position (1–4) |
+| Opponent | Opposing team name |
+| Points | League points for the game |
+| Bonus Points | Bonus pins / Sonderpunkte |
+| Players per Team | Roster size context for the match |
+
+Dedupe keys for league merge (unchanged logic, renamed field in keys): `Event`, Season, Week, Round Number, Match Number, Team, Position, Player.
+
+#### Tournament extensions (`Event Type` = `tournament`)
+
+Columns present on tournament Parquet; empty or absent on league rows:
+
+| Column | Role |
+|--------|------|
+| Round Name | Stage (`Vorlauf`, `Zwischenlauf`, `Finale`, …) |
+| Game Number | Game index within stage / series |
+| Handicap | Per-game handicap |
+| A Priori Average | Sheet handicap basis |
+| Handicap Reference | Reference score for handicap formula |
+| Stage Rank | Rank within stage after game |
+| Cumulative Score | Running total in stage |
+| Cut Line | Cut threshold |
+| Overall Cumulative Score | Event-wide running total (when used) |
+
+#### Schema evolution rules
+
+1. **Add core column** only if both streams can populate it from source data (no inference).
+2. **Add extension column** on one stream only; other stream omits column or leaves null — Parquet union is fine.
+3. **`Columns` dataclass** (`data_access/schema.py`): add `event: str = 'Event'`, deprecate `league_name` / duplicate `event_name` after migration.
+4. **Readers** use `Event Type` + `Event` for filters; never read legacy `League` after cutover.
+5. **Players registry** applies to `Player` / `Player ID` before publish; core row is already canonical.
+
+#### Current vs target (gap)
+
+| Today | Target |
+|-------|--------|
+| League: `League`, no `Event Type` | `Event`, `Event Type` = `league` |
+| Tournament: `Event Name`, `Event Type` | `Event` (renamed), `Event Type` = `tournament` |
+| Hybrid fills Event/Club for league at concat | **No hybrid**; league publish writes complete core |
+| Spieler merges two files + guesses columns | Runtime `merge_file_paths` OR two queries; same core either way |
+
+**Implementation order:** (1) canonical writers emit v2 core on league + tournament jobs, (2) migrate `Columns` + services (`league_name` → `event`), (3) drop hybrid artifact, (4) manifest documents `schema_version: 2` per Parquet.
+
+### 2.7 Central players registry (recommended)
+
+**Problem:** Player name / EDV-ID resolution is scattered across merge-time JSON rules, audit CSVs, and runtime heuristics (`player_service._canonical_name_for_player_id`). Every new source re-opens the same conflicts.
+
+**Recommendation:** introduce a small **central players registry** — not a full CRM, just authoritative identity:
+
+| Column | Meaning |
+|--------|---------|
+| `player_id` | EDV number (string, normalized) |
+| `canonical_name` | Official `Family, Given` form |
+| `source` | `dbu` \| `majority` \| `manual` \| `same_person_alias` |
+| `updated_at` | Last registry change |
+
+**Optional columns (later):** `aliases[]` (valid alternate display names for `same_person`), `notes`, `merged_from_ids[]`.
+
+**Published artifact:** `database/data/players_registry.parquet` (or `.csv` sidecar during transition).
+
+**How it fits the pipeline:**
+
+```mermaid
+flowchart LR
+  subgraph ingest [All league + tournament sources]
+    ROWS[per-game rows with raw Player + Player ID]
+  end
+  subgraph registry [Players registry job]
+    AUDIT[MULTI_ID / MULTI_NAME audits]
+    MANUAL[annotated CSV import]
+    REG[players_registry.parquet]
+  end
+  subgraph apply [Before or during merge]
+    NORM[normalize Player + Player ID columns]
+  end
+  ROWS --> AUDIT
+  AUDIT --> MANUAL --> REG
+  REG --> NORM
+  NORM --> LRM[league_results_merged.parquet]
+  NORM --> TPM[tournaments_postprocessed.parquet]
+```
+
+**Why this helps:**
+
+1. **Single source of truth** for “what do we call player 16002?” — replaces growing sprawl of pairwise remap rules where possible.
+2. **Audits become registry diffs** — MULTI_NAME/MULTI_ID suggest rows; approved rows update the registry, not a thousand `(name, id)` entries.
+3. **Same person / marriage** — `aliases` on one `player_id` instead of exempting whole conflict groups in audit only.
+4. **App reads registry** for Spieler dropdown canonical labels (thin join on `player_id`), not per-page heuristics.
+
+**What stays in JSON configs (for now):**
+
+- `player_id_name_normalization.json` — import path from audits until registry import exists; gradually shrink to “registry export”.
+- `player_name_normalization.json` — same; remaps that are really alias → canonical_name moves to registry.
+
+**Name resolution (Phase 2b):** merge applies **registry only** for display names — exact match, format reassembly, or close typo (same given name). No majority / autoresolve name rules at publish time. Unresolved rows stay in the audit CSV. **ID remaps** remain transitional JSON until registry grows an id-alias layer.
+
+**Migration:** Phase 2b — build registry from existing configs + annotated CSVs; import audit rows into registry; flip `blocks_publish` when coverage is sufficient.
+
+**Not in scope:** biographical data, club affiliation history, photos, BV API sync automation (manual `dbu_id` annotations remain the source for official corrections).
 
 ---
 
@@ -307,11 +535,14 @@ Keeps separation:
 │ Sources table                                                │
 │  source id │ stream │ stage │ rows │ mtime │ status │ action │
 ├─────────────────────────────────────────────────────────────┤
-│ Publish artifacts                                            │
-│  file │ format │ size │ mtime │ row_count │ app source id    │
+│ Publish artifacts (per job)                                  │
+│  job │ file │ rows │ era split │ inputs │ audit │ forced?   │
+├─────────────────────────────────────────────────────────────┤
+│ Players registry (when present)                              │
+│  ids │ last update │ unresolved audit count                  │
 ├─────────────────────────────────────────────────────────────┤
 │ Audits (work dir, if readable)                               │
-│  report │ rows │ link to re-import docs                      │
+│  report │ rows │ blocks publish? │ link to import scripts    │
 ├─────────────────────────────────────────────────────────────┤
 │ Runbook links → Excel_Extraction.md, build commands          │
 └─────────────────────────────────────────────────────────────┘
@@ -321,7 +552,7 @@ Keeps separation:
 
 | Phase | Endpoint | Payload |
 |-------|----------|---------|
-| **1a** (starter) | `GET /pipeline/status` | Published artifact metadata (path, mtime, size, exists, row_count optional), work/published dir paths, config fingerprints |
+| **1a** (starter) | `GET /pipeline/status` | Published artifact metadata (mtime, size, exists, row_count), manifest summary, audits; **absolute paths only when** `BOWLYZER_PIPELINE_EXPOSE_PATHS=1` or non-`/app/` data dir (hidden in prod container by default) |
 | **1b** | same | Per-source stage from `runs/latest.json` manifest |
 | **2** | `GET /pipeline/sources` | Full source registry + GF last run from `pipeline/…/logs/` |
 | **3** | `POST /pipeline/trigger` | Dev-only: shell out to ingest (guard with env flag) |
@@ -356,33 +587,50 @@ Until then, Diagnose tab is sufficient.
 
 ## 4. Implementation phases
 
-### Phase 0 — Documentation & manifests (this doc)
+### Phase 0 — Documentation & manifests (done 2026-06)
 
 - [x] Inventory current flows (section 1).
 - [x] Define stage vocabulary + target layout (section 2).
 - [x] UI spec (section 3).
-- [ ] Add `runs/latest.json` emission to `build_published_dataset.py` (small JSON: inputs, outputs, timestamps, audit counts).
+- [x] Lock decisions: separated Parquets, strict publish + `--force-publish`, PDF low priority, A/B unified + format era.
+- [x] **`runs/latest.json`** — per-artifact contract (job, inputs, row_count, columns, era breakdown, audit_status).
+- [x] **`database/data/ARTIFACTS.md`** — human-readable mirror of Parquet contracts (linked from Datenpipeline UI).
 
-### Phase 1 — Read-only operator UI (started 2026-06-03)
+### Phase 1 — Read-only operator UI (done 2026-06)
 
 - [x] `GET /pipeline/status` — published files + paths + fingerprints (`app/services/pipeline_status_service.py`).
 - [x] React page `/diagnose/datenpipeline` — KPI strip + artifacts + sources tables.
 - [x] Audit report row count when `player_id_name_conflicts.csv` is readable from work dir.
-- [ ] Copy-friendly build commands in-page (buttons / code block).
-- [ ] `runs/latest.json` manifest from `build_published_dataset.py`.
+- [x] Copy-friendly build commands in-page (code block).
+- [x] `runs/latest.json` manifest from `build_published_dataset.py`.
+- [x] Manifest summary in `/pipeline/status` + Datenpipeline “Letzter Publish-Lauf”.
 
-### Phase 2 — Source registry
+### Phase 2 — Source registry & separated jobs (mostly done 2026-06)
 
-- [ ] `database/config/data_sources.json` — static registry of source ids, adapters, merge priority.
-- [ ] Extend `/pipeline/status` with per-source stage from manifest + GF logs.
-- [ ] Unify hybrid build to always use published tournament parquet (remove `gf_tables_export` divergence).
+- [x] `database/config/data_sources.json` — source ids, provenance, `format_era` adapter mapping, deferred audit policy.
+- [x] CLI `--job league,tournament[,player_hybrid]` (replaces `--league-only` / `--tournaments-only`).
+- [x] **`--strict-audit` default on**; `--force-publish` with manifest flag; player ID/name **deferred** until Phase 2b.
+- [x] Extend `/pipeline/status` with manifest contents (per-job artifacts, deferred audits).
+- [x] Spieler runtime merge from published Parquets; app startup hybrid rebuild removed (`gf_tables_export` divergence gone).
+- [ ] Canonical-stage schema v2 in GF/Excel writers (publish-only today).
+
+### Phase 2b — Players registry (in progress 2026-06)
+
+- [x] `players_registry.parquet` schema + incremental merge from normalization JSON (not full rebuild on league publish).
+- [x] Apply registry during league merge (names only; closest canonical or alias).
+- [x] Drop legacy name remap apply (`majority`, `name_reassembly`, `player_name_normalization.json` at merge).
+- [x] Spieler catalog reads registry for canonical display name (`player_service`).
+- [ ] Import annotated audit CSV rows into registry (not only JSON configs).
+- [ ] Re-enable **blocking** publish on player ID/name when registry is live (`data_sources.json` → `blocks_publish: true`).
 
 ### Phase 3 — Work dir layout migration
 
 - [ ] Introduce `work_dir/sources/` + `work_dir/runs/` without breaking existing paths.
 - [ ] `build_published_dataset.py --write-manifest` default on.
 
-### Phase 4 — PDF intake (when needed)
+### Phase 4 — PDF intake (archaeologist — defer)
+
+Low priority; only when a specific season/league gap is identified.
 
 - [ ] `intake/pdf/` convention + extraction script stub.
 - [ ] Diagnose “review queue” for low-confidence OCR rows.
@@ -398,15 +646,19 @@ Until then, Diagnose tab is sufficient.
 
 ---
 
-## 5. Open decisions
+## 5. Decisions log
 
-| # | Question | Recommendation |
-|---|----------|----------------|
-| 1 | Single `data_sources.json` vs code-defined registry? | Start JSON registry; adapters stay Python modules. |
-| 2 | Store historical Excel path in config or env only? | Env `BOWLYZER_EXCEL_ARCHIVE_DIR`; document in runbook. |
-| 3 | Fail publish on audit conflicts? | Default **warn**; `--strict-audit` for CI. |
-| 4 | Expose work dir on VPS? | **No** — status endpoint returns published + manifest only; full detail on build machine. |
-| 5 | PDF OCR tool choice? | Defer; prototype with `pdfplumber` / Tesseract on one sheet first. |
+| # | Question | Decision |
+|---|----------|----------|
+| 1 | Artifact manifest required? | **Yes** — non-negotiable; Datenpipeline and `runs/latest.json` are the operator source of truth. |
+| 2 | League vs tournament Parquets? | **Separated jobs** — never mix streams in one published file (hybrid is explicit derived job). |
+| 3 | Legacy A vs B? | **Same pipeline**; tag `provenance`; split adapters on **pre/post 2022 format era**, not on scrape vs Excel. |
+| 4 | Central players DB? | **Yes (minimal registry)** — `player_id` + `canonical_name` + provenance; see §2.6. |
+| 5 | Fail publish on audit conflicts? | **Strict default**; **`--force-publish`** override logged in manifest. |
+| 6 | PDF intake priority? | **Super low** — completionist / gap-fill only. |
+| 7 | `data_sources.json` vs code registry? | JSON registry for metadata; adapters stay Python. |
+| 8 | Historical Excel path? | Env `BOWLYZER_EXCEL_ARCHIVE_DIR`. |
+| 9 | Expose work dir on VPS? | **No** — manifest + published artifacts only. |
 
 ---
 
@@ -415,7 +667,7 @@ Until then, Diagnose tab is sufficient.
 ```powershell
 # Full publish (build machine)
 $env:BOWLYZER_WORK_DATA_DIR = "C:\tmp\bowlyzer\data"
-uv run python scripts/build_published_dataset.py --with-player-hybrid
+uv run python scripts/build_published_dataset.py
 uv run python scripts/rebuild_league_caches.py --all-published --workers 8
 
 # GF league incremental

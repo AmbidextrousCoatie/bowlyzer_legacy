@@ -117,7 +117,18 @@ def _ensure_merged_league_csv_stub(path: Path) -> None:
 
 
 def _should_build_player_merged_hybrid_csv() -> bool:
-    """Skip rebuild when hybrid already exists or startup must not write (e.g. Docker :ro data)."""
+    """
+    Deprecated: Spieler loads league + tournament Parquets at runtime via merge_file_paths.
+
+    Set BOWLYZER_BUILD_PLAYER_HYBRID=1 to regenerate the legacy single-file artifact.
+    """
+    if (os.environ.get("BOWLYZER_BUILD_PLAYER_HYBRID") or "").strip().lower() not in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }:
+        return False
     if (os.environ.get("BOWLYZER_SKIP_HYBRID_BUILD") or "").strip().lower() in {
         "1",
         "true",
@@ -125,14 +136,6 @@ def _should_build_player_merged_hybrid_csv() -> bool:
         "on",
     }:
         return False
-    try:
-        from data_access.parquet_sidecar import data_file_exists
-
-        if data_file_exists(MERGED_PLAYER_HYBRID_CSV):
-            return False
-    except ImportError:
-        if MERGED_PLAYER_HYBRID_CSV.is_file():
-            return False
     return True
 
 
@@ -169,9 +172,7 @@ def _build_player_merged_hybrid_csv() -> None:
         if not str(merged.get("Event Type", "")).strip():
             merged["Event Type"] = "league"
         if not str(merged.get("Event Name", "")).strip():
-            merged["Event Name"] = str(merged.get("League", "")).strip()
-        if not str(merged.get("Club", "")).strip():
-            merged["Club"] = str(merged.get("Team", "")).strip()
+            merged["Event Name"] = str(merged.get("Event", merged.get("League", ""))).strip()
         out_rows.append(merged)
 
     for row in tournament_rows:
@@ -273,12 +274,16 @@ class DatabaseConfig:
                 file_path=str(GF_PLAYER_COMBINED_CSV),
             ),
             'db_player_merged_hybrid': DataSourceConfig(
-                filename='player_stats_merged_plus_tournaments.csv',
-                display_name='Player Data (Merged+Tournament)',
-                description='Player hybrid source built from merged league data plus tournament postprocessed rows',
+                filename='league_results_merged.csv',
+                display_name='Player Data (League+Tournament)',
+                description=(
+                    'Merged league Parquet plus tournaments_postprocessed at load time '
+                    '(replaces deprecated player_stats_merged_plus_tournaments artifact)'
+                ),
                 is_default=False,
                 is_enabled=True,
-                file_path=str(MERGED_PLAYER_HYBRID_CSV),
+                file_path=str(MERGED_LEAGUE_RESULTS_CSV),
+                merge_file_paths=(str(TOURNAMENTS_POSTPROCESSED_CSV),),
             ),
         }
 
@@ -307,11 +312,8 @@ class DatabaseConfig:
             except (ImportError, OSError) as exc:
                 print(f"Warning: could not create {label}: {exc}")
 
-        if _should_build_player_merged_hybrid_csv():
-            try:
-                _build_player_merged_hybrid_csv()
-            except (ImportError, OSError) as exc:
-                print(f"Warning: could not build player merged hybrid CSV: {exc}")
+        # Spieler uses runtime merge (league + tournament Parquets). Legacy hybrid CSV is
+        # opt-in only via BOWLYZER_BUILD_PLAYER_HYBRID=1 and build_published_dataset --job player_hybrid.
 
         # Validate sources on initialization
         self._validate_sources()

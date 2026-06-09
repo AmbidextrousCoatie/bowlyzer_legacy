@@ -5,6 +5,8 @@
  * `frontend/dist` on the same origin, so relative API paths still work.
  */
 
+import { readStoredLanguage } from "./language";
+
 export class ApiError extends Error {
   status: number;
   constructor(message: string, status: number) {
@@ -13,8 +15,19 @@ export class ApiError extends Error {
   }
 }
 
+export async function postJson<T = unknown>(url: string, body: unknown): Promise<T> {
+  return fetchJson<T>(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
 export async function fetchJson<T = unknown>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, init);
+  const res = await fetch(url, {
+    credentials: "same-origin",
+    ...init,
+  });
   if (!res.ok) {
     let message = `HTTP ${res.status} ${res.statusText}`;
     try {
@@ -109,6 +122,9 @@ export function buildUrl(
   if (!parts.some((p) => p.startsWith("database="))) {
     const db = resolveDatabaseParam(scope);
     if (db) parts.push(formatQueryPair("database", db, apiWire));
+  }
+  if (apiWire && !parts.some((p) => p.startsWith("language="))) {
+    parts.push(formatQueryPair("language", readStoredLanguage(), apiWire));
   }
   const qs = parts.join("&");
   return qs ? `${path}?${qs}` : path;

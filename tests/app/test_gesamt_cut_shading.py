@@ -64,6 +64,7 @@ def test_gesamt_cut_shade_rank_matches_net_sort_rank(svc: TournamentService) -> 
     group_titles = [g.title for g in lb.columns]
     assert len(group_titles) == 3
     net_idx = group_titles.index(i18n_service.get_text("ui.tournament.lb_group_net"))
+    assert i18n_service.get_text("ui.tournament.lb_group_net") == "mit Handicap"
     scratch_idx = group_titles.index(i18n_service.get_text("ui.tournament.lb_group_scratch"))
     spieler_idx = group_titles.index(i18n_service.get_text("ui.tournament.lb_group_players"))
     assert spieler_idx < net_idx < scratch_idx

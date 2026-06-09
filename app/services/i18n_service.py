@@ -21,6 +21,15 @@ class I18nService:
             "ui.language.english": {"en": "English", "de": "English"},
             "ui.language.german": {"en": "Deutsch", "de": "Deutsch"},
 
+            # Namespaced: App shell / sidebar navigation
+            "ui.nav.home": {"en": "Overview", "de": "Übersicht"},
+            "ui.nav.search": {"en": "Search", "de": "Suche"},
+            "ui.nav.impressum": {"en": "Legal notice", "de": "Impressum"},
+            "ui.nav.group_start": {"en": "Start", "de": "Start"},
+            "ui.nav.group_play": {"en": "Competition", "de": "Spielbetrieb"},
+            "ui.nav.group_actors": {"en": "Participants", "de": "Akteure"},
+            "ui.nav.group_diagnosis": {"en": "Diagnostics", "de": "Diagnose"},
+
             # Namespaced: Generic UI/actions/status
             "action.refresh": {"en": "Refresh", "de": "Aktualisieren"},
             "action.update": {"en": "Update", "de": "Aktualisieren"},
@@ -359,7 +368,10 @@ class I18nService:
             },
             "ui.tournament.lb_group_players": {"en": "Players", "de": "Spieler"},
             "ui.tournament.lb_group_scratch": {"en": "Scratch", "de": "Scratch"},
-            "ui.tournament.lb_group_net": {"en": "Net", "de": "Netto"},
+            "ui.tournament.lb_group_net": {"en": "With handicap", "de": "mit Handicap"},
+            "ui.tournament.lb_sort_mode": {"en": "Sort", "de": "Sortierung"},
+            "ui.tournament.lb_sort_total": {"en": "Total pins", "de": "Gesamtpins"},
+            "ui.tournament.lb_sort_average": {"en": "Average", "de": "Schnitt"},
             "ui.tournament.lb_total_scratch": {"en": "Total", "de": "Gesamt"},
             "ui.tournament.lb_avg_scratch": {"en": "Ø", "de": "Ø"},
             "ui.tournament.lb_total_net": {"en": "Total", "de": "Gesamt"},
@@ -564,6 +576,25 @@ class I18nService:
         """Get translated text for the given key"""
         with self._lock:
             return self._translations[self._current_language].get(key, key)
+
+    def get_text_for_language(self, key: str, language: Language) -> str:
+        """Look up a key for a specific language without changing the active language."""
+        with self._lock:
+            return self._translations[language].get(key, key)
+
+    @staticmethod
+    def language_from_code(code: str | None) -> Language | None:
+        if code == Language.ENGLISH.value:
+            return Language.ENGLISH
+        if code == Language.GERMAN.value:
+            return Language.GERMAN
+        return None
+
+    def apply_language_code(self, code: str | None) -> Language:
+        """Set active language from ``en`` / ``de``; return the effective language."""
+        resolved = self.language_from_code(code) or self.get_current_language()
+        self.set_language(resolved)
+        return resolved
     
     def get_translations_version(self) -> str:
         with self._lock:

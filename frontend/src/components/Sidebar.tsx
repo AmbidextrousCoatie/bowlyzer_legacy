@@ -22,62 +22,74 @@ import {
 import { Link, NavLink, useSearchParams } from "react-router-dom";
 import { AppLogo } from "./AppLogo";
 import { DatabaseSelector } from "./DatabaseSelector";
+import { useLanguage, type AppLanguage } from "../context/LanguageContext";
+import { useTranslations } from "../hooks/useTranslations";
 import { useMobileNav } from "../context/MobileNavContext";
 import { querySuffixForPath } from "../lib/navigationQuery";
 
-const DIAGNOSIS_GROUP_LABEL = "Diagnose";
-
 type Theme = "light" | "dark";
-type Lang = "de" | "en";
-
-type NavItem = {
+type NavItemDef = {
   path: string;
-  label: string;
+  labelKey?: string;
+  fallback: string;
   icon: typeof Trophy;
 };
 
-type NavGroup = {
-  label: string;
-  items: ReadonlyArray<NavItem>;
+type NavGroupDef = {
+  labelKey: string;
+  fallback: string;
+  items: ReadonlyArray<NavItemDef>;
 };
 
-const NAV_GROUPS: ReadonlyArray<NavGroup> = [
+const NAV_GROUPS: ReadonlyArray<NavGroupDef> = [
   {
-    label: "Start",
-    items: [{ path: "/", label: "Übersicht", icon: HomeIcon }],
+    labelKey: "ui.nav.group_start",
+    fallback: "Start",
+    items: [{ path: "/", labelKey: "ui.nav.home", fallback: "Übersicht", icon: HomeIcon }],
   },
   {
-    label: "Spielbetrieb",
+    labelKey: "ui.nav.group_play",
+    fallback: "Spielbetrieb",
     items: [
-      { path: "/liga", label: "Liga", icon: Trophy },
-      { path: "/turnier", label: "Turnier", icon: Award },
+      { path: "/liga", labelKey: "league", fallback: "Liga", icon: Trophy },
+      { path: "/turnier", labelKey: "ui.tournament.tournament", fallback: "Turnier", icon: Award },
     ],
   },
   {
-    label: "Akteure",
+    labelKey: "ui.nav.group_actors",
+    fallback: "Akteure",
     items: [
-      { path: "/club", label: "Club", icon: Users },
-      { path: "/spieler", label: "Spieler", icon: User },
+      { path: "/club", labelKey: "ui.team.page_title", fallback: "Club", icon: Users },
+      { path: "/spieler", labelKey: "player", fallback: "Spieler", icon: User },
     ],
   },
   {
-    label: "Diagnose",
+    labelKey: "ui.nav.group_diagnosis",
+    fallback: "Diagnose",
     items: [
-      { path: "/diagnose/design-system", label: "Designsystem", icon: Palette },
-      { path: "/diagnose/club-matrix", label: "Club-Matrix", icon: Building2 },
-      { path: "/diagnose/liga-wochen", label: "Liga-Wochen", icon: CalendarRange },
-      { path: "/diagnose/daten-anomalien", label: "Anomalien", icon: AlertTriangle },
-      { path: "/diagnose/datenpipeline", label: "Datenpipeline", icon: Workflow },
+      { path: "/diagnose/design-system", fallback: "Designsystem", icon: Palette },
+      { path: "/diagnose/club-matrix", fallback: "Club-Matrix", icon: Building2 },
+      { path: "/diagnose/liga-wochen", fallback: "Liga-Wochen", icon: CalendarRange },
+      { path: "/diagnose/daten-anomalien", fallback: "Anomalien", icon: AlertTriangle },
+      { path: "/diagnose/datenpipeline", fallback: "Datenpipeline", icon: Workflow },
     ],
   },
 ];
 
-const LANG_LABEL: Record<Lang, { flag: string; name: string }> = {
+const LANG_LABEL: Record<AppLanguage, { flag: string; name: string }> = {
   de: { flag: "🇩🇪", name: "Deutsch" },
   en: { flag: "🇺🇸", name: "English" },
 };
 
+function navLabel(
+  t: (key: string, fallback?: string) => string,
+  item: NavItemDef,
+): string {
+  return item.labelKey ? t(item.labelKey, item.fallback) : item.fallback;
+}
+
 export function Sidebar() {
+  const { t } = useTranslations();
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     return localStorage.getItem("sidebar:collapsed") === "true";
@@ -86,7 +98,7 @@ export function Sidebar() {
     if (typeof window === "undefined") return "light";
     return (localStorage.getItem("ds:theme") as Theme) ?? "light";
   });
-  const [lang, setLang] = useState<Lang>("de");
+  const { language, toggleLanguage } = useLanguage();
   const { mobileOpen, openMobileNav, closeMobileNav, compactPageChrome } = useMobileNav();
   const [searchParams] = useSearchParams();
 
@@ -178,25 +190,26 @@ export function Sidebar() {
 
         {/* Search */}
         <div className={"px-3 pt-3 " + (collapsed ? "lg:px-2" : "")}>
-          <SearchTrigger collapsed={collapsed && !mobileOpen} />
+          <SearchTrigger collapsed={collapsed && !mobileOpen} label={t("ui.nav.search", "Suche")} />
         </div>
 
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto px-2 pt-4 pb-2">
           {NAV_GROUPS.map((group) => (
-            <div key={group.label} className="mb-4 last:mb-0">
+            <div key={group.labelKey} className="mb-4 last:mb-0">
               <p
                 className={
                   "text-label uppercase text-subtle mb-1 px-2 " +
                   (collapsed && !mobileOpen ? "lg:hidden" : "")
                 }
               >
-                {group.label}
+                {t(group.labelKey, group.fallback)}
               </p>
               <ul className="flex flex-col gap-0.5">
                 {group.items.map((item) => (
                   <li key={item.path}>
                     <NavRow
+                      label={navLabel(t, item)}
                       item={item}
                       to={`${item.path}${querySuffixForPath(item.path, searchParams)}`}
                       collapsed={collapsed && !mobileOpen}
@@ -204,7 +217,7 @@ export function Sidebar() {
                     />
                   </li>
                 ))}
-                {group.label === DIAGNOSIS_GROUP_LABEL && (
+                {group.labelKey === "ui.nav.group_diagnosis" && (
                   <li className="mt-2 pt-2 border-t border-border">
                     <DatabaseSelector
                       variant="sidebar"
@@ -221,7 +234,7 @@ export function Sidebar() {
           <NavLink
             to={`/impressum${querySuffixForPath("/impressum", searchParams)}`}
             onClick={closeMobileNav}
-            title={collapsed && !mobileOpen ? "Impressum" : undefined}
+            title={collapsed && !mobileOpen ? t("ui.nav.impressum", "Impressum") : undefined}
             className={({ isActive }) =>
               "flex h-9 items-center gap-2.5 rounded-sm px-2 text-small transition-colors hover:bg-surface-subtle focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring " +
               (isActive ? "bg-accent-tint text-foreground" : "text-muted hover:text-foreground") +
@@ -229,7 +242,9 @@ export function Sidebar() {
             }
           >
             <FileText size={16} strokeWidth={1.75} />
-            <span className={collapsed && !mobileOpen ? "lg:hidden" : ""}>Impressum</span>
+            <span className={collapsed && !mobileOpen ? "lg:hidden" : ""}>
+              {t("ui.nav.impressum", "Impressum")}
+            </span>
           </NavLink>
         </div>
 
@@ -252,7 +267,12 @@ export function Sidebar() {
             <SunMoon size={18} strokeWidth={1.75} />
           </button>
 
-          <LanguageButton lang={lang} onChange={setLang} />
+          <LanguageButton
+            lang={language}
+            onToggle={() => {
+              void toggleLanguage().catch(() => undefined);
+            }}
+          />
 
           <button
             type="button"
@@ -281,13 +301,13 @@ function Brand() {
   );
 }
 
-function SearchTrigger({ collapsed }: { collapsed: boolean }) {
+function SearchTrigger({ collapsed, label }: { collapsed: boolean; label: string }) {
   if (collapsed) {
     return (
       <button
         type="button"
-        aria-label="Suche"
-        title="Suche · ⌘K"
+        aria-label={label}
+        title={`${label} · ⌘K`}
         className="grid h-9 w-full place-items-center rounded-sm text-muted hover:bg-surface-subtle hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
       >
         <Search size={16} strokeWidth={1.75} />
@@ -300,7 +320,7 @@ function SearchTrigger({ collapsed }: { collapsed: boolean }) {
       className="flex h-9 w-full items-center gap-2 rounded-sm border border-border bg-surface-subtle px-2.5 text-small text-muted hover:border-border-strong hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
     >
       <Search size={14} strokeWidth={1.75} />
-      <span className="flex-1 text-left">Suche</span>
+      <span className="flex-1 text-left">{label}</span>
       <kbd className="rounded-xs border border-border bg-surface px-1.5 font-mono text-[10px] text-subtle">
         ⌘K
       </kbd>
@@ -309,12 +329,14 @@ function SearchTrigger({ collapsed }: { collapsed: boolean }) {
 }
 
 function NavRow({
+  label,
   item,
   to,
   collapsed,
   onNavigate,
 }: {
-  item: NavItem;
+  label: string;
+  item: NavItemDef;
   to: string;
   collapsed: boolean;
   onNavigate: () => void;
@@ -324,7 +346,7 @@ function NavRow({
     <NavLink
       to={to}
       onClick={onNavigate}
-      title={collapsed ? item.label : undefined}
+      title={collapsed ? label : undefined}
       className={({ isActive }) =>
         "group/row relative flex h-9 items-center gap-2.5 rounded-sm px-2 text-small transition-colors hover:bg-surface-subtle focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring " +
         (isActive ? "bg-accent-tint text-foreground" : "text-muted hover:text-foreground")
@@ -339,23 +361,31 @@ function NavRow({
             />
           )}
           <Icon size={16} strokeWidth={1.75} className={isActive ? "text-accent" : ""} />
-          <span className={collapsed ? "lg:hidden" : ""}>{item.label}</span>
+          <span className={collapsed ? "lg:hidden" : ""}>{label}</span>
         </>
       )}
     </NavLink>
   );
 }
 
-function LanguageButton({ lang, onChange }: { lang: Lang; onChange: (l: Lang) => void }) {
+function LanguageButton({
+  lang,
+  onToggle,
+}: {
+  lang: AppLanguage;
+  onToggle: () => void;
+}) {
   return (
     <button
       type="button"
       aria-label={`Sprache · ${LANG_LABEL[lang].name}`}
       title={`Sprache · ${LANG_LABEL[lang].name}`}
-      onClick={() => onChange(lang === "de" ? "en" : "de")}
+      onClick={onToggle}
       className="grid h-9 w-9 place-items-center rounded-xs text-muted hover:bg-surface-subtle hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
     >
-      <span className="text-base leading-none">{LANG_LABEL[lang].flag}</span>
+      <span className="text-sm font-semibold leading-none tracking-tight">
+        {lang.toUpperCase()}
+      </span>
     </button>
   );
 }

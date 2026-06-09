@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import os
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
 
@@ -13,9 +14,98 @@ from database.paths import (
     get_work_data_dir,
     league_results_merged_csv,
     manual_tournament_postprocessed_csv,
-    player_stats_merged_hybrid_csv,
+    players_registry_csv,
+    publish_latest_manifest,
     tournaments_postprocessed_csv,
 )
+
+
+def _looks_like_container_data_dir(data_dir: Path) -> bool:
+    parts = [p.lower() for p in data_dir.resolve().parts]
+    return any(parts[i] == "app" and parts[i + 1] == "database" for i in range(len(parts) - 1))
+
+
+def pipeline_expose_operator_paths() -> bool:
+    """Whether Diagnose may show absolute filesystem paths.
+
+    Prod containers (``…/app/database/data``) hide paths by default. Set
+    ``BOWLYZER_PIPELINE_EXPOSE_PATHS=1`` on a dev machine to force show, or
+    ``=0`` to force hide locally.
+    """
+    raw = (os.environ.get("BOWLYZER_PIPELINE_EXPOSE_PATHS") or "").strip().lower()
+    if raw in {"1", "true", "yes", "on"}:
+        return True
+    if raw in {"0", "false", "no", "off"}:
+        return False
+    return not _looks_like_container_data_dir(get_data_dir())
+
+
+def _basename_only(path_str: str) -> str:
+    if not path_str:
+        return ""
+    return Path(path_str).name
+
+
+def _redact_path_fields(row: Dict[str, Any]) -> None:
+    filename = row.get("filename") or _basename_only(str(row.get("logical_path") or ""))
+    row["logical_path"] = ""
+    row["load_path"] = ""
+    if filename:
+        row["filename"] = filename
+
+
+def _sanitize_pipeline_status_for_client(
+    status: Dict[str, Any],
+    *,
+    expose_paths: bool,
+) -> Dict[str, Any]:
+    if expose_paths:
+        status["expose_operator_paths"] = True
+        return status
+
+    out = dict(status)
+    out["expose_operator_paths"] = False
+    out.pop("latest_manifest", None)
+
+    paths = dict(out.get("paths") or {})
+    out["paths"] = {
+        "work_dir_readable": bool(paths.get("work_dir_readable")),
+    }
+
+    published: List[Dict[str, Any]] = []
+    for row in out.get("published_artifacts") or []:
+        item = dict(row)
+        _redact_path_fields(item)
+        published.append(item)
+    out["published_artifacts"] = published
+
+    app_sources: List[Dict[str, Any]] = []
+    for row in out.get("app_sources") or []:
+        item = dict(row)
+        _redact_path_fields(item)
+        app_sources.append(item)
+    out["app_sources"] = app_sources
+
+    audits: Dict[str, Any] = {}
+    for key, row in (out.get("audits") or {}).items():
+        if not isinstance(row, dict):
+            continue
+        item = dict(row)
+        item.pop("path", None)
+        audits[key] = item
+    out["audits"] = audits
+
+    fingerprints: Dict[str, Any] = {}
+    for key, value in (out.get("config_fingerprints") or {}).items():
+        if isinstance(value, dict):
+            fp = dict(value)
+            fp.pop("path", None)
+            fingerprints[key] = fp
+        else:
+            fingerprints[key] = value
+    out["config_fingerprints"] = fingerprints
+
+    return out
 
 
 def _iso_mtime(path: Path) -> Optional[str]:
@@ -148,10 +238,18 @@ def get_pipeline_status() -> Dict[str, Any]:
             stream="tournament",
         ),
         _describe_artifact(
-            artifact_id="player_hybrid",
-            label="Player hybrid",
-            logical_path=player_stats_merged_hybrid_csv(),
+            artifact_id="player_runtime_merge",
+            label="Spieler (league + tournament runtime)",
+            logical_path=league_results_merged_csv(),
             source_id="db_player_merged_hybrid",
+            required=False,
+            stream="player",
+        ),
+        _describe_artifact(
+            artifact_id="players_registry",
+            label="Players registry",
+            logical_path=players_registry_csv(),
+            source_id="players_registry",
             required=False,
             stream="player",
         ),
@@ -199,6 +297,9 @@ def get_pipeline_status() -> Dict[str, Any]:
 
     repo_root = Path(__file__).resolve().parents[2]
     config_dir = repo_root / "database" / "config"
+    from data_access.data_sources_registry import load_data_sources_registry
+
+    source_registry = load_data_sources_registry()
 
     audits = {
         "player_id_name_conflicts": _audit_report(work_dir / "player_id_name_conflicts.csv"),
@@ -209,14 +310,35 @@ def get_pipeline_status() -> Dict[str, Any]:
         default=None,
     )
 
-    return {
+    manifest_path = publish_latest_manifest()
+    latest_manifest: Optional[Dict[str, Any]] = None
+    manifest_summary: Dict[str, Any] = {"present": False}
+    if manifest_path.is_file():
+        try:
+            import json
+
+            from data_access.publish_manifest import summarize_manifest_for_status
+
+            latest_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest_summary = summarize_manifest_for_status(latest_manifest)
+            manifest_mtime = _iso_mtime(manifest_path)
+            if manifest_mtime and (latest_mtime is None or manifest_mtime > latest_mtime):
+                latest_mtime = manifest_mtime
+        except (OSError, ValueError, json.JSONDecodeError):
+            latest_manifest = None
+            manifest_summary = {"present": False}
+
+    status = {
         "generated_at_utc": dt.datetime.now(tz=dt.timezone.utc).isoformat(),
         "paths": {
             "published_data_dir": str(data_dir.resolve()),
             "work_data_dir": str(work_dir.resolve()),
             "work_dir_readable": work_dir.is_dir(),
+            "latest_manifest": str(manifest_path.resolve()),
         },
         "last_publish_mtime_utc": latest_mtime,
+        "latest_manifest": latest_manifest,
+        "manifest_summary": manifest_summary,
         "published_artifacts": published,
         "app_sources": app_sources,
         "config_fingerprints": {
@@ -228,5 +350,11 @@ def get_pipeline_status() -> Dict[str, Any]:
         "docs": {
             "pipeline_plan": "docs/planning/DATA_PIPELINE_PLAN.md",
             "publish_runbook": "database/data/README.md",
+            "artifacts_contract": "database/data/ARTIFACTS.md",
         },
+        "source_registry": source_registry,
     }
+    return _sanitize_pipeline_status_for_client(
+        status,
+        expose_paths=pipeline_expose_operator_paths(),
+    )

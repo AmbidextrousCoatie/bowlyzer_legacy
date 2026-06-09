@@ -35,8 +35,7 @@ class DataManager:
         
         try:
             config = database_config.get_source_config(self._current_source)
-            file_path = config.file_path if config else str(DATABASE_DATA_DIR / database_config.get_filename_for_source(self._current_source))
-            self._df = self._get_cached_or_load_df(file_path)
+            self._df = self._load_df_for_config(config, self._current_source)
 
         except Exception as e:
             print(f"Error loading data from {self._current_source}: {e}")
@@ -46,8 +45,7 @@ class DataManager:
                 self._current_source = default_source
                 self._save_session_source(self._current_source)
                 config = database_config.get_source_config(self._current_source)
-                file_path = config.file_path if config else str(DATABASE_DATA_DIR / database_config.get_filename_for_source(self._current_source))
-                self._df = self._get_cached_or_load_df(file_path)
+                self._df = self._load_df_for_config(config, self._current_source)
                 print(f"Fallback to default data source: {self._current_source}")
             else:
                 return False
@@ -72,8 +70,7 @@ class DataManager:
             
             # Load the new data
             config = database_config.get_source_config(self._current_source)
-            file_path = config.file_path if config else str(DATABASE_DATA_DIR / database_config.get_filename_for_source(self._current_source))
-            self._df = self._get_cached_or_load_df(file_path)
+            self._df = self._load_df_for_config(config, self._current_source)
             
             # Data source switched successfully
             
@@ -90,8 +87,7 @@ class DataManager:
             self._save_session_source(self._current_source)
             try:
                 config = database_config.get_source_config(self._current_source)
-                file_path = config.file_path if config else str(DATABASE_DATA_DIR / database_config.get_filename_for_source(self._current_source))
-                self._df = self._get_cached_or_load_df(file_path)
+                self._df = self._load_df_for_config(config, self._current_source)
                 print(f"✅ Rolled back to: {self._current_source}")
             except Exception as rollback_error:
                 print(f"❌ Critical error: Could not rollback to {self._current_source}: {rollback_error}")
@@ -99,8 +95,7 @@ class DataManager:
                 self._current_source = database_config.get_default_source()
                 self._save_session_source(self._current_source)
                 config = database_config.get_source_config(self._current_source)
-                file_path = config.file_path if config else str(DATABASE_DATA_DIR / database_config.get_filename_for_source(self._current_source))
-                self._df = self._get_cached_or_load_df(file_path)
+                self._df = self._load_df_for_config(config, self._current_source)
             
             return False
 
@@ -212,16 +207,26 @@ class DataManager:
         # Reload data with the new source
         try:
             config = database_config.get_source_config(source)
-            file_path = config.file_path if config else str(DATABASE_DATA_DIR / database_config.get_filename_for_source(source))
-            self._df = self._get_cached_or_load_df(file_path)
+            self._df = self._load_df_for_config(config, source)
             print(f"✅ Successfully switched to: {source}")
             return True
         except Exception as e:
             print(f"❌ Error forcing source {source}: {e}")
             return False 
 
-    @classmethod
-    def _get_cached_or_load_df(cls, file_path: str) -> pd.DataFrame:
+    @staticmethod
+    def _load_df_for_config(config, source_id: str) -> pd.DataFrame:
+        from data_access.shared_pandas_store import load_dataframe_for_paths, resolve_database_paths
+
+        if config and getattr(config, "merge_file_paths", None):
+            primary, extras = resolve_database_paths(source_id)
+            return load_dataframe_for_paths(primary, extras)
+
+        file_path = (
+            config.file_path
+            if config
+            else str(DATABASE_DATA_DIR / database_config.get_filename_for_source(source_id))
+        )
         from data_access.shared_pandas_store import get_dataframe
 
         return get_dataframe(Path(file_path))

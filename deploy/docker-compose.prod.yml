@@ -17,6 +17,8 @@ services:
       LEAGUE_CACHE_WARM_ON_START: "0"
       # Published data is bind-mounted :ro; hybrid is built offline via build_published_dataset.py
       BOWLYZER_SKIP_HYBRID_BUILD: "1"
+      # Diagnose Datenpipeline: hide absolute paths in /pipeline/status (default for /app/).
+      # BOWLYZER_PIPELINE_EXPOSE_PATHS: "1"
       # Pre-warmed JSON (build locally, ship with deploy.ps1 -SyncCache) — read-only.
       LEAGUE_CACHE_DIR: /app/.cache/league
       # Read-write overlay: cache misses + revision_index patches persist here.

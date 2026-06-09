@@ -18,14 +18,15 @@ from data_access.player_id_name_normalization import (
     apply_player_id_name_normalization,
     compute_player_id_name_normalization_fingerprint,
     format_normalization_summary as format_player_id_normalization_summary,
-    load_player_id_name_remapping_rules,
+    load_player_id_only_remapping_rules,
 )
-from data_access.player_name_normalization_config import (
-    apply_player_name_normalization,
-    compute_player_name_normalization_fingerprint,
-    format_normalization_summary as format_player_name_normalization_summary,
-    load_player_name_remapping_rules,
+from data_access.players_registry import (
+    apply_players_registry,
+    compute_players_registry_fingerprint,
+    format_registry_apply_summary,
+    load_players_registry_df,
 )
+from data_access.competition_schema import apply_league_competition_schema_v2
 from extract_excel_data import (
     load_team_number_overrides,
     normalize_extracted_dataframe,
@@ -59,7 +60,7 @@ def _resolve_key_columns(df: pd.DataFrame, keys: List[str]) -> Dict[str, str]:
         )
 
     alias_candidates: Dict[str, Iterable[str]] = {
-        "league": ("league",),
+        "league": ("event", "league"),
         "season": ("season",),
         "week": ("week",),
         "game": ("game", "match number", "game number"),
@@ -192,10 +193,10 @@ def merge_sources(
     frames: List[pd.DataFrame] = []
     input_dims: List[Dict] = []
     overrides_df = load_team_number_overrides() if normalize_team_names else pd.DataFrame()
-    player_id_rules = load_player_id_name_remapping_rules() if normalize_player_ids else []
-    player_name_rules = load_player_name_remapping_rules() if normalize_player_ids else []
+    player_id_rules = load_player_id_only_remapping_rules() if normalize_player_ids else []
+    registry_df = load_players_registry_df() if normalize_player_ids else None
     player_id_stats: Dict[str, int] = {}
-    player_name_stats: Dict[str, int] = {}
+    registry_stats: Dict[str, int] = {}
     for idx, path in enumerate(input_paths):
         df = pd.read_csv(path, sep=sep, dtype=str, keep_default_na=False)
         if normalize_team_names and not df.empty:
@@ -213,13 +214,13 @@ def merge_sources(
             )
         if normalize_player_ids and not df.empty:
             if player_id_rules:
-                df, batch_stats = apply_player_id_name_normalization(df, player_id_rules)
+                df, batch_stats = apply_player_id_name_normalization(df, player_id_rules, id_only=True)
                 for label, count in batch_stats.items():
                     player_id_stats[label] = player_id_stats.get(label, 0) + int(count)
-            if player_name_rules:
-                df, batch_stats = apply_player_name_normalization(df, player_name_rules)
+            if registry_df is not None and not registry_df.empty:
+                df, batch_stats = apply_players_registry(df, registry_df)
                 for label, count in batch_stats.items():
-                    player_name_stats[label] = player_name_stats.get(label, 0) + int(count)
+                    registry_stats[label] = registry_stats.get(label, 0) + int(count)
         df["__source_idx"] = str(idx)
         frames.append(df)
         input_dims.append(
@@ -255,6 +256,7 @@ def merge_sources(
 
     merged = combined.drop_duplicates(subset=dedupe_cols, keep="last")
     merged = merged.drop(columns=dedupe_cols + ["__source_idx"])
+    merged = apply_league_competition_schema_v2(merged)
 
     from data_access.parquet_sidecar import publish_dataframe
 
@@ -280,8 +282,8 @@ def merge_sources(
         print_team_normalization_summary()
     if normalize_player_ids and player_id_rules:
         print(format_player_id_normalization_summary(player_id_stats))
-    if normalize_player_ids and player_name_rules:
-        print(format_player_name_normalization_summary(player_name_stats))
+    if normalize_player_ids and registry_stats:
+        print(format_registry_apply_summary(registry_stats))
 
     return {
         "dedupe_keys": key_names,
@@ -311,12 +313,17 @@ def merge_sources(
         },
         "normalization": {
             "team_name_normalization_applied": bool(normalize_team_names),
-            "player_id_name_normalization_applied": bool(normalize_player_ids and player_id_rules),
+            "players_registry_applied": bool(registry_df is not None and not registry_df.empty),
+            "players_registry_row_count": int(len(registry_df)) if registry_df is not None else 0,
+            "players_registry_fingerprint": compute_players_registry_fingerprint(registry_df),
+            "players_registry_rows_changed": int(
+                registry_stats.get("registry_exact", 0)
+                + registry_stats.get("registry_reassembly", 0)
+                + registry_stats.get("registry_close", 0)
+            ),
+            "player_id_remap_applied": bool(normalize_player_ids and player_id_rules),
             "player_id_name_normalization_fingerprint": compute_player_id_name_normalization_fingerprint(),
-            "player_id_name_rows_changed": int(sum(player_id_stats.values())),
-            "player_name_normalization_applied": bool(normalize_player_ids and player_name_rules),
-            "player_name_normalization_fingerprint": compute_player_name_normalization_fingerprint(),
-            "player_name_rows_changed": int(sum(player_name_stats.values())),
+            "player_id_rows_changed": int(sum(player_id_stats.values())),
         },
     }
 

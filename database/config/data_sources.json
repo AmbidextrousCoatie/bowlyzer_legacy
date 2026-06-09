@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "deferred_audits": {
+    "player_id_name": {
+      "blocks_publish": false,
+      "resolve_in": "phase_2b_players_registry",
+      "description": "ID/name conflicts reported but do not block publish until players_registry.parquet exists."
+    }
+  },
+  "publish_jobs": [
+    {
+      "id": "league_merge",
+      "stream": "league",
+      "artifact_stem": "league_results_merged",
+      "app_source_id": "db_real_merged"
+    },
+    {
+      "id": "tournament_merge",
+      "stream": "tournament",
+      "artifact_stem": "tournaments_postprocessed",
+      "app_source_id": "db_tournament_regions_2026_gf"
+    },
+    {
+      "id": "players_registry",
+      "stream": "player",
+      "artifact_stem": "players_registry",
+      "app_source_id": "players_registry"
+    }
+  ],
+  "sources": [
+    {
+      "id": "legacy_league_excel",
+      "stream": "league",
+      "provenance": "excel_archive",
+      "adapter": "extract_excel_data.py",
+      "intake_format": "xlsx",
+      "format_era": "pre2022|post2022",
+      "path_resolver": "historical_league_results_csv",
+      "merge_priority": 0
+    },
+    {
+      "id": "legacy_league_scrape",
+      "stream": "league",
+      "provenance": "web_scrape",
+      "adapter": "scrape_legacy_liga.py",
+      "intake_format": "xls",
+      "format_era": "pre2022",
+      "path_resolver": "legacy_scrape_league_csv",
+      "merge_priority": 1,
+      "optional": true
+    },
+    {
+      "id": "legacy_player_registry_scrape",
+      "stream": "player",
+      "provenance": "web_scrape",
+      "adapter": "scrape_legacy_liga.py --fetch-player-registry",
+      "intake_format": "xls",
+      "format_era": "pre2022",
+      "path_resolver": "legacy_scrape_dir",
+      "publish_job": "players_registry",
+      "optional": true
+    },
+    {
+      "id": "gf_league",
+      "stream": "league",
+      "provenance": "gf_api",
+      "adapter": "run_gf_pipeline.py",
+      "intake_format": "gf_rest",
+      "format_era": "post2022",
+      "path_resolver": "pipeline_gf_league_csv",
+      "merge_priority": 99
+    },
+    {
+      "id": "gf_tournament",
+      "stream": "tournament",
+      "provenance": "gf_api",
+      "adapter": "export_gf_tables.py",
+      "intake_format": "gf_tables",
+      "path_resolver": "gf_tournaments_combined_postprocessed_csv",
+      "publish_job": "tournament_merge"
+    },
+    {
+      "id": "tournament_xlsx",
+      "stream": "tournament",
+      "provenance": "manual_import",
+      "adapter": "import_clubmeisterschaft_donaubowler_xlsx.py",
+      "intake_format": "xlsx",
+      "path_resolver": "manual_tournament_postprocessed_csv",
+      "publish_job": "tournament_merge"
+    }
+  ]
+}

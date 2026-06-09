@@ -160,6 +160,11 @@ def load_player_id_name_remapping_rules(path: Path | None = None) -> List[Player
     return list(load_player_id_name_normalization_config(path).remap_rules)
 
 
+def load_player_id_only_remapping_rules(path: Path | None = None) -> List[PlayerIdNameRemapRule]:
+    """Rules that change ``Player ID`` only (name fixes belong in players_registry)."""
+    return [rule for rule in load_player_id_name_remapping_rules(path) if rule.replace_player_id is not None]
+
+
 def different_person_id_sets_for_name(
     player_name: str,
     config: PlayerIdNameNormalizationConfig | None = None,
@@ -195,9 +200,12 @@ def apply_player_id_name_normalization(
     rules: List[PlayerIdNameRemapRule] | None = None,
     *,
     config_path: Path | None = None,
+    id_only: bool = False,
 ) -> Tuple[Any, Dict[str, int]]:
     """
     Apply curated remappings in file order. Returns (df, rows_changed_per_rule_label).
+
+    When ``id_only`` is True, only ``replace.player_id`` is applied (names use players_registry).
     """
     import pandas as pd
 
@@ -205,7 +213,11 @@ def apply_player_id_name_normalization(
         return df, {}
 
     if rules is None:
-        rules = load_player_id_name_remapping_rules(config_path)
+        rules = (
+            load_player_id_only_remapping_rules(config_path)
+            if id_only
+            else load_player_id_name_remapping_rules(config_path)
+        )
     rules = list(rules)
     if not rules:
         return df, {}
@@ -229,7 +241,7 @@ def apply_player_id_name_normalization(
         if rule.replace_player_id is not None:
             out.loc[mask, id_col] = rule.replace_player_id
             pid_series = out[id_col].map(normalize_player_id)
-        if rule.replace_player_name is not None:
+        if not id_only and rule.replace_player_name is not None:
             out.loc[mask, name_col] = rule.replace_player_name
             name_series = out[name_col].map(normalize_player_name)
         stats[rule.label()] = changed

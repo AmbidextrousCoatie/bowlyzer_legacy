@@ -127,13 +127,13 @@
       "last_updated": "2026-05-14T00:21:13Z"
     },
     "9a15e683-bc71-448a-890e-6e6539b9d398": {
-      "user_message_count": 35,
-      "agent_message_count": 939,
+      "user_message_count": 28,
+      "agent_message_count": 1056,
       "start_timestamp": "2026-06-03T19:17:54+02:00",
       "end_timestamp": "2026-06-03T19:17:54+02:00",
-      "markdown_size_bytes": 711082,
+      "markdown_size_bytes": 828599,
       "provider": "cursoride",
-      "last_updated": "2026-06-09T06:28:18Z"
+      "last_updated": "2026-06-09T22:21:16Z"
     },
     "9a30d81f-4ab3-4637-8610-46f13c29a695": {
       "user_message_count": 30,
@@ -142,7 +142,7 @@
       "end_timestamp": "2026-05-19T09:58:26+02:00",
       "markdown_size_bytes": 824784,
       "provider": "cursoride",
-      "last_updated": "2026-06-09T06:08:08Z"
+      "last_updated": "2026-06-09T19:44:04Z"
     },
     "9bb000f4-b576-4d8d-91ff-10ca23beb566": {
       "user_message_count": 16,
@@ -169,7 +169,7 @@
       "end_timestamp": "2026-05-19T09:33:29+02:00",
       "markdown_size_bytes": 378,
       "provider": "cursoride",
-      "last_updated": "2026-06-09T06:09:58Z"
+      "last_updated": "2026-06-09T19:45:13Z"
     },
     "b3f83efc-a2d9-480b-8470-75c45b46a7e6": {
       "user_message_count": 1,
@@ -178,7 +178,7 @@
       "end_timestamp": "2026-05-18T12:33:30+02:00",
       "markdown_size_bytes": 7953,
       "provider": "cursoride",
-      "last_updated": "2026-06-09T06:08:08Z"
+      "last_updated": "2026-06-09T19:44:04Z"
     },
     "bbee56e9-9522-4b82-8145-d0a667b7e3ff": {
       "user_message_count": 2,
@@ -187,7 +187,7 @@
       "end_timestamp": "2026-05-19T09:55:15+02:00",
       "markdown_size_bytes": 520,
       "provider": "cursoride",
-      "last_updated": "2026-06-09T06:08:08Z"
+      "last_updated": "2026-06-09T19:44:04Z"
     },
     "d4ab47d7-322e-487c-91de-5dcbebe33f56": {
       "user_message_count": 78,
@@ -205,7 +205,7 @@
       "end_timestamp": "2026-05-18T14:35:26+02:00",
       "markdown_size_bytes": 830149,
       "provider": "cursoride",
-      "last_updated": "2026-06-09T06:08:08Z"
+      "last_updated": "2026-06-09T19:44:04Z"
     }
   }
 }

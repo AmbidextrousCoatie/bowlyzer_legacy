@@ -78,8 +78,8 @@ Uploads `database/data/*.parquet`, `*.json`, plus `relational_csv/` and `config/
 Build the cache on your PC (after published data is built), then ship it:
 
 ```powershell
-# 1) Published data: historical + legacy scrape + GF + tournaments + player hybrid
-uv run python scripts/build_published_dataset.py --with-legacy-scrape --with-player-hybrid
+# 1) Published data: historical + legacy scrape + GF + tournaments (Spieler merges at runtime)
+uv run python scripts/build_published_dataset.py --with-legacy-scrape
 
 # 2) Full API cache rebuild (league + clubs + Spieler + Turnier)
 uv run python scripts/rebuild_league_caches.py --all-published --workers 8
@@ -112,7 +112,7 @@ Locally only `.cache/league/` is used unless you set `LEAGUE_CACHE_RUNTIME_DIR`.
 
 **Important:** `deploy-data.ps1` only updates files on the VPS host. The running container must include Python that reads `entries/` (recent `bowlyzer:release` image). Data-only deploy without a new image → cache files sit on disk but the app ignores them. After image + cache deploy, check responses: `curl -sI 'https://www.bowlyzer.online/league/get_club_matrix?database=db_real_merged&club=Donaubowler+Regensburg' | findstr X-League-Cache` should show `HIT`.
 
-Pipeline intermediates belong on **`C:\tmp\bowlyzer\data`** (see `database/data/README.md`). `-SyncDatabase` uploads `database/relational_csv`, `database/config`, and **`*.parquet` / `*.json`** in `database/data/`, plus **`tournament_manual_postprocessed.csv`** (small; used by hybrid rebuild). Use **`-SyncDatabaseCsv`** only if you still need huge CSV copies on the VPS (e.g. full `league_results_merged.csv`).
+Pipeline intermediates belong on **`C:\tmp\bowlyzer\data`** (see `database/data/README.md`). `-SyncDatabase` uploads `database/relational_csv`, `database/config`, and **`*.parquet` / `*.json`** in `database/data/`, plus **`tournament_manual_postprocessed.csv`** when needed. Use **`-SyncDatabaseCsv`** only if you still need huge CSV copies on the VPS (e.g. full `league_results_merged.csv`).
 
 **Tournament data:** After `build_published_dataset.py`, the app reads **`tournaments_postprocessed.parquet`** on the VPS (GF + manual club imports merged locally). You do **not** need to sync `database/input/gf_tables_export/` — that path is dev-only and baked into the image.
 

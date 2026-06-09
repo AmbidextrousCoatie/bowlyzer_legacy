@@ -47,7 +47,7 @@ class PlayerNameRemapRule:
 @dataclass(frozen=True)
 class SamePersonNameGroup:
     player_id: str
-    player_names: FrozenSet[str]
+    player_names: Tuple[str, ...]
 
 
 @dataclass(frozen=True)
@@ -129,10 +129,17 @@ def load_player_name_normalization_config(path: Path | None = None) -> PlayerNam
             names_raw = entry.get("player_names") or []
             if not pid or not isinstance(names_raw, list) or len(names_raw) < 2:
                 raise ValueError(f"{cfg_path}: same_person[{idx}] needs player_id and 2+ player_names")
-            names = frozenset(normalize_player_label(x) for x in names_raw if normalize_player_label(x))
+            seen: Set[str] = set()
+            names: List[str] = []
+            for raw_name in names_raw:
+                label = normalize_player_label(raw_name)
+                if not label or label in seen:
+                    continue
+                seen.add(label)
+                names.append(label)
             if len(names) < 2:
                 raise ValueError(f"{cfg_path}: same_person[{idx}] has fewer than 2 valid player_names")
-            same_person_groups.append(SamePersonNameGroup(player_id=pid, player_names=names))
+            same_person_groups.append(SamePersonNameGroup(player_id=pid, player_names=tuple(names)))
 
     return PlayerNameNormalizationConfig(
         remap_rules=tuple(rules),
@@ -150,13 +157,13 @@ def is_same_person_name_group(
     *,
     config_path: Path | None = None,
 ) -> bool:
-    """True when every name for this id is a registered same-person alias set."""
+    """True when observed names are a subset of a registered same-person alias set."""
     pid = normalize_player_id(player_id)
     normalized = {normalize_player_label(name) for name in player_names if normalize_player_label(name)}
     if len(normalized) < 2:
         return False
     for group in load_player_name_normalization_config(config_path).same_person_groups:
-        if group.player_id == pid and group.player_names == frozenset(normalized):
+        if group.player_id == pid and normalized.issubset(frozenset(group.player_names)):
             return True
     return False
 

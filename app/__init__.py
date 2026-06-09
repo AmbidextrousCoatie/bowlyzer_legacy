@@ -21,6 +21,14 @@ def create_app():
         if not any(path.startswith(prefix) for prefix in _API_PATH_PREFIXES):
             return
         try:
+            from app.services.i18n_service import i18n_service
+
+            # Query param wins so React can request a locale before the cookie updates.
+            lang_code = request.args.get("language") or request.cookies.get("bowlyzer_lang")
+            i18n_service.apply_language_code(lang_code)
+        except Exception as e:
+            print(f"Warning: Could not apply request language: {e}")
+        try:
             from app.services.data_manager import DataManager
 
             data_manager = DataManager()

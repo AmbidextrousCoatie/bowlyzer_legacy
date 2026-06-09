@@ -79,8 +79,11 @@ def get_home_stats(database: str | None = None) -> dict[str, Any]:
         raw_t = t_svc.adapter.get_filtered_data(filters={})
         tournament_df = _tournament_frame(raw_t)
         tournament_games = _count_scored_games(tournament_df)
-        if not tournament_df.empty and Columns.event_name in tournament_df.columns:
-            tournaments = int(tournament_df[Columns.event_name].dropna().nunique())
+        from data_access.competition_schema import competition_event_column
+
+        event_col = competition_event_column(tournament_df)
+        if not tournament_df.empty and event_col:
+            tournaments = int(tournament_df[event_col].dropna().nunique())
         if not tournament_df.empty and Columns.season in tournament_df.columns:
             tournament_seasons = int(tournament_df[Columns.season].dropna().nunique())
     except Exception:
