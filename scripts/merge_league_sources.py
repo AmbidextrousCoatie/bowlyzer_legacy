@@ -14,6 +14,18 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from database.paths import get_data_dir, merge_duplicates_non_exact_report_csv, merge_duplicates_report_csv
+from data_access.player_id_name_normalization import (
+    apply_player_id_name_normalization,
+    compute_player_id_name_normalization_fingerprint,
+    format_normalization_summary as format_player_id_normalization_summary,
+    load_player_id_name_remapping_rules,
+)
+from data_access.player_name_normalization_config import (
+    apply_player_name_normalization,
+    compute_player_name_normalization_fingerprint,
+    format_normalization_summary as format_player_name_normalization_summary,
+    load_player_name_remapping_rules,
+)
 from extract_excel_data import (
     load_team_number_overrides,
     normalize_extracted_dataframe,
@@ -167,6 +179,7 @@ def merge_sources(
     duplicates_out_path: Path | None = None,
     non_exact_duplicates_out_path: Path | None = None,
     normalize_team_names: bool = True,
+    normalize_player_ids: bool = True,
     write_csv: bool = False,
     show_progress: bool = True,
 ) -> Dict:
@@ -179,6 +192,10 @@ def merge_sources(
     frames: List[pd.DataFrame] = []
     input_dims: List[Dict] = []
     overrides_df = load_team_number_overrides() if normalize_team_names else pd.DataFrame()
+    player_id_rules = load_player_id_name_remapping_rules() if normalize_player_ids else []
+    player_name_rules = load_player_name_remapping_rules() if normalize_player_ids else []
+    player_id_stats: Dict[str, int] = {}
+    player_name_stats: Dict[str, int] = {}
     for idx, path in enumerate(input_paths):
         df = pd.read_csv(path, sep=sep, dtype=str, keep_default_na=False)
         if normalize_team_names and not df.empty:
@@ -194,6 +211,15 @@ def merge_sources(
                 show_progress=show_progress,
                 progress_desc=f"team numbers [{idx + 1}/{len(input_paths)}] {source_label}",
             )
+        if normalize_player_ids and not df.empty:
+            if player_id_rules:
+                df, batch_stats = apply_player_id_name_normalization(df, player_id_rules)
+                for label, count in batch_stats.items():
+                    player_id_stats[label] = player_id_stats.get(label, 0) + int(count)
+            if player_name_rules:
+                df, batch_stats = apply_player_name_normalization(df, player_name_rules)
+                for label, count in batch_stats.items():
+                    player_name_stats[label] = player_name_stats.get(label, 0) + int(count)
         df["__source_idx"] = str(idx)
         frames.append(df)
         input_dims.append(
@@ -252,6 +278,10 @@ def merge_sources(
 
     if normalize_team_names:
         print_team_normalization_summary()
+    if normalize_player_ids and player_id_rules:
+        print(format_player_id_normalization_summary(player_id_stats))
+    if normalize_player_ids and player_name_rules:
+        print(format_player_name_normalization_summary(player_name_stats))
 
     return {
         "dedupe_keys": key_names,
@@ -281,6 +311,12 @@ def merge_sources(
         },
         "normalization": {
             "team_name_normalization_applied": bool(normalize_team_names),
+            "player_id_name_normalization_applied": bool(normalize_player_ids and player_id_rules),
+            "player_id_name_normalization_fingerprint": compute_player_id_name_normalization_fingerprint(),
+            "player_id_name_rows_changed": int(sum(player_id_stats.values())),
+            "player_name_normalization_applied": bool(normalize_player_ids and player_name_rules),
+            "player_name_normalization_fingerprint": compute_player_name_normalization_fingerprint(),
+            "player_name_rows_changed": int(sum(player_name_stats.values())),
         },
     }
 
@@ -331,6 +367,11 @@ def main() -> int:
         ),
     )
     parser.add_argument(
+        "--no-normalize-player-ids",
+        action="store_true",
+        help="Disable curated player_id_name_normalization.json remappings.",
+    )
+    parser.add_argument(
         "--write-csv",
         action="store_true",
         help="Also write the merged CSV (default: Parquet only).",
@@ -365,6 +406,7 @@ def main() -> int:
         duplicates_out_path=duplicates_out_path,
         non_exact_duplicates_out_path=non_exact_duplicates_out_path,
         normalize_team_names=not args.no_normalize_team_names,
+        normalize_player_ids=not args.no_normalize_player_ids,
         write_csv=args.write_csv,
         show_progress=not args.no_progress,
     )

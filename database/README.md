@@ -73,3 +73,5 @@ If `bowling_ergebnisse_real.csv` is missing, the app logs one warning and disabl
 | Full Python tree | Whole repo | **Image only** (not host mount) |
 
 See `database/data/README.md` for Parquet build and deploy sync commands.
+
+**Pipeline architecture & roadmap:** [`docs/planning/DATA_PIPELINE_PLAN.md`](../docs/planning/DATA_PIPELINE_PLAN.md) — unified stages, future PDF/Sheets intake, Diagnose UI.

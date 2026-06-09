@@ -16,6 +16,7 @@ import {
   Trophy,
   User,
   Users,
+  Workflow,
   X,
 } from "lucide-react";
 import { Link, NavLink, useSearchParams } from "react-router-dom";
@@ -66,6 +67,7 @@ const NAV_GROUPS: ReadonlyArray<NavGroup> = [
       { path: "/diagnose/club-matrix", label: "Club-Matrix", icon: Building2 },
       { path: "/diagnose/liga-wochen", label: "Liga-Wochen", icon: CalendarRange },
       { path: "/diagnose/daten-anomalien", label: "Anomalien", icon: AlertTriangle },
+      { path: "/diagnose/datenpipeline", label: "Datenpipeline", icon: Workflow },
     ],
   },
 ];

@@ -46,7 +46,10 @@ from database.paths import (
     tournaments_postprocessed_csv,
 )
 from scripts.audit_female_league_split import audit_league_csv, format_issue_report
+from scripts.audit_player_id_names import audit_player_id_names, format_summary, write_conflict_report
 from scripts.merge_league_sources import CSV_SEP, DEFAULT_KEYS, merge_sources
+
+PLAYER_ID_NAME_CONFLICTS_CSV = "player_id_name_conflicts.csv"
 
 CSV_READ_KW = {"sep": CSV_SEP, "dtype": str, "low_memory": False}
 
@@ -165,6 +168,22 @@ def build_player_hybrid(
         out_rows.append(merged)
 
     hybrid_df = pd.DataFrame(out_rows)
+    from data_access.player_id_name_normalization import (
+        apply_player_id_name_normalization,
+        format_normalization_summary as format_player_id_normalization_summary,
+    )
+    from data_access.player_name_normalization_config import (
+        apply_player_name_normalization,
+        format_normalization_summary as format_player_name_normalization_summary,
+    )
+
+    hybrid_df, player_id_stats = apply_player_id_name_normalization(hybrid_df)
+    if player_id_stats:
+        print(format_player_id_normalization_summary(player_id_stats))
+    hybrid_df, player_name_stats = apply_player_name_normalization(hybrid_df)
+    if player_name_stats:
+        print(format_player_name_normalization_summary(player_name_stats))
+
     published = publish_dataframe(hybrid_df, out_path, write_csv=write_csv, sep=CSV_SEP)
     if write_csv:
         out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -273,6 +292,11 @@ def main() -> int:
         help="Do not fail when legacy/extra league CSVs collapse Damen into male league ids.",
     )
     parser.add_argument(
+        "--skip-player-id-name-audit",
+        action="store_true",
+        help="Skip player name / Player ID conflict report (player_id_name_conflicts.csv).",
+    )
+    parser.add_argument(
         "--no-progress",
         action="store_true",
         help="Disable tqdm progress bars during team-name normalization (merge step)",
@@ -315,6 +339,7 @@ def main() -> int:
         return 0
 
     summary: Dict[str, Any] = {"paths": {"data_dir": str(get_data_dir()), "work_dir": str(get_work_data_dir())}}
+    player_id_audit_paths: List[Path] = []
 
     if not args.skip_female_league_audit:
         audit_paths = [
@@ -349,6 +374,7 @@ def main() -> int:
             write_csv=args.write_csv,
             show_progress=not args.no_progress,
         )
+        player_id_audit_paths.append(league_out)
 
     if not args.league_only:
         if not tournament_inputs:
@@ -368,12 +394,44 @@ def main() -> int:
             print("Error: league output missing; cannot build player hybrid.", file=sys.stderr)
             return 2
         print("==> building player hybrid (optional) …")
+        hybrid_out = player_stats_merged_hybrid_csv().resolve()
         summary["player_hybrid"] = build_player_hybrid(
             league_out,
             tournaments_out,
-            player_stats_merged_hybrid_csv().resolve(),
+            hybrid_out,
             write_csv=args.write_csv,
         )
+        player_id_audit_paths.append(hybrid_out)
+
+    if not args.skip_player_id_name_audit and player_id_audit_paths:
+        from data_access.parquet_sidecar import data_file_exists, resolve_load_path
+
+        report_path = get_work_data_dir() / PLAYER_ID_NAME_CONFLICTS_CSV
+        all_conflicts = []
+        for audit_target in player_id_audit_paths:
+            if not data_file_exists(audit_target):
+                continue
+            load_path = resolve_load_path(audit_target)
+            conflicts = audit_player_id_names(
+                load_path,
+                sep=CSV_SEP,
+                source_file=audit_target.name,
+            )
+            all_conflicts.extend(conflicts)
+            print(format_summary(conflicts, data_path=load_path, report_path=report_path))
+        if all_conflicts:
+            write_conflict_report(all_conflicts, report_path)
+            summary["player_id_name_audit"] = {
+                "report": str(report_path.resolve()),
+                "detail_rows": len(all_conflicts),
+            }
+        else:
+            write_conflict_report([], report_path)
+            summary["player_id_name_audit"] = {
+                "report": str(report_path.resolve()),
+                "detail_rows": 0,
+            }
+            print(f"Player ID/name audit: no conflicts; empty report at {report_path}")
 
     print()
     print(json.dumps(summary, indent=2, ensure_ascii=False))

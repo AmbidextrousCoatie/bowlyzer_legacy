@@ -1,0 +1,339 @@
+"""Player name / Player ID consistency audit (no auto-merge)."""
+
+from __future__ import annotations
+
+import csv
+from pathlib import Path
+
+from scripts.audit_player_id_names import (
+    ANALYSIS_MULTI_ID,
+    ANALYSIS_MULTI_NAME,
+    AUTORESOLVE_MAJORITY,
+    AUTORESOLVE_NAME_REASSEMBLY,
+    AUTORESOLVE_PLACEHOLDER,
+    ISSUE_SAME_ID,
+    ISSUE_SAME_ID_NAME_VARIANTS,
+    ISSUE_SAME_NAME,
+    audit_player_id_names,
+    is_placeholder_player_id,
+    write_conflict_report,
+)
+
+
+def _write_csv(path: Path, rows: list[dict]) -> None:
+    headers = ["Season", "Player", "Player ID", "Input Data", "Computed Data"]
+    with path.open("w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=headers, delimiter=";", extrasaction="ignore")
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def _player_row(*, season: str, name: str, pid: str) -> dict:
+    return {
+        "Season": season,
+        "Player": name,
+        "Player ID": pid,
+        "Input Data": "True",
+        "Computed Data": "False",
+    }
+
+
+def test_same_name_different_ids(tmp_path: Path) -> None:
+    rows = [
+        _player_row(season="24/25", name="Seltmann, Dominik", pid="25604"),
+        _player_row(season="14/15", name="Seltmann, Dominik", pid="26504"),
+        _player_row(season="25/26", name="Seltmann, Dominik", pid="25604"),
+    ]
+    path = tmp_path / "league.csv"
+    _write_csv(path, rows)
+
+    conflicts = audit_player_id_names(path, apply_normalization=False)
+    same_name = [c for c in conflicts if c.issue_type == ISSUE_SAME_NAME]
+    assert len(same_name) == 2
+    assert {c.player_id for c in same_name} == {"25604", "26504"}
+    assert all(c.player_name == "Seltmann, Dominik" for c in same_name)
+    assert all(c.group_size_ids == 2 for c in same_name)
+
+
+def test_same_id_different_names(tmp_path: Path) -> None:
+    rows = [
+        _player_row(season="08/09", name="Rotter, Mark-Roland", pid="16005"),
+        _player_row(season="09/10", name="Rotter Dr., Aurelian", pid="16005"),
+    ]
+    path = tmp_path / "league.csv"
+    _write_csv(path, rows)
+
+    conflicts = audit_player_id_names(path, apply_normalization=False)
+    same_id = [c for c in conflicts if c.issue_type == ISSUE_SAME_ID]
+    assert len(same_id) == 2
+    assert {c.player_name for c in same_id} == {"Rotter, Mark-Roland", "Rotter Dr., Aurelian"}
+    assert all(c.player_id == "16005" for c in same_id)
+
+
+def test_different_spellings_are_not_same_name(tmp_path: Path) -> None:
+    rows = [
+        _player_row(season="24/25", name="Seltmann, Dominik", pid="25604"),
+        _player_row(season="14/15", name="Seltmann, Dominic", pid="26504"),
+    ]
+    path = tmp_path / "league.csv"
+    _write_csv(path, rows)
+
+    conflicts = audit_player_id_names(path, apply_normalization=False)
+    assert conflicts == []
+
+
+def test_skips_team_total_and_computed_rows(tmp_path: Path) -> None:
+    rows = [
+        {
+            "Season": "24/25",
+            "Player": "Team Total",
+            "Player ID": "99999",
+            "Input Data": "True",
+            "Computed Data": "False",
+        },
+        {
+            "Season": "24/25",
+            "Player": "Alpha, A",
+            "Player ID": "1",
+            "Input Data": "False",
+            "Computed Data": "False",
+        },
+        _player_row(season="24/25", name="Beta, B", pid="1"),
+        _player_row(season="24/25", name="Beta, C", pid="1"),
+    ]
+    path = tmp_path / "league.csv"
+    _write_csv(path, rows)
+
+    conflicts = audit_player_id_names(path, apply_normalization=False)
+    same_id = [c for c in conflicts if c.issue_type == ISSUE_SAME_ID]
+    assert len(same_id) == 2
+    assert {c.player_name for c in same_id} == {"Beta, B", "Beta, C"}
+
+
+def test_majority_autoresolve_same_name(tmp_path: Path) -> None:
+    rows = []
+    for _ in range(30):
+        rows.append(_player_row(season="24/25", name="Seltmann, Dominik", pid="25604"))
+    rows.append(_player_row(season="14/15", name="Seltmann, Dominik", pid="26504"))
+
+    path = tmp_path / "league.csv"
+    _write_csv(path, rows)
+
+    conflicts = audit_player_id_names(path)
+    minority = next(
+        c for c in conflicts if c.issue_type == ISSUE_SAME_NAME and c.player_id == "26504"
+    )
+    majority = next(
+        c for c in conflicts if c.issue_type == ISSUE_SAME_NAME and c.player_id == "25604"
+    )
+    assert minority.autoresolve_rule == AUTORESOLVE_MAJORITY
+    assert minority.proposed_id == "25604"
+    assert majority.autoresolve_rule == AUTORESOLVE_MAJORITY
+    assert majority.proposed_id == ""
+
+
+def test_majority_not_applied_below_ratio(tmp_path: Path) -> None:
+    rows = [
+        _player_row(season="24/25", name="Same, Name", pid="10001"),
+        _player_row(season="24/25", name="Same, Name", pid="10001"),
+        _player_row(season="14/15", name="Same, Name", pid="10002"),
+    ]
+    path = tmp_path / "league.csv"
+    _write_csv(path, rows)
+
+    conflicts = audit_player_id_names(path, apply_normalization=False)
+    for row in conflicts:
+        assert row.autoresolve_rule == ""
+        assert row.proposed_id == ""
+
+
+def test_is_placeholder_player_id() -> None:
+    assert is_placeholder_player_id("1")
+    assert is_placeholder_player_id("111")
+    assert is_placeholder_player_id("99999")
+    assert is_placeholder_player_id("11112345")
+    assert is_placeholder_player_id("99991234")
+    assert not is_placeholder_player_id("25604")
+    assert not is_placeholder_player_id("1234")
+    assert not is_placeholder_player_id("11123")
+
+
+def test_placeholder_autoresolve_same_name(tmp_path: Path) -> None:
+    rows = []
+    for _ in range(20):
+        rows.append(_player_row(season="24/25", name="Dummy, Player", pid="25604"))
+    rows.append(_player_row(season="24/25", name="Dummy, Player", pid="11111"))
+
+    path = tmp_path / "league.csv"
+    _write_csv(path, rows)
+
+    conflicts = audit_player_id_names(path)
+    placeholder = next(c for c in conflicts if c.player_id == "11111")
+    real = next(c for c in conflicts if c.player_id == "25604")
+    assert placeholder.autoresolve_rule == AUTORESOLVE_PLACEHOLDER
+    assert placeholder.proposed_id == "25604"
+    assert real.autoresolve_rule == AUTORESOLVE_PLACEHOLDER
+    assert real.proposed_id == ""
+
+
+def test_placeholder_all_dummy_ids_picks_majority_games(tmp_path: Path) -> None:
+    rows = []
+    for _ in range(10):
+        rows.append(_player_row(season="24/25", name="Dummy, Player", pid="11111"))
+    rows.append(_player_row(season="24/25", name="Dummy, Player", pid="111"))
+
+    path = tmp_path / "league.csv"
+    _write_csv(path, rows)
+
+    conflicts = audit_player_id_names(path)
+    dominant = next(c for c in conflicts if c.player_id == "11111")
+    minority = next(c for c in conflicts if c.player_id == "111")
+    assert dominant.autoresolve_rule == AUTORESOLVE_PLACEHOLDER
+    assert dominant.proposed_id == ""
+    assert minority.autoresolve_rule == AUTORESOLVE_PLACEHOLDER
+    assert minority.proposed_id == "11111"
+
+
+def test_multi_name_reassembly_same_canonical(tmp_path: Path) -> None:
+    rows = [
+        _player_row(season="24/25", name="Scheigenpflug, Stephan", pid="12345"),
+        _player_row(season="14/15", name="Stephan Scheigenpflug", pid="12345"),
+    ]
+    path = tmp_path / "league.csv"
+    _write_csv(path, rows)
+
+    conflicts = audit_player_id_names(path, apply_normalization=False, analyses=[ANALYSIS_MULTI_NAME])
+    assert len(conflicts) == 2
+    assert all(c.issue_type == ISSUE_SAME_ID_NAME_VARIANTS for c in conflicts)
+    assert all(c.canonical_name == "Scheigenpflug, Stephan" for c in conflicts)
+    reordered = next(c for c in conflicts if c.player_name == "Stephan Scheigenpflug")
+    canonical_row = next(c for c in conflicts if c.player_name == "Scheigenpflug, Stephan")
+    assert reordered.autoresolve_rule == AUTORESOLVE_NAME_REASSEMBLY
+    assert reordered.proposed_name == "Scheigenpflug, Stephan"
+    assert canonical_row.autoresolve_rule == AUTORESOLVE_NAME_REASSEMBLY
+    assert canonical_row.proposed_name == ""
+
+
+def test_multi_name_no_reassembly_when_canonicals_differ(tmp_path: Path) -> None:
+    rows = [
+        _player_row(season="08/09", name="Rotter, Mark-Roland", pid="16005"),
+        _player_row(season="09/10", name="Rotter Dr., Aurelian", pid="16005"),
+    ]
+    path = tmp_path / "league.csv"
+    _write_csv(path, rows)
+
+    conflicts = audit_player_id_names(path, apply_normalization=False, analyses=[ANALYSIS_MULTI_NAME])
+    assert len(conflicts) == 2
+    assert all(c.autoresolve_rule == "" for c in conflicts)
+    assert all(c.proposed_name == "" for c in conflicts)
+    assert {c.canonical_name for c in conflicts} == {
+        "Rotter, Mark-Roland",
+        "Rotter Dr., Aurelian",
+    }
+
+
+def test_multi_name_merges_comma_whitespace_variants(tmp_path: Path) -> None:
+    rows = []
+    for _ in range(10):
+        rows.append(_player_row(season="24/25", name="Mihatsch, Rudolf", pid="7031"))
+    for _ in range(4):
+        rows.append(_player_row(season="18/19", name="Mihatsch , Rudolf", pid="7031"))
+    rows.append(_player_row(season="08/09", name="Mihatsch, Rudi", pid="7031"))
+
+    path = tmp_path / "league.csv"
+    _write_csv(path, rows)
+
+    conflicts = audit_player_id_names(path, apply_normalization=False, analyses=[ANALYSIS_MULTI_NAME])
+    assert len(conflicts) == 2
+    rudolf = next(c for c in conflicts if c.player_name == "Mihatsch, Rudolf")
+    rudi = next(c for c in conflicts if c.player_name == "Mihatsch, Rudi")
+    assert rudolf.row_count == 14
+    assert rudolf.canonical_name == "Mihatsch, Rudolf"
+    assert rudolf.autoresolve_rule == AUTORESOLVE_MAJORITY
+    assert rudolf.proposed_name == ""
+    assert rudi.autoresolve_rule == AUTORESOLVE_MAJORITY
+    assert rudi.proposed_name == "Mihatsch, Rudolf"
+
+
+def test_multi_name_reassembly_two_token_reversal(tmp_path: Path) -> None:
+    rows = []
+    for _ in range(20):
+        rows.append(_player_row(season="24/25", name="Köse, Sahin", pid="16002"))
+    rows.append(_player_row(season="25/26", name="Köse Sahin", pid="16002"))
+    rows.append(_player_row(season="25/26", name="Sahin Köse", pid="16002"))
+
+    path = tmp_path / "league.csv"
+    _write_csv(path, rows)
+
+    conflicts = audit_player_id_names(path, apply_normalization=False, analyses=[ANALYSIS_MULTI_NAME])
+    assert len(conflicts) == 3
+    assert all(c.autoresolve_rule == AUTORESOLVE_NAME_REASSEMBLY for c in conflicts)
+    assert all(c.canonical_name == "Köse, Sahin" for c in conflicts)
+    dominant = next(c for c in conflicts if c.player_name == "Köse, Sahin")
+    minority_a = next(c for c in conflicts if c.player_name == "Köse Sahin")
+    minority_b = next(c for c in conflicts if c.player_name == "Sahin Köse")
+    assert dominant.proposed_name == ""
+    assert minority_a.proposed_name == "Köse, Sahin"
+    assert minority_b.proposed_name == "Köse, Sahin"
+
+
+def test_multi_name_majority_when_reversal_does_not_apply(tmp_path: Path) -> None:
+    rows = []
+    for _ in range(20):
+        rows.append(_player_row(season="24/25", name="Rotter, Mark-Roland", pid="16005"))
+    rows.append(_player_row(season="09/10", name="Rotter Dr., Aurelian", pid="16005"))
+
+    path = tmp_path / "league.csv"
+    _write_csv(path, rows)
+
+    conflicts = audit_player_id_names(path, apply_normalization=False, analyses=[ANALYSIS_MULTI_NAME])
+    assert len(conflicts) == 2
+    dominant = next(c for c in conflicts if c.player_name == "Rotter, Mark-Roland")
+    minority = next(c for c in conflicts if c.player_name == "Rotter Dr., Aurelian")
+    assert dominant.autoresolve_rule == AUTORESOLVE_MAJORITY
+    assert dominant.proposed_name == ""
+    assert minority.autoresolve_rule == AUTORESOLVE_MAJORITY
+    assert minority.proposed_name == "Rotter, Mark-Roland"
+
+
+def test_multi_name_majority_not_applied_below_ratio(tmp_path: Path) -> None:
+    rows = [
+        _player_row(season="24/25", name="Rotter, Mark-Roland", pid="16005"),
+        _player_row(season="24/25", name="Rotter, Mark-Roland", pid="16005"),
+        _player_row(season="25/26", name="Rotter Dr., Aurelian", pid="16005"),
+    ]
+    path = tmp_path / "league.csv"
+    _write_csv(path, rows)
+
+    conflicts = audit_player_id_names(path, apply_normalization=False, analyses=[ANALYSIS_MULTI_NAME])
+    assert all(c.autoresolve_rule == "" for c in conflicts)
+    assert all(c.proposed_name == "" for c in conflicts)
+
+
+def test_analysis_multi_id_only_skips_name_variants(tmp_path: Path) -> None:
+    rows = [
+        _player_row(season="24/25", name="Scheigenpflug, Stephan", pid="12345"),
+        _player_row(season="14/15", name="Stephan Scheigenpflug", pid="12345"),
+    ]
+    path = tmp_path / "league.csv"
+    _write_csv(path, rows)
+
+    conflicts = audit_player_id_names(path, apply_normalization=False, analyses=[ANALYSIS_MULTI_ID])
+    assert len(conflicts) == 2
+    assert all(c.issue_type == ISSUE_SAME_ID for c in conflicts)
+    assert all(c.canonical_name == "" for c in conflicts)
+
+
+def test_write_conflict_report(tmp_path: Path) -> None:
+    rows = [
+        _player_row(season="24/25", name="Same, Name", pid="1"),
+        _player_row(season="24/25", name="Same, Name", pid="2"),
+    ]
+    path = tmp_path / "league.csv"
+    _write_csv(path, rows)
+    out = tmp_path / "report.csv"
+    conflicts = audit_player_id_names(path)
+    write_conflict_report(conflicts, out)
+    text = out.read_text(encoding="utf-8")
+    assert "same_name_different_ids" in text
+    assert "Same, Name" in text

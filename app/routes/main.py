@@ -88,6 +88,17 @@ def switch_database():
             'message': f'Error switching database: {str(e)}'
         }), 500
 
+@bp.route('/pipeline/status')
+def pipeline_status():
+    """Published artifacts and pipeline paths for the Diagnose Datenpipeline page."""
+    try:
+        from app.services.pipeline_status_service import get_pipeline_status
+
+        return jsonify(get_pipeline_status())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 @bp.route('/get-data-sources-info')
 def get_data_sources_info():
     try:

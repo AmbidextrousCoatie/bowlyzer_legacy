@@ -1,0 +1,2469 @@
+{
+  "version": 2,
+  "manual_resolutions": {
+    "dbu_id": [
+      {
+        "match": {
+          "player_name": "Baunach, Robert",
+          "player_id": "35378"
+        },
+        "replace": {
+          "player_id": "38378"
+        },
+        "source": "dbu_id"
+      },
+      {
+        "match": {
+          "player_name": "Brooks, Gary",
+          "player_id": "79813"
+        },
+        "replace": {
+          "player_id": "25645"
+        },
+        "source": "dbu_id"
+      },
+      {
+        "match": {
+          "player_name": "Burkhardt, Richard",
+          "player_id": "19042"
+        },
+        "replace": {
+          "player_id": "16042"
+        },
+        "source": "dbu_id"
+      },
+      {
+        "match": {
+          "player_name": "Dopieralski, Hanna",
+          "player_id": "16368"
+        },
+        "replace": {
+          "player_id": "16369"
+        },
+        "source": "dbu_id"
+      },
+      {
+        "match": {
+          "player_name": "Engelin, Michael",
+          "player_id": "38166"
+        },
+        "replace": {
+          "player_id": "10429"
+        },
+        "source": "dbu_id"
+      },
+      {
+        "match": {
+          "player_name": "Faltermeier, Robert",
+          "player_id": "38427"
+        },
+        "replace": {
+          "player_id": "38472"
+        },
+        "source": "dbu_id"
+      },
+      {
+        "match": {
+          "player_name": "Franzé, Salvatore",
+          "player_id": "1695"
+        },
+        "replace": {
+          "player_id": "16951"
+        },
+        "source": "dbu_id"
+      },
+      {
+        "match": {
+          "player_name": "Gehweiler, Manuel",
+          "player_id": "75807"
+        },
+        "replace": {
+          "player_id": "7587"
+        },
+        "source": "dbu_id"
+      },
+      {
+        "match": {
+          "player_name": "Girbinger, Bodo",
+          "player_id": "7252"
+        },
+        "replace": {
+          "player_id": "25105"
+        },
+        "source": "dbu_id"
+      },
+      {
+        "match": {
+          "player_name": "Hess , Simone",
+          "player_id": "755"
+        },
+        "replace": {
+          "player_id": "7055"
+        },
+        "source": "dbu_id"
+      },
+      {
+        "match": {
+          "player_name": "Hofer, Stefan",
+          "player_id": "38128"
+        },
+        "replace": {
+          "player_id": "38153"
+        },
+        "source": "dbu_id"
+      },
+      {
+        "match": {
+          "player_name": "Hoyng, Hermann-Josef",
+          "player_id": "25234"
+        },
+        "replace": {
+          "player_id": "25334"
+        },
+        "source": "dbu_id"
+      },
+      {
+        "match": {
+          "player_name": "Höllger, Uwe",
+          "player_id": "16289"
+        },
+        "replace": {
+          "player_id": "16269"
+        },
+        "source": "dbu_id"
+      },
+      {
+        "match": {
+          "player_name": "Jentsch, Judith",
+          "player_id": "39608"
+        },
+        "replace": {
+          "player_id": "38608"
+        },
+        "source": "dbu_id"
+      },
+      {
+        "match": {
+          "player_name": "Jung, Ronald",
+          "player_id": "25678"
+        },
+        "replace": {
+          "player_id": "25679"
+        },
+        "source": "dbu_id"
+      },
+      {
+        "match": {
+          "player_name": "Kadric, Zenun",
+          "player_id": "25543"
+        },
+        "replace": {
+          "player_id": "25539"
+        },
+        "source": "dbu_id"
+      },
+      {
+        "match": {
+          "player_name": "Kernstock, Karl-Heinz",
+          "player_id": "38033"
+        },
+        "replace": {
+          "player_id": "38053"
+        },
+        "source": "dbu_id"
+      },
+      {
+        "match": {
+          "player_name": "Kirchgässner, Herbert",
+          "player_id": "70112"
+        },
+        "replace": {
+          "player_id": "25151"
+        },
+        "source": "dbu_id"
+      },
+      {
+        "match": {
+          "player_name": "Koch, Markus",
+          "player_id": "38326"
+        },
+        "replace": {
+          "player_id": "38336"
+        },
+        "source": "dbu_id"
+      },
+      {
+        "match": {
+          "player_name": "Kraft, Andreas",
+          "player_id": "9998"
+        },
+        "replace": {
+          "player_id": "38218"
+        },
+        "source": "dbu_id"
+      },
+      {
+        "match": {
+          "player_name": "Krüger, Lars",
+          "player_id": "38422"
+        },
+        "replace": {
+          "player_id": "38402"
+        },
+        "source": "dbu_id"
+      },
+      {
+        "match": {
+          "player_name": "Lehmann, Ramona",
+          "player_id": "7426"
+        },
+        "replace": {
+          "player_id": "7429"
+        },
+        "source": "dbu_id"
+      },
+      {
+        "match": {
+          "player_name": "Markus Hanauer",
+          "player_id": "38314"
+        },
+        "replace": {
+          "player_id": "38214"
+        },
+        "source": "dbu_id"
+      },
+      {
+        "match": {
+          "player_name": "Molz, Felix",
+          "player_id": "25336"
+        },
+        "replace": {
+          "player_id": "25366"
+        },
+        "source": "dbu_id"
+      },
+      {
+        "match": {
+          "player_name": "Neitzel, Rita",
+          "player_id": "16287"
+        },
+        "replace": {
+          "player_id": "16267"
+        },
+        "source": "dbu_id"
+      },
+      {
+        "match": {
+          "player_name": "Oberfrank, Wolfgang",
+          "player_id": "19633"
+        },
+        "replace": {
+          "player_id": "16933"
+        },
+        "source": "dbu_id"
+      },
+      {
+        "match": {
+          "player_name": "Pichl, Rainer",
+          "player_id": "25484"
+        },
+        "replace": {
+          "player_id": "25485"
+        },
+        "source": "dbu_id"
+      },
+      {
+        "match": {
+          "player_name": "Pirrotti, Franco-Daniele",
+          "player_id": "3818"
+        },
+        "replace": {
+          "player_id": "38188"
+        },
+        "source": "dbu_id"
+      },
+      {
+        "match": {
+          "player_name": "Rieß, Sandra",
+          "player_id": "7186"
+        },
+        "replace": {
+          "player_id": "7168"
+        },
+        "source": "dbu_id"
+      },
+      {
+        "match": {
+          "player_name": "Rothenhöfer, Iris",
+          "player_id": "38342"
+        },
+        "replace": {
+          "player_id": "16370"
+        },
+        "source": "dbu_id"
+      },
+      {
+        "match": {
+          "player_name": "Rotter, Mark-Roland",
+          "player_id": "16005"
+        },
+        "replace": {
+          "player_id": "16010"
+        },
+        "source": "dbu_id"
+      },
+      {
+        "match": {
+          "player_name": "Sack, Tobias",
+          "player_id": "25016"
+        },
+        "replace": {
+          "player_id": "25019"
+        },
+        "source": "dbu_id"
+      },
+      {
+        "match": {
+          "player_name": "Schindler, Martin",
+          "player_id": "16555"
+        },
+        "replace": {
+          "player_id": "16655"
+        },
+        "source": "dbu_id"
+      },
+      {
+        "match": {
+          "player_name": "Seltmann, Dominic",
+          "player_id": "26504"
+        },
+        "replace": {
+          "player_id": "25604"
+        },
+        "source": "dbu_id"
+      },
+      {
+        "match": {
+          "player_name": "Wanner, Wolfgang",
+          "player_id": "35195"
+        },
+        "replace": {
+          "player_id": "38195"
+        },
+        "source": "dbu_id"
+      },
+      {
+        "match": {
+          "player_name": "Wronna, Gerry",
+          "player_id": "7126"
+        },
+        "replace": {
+          "player_id": "7303"
+        },
+        "source": "dbu_id"
+      }
+    ],
+    "different_person": [
+      {
+        "player_name": "Müller, Angelika",
+        "player_ids": [
+          "12850",
+          "25571"
+        ]
+      },
+      {
+        "player_name": "Müller, Christian",
+        "player_ids": [
+          "16866",
+          "25117"
+        ]
+      },
+      {
+        "player_name": "Poppe, Andreas",
+        "player_ids": [
+          "7421",
+          "25489"
+        ]
+      },
+      {
+        "player_name": "Raab, Florian",
+        "player_ids": [
+          "16206",
+          "38281"
+        ]
+      }
+    ]
+  },
+  "autoresolve_remappings": [
+    {
+      "match": {
+        "player_name": "Aigner, Günther",
+        "player_id": "99999"
+      },
+      "replace": {
+        "player_id": "25685"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Axt, Florian",
+        "player_id": "16395"
+      },
+      "replace": {
+        "player_id": "273"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Bartl, Christian",
+        "player_id": "1"
+      },
+      "replace": {
+        "player_id": "28088"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Bartl, Christian",
+        "player_id": "25462"
+      },
+      "replace": {
+        "player_id": "28088"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Bauer, Lydia",
+        "player_id": "25834"
+      },
+      "replace": {
+        "player_id": "16863"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Bauer, Lydia",
+        "player_id": "99999"
+      },
+      "replace": {
+        "player_id": "16863"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Beck, Joseph",
+        "player_id": "7833"
+      },
+      "replace": {
+        "player_id": "7883"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Beck, Martin",
+        "player_id": "25583"
+      },
+      "replace": {
+        "player_id": "25893"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Behn-Remus, Daniel",
+        "player_id": "25949"
+      },
+      "replace": {
+        "player_id": "38389"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Beißel, Ralf",
+        "player_id": "16298"
+      },
+      "replace": {
+        "player_id": "16289"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Betz, Jürgen",
+        "player_id": "2502"
+      },
+      "replace": {
+        "player_id": "25025"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Betz, Jürgen",
+        "player_id": "26025"
+      },
+      "replace": {
+        "player_id": "25025"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Bevins, Jimmy",
+        "player_id": "99"
+      },
+      "replace": {
+        "player_id": "25531"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Biehl, Thomas",
+        "player_id": "3813"
+      },
+      "replace": {
+        "player_id": "38136"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Bluhm, Bernd Horst",
+        "player_id": "99999"
+      },
+      "replace": {
+        "player_id": "25840"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Bogdan, Birgit",
+        "player_id": "7801"
+      },
+      "replace": {
+        "player_id": "25335"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Bohnen, Frank",
+        "player_id": "11111"
+      },
+      "replace": {
+        "player_id": "38359"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Both, Mathias",
+        "player_id": "99999"
+      },
+      "replace": {
+        "player_id": "25382"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Brem, Ivan",
+        "player_id": "25534"
+      },
+      "replace": {
+        "player_id": "25543"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Brem, Ivan",
+        "player_id": "25542"
+      },
+      "replace": {
+        "player_id": "25543"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Bremova, Alena",
+        "player_id": "25543"
+      },
+      "replace": {
+        "player_id": "25542"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Breuer, Jörg",
+        "player_id": "99998"
+      },
+      "replace": {
+        "player_id": "25987"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Brodowsky, Jan",
+        "player_id": "25323"
+      },
+      "replace": {
+        "player_id": "7650"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Brown, Stanton W.",
+        "player_id": "99999"
+      },
+      "replace": {
+        "player_id": "25694"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Brunke, Thorsten",
+        "player_id": "2567"
+      },
+      "replace": {
+        "player_id": "25567"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Burtscher, Albert",
+        "player_id": "99999"
+      },
+      "replace": {
+        "player_id": "38023"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Böck, Maximilian",
+        "player_id": "99999"
+      },
+      "replace": {
+        "player_id": "38326"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Böhme , Manfred",
+        "player_id": "16420"
+      },
+      "replace": {
+        "player_id": "16424"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Büttner, Christian",
+        "player_id": "16393"
+      },
+      "replace": {
+        "player_id": "16862"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Czarnowski, Ernst",
+        "player_id": "25332"
+      },
+      "replace": {
+        "player_id": "25337"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Czarnowski, Ernst",
+        "player_id": "99999"
+      },
+      "replace": {
+        "player_id": "25337"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Derbfuss, Tobias",
+        "player_id": "38271"
+      },
+      "replace": {
+        "player_id": "38270"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Dörr, Martin",
+        "player_id": "99999"
+      },
+      "replace": {
+        "player_id": "25816"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Eberl, Christian",
+        "player_id": "61383"
+      },
+      "replace": {
+        "player_id": "25668"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Eck, Tom",
+        "player_id": "38053"
+      },
+      "replace": {
+        "player_id": "38050"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Egger, Michael",
+        "player_id": "785"
+      },
+      "replace": {
+        "player_id": "25785"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Eisenegger, Patrick",
+        "player_id": "25068"
+      },
+      "replace": {
+        "player_id": "25069"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Enderle, Angelica",
+        "player_id": "99998"
+      },
+      "replace": {
+        "player_id": "38557"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Eppler-Vogt, Daniela",
+        "player_id": "99992"
+      },
+      "replace": {
+        "player_id": "25150"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Federmann, Markus",
+        "player_id": "99997"
+      },
+      "replace": {
+        "player_id": "25374"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Ferber, Andreas",
+        "player_id": "7370"
+      },
+      "replace": {
+        "player_id": "7338"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Fischer, Harald",
+        "player_id": "25763"
+      },
+      "replace": {
+        "player_id": "25514"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Fischer, Markus",
+        "player_id": "38238"
+      },
+      "replace": {
+        "player_id": "38237"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Fischer, Thomas",
+        "player_id": "38929"
+      },
+      "replace": {
+        "player_id": "25719"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Franke, Guido",
+        "player_id": "7235"
+      },
+      "replace": {
+        "player_id": "7135"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Frasch, Albert",
+        "player_id": "26657"
+      },
+      "replace": {
+        "player_id": "25657"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Freigang, Edith",
+        "player_id": "60604"
+      },
+      "replace": {
+        "player_id": "16604"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Friedrich, Bernd",
+        "player_id": "7256"
+      },
+      "replace": {
+        "player_id": "7265"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Fynney, Sam",
+        "player_id": "9999"
+      },
+      "replace": {
+        "player_id": "25362"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Geese, Alexander",
+        "player_id": "99999"
+      },
+      "replace": {
+        "player_id": "16798"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Giorgini, Giuseppe",
+        "player_id": "38033"
+      },
+      "replace": {
+        "player_id": "7662"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Gladisch, Eberhard",
+        "player_id": "12860"
+      },
+      "replace": {
+        "player_id": "16097"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Glatzer, Daniel",
+        "player_id": "16234"
+      },
+      "replace": {
+        "player_id": "16243"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Grabowski, Jaroslaw",
+        "player_id": "9999"
+      },
+      "replace": {
+        "player_id": "25377"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Gulvadi, Sanat",
+        "player_id": "38424"
+      },
+      "replace": {
+        "player_id": "38429"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Hacker, Michael",
+        "player_id": "7449"
+      },
+      "replace": {
+        "player_id": "7749"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Hagedorn, Sascha",
+        "player_id": "19236"
+      },
+      "replace": {
+        "player_id": "25072"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Hannemann, Roland",
+        "player_id": "16338"
+      },
+      "replace": {
+        "player_id": "16336"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Heckl, Dominik",
+        "player_id": "28271"
+      },
+      "replace": {
+        "player_id": "38371"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Heinzl, Karl",
+        "player_id": "16523"
+      },
+      "replace": {
+        "player_id": "16526"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Heiß, Markus",
+        "player_id": "25904"
+      },
+      "replace": {
+        "player_id": "25906"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Helfririch, Nicolas",
+        "player_id": "31442"
+      },
+      "replace": {
+        "player_id": "38163"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Herbst, Fritz",
+        "player_id": "10045"
+      },
+      "replace": {
+        "player_id": "10075"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Hering, Dieter",
+        "player_id": "7379"
+      },
+      "replace": {
+        "player_id": "7397"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Hermann, Felix",
+        "player_id": "25427"
+      },
+      "replace": {
+        "player_id": "25724"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Hess, Simone",
+        "player_id": "7056"
+      },
+      "replace": {
+        "player_id": "7055"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Hofbauer, Daniela",
+        "player_id": "16872"
+      },
+      "replace": {
+        "player_id": "16372"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Hoffmann, Alexander",
+        "player_id": "99999"
+      },
+      "replace": {
+        "player_id": "38610"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Hofmann, Günther",
+        "player_id": "99999"
+      },
+      "replace": {
+        "player_id": "25138"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Häfner, Thomas",
+        "player_id": "9991"
+      },
+      "replace": {
+        "player_id": "16956"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Höger, Armin",
+        "player_id": "18965"
+      },
+      "replace": {
+        "player_id": "18963"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Hübsch, Alexander",
+        "player_id": "25198"
+      },
+      "replace": {
+        "player_id": "25189"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Hübsch, Alexander",
+        "player_id": "51879"
+      },
+      "replace": {
+        "player_id": "25189"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Hübsch, Alexander",
+        "player_id": "7123"
+      },
+      "replace": {
+        "player_id": "25189"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Hübsch, Alexander",
+        "player_id": "91496"
+      },
+      "replace": {
+        "player_id": "25189"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Jilski, Akata",
+        "player_id": "25664"
+      },
+      "replace": {
+        "player_id": "25644"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Jost, Andreas",
+        "player_id": "99998"
+      },
+      "replace": {
+        "player_id": "25974"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Kadric, Zenun",
+        "player_id": "99998"
+      },
+      "replace": {
+        "player_id": "25539"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Kammermeier, Peter",
+        "player_id": "7929"
+      },
+      "replace": {
+        "player_id": "7927"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Kasenbacher, Lucas",
+        "player_id": "25430"
+      },
+      "replace": {
+        "player_id": "25340"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Kathan, Peter",
+        "player_id": "7641"
+      },
+      "replace": {
+        "player_id": "7639"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Kerscher, Anita",
+        "player_id": "7578"
+      },
+      "replace": {
+        "player_id": "7678"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Klingebeil, Dirk",
+        "player_id": "99999"
+      },
+      "replace": {
+        "player_id": "25859"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Klingenmaier, Manfred",
+        "player_id": "28354"
+      },
+      "replace": {
+        "player_id": "38354"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Klingenmeier, Manfred",
+        "player_id": "28354"
+      },
+      "replace": {
+        "player_id": "38354"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Kossin, Wolfgang",
+        "player_id": "19872"
+      },
+      "replace": {
+        "player_id": "16872"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Kostic, Sascha",
+        "player_id": "99999"
+      },
+      "replace": {
+        "player_id": "38363"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Kraus, Werner",
+        "player_id": "25392"
+      },
+      "replace": {
+        "player_id": "25302"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Kristof, Robert",
+        "player_id": "1024"
+      },
+      "replace": {
+        "player_id": "10124"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Körber, Elke",
+        "player_id": "99999"
+      },
+      "replace": {
+        "player_id": "38435"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Küchler, Martin",
+        "player_id": "2826"
+      },
+      "replace": {
+        "player_id": "25826"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Künz, Marco",
+        "player_id": "25322"
+      },
+      "replace": {
+        "player_id": "25332"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Künz, Marco",
+        "player_id": "25323"
+      },
+      "replace": {
+        "player_id": "25332"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Langner, Frank",
+        "player_id": "727"
+      },
+      "replace": {
+        "player_id": "7273"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Langner, Frank",
+        "player_id": "7275"
+      },
+      "replace": {
+        "player_id": "7273"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Lauchner, Wolfgang",
+        "player_id": "99999"
+      },
+      "replace": {
+        "player_id": "25972"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Laurent, Jennifer",
+        "player_id": "99999"
+      },
+      "replace": {
+        "player_id": "25508"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Laurent, Sabrina",
+        "player_id": "99991"
+      },
+      "replace": {
+        "player_id": "7092"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Lechner, Christian",
+        "player_id": "99991"
+      },
+      "replace": {
+        "player_id": "25064"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Lederle, Walter",
+        "player_id": "16420"
+      },
+      "replace": {
+        "player_id": "16402"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Lehmann, Thorsten",
+        "player_id": "16617"
+      },
+      "replace": {
+        "player_id": "7411"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Lehmann, Torsten",
+        "player_id": "7401"
+      },
+      "replace": {
+        "player_id": "7411"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Lehmann, Torsten",
+        "player_id": "92346"
+      },
+      "replace": {
+        "player_id": "7411"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Lenz, Bernhard",
+        "player_id": "99997"
+      },
+      "replace": {
+        "player_id": "25988"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Luu, Vinh Duc",
+        "player_id": "9468"
+      },
+      "replace": {
+        "player_id": "25865"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Mairitsch, Herbert",
+        "player_id": "99999"
+      },
+      "replace": {
+        "player_id": "38248"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Malt, Stephanie",
+        "player_id": "1111"
+      },
+      "replace": {
+        "player_id": "25197"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Manig, David",
+        "player_id": "99999"
+      },
+      "replace": {
+        "player_id": "25996"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Maschkiwitz, Harald",
+        "player_id": "99999"
+      },
+      "replace": {
+        "player_id": "25163"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Mauckner, Norbert",
+        "player_id": "7975"
+      },
+      "replace": {
+        "player_id": "7968"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Mihatsch, Rudolf",
+        "player_id": "7030"
+      },
+      "replace": {
+        "player_id": "7031"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Mittelmaier, Andreas",
+        "player_id": "16869"
+      },
+      "replace": {
+        "player_id": "16896"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Montag, Wolfgang",
+        "player_id": "99901"
+      },
+      "replace": {
+        "player_id": "16534"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Mrosek, Manuel",
+        "player_id": "7683"
+      },
+      "replace": {
+        "player_id": "7653"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Müller, Felix",
+        "player_id": "99999"
+      },
+      "replace": {
+        "player_id": "25831"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Müller, Marcel",
+        "player_id": "99999"
+      },
+      "replace": {
+        "player_id": "28367"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Müller, Michael",
+        "player_id": "16152"
+      },
+      "replace": {
+        "player_id": "16155"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Müller, Sonja",
+        "player_id": "25867"
+      },
+      "replace": {
+        "player_id": "25887"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Netter, Lina",
+        "player_id": "16826"
+      },
+      "replace": {
+        "player_id": "16828"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Niedrig, Markus",
+        "player_id": "25828"
+      },
+      "replace": {
+        "player_id": "25282"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Oberndorfer, Vanessa",
+        "player_id": "2222"
+      },
+      "replace": {
+        "player_id": "25192"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Oppel, Christian",
+        "player_id": "25019"
+      },
+      "replace": {
+        "player_id": "16561"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Peetz, Andreas",
+        "player_id": "25153"
+      },
+      "replace": {
+        "player_id": "25143"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Petzinger, Otto",
+        "player_id": "25499"
+      },
+      "replace": {
+        "player_id": "25699"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Pipo, Klaus",
+        "player_id": "7659"
+      },
+      "replace": {
+        "player_id": "7405"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Pircher, Klaus",
+        "player_id": "99999"
+      },
+      "replace": {
+        "player_id": "25986"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Plath, Rene",
+        "player_id": "1111"
+      },
+      "replace": {
+        "player_id": "25156"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Plath, Rene",
+        "player_id": "99999"
+      },
+      "replace": {
+        "player_id": "25156"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Platzer, Manuel",
+        "player_id": "20002"
+      },
+      "replace": {
+        "player_id": "25002"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Platzer, Rudolf",
+        "player_id": "38310"
+      },
+      "replace": {
+        "player_id": "38320"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Purschke, Barbara",
+        "player_id": "87058"
+      },
+      "replace": {
+        "player_id": "7058"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Radecker, Annalena",
+        "player_id": "25596"
+      },
+      "replace": {
+        "player_id": "25598"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Reichert, Gabriele",
+        "player_id": "99999"
+      },
+      "replace": {
+        "player_id": "25268"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Reichert, Raphael",
+        "player_id": "7462"
+      },
+      "replace": {
+        "player_id": "7426"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Reißmann, Reinhold",
+        "player_id": "16349"
+      },
+      "replace": {
+        "player_id": "16439"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Reslmaier, Patrick",
+        "player_id": "99999"
+      },
+      "replace": {
+        "player_id": "25497"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Riedel, Sophie",
+        "player_id": "37868"
+      },
+      "replace": {
+        "player_id": "38768"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Rohr, Patrick",
+        "player_id": "16805"
+      },
+      "replace": {
+        "player_id": "16808"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Rosenberger, Sabine",
+        "player_id": "25500"
+      },
+      "replace": {
+        "player_id": "25300"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Roth, Elfriede",
+        "player_id": "99991"
+      },
+      "replace": {
+        "player_id": "25208"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Rösler, Jens",
+        "player_id": "25277"
+      },
+      "replace": {
+        "player_id": "25227"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Rösler, Jens-Uwe",
+        "player_id": "25277"
+      },
+      "replace": {
+        "player_id": "25227"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Schaeblen, Marcus",
+        "player_id": "7969"
+      },
+      "replace": {
+        "player_id": "7696"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Schaffer, Daniela",
+        "player_id": "2542"
+      },
+      "replace": {
+        "player_id": "25420"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Schardt, Hans",
+        "player_id": "7150"
+      },
+      "replace": {
+        "player_id": "7190"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Schauer, Tanja",
+        "player_id": "7461"
+      },
+      "replace": {
+        "player_id": "7479"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Scheider, Marc",
+        "player_id": "99999"
+      },
+      "replace": {
+        "player_id": "25537"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Schiewer, Achim",
+        "player_id": "25242"
+      },
+      "replace": {
+        "player_id": "25883"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Schindler, Friedrich",
+        "player_id": "7471"
+      },
+      "replace": {
+        "player_id": "7417"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Schlammer, Karin",
+        "player_id": "62274"
+      },
+      "replace": {
+        "player_id": "16274"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Schneider, Andreas",
+        "player_id": "25210"
+      },
+      "replace": {
+        "player_id": "16198"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Schneider, Tobias",
+        "player_id": "25945"
+      },
+      "replace": {
+        "player_id": "25949"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Schnur, Oswald",
+        "player_id": "99998"
+      },
+      "replace": {
+        "player_id": "25365"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Schrade, René",
+        "player_id": "99999"
+      },
+      "replace": {
+        "player_id": "25975"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Schroll, Petra",
+        "player_id": "7819"
+      },
+      "replace": {
+        "player_id": "7817"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Schuster, Katharina",
+        "player_id": "25197"
+      },
+      "replace": {
+        "player_id": "7801"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Schwarz, Michael",
+        "player_id": "7716"
+      },
+      "replace": {
+        "player_id": "7715"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Schweizer, Elke",
+        "player_id": "99999"
+      },
+      "replace": {
+        "player_id": "25503"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Schweizer, Michael",
+        "player_id": "15731"
+      },
+      "replace": {
+        "player_id": "16731"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Schäfer, Mirko",
+        "player_id": "99999"
+      },
+      "replace": {
+        "player_id": "25515"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Schäfer, Stefan",
+        "player_id": "16627"
+      },
+      "replace": {
+        "player_id": "16672"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Schäffer, Markus",
+        "player_id": "99999"
+      },
+      "replace": {
+        "player_id": "38453"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Schöne, Oliver",
+        "player_id": "25714"
+      },
+      "replace": {
+        "player_id": "25814"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Seuling, Antonina",
+        "player_id": "38153"
+      },
+      "replace": {
+        "player_id": "38154"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Siemenczuk, Johannes",
+        "player_id": "99999"
+      },
+      "replace": {
+        "player_id": "38558"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Siener, Erich",
+        "player_id": "1638"
+      },
+      "replace": {
+        "player_id": "16389"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Smieskol, Philipp",
+        "player_id": "10000"
+      },
+      "replace": {
+        "player_id": "7660"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Smith, Allan",
+        "player_id": "26995"
+      },
+      "replace": {
+        "player_id": "14958"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Smith, Allan",
+        "player_id": "80147"
+      },
+      "replace": {
+        "player_id": "14958"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Spindler, Andre",
+        "player_id": "38208"
+      },
+      "replace": {
+        "player_id": "38205"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Stahl, Stephan",
+        "player_id": "25448"
+      },
+      "replace": {
+        "player_id": "25488"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Stegner, Ottmar",
+        "player_id": "26535"
+      },
+      "replace": {
+        "player_id": "16535"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Stegner, Ottmar",
+        "player_id": "68746"
+      },
+      "replace": {
+        "player_id": "16535"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Steinberg, Andreas",
+        "player_id": "38182"
+      },
+      "replace": {
+        "player_id": "38131"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Steinberg, Sabrina",
+        "player_id": "38182"
+      },
+      "replace": {
+        "player_id": "38131"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Steiner, Andrea",
+        "player_id": "99998"
+      },
+      "replace": {
+        "player_id": "25995"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Stockmann, Uwe",
+        "player_id": "99999"
+      },
+      "replace": {
+        "player_id": "38149"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Stowasser, Ulrike",
+        "player_id": "99999"
+      },
+      "replace": {
+        "player_id": "38533"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Söldner, Ilse",
+        "player_id": "7169"
+      },
+      "replace": {
+        "player_id": "7164"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Tarin, Cornelia",
+        "player_id": "25735"
+      },
+      "replace": {
+        "player_id": "25736"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Teige, Carolin",
+        "player_id": "9999"
+      },
+      "replace": {
+        "player_id": "25856"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Theile, Jens",
+        "player_id": "99999"
+      },
+      "replace": {
+        "player_id": "29479"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Tilger, Josef",
+        "player_id": "723"
+      },
+      "replace": {
+        "player_id": "7423"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Ubl, Karl-Heinz",
+        "player_id": "25648"
+      },
+      "replace": {
+        "player_id": "25678"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Ulsamer, Clemens",
+        "player_id": "16345"
+      },
+      "replace": {
+        "player_id": "16351"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Ultsch, Robert",
+        "player_id": "16360"
+      },
+      "replace": {
+        "player_id": "16260"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Vogel, Jens",
+        "player_id": "21170"
+      },
+      "replace": {
+        "player_id": "29170"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Walter, Oliver",
+        "player_id": "99991"
+      },
+      "replace": {
+        "player_id": "25121"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Weidlich, René",
+        "player_id": "25825"
+      },
+      "replace": {
+        "player_id": "25828"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Wenzel, Alexander",
+        "player_id": "11111"
+      },
+      "replace": {
+        "player_id": "25812"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Wilms, Hanspeter",
+        "player_id": "99999"
+      },
+      "replace": {
+        "player_id": "25360"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Winecki, Marlen",
+        "player_id": "2585"
+      },
+      "replace": {
+        "player_id": "25805"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Wirtz, Peter",
+        "player_id": "38249"
+      },
+      "replace": {
+        "player_id": "7583"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Wirtz, Ute",
+        "player_id": "7583"
+      },
+      "replace": {
+        "player_id": "7545"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Witt , Peter",
+        "player_id": "99999"
+      },
+      "replace": {
+        "player_id": "25541"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Wotsch, Raimar",
+        "player_id": "99997"
+      },
+      "replace": {
+        "player_id": "25375"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Wotsch, Robert",
+        "player_id": "99998"
+      },
+      "replace": {
+        "player_id": "25363"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Wächter, Martin",
+        "player_id": "16186"
+      },
+      "replace": {
+        "player_id": "16185"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Wächter, Martin Sen",
+        "player_id": "9999"
+      },
+      "replace": {
+        "player_id": "16186"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Wörrlein, Jonas",
+        "player_id": "25412"
+      },
+      "replace": {
+        "player_id": "25199"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Wünsch, Marion",
+        "player_id": "25056"
+      },
+      "replace": {
+        "player_id": "16907"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Zehner, Anton",
+        "player_id": "6769"
+      },
+      "replace": {
+        "player_id": "7669"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Zehner, Anton",
+        "player_id": "7679"
+      },
+      "replace": {
+        "player_id": "7669"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Zelger, Oliver",
+        "player_id": "25164"
+      },
+      "replace": {
+        "player_id": "25165"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Zilla, Yves",
+        "player_id": "16323"
+      },
+      "replace": {
+        "player_id": "16362"
+      },
+      "source": "majority"
+    },
+    {
+      "match": {
+        "player_name": "Zimmer, Gerhard",
+        "player_id": "99999"
+      },
+      "replace": {
+        "player_id": "38118"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Zimmermann, Alfred",
+        "player_id": "7558"
+      },
+      "replace": {
+        "player_id": "7573"
+      },
+      "source": "majority"
+    }
+  ]
+}
