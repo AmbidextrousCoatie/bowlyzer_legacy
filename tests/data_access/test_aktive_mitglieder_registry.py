@@ -7,10 +7,12 @@ from pathlib import Path
 import pandas as pd
 
 from data_access.aktive_mitglieder_registry import (
+    DEFAULT_AKTIVE_MIN_SEASON,
     canonical_name_from_combined,
     canonical_name_from_split,
     discover_local_aktive_workbooks,
     locate_member_header,
+    resolve_aktive_min_season,
     row_to_aktive_player,
     build_registry_dataframe_from_aktive,
 )
@@ -76,6 +78,28 @@ def test_canonical_name_from_combined_family_given() -> None:
     assert canonical_name_from_combined("Brown Mike") == "Brown, Mike"
 
 
+def test_resolve_aktive_min_season_defaults_and_overrides() -> None:
+    assert resolve_aktive_min_season(None) == DEFAULT_AKTIVE_MIN_SEASON
+    assert resolve_aktive_min_season("2007-08") == "2007-08"
+    assert resolve_aktive_min_season("") is None
+
+
+def test_discover_local_respects_min_season(tmp_path: Path) -> None:
+    for season in ("2004-05", "2007-08", "2008-09"):
+        season_dir = tmp_path / f"saison{season}" / "allgemein"
+        season_dir.mkdir(parents=True)
+        (season_dir / f"aktive_{season}.xls").write_bytes(season.encode())
+
+    all_seasons = discover_local_aktive_workbooks(tmp_path)
+    assert [season for season, _ in all_seasons] == ["2004-05", "2007-08", "2008-09"]
+
+    from_0808 = discover_local_aktive_workbooks(tmp_path, min_season="2007-08")
+    assert [season for season, _ in from_0808] == ["2007-08", "2008-09"]
+
+    from_0809 = discover_local_aktive_workbooks(tmp_path, min_season="2008-09")
+    assert [season for season, _ in from_0809] == ["2008-09"]
+
+
 def test_discover_local_prefers_endstand(tmp_path: Path) -> None:
     season_dir = tmp_path / "saison2013-14" / "allgemein"
     season_dir.mkdir(parents=True)
@@ -115,3 +139,28 @@ def test_build_registry_accumulates_aliases_across_seasons(tmp_path: Path, monke
     assert row["player_id"] == "1234"
     assert row["canonical_name"] == "Vogt, Thomas"
     assert "Voigt, Thomas" in row["aliases"]
+
+
+def test_build_registry_from_aktive_min_season(tmp_path: Path, monkeypatch) -> None:
+    for season in ("2004-05", "2007-08"):
+        season_dir = tmp_path / f"saison{season}" / "allgemein"
+        season_dir.mkdir(parents=True)
+        (season_dir / f"aktive_{season}.xls").write_bytes(season.encode())
+
+    from data_access import aktive_mitglieder_registry as mod
+
+    def fake_parse(path: Path, *, season: str = ""):
+        if season == "2004-05":
+            return [mod.AktivePlayerRow("111708", "Windsheimer, Friedrich", season)]
+        return [mod.AktivePlayerRow("7762", "Windsheimer, Friedrich", season)]
+
+    monkeypatch.setattr(mod, "parse_aktive_workbook", fake_parse)
+
+    registry_df, stats = build_registry_dataframe_from_aktive(
+        tmp_path,
+        updated_at="2026-06-03T00:00:00+00:00",
+        min_season="2007-08",
+    )
+    assert stats.workbooks_parsed == 1
+    assert len(registry_df) == 1
+    assert registry_df.iloc[0]["player_id"] == "7762"

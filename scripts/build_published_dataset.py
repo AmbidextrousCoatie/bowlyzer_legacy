@@ -336,6 +336,18 @@ def main() -> int:
         help="Skip player name / Player ID conflict report (player_id_name_conflicts.csv).",
     )
     parser.add_argument(
+        "--skip-league-standings-audit",
+        action="store_true",
+        help="Skip league standings validation against Excel reference tables.",
+    )
+    parser.add_argument(
+        "--league-standings-limit",
+        type=int,
+        default=None,
+        metavar="N",
+        help="Max league×season standings comparisons (dev smoke tests).",
+    )
+    parser.add_argument(
         "--no-progress",
         action="store_true",
         help="Disable tqdm progress bars during team-name normalization (merge step)",
@@ -363,7 +375,30 @@ def main() -> int:
             "(default: import Aktive Mitglieder + configs first)."
         ),
     )
+    parser.add_argument(
+        "--aktive-min-season",
+        metavar="YYYY-YY",
+        default=None,
+        help=(
+            "Only import Aktive Mitglieder from this season onward when building "
+            "players_registry (default: 2008-09)"
+        ),
+    )
+    parser.add_argument(
+        "--all-aktive-seasons",
+        action="store_true",
+        help="Import every Aktive season when building players_registry (legacy EDVs)",
+    )
+    parser.add_argument(
+        "--merge-existing-registry",
+        action="store_true",
+        help="Merge players_registry into existing parquet instead of from-scratch rebuild",
+    )
     args = parser.parse_args()
+
+    if args.all_aktive_seasons and args.aktive_min_season:
+        print("Error: use only one of --all-aktive-seasons or --aktive-min-season", file=sys.stderr)
+        return 2
 
     if args.league_only:
         job_names = ["league"]
@@ -449,7 +484,11 @@ def main() -> int:
         from data_access.players_registry import build_and_publish_players_registry
 
         print("==> building players registry (Aktive Mitglieder + configs) …")
-        registry_summary = build_and_publish_players_registry(write_csv=args.write_csv)
+        registry_summary = build_and_publish_players_registry(
+            write_csv=args.write_csv,
+            from_scratch=not args.merge_existing_registry,
+            aktive_min_season="" if args.all_aktive_seasons else args.aktive_min_season,
+        )
         aktive_line = registry_summary.get("aktive_import_summary")
         if aktive_line:
             print(aktive_line)
@@ -533,6 +572,42 @@ def main() -> int:
                 "detail_rows": 0,
             }
             print(f"Player ID/name audit: no conflicts; empty report at {report_path}")
+
+    if not args.skip_league_standings_audit and run_league:
+        from data_access.parquet_sidecar import data_file_exists, resolve_load_path
+        from database.paths import analysis_log_path
+        from data_access.league_standings_validation import (
+            LEAGUE_STANDINGS_VALIDATION_CSV,
+            audit_league_standings,
+            comparison_summary_for_manifest,
+            format_comparison_report,
+            write_comparison_report,
+        )
+
+        if not data_file_exists(league_out):
+            print("League standings audit: skipped (league output missing)")
+        else:
+            analysis_log = analysis_log_path()
+            if not analysis_log.is_file():
+                print(f"League standings audit: skipped (no analysis log at {analysis_log})")
+            else:
+                load_path = resolve_load_path(league_out)
+                if load_path.suffix.lower() == ".parquet":
+                    league_df = pd.read_parquet(load_path)
+                else:
+                    league_df = pd.read_csv(load_path, **CSV_READ_KW)
+                report_path = get_work_data_dir() / LEAGUE_STANDINGS_VALIDATION_CSV
+                comparisons = audit_league_standings(
+                    league_df,
+                    analysis_log_path=analysis_log,
+                    limit=args.league_standings_limit,
+                )
+                write_comparison_report(comparisons, report_path)
+                summary["league_standings_audit"] = {
+                    "report": str(report_path.resolve()),
+                    **comparison_summary_for_manifest(comparisons),
+                }
+                print(format_comparison_report(comparisons, data_path=load_path))
 
     from data_access.publish_gate import evaluate_publish_gate, rollback_published_outputs
 

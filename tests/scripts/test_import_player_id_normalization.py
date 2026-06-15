@@ -75,6 +75,32 @@ def test_build_config_from_audit_csv(tmp_path: Path) -> None:
     assert config["autoresolve_remappings"][0]["source"] == "placeholder"
 
 
+def test_build_config_imports_same_id_placeholder_rows(tmp_path: Path) -> None:
+    rows = [
+        {
+            "issue_type": "same_id_name_variants",
+            "player_name": "Erhard, Hannelore",
+            "player_id": "99999",
+            "autoresolve_rule": "placeholder",
+            "proposed_id": "25977",
+        },
+        {
+            "issue_type": "same_id_name_variants",
+            "player_name": "Gulvadi, Sanat",
+            "player_id": "38429",
+            "autoresolve_rule": "placeholder",
+            "proposed_id": "38424",
+        },
+    ]
+    csv_path = tmp_path / "audit.csv"
+    _write_csv(csv_path, rows)
+    config = build_config_from_audit_csv(csv_path)
+    assert len(config["autoresolve_remappings"]) == 2
+    by_name = {row["match"]["player_name"]: row for row in config["autoresolve_remappings"]}
+    assert by_name["Erhard, Hannelore"]["replace"]["player_id"] == "25977"
+    assert by_name["Gulvadi, Sanat"]["replace"]["player_id"] == "38424"
+
+
 def test_audit_zero_same_name_after_normalization(tmp_path: Path, monkeypatch) -> None:
     league = tmp_path / "league.csv"
     with league.open("w", encoding="utf-8", newline="") as f:

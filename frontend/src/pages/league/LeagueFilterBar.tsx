@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ChevronDown, Menu } from "lucide-react";
 import { BottomSheet } from "../../components/BottomSheet";
 import { useMobileNav } from "../../context/MobileNavContext";
+import { LEAGUE_SEASON_ALL, LEAGUE_SEASON_LATEST } from "../../lib/leagueSeason";
 
 export type LeagueFilterBarProps = {
   season: string;
@@ -295,7 +296,8 @@ function CompactSeasonLeagueFields(
         ariaLabel={t("season", "Saison")}
         className={selectClass}
       >
-        <option value="latest">{t("season_latest", "Aktuelle Saison")}</option>
+        <option value={LEAGUE_SEASON_LATEST}>{t("season_latest", "Aktuelle Saison")}</option>
+        <option value={LEAGUE_SEASON_ALL}>{t("season_all", "Alle Saisons")}</option>
         {props.seasons.map((s) => (
           <option key={s} value={s}>
             {s}
@@ -353,7 +355,8 @@ function SeasonLeagueFields({
           ariaLabel={t("season", "Saison")}
           className={selectClassName}
         >
-          <option value="latest">{t("season_latest", "Aktuelle Saison")}</option>
+          <option value={LEAGUE_SEASON_LATEST}>{t("season_latest", "Aktuelle Saison")}</option>
+          <option value={LEAGUE_SEASON_ALL}>{t("season_all", "Alle Saisons")}</option>
           {seasons.map((s) => (
             <option key={s} value={s}>
               {s}

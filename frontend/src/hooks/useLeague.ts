@@ -43,11 +43,7 @@ export type SeasonLeagueStandings = {
   }>;
 };
 
-/** Picks the newest season label (matches legacy league-stats-app.js). */
-export function pickLatestSeason(seasons: string[]): string | null {
-  if (seasons.length === 0) return null;
-  return seasons.reduce((a, b) => (String(a) > String(b) ? a : b));
-}
+export { pickLatestSeason } from "../lib/leagueSeason";
 
 export function useAvailableSeasons() {
   return useQuery({
@@ -57,10 +53,15 @@ export function useAvailableSeasons() {
 }
 
 export function useAvailableLeagues(season: string | null) {
+  const allSeasons = !season;
   return useQuery({
-    queryKey: ["league", "leagues", season],
-    queryFn: () => fetchJson<LeagueOption[]>(buildUrl("/league/get_available_leagues", { season })),
-    enabled: !!season,
+    queryKey: ["league", "leagues", allSeasons ? "all" : season],
+    queryFn: () =>
+      fetchJson<LeagueOption[]>(
+        allSeasons
+          ? buildUrl("/league/get_available_leagues")
+          : buildUrl("/league/get_available_leagues", { season }),
+      ),
   });
 }
 
@@ -549,4 +550,63 @@ export function useGameTeamDetails(
       ),
     enabled: !!season && !!league && !!week && !!team && !!round,
   });
+}
+
+export type LeagueHistoryChart = {
+  data: Record<string, number[]>;
+  seasons: string[];
+  labels: string[];
+  title?: string;
+  y_axis_title?: string;
+};
+
+function useLeagueAggregationQuery<T>(
+  endpoint: string,
+  league: string | null,
+  extraParams?: Record<string, string>,
+) {
+  return useQuery({
+    queryKey: ["league", endpoint, league, extraParams?.debug ?? ""],
+    queryFn: () =>
+      fetchJson<T>(
+        buildUrl(`/league/${endpoint}`, { league: league!, ...extraParams }),
+      ),
+    enabled: !!league,
+  });
+}
+
+export function useLeagueAveragesHistory(league: string | null) {
+  return useLeagueAggregationQuery<LeagueHistoryChart>(
+    "get_league_averages_history",
+    league,
+    { debug: "false" },
+  );
+}
+
+export function usePointsToWinHistory(league: string | null) {
+  return useLeagueAggregationQuery<LeagueHistoryChart>(
+    "get_points_to_win_history",
+    league,
+    { debug: "false" },
+  );
+}
+
+export function useTopTeamPerformances(league: string | null) {
+  return useLeagueAggregationQuery<TableData>("get_top_team_performances", league);
+}
+
+export function useTopIndividualPerformances(league: string | null) {
+  return useLeagueAggregationQuery<TableData>("get_top_individual_performances", league);
+}
+
+export function useRecordGames(league: string | null) {
+  return useLeagueAggregationQuery<TableData>("get_record_games", league);
+}
+
+export function useRecordIndividualGames(league: string | null) {
+  return useLeagueAggregationQuery<TableData>("get_record_individual_games", league);
+}
+
+export function useRecordTeamGames(league: string | null) {
+  return useLeagueAggregationQuery<TableData>("get_record_team_games", league);
 }

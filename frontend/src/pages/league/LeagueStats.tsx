@@ -1,8 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useMobileNav } from "../../context/MobileNavContext";
 import {
-  pickLatestSeason,
   useAvailableLeagues,
   useAvailableRounds,
   useAvailableSeasons,
@@ -10,19 +9,27 @@ import {
   useAvailableWeeks,
 } from "../../hooks/useLeague";
 import { useTranslations } from "../../hooks/useTranslations";
+import { seasonForUrlQuery } from "../../lib/api";
+import {
+  isLeagueAllSeasons,
+  LEAGUE_SEASON_ALL,
+  LEAGUE_SEASON_LATEST,
+  leagueSeasonFilterLabel,
+  resolveLeagueApiSeason,
+} from "../../lib/leagueSeason";
 import { GameOverview, GameTeamDetails } from "./blocks/GameBlocks";
+import { LeagueOverview } from "./blocks/LeagueOverview";
 import { LeagueSeasonOverview } from "./blocks/LeagueSeasonOverview";
 import { Matchday } from "./blocks/Matchday";
 import { SeasonLeagueStandings } from "./blocks/SeasonLeagueStandings";
 import { TeamDetails } from "./blocks/TeamDetails";
 import { TeamPerformance } from "./blocks/TeamPerformance";
-import { seasonForUrlQuery } from "../../lib/api";
 import { LeagueFilterBar } from "./LeagueFilterBar";
 
 export function LeagueStats() {
   const { setCompactPageChrome } = useMobileNav();
   const [searchParams, setSearchParams] = useSearchParams();
-  const season = searchParams.get("season") ?? "latest";
+  const season = searchParams.get("season") ?? LEAGUE_SEASON_LATEST;
   const league = searchParams.get("league") ?? "";
   const week = searchParams.get("week") ?? "";
   const team = searchParams.get("team") ?? "";
@@ -36,24 +43,13 @@ export function LeagueStats() {
 
   const seasonsQuery = useAvailableSeasons();
   const seasonList = seasonsQuery.data ?? [];
-  const resolvedSeason =
-    season === "latest"
-      ? seasonsQuery.isSuccess
-        ? pickLatestSeason(seasonList)
-        : null
-      : seasonForUrlQuery(season);
+  const resolvedSeason = useMemo(() => {
+    if (!seasonsQuery.isSuccess) return null;
+    return resolveLeagueApiSeason(season, seasonList, league);
+  }, [seasonsQuery.isSuccess, season, seasonList, league]);
 
-  useEffect(() => {
-    if (!seasonsQuery.isSuccess) return;
-    if (season !== "latest" || seasonList.length === 0) return;
-    const latest = pickLatestSeason(seasonList);
-    if (!latest) return;
-    const next = new URLSearchParams(searchParams);
-    next.set("season", seasonForUrlQuery(latest));
-    setSearchParams(next, { replace: true });
-  }, [seasonsQuery.isSuccess, seasonsQuery.data, season, searchParams, setSearchParams]);
-
-  const leaguesQuery = useAvailableLeagues(resolvedSeason);
+  const leaguesSeason = isLeagueAllSeasons(season) ? null : resolvedSeason;
+  const leaguesQuery = useAvailableLeagues(leaguesSeason);
   const weeksQuery = useAvailableWeeks(resolvedSeason, league || null);
   const teamsQuery = useAvailableTeams(resolvedSeason, league || null);
   const roundsQuery = useAvailableRounds(resolvedSeason, league || null, week || null);
@@ -61,18 +57,26 @@ export function LeagueStats() {
   function setParam(key: string, value: string, drop: string[] = []) {
     const next = new URLSearchParams(searchParams);
     if (value === "") next.delete(key);
+    else if (key === "season" && (value === LEAGUE_SEASON_ALL || value === LEAGUE_SEASON_LATEST)) {
+      next.set("season", value);
+    }
     else next.set(key, key === "season" ? seasonForUrlQuery(value) : value);
     drop.forEach((k) => next.delete(k));
     setSearchParams(next, { replace: false });
   }
 
-  const showSeasonStandings = !!resolvedSeason && !league;
-  const showLeagueSeasonOverview = !!league && !!resolvedSeason && !week && !team;
+  const showSeasonStandings = !!resolvedSeason && !league && !isLeagueAllSeasons(season);
+  const showLeagueOverview =
+    isLeagueAllSeasons(season) && !!league && !week && !team;
+  const showLeagueSeasonOverview =
+    !isLeagueAllSeasons(season) && !!league && !!resolvedSeason && !week && !team;
   const showMatchday = !!resolvedSeason && !!league && !!week && !team && !round;
   const showTeamPerformance = !!league && !!resolvedSeason && !!team && !week;
   const showTeamDetails = !!resolvedSeason && !!league && !!week && !!team && !round;
   const showGameOverview = !!resolvedSeason && !!league && !!week && !!round && !team;
   const showGameTeamDetails = !!resolvedSeason && !!league && !!week && !!team && !!round;
+
+  const seasonHeading = leagueSeasonFilterLabel(season, t);
 
   return (
     <div className="mx-auto max-w-[1280px] px-4 pt-8 pb-24 max-lg:landscape:pt-2 lg:px-8 lg:pt-12">
@@ -84,14 +88,14 @@ export function LeagueStats() {
           {t("league", "Liga")} ·{" "}
           <span className="text-muted font-normal">
             {t("season", "Saison")}{" "}
-            <span className="font-mono">{seasonDisplay(resolvedSeason ?? season)}</span>
+            <span className="font-mono">{seasonHeading}</span>
           </span>
         </h1>
       </header>
 
       <LeagueFilterBar
         pageName={t("league_statistics", "Bowl-A-Lyzer")}
-        pageHeading={buildLeaguePageHeading(t, resolvedSeason ?? season)}
+        pageHeading={`${t("league", "Liga")} · ${t("season", "Saison")} ${seasonHeading}`}
         season={season}
         seasons={seasonsQuery.data ?? []}
         seasonsLoading={seasonsQuery.isPending}
@@ -119,6 +123,7 @@ export function LeagueStats() {
         {showSeasonStandings && resolvedSeason && (
           <SeasonLeagueStandings season={resolvedSeason} />
         )}
+        {showLeagueOverview && <LeagueOverview league={league} />}
         {showLeagueSeasonOverview && resolvedSeason && (
           <LeagueSeasonOverview season={resolvedSeason} league={league} />
         )}
@@ -146,15 +151,4 @@ export function LeagueStats() {
       </div>
     </div>
   );
-}
-
-function seasonDisplay(season: string): string {
-  return season === "latest" ? "—" : season;
-}
-
-function buildLeaguePageHeading(
-  t: (key: string, fallback?: string) => string,
-  season: string,
-): string {
-  return `${t("league", "Liga")} · ${t("season", "Saison")} ${seasonDisplay(season)}`;
 }

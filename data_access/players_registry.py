@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from difflib import SequenceMatcher
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, MutableMapping, Optional, Set, Tuple
+from typing import Any, Dict, List, Mapping, MutableMapping, Optional, Sequence, Set, Tuple
 
 import pandas as pd
 
@@ -18,7 +18,10 @@ from data_access.player_id_name_normalization import (
 )
 from data_access.player_name_normalization import (
     canonicalize_player_name,
+    given_names_substring_equivalent,
     group_canonical_target,
+    name_identity_key,
+    names_share_identity,
     normalize_player_label,
     parse_player_name_parts,
 )
@@ -32,6 +35,10 @@ REGISTRY_FORMAT_VERSION = 1
 
 # Same-given-name typo threshold (SequenceMatcher ratio on normalized full labels).
 CLOSE_MATCH_RATIO = 0.85
+
+# Dual typo: family and given may each be slightly off (``Pafford, Mark`` / ``Paffort, Marc``).
+DUAL_TYPO_FAMILY_RATIO = 0.85
+DUAL_TYPO_GIVEN_RATIO = 0.75
 
 _SOURCE_PRIORITY: Dict[str, int] = {
     "dbu_id": 100,
@@ -76,6 +83,34 @@ def _given_token(name: str) -> str:
     return given.strip().lower()
 
 
+def _family_token(name: str) -> str:
+    family, _ = parse_player_name_parts(normalize_player_label(name))
+    return family.strip().lower()
+
+
+def _given_similarity(left: str, right: str) -> float:
+    a = _given_token(left)
+    b = _given_token(right)
+    if not a or not b:
+        return 0.0
+    return SequenceMatcher(None, a, b).ratio()
+
+
+def _family_similarity(left: str, right: str) -> float:
+    a = _family_token(left)
+    b = _family_token(right)
+    if not a or not b:
+        return 0.0
+    if a == b:
+        return 1.0
+    return SequenceMatcher(None, a, b).ratio()
+
+
+def _given_is_short_form(raw_given: str, candidate_given: str) -> bool:
+    """True when one given name is a prefix substring of the other (incl. ``Hans`` / ``Hans-Jürgen``)."""
+    return given_names_substring_equivalent(raw_given, candidate_given)
+
+
 def _name_similarity(left: str, right: str) -> float:
     a = normalize_player_label(left).lower()
     b = normalize_player_label(right).lower()
@@ -98,6 +133,189 @@ def candidate_names_for_entry(entry: Mapping[str, str]) -> List[str]:
 
 def candidate_names_normalized(entry: Mapping[str, str]) -> Set[str]:
     return {normalize_player_label(name) for name in candidate_names_for_entry(entry)}
+
+
+def should_normalize_alias_to_canonical(raw_name: str, entry: Mapping[str, str]) -> bool:
+    """
+    True when ``raw_name`` is a registered alias that is only a format/spelling
+    variant of ``canonical_name`` (not a distinct person such as a marriage name).
+    """
+    raw = normalize_player_label(raw_name)
+    canonical = normalize_player_label(str(entry.get("canonical_name") or ""))
+    if not raw or not canonical or raw == canonical:
+        return False
+    if raw not in candidate_names_normalized(entry):
+        if names_share_identity(raw, canonical):
+            return True
+        return False
+    target = group_canonical_target([raw, canonical])
+    return bool(target and normalize_player_label(target) == canonical)
+
+
+def _pick_reassembly_display(
+    target: str,
+    candidates: Sequence[str],
+    canonical_display: str,
+) -> str:
+    norm_target = normalize_player_label(target)
+    if canonical_display and names_share_identity(target, canonical_display):
+        return canonical_display
+    matches: List[str] = []
+    for candidate in candidates:
+        normalized = normalize_player_label(candidate)
+        if normalized == norm_target or canonicalize_player_name(candidate) == norm_target:
+            matches.append(candidate)
+        elif names_share_identity(target, candidate):
+            matches.append(candidate)
+    if canonical_display in matches:
+        return canonical_display
+    comma_matches = [match for match in matches if "," in match]
+    if comma_matches:
+        return sorted(comma_matches, key=lambda label: label.lower())[0]
+    if matches:
+        return matches[0]
+    return target
+
+
+def _resolve_pairwise_reassembly(
+    raw: str,
+    candidates: Sequence[str],
+    canonical_display: str,
+) -> Optional[str]:
+    """Match ``Given Family`` / reversed labels against one registry candidate at a time."""
+    hits: List[str] = []
+    for candidate in candidates:
+        target = group_canonical_target([raw, candidate])
+        if not target:
+            continue
+        hits.append(_pick_reassembly_display(target, candidates, canonical_display))
+    if not hits:
+        return None
+    return max(hits, key=lambda label: _name_similarity(raw, label))
+
+
+def _resolve_identity_match(
+    raw: str,
+    candidates: Sequence[str],
+    canonical_display: str,
+) -> Optional[str]:
+    """
+    Match after von/van particle normalization and sen/jun stripping (same person, different eras).
+    """
+    raw_key = name_identity_key(raw)
+    if not raw_key[0] and not raw_key[1]:
+        return None
+    matches = [candidate for candidate in candidates if name_identity_key(candidate) == raw_key]
+    if not matches and canonical_display and name_identity_key(canonical_display) == raw_key:
+        return canonical_display
+    if not matches:
+        return None
+    if canonical_display in matches:
+        return canonical_display
+    comma_matches = [match for match in matches if "," in match]
+    if comma_matches:
+        return sorted(comma_matches, key=lambda label: label.lower())[0]
+    return matches[0]
+
+
+def _resolve_substring_given(
+    raw: str,
+    candidates: Sequence[str],
+    canonical_display: str,
+) -> Optional[str]:
+    """Same family + bidirectional given substring (``Alex`` / ``Alexander``, ``Carina`` / ``Carina Mareen``)."""
+    raw_family = _family_token(raw)
+    raw_given = _given_token(raw)
+    if not raw_family or not raw_given:
+        return None
+    matches = [
+        candidate
+        for candidate in candidates
+        if _family_token(candidate) == raw_family
+        and given_names_substring_equivalent(raw_given, _given_token(candidate))
+    ]
+    if not matches:
+        return None
+    if canonical_display in matches:
+        return canonical_display
+    return max(matches, key=lambda label: (len(_given_token(label)), _name_similarity(raw, label)))
+
+
+def _resolve_abbreviated_given(
+    raw: str,
+    candidates: Sequence[str],
+    canonical_display: str,
+) -> Optional[str]:
+    """Same family + shortened given (``Hans`` for ``Hans-Jürgen``) when ID is already known."""
+    raw_family = _family_token(raw)
+    raw_given = _given_token(raw)
+    if not raw_family or not raw_given:
+        return None
+    matches = [
+        candidate
+        for candidate in candidates
+        if _family_token(candidate) == raw_family
+        and _given_is_short_form(raw_given, _given_token(candidate))
+    ]
+    if not matches:
+        return None
+    if canonical_display in matches:
+        return canonical_display
+    return max(matches, key=lambda label: (len(_given_token(label)), _name_similarity(raw, label)))
+
+
+def _resolve_close_match(
+    raw: str,
+    candidates: Sequence[str],
+    *,
+    close_match_ratio: float,
+) -> Optional[str]:
+    """Typo tolerance: same given name, dual family+given typos, or similar given (Dominic/Dominik)."""
+    dual_matches = [
+        candidate
+        for candidate in candidates
+        if _family_similarity(raw, candidate) >= DUAL_TYPO_FAMILY_RATIO
+        and _given_similarity(raw, candidate) >= DUAL_TYPO_GIVEN_RATIO
+    ]
+    if dual_matches:
+        return max(
+            dual_matches,
+            key=lambda candidate: (
+                _family_similarity(raw, candidate),
+                _given_similarity(raw, candidate),
+                _name_similarity(raw, candidate),
+            ),
+        )
+
+    raw_given = _given_token(raw)
+    if raw_given:
+        same_given = [candidate for candidate in candidates if _given_token(candidate) == raw_given]
+        if same_given:
+            best = max(same_given, key=lambda candidate: _name_similarity(raw, candidate))
+            if _name_similarity(raw, best) >= close_match_ratio:
+                return best
+
+    raw_family = _family_token(raw)
+    if raw_family:
+        same_family = [candidate for candidate in candidates if _family_token(candidate) == raw_family]
+        if same_family:
+            best = max(
+                same_family,
+                key=lambda candidate: (
+                    _given_similarity(raw, candidate),
+                    _name_similarity(raw, candidate),
+                ),
+            )
+            if (
+                _given_similarity(raw, best) >= close_match_ratio
+                or _name_similarity(raw, best) >= close_match_ratio
+            ):
+                return best
+
+    best_overall = max(candidates, key=lambda candidate: _name_similarity(raw, candidate))
+    if _name_similarity(raw, best_overall) >= close_match_ratio:
+        return best_overall
+    return None
 
 
 @lru_cache(maxsize=1)
@@ -136,6 +354,77 @@ def registry_lookup_by_id(registry: pd.DataFrame) -> Dict[str, Dict[str, str]]:
     return out
 
 
+def registry_name_index(registry: pd.DataFrame) -> Dict[str, str]:
+    """Normalized display label -> ``player_id`` (first registry row wins on collision)."""
+    lookup_by_id = registry_lookup_by_id(registry)
+    out: Dict[str, str] = {}
+    for pid, entry in lookup_by_id.items():
+        for label in candidate_names_for_entry(entry):
+            norm = normalize_player_label(label)
+            if norm and norm not in out:
+                out[norm] = pid
+    return out
+
+
+def resolve_player_id_for_name(
+    raw_name: str,
+    name_index: Mapping[str, str],
+    lookup_by_id: Mapping[str, Mapping[str, str]],
+    *,
+    close_match_ratio: float = CLOSE_MATCH_RATIO,
+) -> Tuple[Optional[str], str]:
+    """
+    Find a registry ``player_id`` for a raw label (exact, identity, or unique close match).
+
+    Used for placeholder-ID rows where the observed EDV number is not trustworthy.
+    """
+    raw = normalize_player_label(raw_name)
+    if not raw:
+        return None, "missing"
+
+    exact_pid = name_index.get(raw)
+    if exact_pid:
+        return exact_pid, "exact"
+
+    identity_hits: List[Tuple[str, str, float]] = []
+    close_hits: List[Tuple[str, str, float]] = []
+    for pid, entry in lookup_by_id.items():
+        for label in candidate_names_for_entry(entry):
+            if names_share_identity(raw, label):
+                identity_hits.append((pid, label, _name_similarity(raw, label)))
+            elif _name_similarity(raw, label) >= close_match_ratio:
+                close_hits.append((pid, label, _name_similarity(raw, label)))
+
+    if identity_hits:
+        best_pid, _, best_score = max(identity_hits, key=lambda item: item[2])
+        same_pid = {pid for pid, _, _ in identity_hits}
+        if len(same_pid) == 1 or best_score >= close_match_ratio:
+            return best_pid, "identity"
+
+    if not close_hits:
+        return None, "unresolved"
+
+    close_hits.sort(key=lambda item: (-item[2], item[0]))
+    best_pid, _, best_score = close_hits[0]
+    if len(close_hits) == 1:
+        return best_pid, "close"
+    second_score = close_hits[1][2]
+    if best_score - second_score >= 0.05:
+        return best_pid, "close"
+    same_best = [pid for pid, _, score in close_hits if score >= best_score - 0.01]
+    if len(set(same_best)) == 1:
+        return best_pid, "close"
+    canonicals = {
+        normalize_player_label(str(lookup_by_id[pid].get("canonical_name") or ""))
+        for pid in same_best
+        if pid in lookup_by_id
+    }
+    canonicals.discard("")
+    if len(canonicals) == 1:
+        return sorted(same_best)[0], "close"
+    return None, "unresolved"
+
+
 def resolve_player_name_for_id(
     raw_name: str,
     player_id: str,
@@ -147,7 +436,8 @@ def resolve_player_name_for_id(
     Resolve a raw label to the closest registered name (canonical or alias).
 
     Returns ``(resolved_name, kind)`` where kind is one of:
-    ``exact``, ``reassembly``, ``close``, ``unresolved``, ``no_registry``, ``missing``.
+    ``exact``, ``reassembly``, ``abbrev``, ``identity``, ``substring``, ``close``,
+    ``unresolved``, ``no_registry``, ``missing``.
     """
     pid = normalize_player_id(player_id)
     raw = normalize_player_label(raw_name)
@@ -166,25 +456,26 @@ def resolve_player_name_for_id(
     if raw in norm_to_display:
         return norm_to_display[raw], "exact"
 
-    target = group_canonical_target([raw] + candidates)
-    if target:
-        for candidate in candidates:
-            normalized = normalize_player_label(candidate)
-            if normalized == target or canonicalize_player_name(candidate) == target:
-                return candidate, "reassembly"
-        return target, "reassembly"
+    canonical_display = str(entry.get("canonical_name") or "")
+    reassembled = _resolve_pairwise_reassembly(raw, candidates, canonical_display)
+    if reassembled and normalize_player_label(reassembled) != raw:
+        return reassembled, "reassembly"
 
-    raw_given = _given_token(raw)
-    if not raw_given:
-        return None, "unresolved"
+    abbrev = _resolve_abbreviated_given(raw, candidates, canonical_display)
+    if abbrev and normalize_player_label(abbrev) != raw:
+        return abbrev, "abbrev"
 
-    same_given = [candidate for candidate in candidates if _given_token(candidate) == raw_given]
-    if not same_given:
-        return None, "unresolved"
+    identity = _resolve_identity_match(raw, candidates, canonical_display)
+    if identity and normalize_player_label(identity) != raw:
+        return identity, "identity"
 
-    best = max(same_given, key=lambda candidate: _name_similarity(raw, candidate))
-    if _name_similarity(raw, best) >= close_match_ratio:
-        return best, "close"
+    substring = _resolve_substring_given(raw, candidates, canonical_display)
+    if substring and normalize_player_label(substring) != raw:
+        return substring, "substring"
+
+    close = _resolve_close_match(raw, candidates, close_match_ratio=close_match_ratio)
+    if close:
+        return close, "close"
 
     return None, "unresolved"
 
@@ -207,11 +498,22 @@ def registry_accepts_all_names_for_id(
         return False
 
     registered = candidate_names_normalized(entry)
+    registry_names = candidate_names_for_entry(entry)
     for name in names:
         normalized = normalize_player_label(name)
         if not normalized:
             continue
         if normalized in registered:
+            continue
+        if any(
+            name_identity_key(name) == name_identity_key(candidate) for candidate in registry_names
+        ):
+            continue
+        if any(
+            _family_token(name) == _family_token(candidate)
+            and given_names_substring_equivalent(_given_token(name), _given_token(candidate))
+            for candidate in registry_names
+        ):
             continue
         resolved, kind = resolve_player_name_for_id(name, pid, lookup)
         if resolved is None or kind == "unresolved":
@@ -516,6 +818,7 @@ def build_and_publish_players_registry(
     write_csv: bool = False,
     from_scratch: bool = False,
     aktive_root: Optional[Path] = None,
+    aktive_min_season: Optional[str] = None,
     skip_aktive_import: bool = False,
 ) -> Dict[str, Any]:
     """
@@ -529,11 +832,17 @@ def build_and_publish_players_registry(
 
     ``from_scratch=True`` omits the existing published file but still imports Aktive
     workbooks and configs unless ``skip_aktive_import`` is set.
+
+    ``aktive_min_season=None`` uses :data:`~data_access.aktive_mitglieder_registry.DEFAULT_AKTIVE_MIN_SEASON`
+    (``2008-09``). Pass ``""`` to import every Aktive season.
     """
     from data_access.aktive_mitglieder_registry import (
         build_registry_dataframe_from_aktive,
         format_aktive_import_summary,
+        resolve_aktive_min_season,
     )
+
+    season_floor = resolve_aktive_min_season(aktive_min_season)
 
     moment = datetime.now(timezone.utc)
     moment_iso = moment.isoformat()
@@ -549,6 +858,7 @@ def build_and_publish_players_registry(
         aktive_df, aktive_stats = build_registry_dataframe_from_aktive(
             aktive_root,
             updated_at=moment_iso,
+            min_season=season_floor,
         )
         if aktive_df is not None and not aktive_df.empty:
             layers.append(aktive_df)
@@ -571,6 +881,7 @@ def build_and_publish_players_registry(
         "update_rows_from_config": int(len(config_updates)),
         "from_scratch": bool(from_scratch),
         "merged": not from_scratch,
+        "aktive_min_season": season_floor or "",
         "aktive_import": {
             "skipped": bool(skip_aktive_import),
             "seasons_selected": int(getattr(aktive_stats, "seasons_selected", 0) or 0),
@@ -619,7 +930,11 @@ def apply_players_registry(
     stats: Dict[str, int] = {
         "registry_exact": 0,
         "registry_reassembly": 0,
+        "registry_abbrev": 0,
+        "registry_identity": 0,
+        "registry_substring": 0,
         "registry_close": 0,
+        "registry_alias_to_canonical": 0,
         "registry_unchanged": 0,
     }
 
@@ -628,10 +943,17 @@ def apply_players_registry(
         raw = normalize_player_label(row[Columns.player_name])
         if not pid or not raw:
             continue
+        entry = lookup.get(pid) or {}
         resolved, kind = resolve_player_name_for_id(raw, pid, lookup)
         if resolved is None or kind == "unresolved":
             stats["registry_unchanged"] += 1
             continue
+        if kind == "exact" and should_normalize_alias_to_canonical(raw, entry):
+            canonical_display = str(entry.get("canonical_name") or "")
+            if canonical_display and normalize_player_label(canonical_display) != raw:
+                out.at[idx, Columns.player_name] = canonical_display
+                stats["registry_alias_to_canonical"] += 1
+                continue
         if normalize_player_label(resolved) == raw:
             stats["registry_unchanged"] += 1
             continue
@@ -640,6 +962,12 @@ def apply_players_registry(
             stats["registry_exact"] += 1
         elif kind == "reassembly":
             stats["registry_reassembly"] += 1
+        elif kind == "abbrev":
+            stats["registry_abbrev"] += 1
+        elif kind == "identity":
+            stats["registry_identity"] += 1
+        elif kind == "substring":
+            stats["registry_substring"] += 1
         elif kind == "close":
             stats["registry_close"] += 1
 
@@ -649,13 +977,27 @@ def apply_players_registry(
 def format_registry_apply_summary(stats: Mapping[str, int]) -> str:
     if not stats:
         return "Players registry: not applied"
-    changed = int(stats.get("registry_exact", 0)) + int(stats.get("registry_reassembly", 0)) + int(
-        stats.get("registry_close", 0)
+    changed = (
+        int(stats.get("registry_exact", 0))
+        + int(stats.get("registry_reassembly", 0))
+        + int(stats.get("registry_abbrev", 0))
+        + int(stats.get("registry_identity", 0))
+        + int(stats.get("registry_substring", 0))
+        + int(stats.get("registry_close", 0))
+        + int(stats.get("registry_alias_to_canonical", 0))
     )
     if changed <= 0:
         return "Players registry: 0 row(s) changed"
     lines = [f"Players registry: {changed} row(s) changed"]
-    for key in ("registry_exact", "registry_reassembly", "registry_close"):
+    for key in (
+        "registry_exact",
+        "registry_reassembly",
+        "registry_abbrev",
+        "registry_identity",
+        "registry_substring",
+        "registry_close",
+        "registry_alias_to_canonical",
+    ):
         count = int(stats.get(key, 0))
         if count:
             lines.append(f"  {count:5d}  {key}")

@@ -106,6 +106,12 @@ export type DataTableOptions = {
   teamVsTeamMetric?: "points" | "score" | "both";
   /** Tournament leaderboard: row accent from cut cell metadata (green / yellow), not team colors. */
   tournamentCutRowStyling?: boolean;
+  /** Freeze the first N column groups on the left (Tabulator group-level freeze). */
+  freezeColumnGroupCount?: number;
+  /** Body cells in these column group indexes use semibold weight. */
+  boldColumnGroupIndexes?: number[];
+  /** When false, column resize handles are disabled (default: true). */
+  resizableColumns?: boolean;
   /** Team performance tables: seed player/team colors by performance rank order. */
   playerColorOrder?: string[];
   performanceTeamName?: string;

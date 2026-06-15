@@ -31,6 +31,17 @@ export const TOURNAMENT_PLAYER_QUERY_KEYS = ["player"] as const;
 /** Spieler identity on `/spieler` only (`player` is the tournament alias). */
 export const SPIELER_QUERY_KEYS = ["player_name", "player_id"] as const;
 
+/** Liga drill-down on `/liga` only (`season` is also used on `/club` and `/turnier`). */
+export const LIGA_QUERY_KEYS = ["league", "week", "division"] as const;
+
+const SEASON_QUERY_SCOPES = ["/liga", "/club", "/turnier", "/spieler"] as const;
+
+function keepsSeasonQuery(targetPath: string): boolean {
+  return SEASON_QUERY_SCOPES.some(
+    (prefix) => targetPath === prefix || targetPath.startsWith(`${prefix}/`),
+  );
+}
+
 /** Return search params appropriate for ``targetPath`` (strip other pages' keys). */
 export function searchParamsForPath(
   targetPath: string,
@@ -46,15 +57,22 @@ export function searchParamsForPath(
   if (!onClub && !onLiga) {
     next.delete("team");
   }
+  if (!onLiga) {
+    for (const key of LIGA_QUERY_KEYS) next.delete(key);
+    next.delete("week");
+  }
   if (!targetPath.startsWith("/turnier")) {
     for (const key of TOURNAMENT_QUERY_KEYS) next.delete(key);
     for (const key of TOURNAMENT_PLAYER_QUERY_KEYS) next.delete(key);
   }
-  if (!targetPath.startsWith("/turnier") && !targetPath.startsWith("/liga")) {
+  if (!targetPath.startsWith("/turnier") && !onLiga) {
     next.delete("round");
   }
   if (!targetPath.startsWith("/spieler")) {
     for (const key of SPIELER_QUERY_KEYS) next.delete(key);
+  }
+  if (!keepsSeasonQuery(targetPath)) {
+    next.delete("season");
   }
   return next;
 }
@@ -90,5 +108,13 @@ export function stripTournamentPlayerQueryKeys(params: URLSearchParams): URLSear
 export function stripSpielerQueryKeys(params: URLSearchParams): URLSearchParams {
   const next = new URLSearchParams(params);
   for (const key of SPIELER_QUERY_KEYS) next.delete(key);
+  return next;
+}
+
+export function stripLigaQueryKeys(params: URLSearchParams): URLSearchParams {
+  const next = new URLSearchParams(params);
+  for (const key of LIGA_QUERY_KEYS) next.delete(key);
+  next.delete("week");
+  next.delete("round");
   return next;
 }

@@ -6,13 +6,17 @@ Purely descriptive — no merging unless driven by external normalization JSON.
 Intended for manual external lookup (BV registry, score sheets, …).
 
 Analyses (``--analysis``; default: all):
-  - ``MULTI_ID`` — ID consistency (same name → multiple IDs; same ID → multiple names)
-  - ``MULTI_NAME`` — name reassembly (same ID → multiple raw names; canonical form)
+  - ``MULTI_ID`` — same name → multiple IDs (``same_name_different_ids``); when run
+    alone, also reports same ID → multiple names (``same_id_different_names``).
+  - ``MULTI_NAME`` — same ID → multiple raw names (``same_id_name_variants``).
+
+When both analyses run (publish default), same-ID groups are reported only once
+under ``same_id_name_variants`` — not duplicated as ``same_id_different_names``.
 
 Issue types:
   - same_name_different_ids — identical player name string maps to >1 Player ID
-  - same_id_different_names — identical Player ID maps to >1 player name string
-  - same_id_name_variants — MULTI_NAME: same ID, multiple raw names (with canonical_name)
+  - same_id_different_names — MULTI_ID-only: same ID maps to >1 player name string
+  - same_id_name_variants — same ID, multiple raw names (with canonical_name)
 
 Autoresolve columns (suggestions only — not applied to data):
   - ``majority`` — same_name_different_ids: dominant row_count > ratio × minority;
@@ -49,6 +53,7 @@ if str(REPO_ROOT) not in sys.path:
 from data_access.player_name_normalization import (
     canonicalize_player_name,
     group_canonical_target,
+    name_identity_key,
     normalize_player_label,
 )
 from data_access.schema import Columns
@@ -168,10 +173,17 @@ def _canonical_id_among_candidates(counts_by_id: Dict[str, int]) -> str:
 
 def _placeholder_autoresolve_for_name_group(
     counts_by_id: Dict[str, int],
+    *,
+    player_name: str = "",
+    name_index: Mapping[str, str] | None = None,
+    lookup_by_id: Mapping[str, Mapping[str, str]] | None = None,
 ) -> Dict[str, Tuple[str, str]]:
     """
     When a same-name group has placeholder ID(s), tag placeholders and the
     canonical majority-games row (source ID for remapping).
+
+    When every ID in the group is a placeholder, fall back to the players
+    registry (exact / identity / unique close name match) for ``proposed_id``.
     """
     empty = ("", "")
     if len(counts_by_id) < 2:
@@ -182,22 +194,49 @@ def _placeholder_autoresolve_for_name_group(
         return {pid: empty for pid in counts_by_id}
 
     canonical_id = _canonical_id_among_candidates(counts_by_id)
+    registry_pid = ""
+    if (
+        player_name
+        and name_index is not None
+        and lookup_by_id is not None
+        and is_placeholder_player_id(canonical_id)
+    ):
+        from data_access.players_registry import resolve_player_id_for_name
+
+        reg_pid, _kind = resolve_player_id_for_name(player_name, name_index, lookup_by_id)
+        if reg_pid and not is_placeholder_player_id(reg_pid):
+            registry_pid = reg_pid
+
     out: Dict[str, Tuple[str, str]] = {pid: empty for pid in counts_by_id}
     out[canonical_id] = (AUTORESOLVE_PLACEHOLDER, "")
     for pid in placeholder_ids:
         if pid != canonical_id:
-            out[pid] = (AUTORESOLVE_PLACEHOLDER, canonical_id)
+            if not is_placeholder_player_id(canonical_id):
+                proposed = canonical_id
+            elif registry_pid:
+                proposed = registry_pid
+            else:
+                proposed = canonical_id
+            out[pid] = (AUTORESOLVE_PLACEHOLDER, proposed)
     return out
 
 
 def _merge_autoresolve_for_name_group(
     counts_by_id: Dict[str, int],
     *,
+    player_name: str = "",
+    name_index: Mapping[str, str] | None = None,
+    lookup_by_id: Mapping[str, Mapping[str, str]] | None = None,
     ratio: int = MAJORITY_ROW_COUNT_RATIO,
 ) -> Dict[str, Tuple[str, str]]:
     """Placeholder wins over majority when both apply to the same row."""
     majority = _majority_autoresolve_for_name_group(counts_by_id, ratio=ratio)
-    placeholder = _placeholder_autoresolve_for_name_group(counts_by_id)
+    placeholder = _placeholder_autoresolve_for_name_group(
+        counts_by_id,
+        player_name=player_name,
+        name_index=name_index,
+        lookup_by_id=lookup_by_id,
+    )
     out: Dict[str, Tuple[str, str]] = {}
     for pid in counts_by_id:
         ph = placeholder.get(pid, ("", ""))
@@ -337,6 +376,137 @@ def _prepare_pair_stats(
     return label, pair_stats, name_to_ids, id_to_names
 
 
+def _names_coherent_together(
+    names: Sequence[str],
+    player_id: str,
+    lookup: Mapping[str, Mapping[str, str]],
+) -> bool:
+    """True when every name in ``names`` is the same person for this ID."""
+    name_list = [normalize_player_label(name) for name in names if normalize_player_label(name)]
+    if len(name_list) < 2:
+        return True
+    if group_canonical_target(name_list):
+        return True
+    if len({name_identity_key(name) for name in name_list}) == 1:
+        return True
+
+    from data_access.player_name_normalization_config import is_same_person_name_group
+
+    if is_same_person_name_group(player_id, set(name_list)):
+        return True
+
+    if not lookup:
+        return False
+
+    from data_access.players_registry import (
+        registry_accepts_all_names_for_id,
+        resolve_player_name_for_id,
+    )
+
+    if registry_accepts_all_names_for_id(player_id, name_list, lookup):
+        return True
+
+    resolved_labels: set[str] = set()
+    for name in name_list:
+        resolved, kind = resolve_player_name_for_id(name, player_id, lookup)
+        if resolved is None or kind == "unresolved":
+            return False
+        resolved_labels.add(normalize_player_label(resolved))
+    return len(resolved_labels) == 1
+
+
+def _partition_same_id_name_clusters(
+    names: Iterable[str],
+    player_id: str,
+    lookup: Mapping[str, Mapping[str, str]],
+    *,
+    apply_normalization: bool,
+) -> List[List[str]]:
+    """
+    Split a same-ID name set into coherent subgroups.
+
+    Placeholder IDs emit one name per cluster (unrelated people share dummy EDVs).
+    """
+    name_list = sorted(
+        {normalize_player_label(name) for name in names if normalize_player_label(name)},
+        key=lambda item: item.lower(),
+    )
+    if len(name_list) < 2:
+        return [name_list] if name_list else []
+
+    if is_placeholder_player_id(player_id):
+        return [[name] for name in name_list]
+
+    if not apply_normalization or not lookup:
+        return [name_list]
+
+    clusters: List[List[str]] = []
+    remaining = set(name_list)
+    while remaining:
+        seed = min(remaining, key=lambda item: item.lower())
+        cluster = [seed]
+        remaining.remove(seed)
+        changed = True
+        while changed:
+            changed = False
+            for name in list(remaining):
+                if _names_coherent_together([*cluster, name], player_id, lookup):
+                    cluster.append(name)
+                    remaining.remove(name)
+                    changed = True
+        clusters.append(sorted(cluster, key=lambda item: item.lower()))
+    return clusters
+
+
+def _should_skip_same_id_name_group(
+    player_id: str,
+    names: Iterable[str],
+    lookup: Mapping[str, Mapping[str, str]],
+    *,
+    apply_normalization: bool,
+) -> bool:
+    """
+    True when every spelling for this ID is already reconciled (registry / identity / reassembly).
+    """
+    if not apply_normalization:
+        return False
+
+    name_list = sorted({normalize_player_label(name) for name in names if normalize_player_label(name)})
+    if len(name_list) < 2:
+        return True
+
+    if group_canonical_target(name_list):
+        return True
+
+    identity_keys = {name_identity_key(name) for name in name_list}
+    if len(identity_keys) == 1:
+        return True
+
+    from data_access.player_name_normalization_config import is_same_person_name_group
+
+    if is_same_person_name_group(player_id, set(name_list)):
+        return True
+
+    if not lookup:
+        return False
+
+    from data_access.players_registry import (
+        registry_accepts_all_names_for_id,
+        resolve_player_name_for_id,
+    )
+
+    if registry_accepts_all_names_for_id(player_id, set(name_list), lookup):
+        return True
+
+    resolved_labels: set[str] = set()
+    for name in name_list:
+        resolved, kind = resolve_player_name_for_id(name, player_id, lookup)
+        if resolved is None or kind == "unresolved":
+            return False
+        resolved_labels.add(normalize_player_label(resolved))
+    return len(resolved_labels) == 1
+
+
 def _audit_multi_id(
     label: str,
     pair_stats: Dict[Tuple[str, str], Dict[str, object]],
@@ -344,10 +514,21 @@ def _audit_multi_id(
     id_to_names: Dict[str, set[str]],
     *,
     apply_normalization: bool = True,
+    report_same_id_names: bool = True,
 ) -> List[PlayerIdNameConflict]:
     from data_access.player_id_name_normalization import is_different_person_name_group
+    from data_access.players_registry import load_players_registry_df, registry_lookup_by_id
 
     conflicts: List[PlayerIdNameConflict] = []
+    lookup: Dict[str, Dict[str, str]] = {}
+    name_index: Dict[str, str] = {}
+    if apply_normalization:
+        registry_df = load_players_registry_df()
+        if registry_df is not None and not registry_df.empty:
+            from data_access.players_registry import registry_name_index
+
+            lookup = registry_lookup_by_id(registry_df)
+            name_index = registry_name_index(registry_df)
 
     for name, ids in sorted(name_to_ids.items()):
         if len(ids) < 2:
@@ -356,7 +537,12 @@ def _audit_multi_id(
             continue
         sorted_ids = sorted(ids)
         counts_by_id = {pid: int(pair_stats[(name, pid)]["row_count"]) for pid in sorted_ids}
-        autoresolve_by_pid = _merge_autoresolve_for_name_group(counts_by_id)
+        autoresolve_by_pid = _merge_autoresolve_for_name_group(
+            counts_by_id,
+            player_name=name,
+            name_index=name_index,
+            lookup_by_id=lookup,
+        )
         for pid in sorted_ids:
             stats = pair_stats[(name, pid)]
             peer_ids = [x for x in sorted_ids if x != pid]
@@ -379,14 +565,33 @@ def _audit_multi_id(
                 )
             )
 
+    if not report_same_id_names:
+        return conflicts
+
     for pid, names in sorted(id_to_names.items()):
         if len(names) < 2:
             continue
+        if _should_skip_same_id_name_group(pid, names, lookup, apply_normalization=apply_normalization):
+            continue
         sorted_names = sorted(names, key=lambda n: n.lower())
+        registry_by_name = (
+            _registry_proposals_for_id_name_group(pid, sorted_names, lookup)
+            if lookup
+            else {name: ("", "", canonicalize_player_name(name)) for name in sorted_names}
+        )
         for name in sorted_names:
             stats = pair_stats[(name, pid)]
             peer_names = [x for x in sorted_names if x != name]
             autoresolve_rule, proposed_id = _placeholder_autoresolve_for_same_id_row(pid)
+            reg_rule, reg_proposed_name, reg_canonical_name = registry_by_name.get(
+                name, ("", "", "")
+            )
+            conflict_canonical = ""
+            conflict_proposed_name = ""
+            if reg_rule and not autoresolve_rule:
+                autoresolve_rule = reg_rule
+                conflict_canonical = reg_canonical_name
+                conflict_proposed_name = reg_proposed_name
             conflicts.append(
                 PlayerIdNameConflict(
                     issue_type=ISSUE_SAME_ID,
@@ -402,6 +607,8 @@ def _audit_multi_id(
                     group_size_names=len(sorted_names),
                     autoresolve_rule=autoresolve_rule,
                     proposed_id=proposed_id,
+                    canonical_name=conflict_canonical,
+                    proposed_name=conflict_proposed_name,
                 )
             )
 
@@ -515,55 +722,141 @@ def _audit_multi_name(
     *,
     apply_normalization: bool = True,
 ) -> List[PlayerIdNameConflict]:
-    from data_access.players_registry import load_players_registry_df, registry_accepts_all_names_for_id
+    from data_access.players_registry import load_players_registry_df, resolve_player_id_for_name
 
     conflicts: List[PlayerIdNameConflict] = []
     registry_df = load_players_registry_df() if apply_normalization else None
     lookup = {}
+    name_index: Dict[str, str] = {}
     if registry_df is not None and not registry_df.empty:
-        from data_access.players_registry import registry_lookup_by_id
+        from data_access.players_registry import registry_lookup_by_id, registry_name_index
 
         lookup = registry_lookup_by_id(registry_df)
+        name_index = registry_name_index(registry_df)
 
     for pid, names in sorted(id_to_names.items()):
         if len(names) < 2:
             continue
-        if apply_normalization and lookup and registry_accepts_all_names_for_id(pid, names, lookup):
-            continue
-        sorted_names = sorted(names, key=lambda n: n.lower())
-        counts_by_name = {
-            name: int(pair_stats[(name, pid)]["row_count"]) for name in sorted_names
-        }
-        autoresolve_by_name = (
-            _registry_proposals_for_id_name_group(pid, sorted_names, lookup)
-            if lookup
-            else {name: ("", "", canonicalize_player_name(name)) for name in sorted_names}
+
+        clusters = _partition_same_id_name_clusters(
+            names,
+            pid,
+            lookup,
+            apply_normalization=apply_normalization,
         )
-        for name in sorted_names:
-            stats = pair_stats[(name, pid)]
-            peer_names = [x for x in sorted_names if x != name]
-            autoresolve_rule, proposed_name, canonical_name = autoresolve_by_name.get(
-                name, ("", "", canonicalize_player_name(name))
-            )
-            conflicts.append(
-                PlayerIdNameConflict(
-                    issue_type=ISSUE_SAME_ID_NAME_VARIANTS,
-                    source_file=label,
-                    player_name=name,
-                    player_id=pid,
-                    row_count=int(stats["row_count"]),
-                    season_count=len(stats["seasons"]),
-                    seasons="; ".join(stats["seasons"]),
-                    peer_player_ids="",
-                    peer_player_names="; ".join(peer_names),
-                    group_size_ids=1,
-                    group_size_names=len(sorted_names),
-                    autoresolve_rule=autoresolve_rule,
-                    proposed_id="",
-                    canonical_name=canonical_name,
-                    proposed_name=proposed_name,
+        all_names_on_id = sorted(names, key=lambda item: item.lower())
+
+        for cluster in clusters:
+            if len(cluster) == 1:
+                name = cluster[0]
+                stats = pair_stats[(name, pid)]
+                if is_placeholder_player_id(pid):
+                    reg_pid, _kind = (
+                        resolve_player_id_for_name(name, name_index, lookup)
+                        if name_index and lookup
+                        else (None, "unresolved")
+                    )
+                    conflicts.append(
+                        PlayerIdNameConflict(
+                            issue_type=ISSUE_SAME_ID_NAME_VARIANTS,
+                            source_file=label,
+                            player_name=name,
+                            player_id=pid,
+                            row_count=int(stats["row_count"]),
+                            season_count=len(stats["seasons"]),
+                            seasons="; ".join(stats["seasons"]),
+                            peer_player_ids="",
+                            peer_player_names="",
+                            group_size_ids=1,
+                            group_size_names=1,
+                            autoresolve_rule=AUTORESOLVE_PLACEHOLDER,
+                            proposed_id=reg_pid or "",
+                            canonical_name=canonicalize_player_name(name),
+                            proposed_name="",
+                        )
+                    )
+                    continue
+
+                if len(all_names_on_id) < 2:
+                    continue
+
+                from data_access.players_registry import registry_accepts_all_names_for_id
+
+                if registry_accepts_all_names_for_id(pid, {name}, lookup):
+                    continue
+
+                reg_pid, _kind = (
+                    resolve_player_id_for_name(name, name_index, lookup)
+                    if name_index and lookup
+                    else (None, "unresolved")
                 )
+                if not reg_pid or reg_pid == pid:
+                    continue
+
+                conflicts.append(
+                    PlayerIdNameConflict(
+                        issue_type=ISSUE_SAME_ID_NAME_VARIANTS,
+                        source_file=label,
+                        player_name=name,
+                        player_id=pid,
+                        row_count=int(stats["row_count"]),
+                        season_count=len(stats["seasons"]),
+                        seasons="; ".join(stats["seasons"]),
+                        peer_player_ids="",
+                        peer_player_names="",
+                        group_size_ids=1,
+                        group_size_names=1,
+                        autoresolve_rule=AUTORESOLVE_PLACEHOLDER,
+                        proposed_id=reg_pid,
+                        canonical_name=canonicalize_player_name(name),
+                        proposed_name="",
+                    )
+                )
+                continue
+
+            if _should_skip_same_id_name_group(
+                pid, cluster, lookup, apply_normalization=apply_normalization
+            ):
+                continue
+
+            sorted_names = cluster
+            counts_by_name = {
+                name: int(pair_stats[(name, pid)]["row_count"]) for name in sorted_names
+            }
+            heuristic_by_name = _merge_autoresolve_for_id_name_group(sorted_names, counts_by_name)
+            registry_by_name = (
+                _registry_proposals_for_id_name_group(pid, sorted_names, lookup) if lookup else {}
             )
+            for name in sorted_names:
+                stats = pair_stats[(name, pid)]
+                peer_names = [x for x in sorted_names if x != name]
+                h_rule, h_prop, h_canon = heuristic_by_name.get(
+                    name, ("", "", canonicalize_player_name(name))
+                )
+                r_rule, r_prop, r_canon = registry_by_name.get(name, ("", "", ""))
+                if r_rule:
+                    autoresolve_rule, proposed_name, canonical_name = r_rule, r_prop, r_canon
+                else:
+                    autoresolve_rule, proposed_name, canonical_name = h_rule, h_prop, h_canon
+                conflicts.append(
+                    PlayerIdNameConflict(
+                        issue_type=ISSUE_SAME_ID_NAME_VARIANTS,
+                        source_file=label,
+                        player_name=name,
+                        player_id=pid,
+                        row_count=int(stats["row_count"]),
+                        season_count=len(stats["seasons"]),
+                        seasons="; ".join(stats["seasons"]),
+                        peer_player_ids="",
+                        peer_player_names="; ".join(peer_names),
+                        group_size_ids=1,
+                        group_size_names=len(sorted_names),
+                        autoresolve_rule=autoresolve_rule,
+                        proposed_id="",
+                        canonical_name=canonical_name,
+                        proposed_name=proposed_name,
+                    )
+                )
 
     return conflicts
 
@@ -613,6 +906,7 @@ def audit_player_id_names(
                 name_to_ids,
                 id_to_names,
                 apply_normalization=apply_normalization,
+                report_same_id_names=ANALYSIS_MULTI_NAME not in selected,
             )
         )
     if ANALYSIS_MULTI_NAME in selected:

@@ -29,6 +29,7 @@ from data_access.player_id_name_normalization import (
 )
 
 ISSUE_SAME_NAME = "same_name_different_ids"
+ISSUE_SAME_ID_NAME_VARIANTS = "same_id_name_variants"
 
 
 def _remap_entry(
@@ -52,12 +53,48 @@ def _remap_entry(
 def build_config_from_audit_csv(csv_path: Path) -> Dict[str, Any]:
     rows = list(csv.DictReader(csv_path.open(encoding="utf-8-sig", newline="")))
     same_name = [r for r in rows if (r.get("issue_type") or "").strip() == ISSUE_SAME_NAME]
+    same_id_variants = [
+        r for r in rows if (r.get("issue_type") or "").strip() == ISSUE_SAME_ID_NAME_VARIANTS
+    ]
 
     autoresolve_remappings: List[Dict[str, Any]] = []
     seen_remap: Set[Tuple[str, str, str]] = set()
 
     dbu_by_name: DefaultDict[str, List[dict]] = defaultdict(list)
     different_by_name: DefaultDict[str, Set[str]] = defaultdict(set)
+
+    def _add_autoresolve_remap(
+        *,
+        player_name: str,
+        player_id: str,
+        assigned_id: str,
+        source: str,
+    ) -> None:
+        key = (player_name, player_id, assigned_id)
+        if key in seen_remap:
+            return
+        seen_remap.add(key)
+        autoresolve_remappings.append(
+            _remap_entry(
+                player_name=player_name,
+                player_id=player_id,
+                assigned_id=assigned_id,
+                source=source,
+            )
+        )
+
+    for row in same_id_variants:
+        name = normalize_player_name(row.get("player_name"))
+        pid = normalize_player_id(row.get("player_id"))
+        autoresolve = (row.get("autoresolve_rule") or "").strip().lower()
+        proposed = normalize_player_id(row.get("proposed_id"))
+        if autoresolve == "placeholder" and proposed and name and pid:
+            _add_autoresolve_remap(
+                player_name=name,
+                player_id=pid,
+                assigned_id=proposed,
+                source=autoresolve,
+            )
 
     for row in same_name:
         name = normalize_player_name(row.get("player_name"))
@@ -79,17 +116,12 @@ def build_config_from_audit_csv(csv_path: Path) -> Dict[str, Any]:
             continue
 
         if autoresolve in {"majority", "placeholder"} and proposed:
-            key = (name, pid, proposed)
-            if key not in seen_remap:
-                seen_remap.add(key)
-                autoresolve_remappings.append(
-                    _remap_entry(
-                        player_name=name,
-                        player_id=pid,
-                        assigned_id=proposed,
-                        source=autoresolve,
-                    )
-                )
+            _add_autoresolve_remap(
+                player_name=name,
+                player_id=pid,
+                assigned_id=proposed,
+                source=autoresolve,
+            )
 
     dbu_id_remappings: List[Dict[str, Any]] = []
     for name, entries in sorted(dbu_by_name.items()):

@@ -5,7 +5,11 @@ from __future__ import annotations
 from data_access.player_name_normalization import (
     candidate_canonical_names,
     canonicalize_player_name,
+    given_names_substring_equivalent,
     group_canonical_target,
+    name_identity_key,
+    names_share_identity,
+    normalize_particle_name,
     normalize_player_label,
     normalize_player_name_whitespace,
     parse_player_name_parts,
@@ -49,6 +53,40 @@ def test_single_token_is_family_only() -> None:
 def test_reversed_spellings_canonicalize_same() -> None:
     assert canonicalize_player_name("Scheigenpflug, Stephan") == "Scheigenpflug, Stephan"
     assert canonicalize_player_name("Stephan Scheigenpflug") == "Scheigenpflug, Stephan"
+
+
+def test_von_van_particle_identity() -> None:
+    assert normalize_particle_name("Alt, Christiane von") == "von Alt, Christiane"
+    assert normalize_particle_name("Von Alt, Christiane") == "von Alt, Christiane"
+    assert normalize_particle_name("Weverberg, Susanne van") == "van Weverberg, Susanne"
+    assert normalize_particle_name("Weverberg Van, Susanne") == "van Weverberg, Susanne"
+    assert names_share_identity("Von Alt, Christiane", "Alt, Christiane von")
+    assert names_share_identity("Weverberg Van, Susanne", "Weverberg, Susanne van")
+
+
+def test_generation_suffix_identity() -> None:
+    variants = [
+        "Glasl jun., Hans-Jürgen",
+        "Glasl, Hans-Jürgen",
+        "Hans-Jürgen Glasl sen.",
+        "Hans-Jürgen Glasl",
+    ]
+    keys = {name_identity_key(name) for name in variants}
+    assert keys == {("glasl", "hans-jürgen")}
+    assert name_identity_key(group_canonical_target(variants) or "") == ("glasl", "hans-jürgen")
+
+
+def test_given_names_substring_equivalent() -> None:
+    assert given_names_substring_equivalent("alex", "alexander")
+    assert given_names_substring_equivalent("alexander", "alex")
+    assert given_names_substring_equivalent("carina", "carina mareen")
+    assert given_names_substring_equivalent("carina mareen", "carina")
+    assert given_names_substring_equivalent("carina", "carina-maren")
+    assert given_names_substring_equivalent("hans", "hans-jürgen")
+    assert given_names_substring_equivalent("max", "maximilian")
+    assert given_names_substring_equivalent("maximilian", "max")
+    assert not given_names_substring_equivalent("ann", "johann")
+    assert not given_names_substring_equivalent("bob", "robert")
 
 
 def test_two_token_reversal_equivalence() -> None:

@@ -174,7 +174,8 @@ def normalize_query_for_key(query_args: Mapping[str, Any], database_id: str) -> 
     """Stable dict for hashing: database always explicit, sorted keys."""
     q: Dict[str, str] = {}
     for k in sorted(query_args.keys()):
-        if k == "database":
+        # ``language`` is applied via i18n_service before lookup and is already in the payload hash.
+        if k in ("database", "language"):
             continue
         v = query_args.get(k)
         if v is None:

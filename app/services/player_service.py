@@ -307,8 +307,10 @@ class PlayerService:
         if search_term:
             search_term = search_term.lower()
             filtered_players = [
-                player for player in all_players
+                player
+                for player in all_players
                 if search_term in str(player.get("name", "")).lower()
+                or search_term in str(player.get("id", "")).lower()
             ]
             return filtered_players
         

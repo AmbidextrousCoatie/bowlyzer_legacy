@@ -2,6 +2,7 @@ import { X } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { PlayerSearchEntry } from "../hooks/usePlayer";
 import { rankFuzzyBy } from "../lib/fuzzySearch";
+import { formatPlayerSearchLabel, playerSearchHaystack } from "../lib/playerSearchLabel";
 
 type PlayerSearchProps = {
   value: string;
@@ -45,7 +46,7 @@ export function PlayerSearch({
   }, [open]);
 
   const matches = useMemo(
-    () => rankFuzzyBy(draft, players, (p) => p.name, MAX_RESULTS),
+    () => rankFuzzyBy(draft, players, playerSearchHaystack, MAX_RESULTS),
     [draft, players],
   );
 
@@ -59,7 +60,7 @@ export function PlayerSearch({
       setOpen(false);
       return;
     }
-    setDraft(entry.name);
+    setDraft(formatPlayerSearchLabel(entry));
     onSelect(entry);
     setOpen(false);
     inputRef.current?.blur();
@@ -79,8 +80,23 @@ export function PlayerSearch({
         e.preventDefault();
         commit(matches[activeIndex]);
       } else {
-        const exact = players.find((p) => p.name.toLowerCase() === draft.trim().toLowerCase());
-        if (exact) commit(exact);
+        const trimmed = draft.trim();
+        if (/^\d+$/.test(trimmed)) {
+          const byId = players.find((p) => p.id === trimmed);
+          if (byId) commit(byId);
+          return;
+        }
+        const byLabel = players.find(
+          (p) => formatPlayerSearchLabel(p).toLowerCase() === trimmed.toLowerCase(),
+        );
+        if (byLabel) {
+          commit(byLabel);
+          return;
+        }
+        const byName = players.filter(
+          (p) => p.name.toLowerCase() === trimmed.toLowerCase(),
+        );
+        if (byName.length === 1) commit(byName[0]);
       }
     } else if (e.key === "Escape") {
       if (open) {
@@ -161,7 +177,7 @@ export function PlayerSearch({
                 (idx === activeIndex ? "bg-accent-tint text-foreground" : "text-foreground")
               }
             >
-              {entry.name}
+              {formatPlayerSearchLabel(entry)}
             </li>
           ))}
         </ul>

@@ -1,12 +1,10 @@
 import { useEffect, useMemo } from "react";
 import { seedTeamColorsFromTablePayload } from "../../../lib/color-utils";
-import { EChart } from "../../../lib/charts/EChart";
 import {
   buildWeekLabels,
   lineChartOption,
   scatterMultiAxisOption,
 } from "../../../lib/charts/options";
-import { DataTable } from "../../../lib/datatable/DataTable";
 import type { DataTableOptions } from "../../../lib/datatable/types";
 import {
   useIndividualAverages,
@@ -18,6 +16,7 @@ import {
 } from "../../../hooks/useLeague";
 import { useTranslations } from "../../../hooks/useTranslations";
 import { rankedTeamTableOptions, teamVsTeamTableOptions } from "../leagueTableOptions";
+import { ChartFrame, DataTableSection, Section } from "./leagueBlockUi";
 import { TeamVsTeamMatrix } from "./TeamVsTeamMatrix";
 
 type Props = {
@@ -175,93 +174,6 @@ export function LeagueSeasonOverview({ season, league }: Props) {
       >
         <DataTableSection query={individualAverages} options={basicTableOptions} />
       </Section>
-    </div>
-  );
-}
-
-function Section({
-  eyebrow,
-  title,
-  children,
-}: {
-  eyebrow: string;
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section>
-      <div className="mb-4">
-        <p className="text-label uppercase text-muted mb-1.5">{eyebrow}</p>
-        <h2 className="text-h2">{title}</h2>
-      </div>
-      {children}
-    </section>
-  );
-}
-
-function DataTableSection({
-  query,
-  options,
-}: {
-  query: {
-    data: import("../../../lib/datatable/types").TableData | undefined;
-    isPending: boolean;
-    isError: boolean;
-    error: Error | null;
-  };
-  options: import("../../../lib/datatable/types").DataTableOptions;
-}) {
-  if (query.isPending) {
-    return <div className="h-48 rounded-sm border border-border bg-surface-subtle" />;
-  }
-  if (query.isError) {
-    return (
-      <div className="rounded-sm border border-danger-fg/40 bg-surface p-6 text-small text-danger-fg">
-        {query.error?.message ?? "Fehler beim Laden"}
-      </div>
-    );
-  }
-  if (!query.data || !query.data.columns || !query.data.data) {
-    return (
-      <div className="rounded-sm border border-dashed border-border p-6 text-small text-muted">
-        Keine Daten vorhanden.
-      </div>
-    );
-  }
-  return <DataTable data={query.data} options={options} />;
-}
-
-function ChartFrame({
-  isPending,
-  isError,
-  errorMessage,
-  option,
-}: {
-  isPending: boolean;
-  isError: boolean;
-  errorMessage?: string;
-  option: import("echarts").EChartsOption | null;
-}) {
-  if (isPending) {
-    return <div className="h-[300px] rounded-sm border border-border bg-surface-subtle" />;
-  }
-  if (isError) {
-    return (
-      <div className="rounded-sm border border-danger-fg/40 bg-surface p-6 text-small text-danger-fg">
-        {errorMessage ?? "Fehler beim Laden"}
-      </div>
-    );
-  }
-  if (!option) {
-    return (
-      <div className="grid h-[300px] place-items-center rounded-sm border border-dashed border-border text-small text-muted">
-        Keine Daten vorhanden.
-      </div>
-    );
-  }
-  return (
-    <div className="rounded-sm border border-border bg-surface p-3">
-      <EChart option={option} height={280} />
     </div>
   );
 }

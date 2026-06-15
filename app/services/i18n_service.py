@@ -140,7 +140,10 @@ class I18nService:
             # Namespaced: Player Stats UI
             "ui.player.title": {"en": "Player Statistics", "de": "Spielerstatistiken"},
             "ui.player.select_player": {"en": "Select Player", "de": "Spieler auswählen"},
-            "ui.player.type_name_placeholder": {"en": "Type a player name...", "de": "Spielernamen eingeben..."},
+            "ui.player.type_name_placeholder": {
+                "en": "Name or player ID…",
+                "de": "Name oder Spieler-ID…",
+            },
             "ui.player.season_scope": {"en": "Season Scope", "de": "Saisonumfang"},
             "ui.player.all_time": {"en": "All Time", "de": "Gesamt"},
             "ui.player.lifetime_title": {"en": "Lifetime Statistics", "de": "Karrierestatistik"},

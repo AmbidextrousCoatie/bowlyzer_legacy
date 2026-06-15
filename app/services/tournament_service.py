@@ -21,12 +21,13 @@ from app.utils.tournament_benchmark import TournamentBenchmark, tournament_bench
 KO_FINALE_SERIES_BO3 = "bo3_pins"
 KO_FINALE_SERIES_SCRATCH_2G = "scratch_total_2g"
 
-# Gesamtwertung Spieler-group column widths (rank/hcp −30%, player −15%).
+# Gesamtwertung column widths (rank/hcp −30%, player −15%; Set round cols −15%).
 _LB_COL_RANK_W = "44px"
 _LB_COL_PLAYER_W = "110px"
 _LB_COL_HCP_W = "55px"
 _LB_COL_TOTAL_W = "90px"  # Gesamt / Ø totals (−15% from 100px)
 _LB_COL_TOTAL_AVG = "60px"
+_LB_COL_ROUND_W = "80px"  # Set 1, Set 2, … (−15% from 94px)
 
 # Individual player stats page: `player_cards` in tournament_ko_config.json (same key as KO block: season||Event Name).
 # Canonical render order when merging with explicit config (unknown ids dropped).
@@ -1677,7 +1678,7 @@ class TournamentService:
             for rn in round_numbers:
                 title = round_name_map.get(rn) or f"Round {rn}"
                 scratch_columns.append(
-                    Column(title=title, field=f"round_{rn}", width="94px", align="center", decimal_places=0)
+                    Column(title=title, field=f"round_{rn}", width=_LB_COL_ROUND_W, align="center", decimal_places=0)
                 )
             scratch_columns.extend(
                 [
@@ -1749,7 +1750,7 @@ class TournamentService:
                 columns.append(Column(title=i18n_service.get_text("ui.player.club"), field="club", width="220px", align="center"))
             for rn in round_numbers:
                 title = round_name_map.get(rn) or f"Round {rn}"
-                columns.append(Column(title=title, field=f"round_{rn}", width="94px", align="center", decimal_places=0))
+                columns.append(Column(title=title, field=f"round_{rn}", width=_LB_COL_ROUND_W, align="center", decimal_places=0))
             columns.append(
                 Column(title=i18n_service.get_text("total"), field="total_score", width="100px", align="center", decimal_places=0)
             )

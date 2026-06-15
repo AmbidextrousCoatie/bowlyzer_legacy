@@ -34,6 +34,36 @@
       },
       {
         "match": {
+          "player_name": "Beck, Joseph",
+          "player_id": "7883"
+        },
+        "replace": {
+          "player_id": "7833"
+        },
+        "source": "dbu_id"
+      },
+      {
+        "match": {
+          "player_name": "Gulvadi, Sanat",
+          "player_id": "38429"
+        },
+        "replace": {
+          "player_id": "38424"
+        },
+        "source": "dbu_id"
+      },
+      {
+        "match": {
+          "player_name": "Sigl, Thomas",
+          "player_id": "38793"
+        },
+        "replace": {
+          "player_id": "16838"
+        },
+        "source": "dbu_id"
+      },
+      {
+        "match": {
           "player_name": "Dopieralski, Hanna",
           "player_id": "16368"
         },
@@ -391,6 +421,13 @@
           "16206",
           "38281"
         ]
+      },
+      {
+        "player_name": "Vogt, Thomas",
+        "player_ids": [
+          "10903",
+          "25263"
+        ]
       }
     ]
   },
@@ -454,16 +491,6 @@
         "player_id": "16863"
       },
       "source": "placeholder"
-    },
-    {
-      "match": {
-        "player_name": "Beck, Joseph",
-        "player_id": "7833"
-      },
-      "replace": {
-        "player_id": "7883"
-      },
-      "source": "majority"
     },
     {
       "match": {
@@ -937,13 +964,73 @@
     },
     {
       "match": {
-        "player_name": "Gulvadi, Sanat",
-        "player_id": "38424"
+        "player_name": "Erhard, Hannelore",
+        "player_id": "99999"
       },
       "replace": {
+        "player_id": "25977"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Holder, Matthes",
+        "player_id": "99999"
+      },
+      "replace": {
+        "player_id": "25823"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Schipke, Ralf",
+        "player_id": "99999"
+      },
+      "replace": {
+        "player_id": "40108"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Steiner, Alfred",
+        "player_id": "99999"
+      },
+      "replace": {
+        "player_id": "25978"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Gulvadi, Sanat",
         "player_id": "38429"
       },
-      "source": "majority"
+      "replace": {
+        "player_id": "38424"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Sigl, Thomas",
+        "player_id": "38793"
+      },
+      "replace": {
+        "player_id": "16838"
+      },
+      "source": "placeholder"
+    },
+    {
+      "match": {
+        "player_name": "Wächter, Martin",
+        "player_id": "999"
+      },
+      "replace": {
+        "player_id": "16185"
+      },
+      "source": "placeholder"
     },
     {
       "match": {

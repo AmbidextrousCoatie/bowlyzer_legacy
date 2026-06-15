@@ -88,6 +88,39 @@ function stripFrozenFromTabulatorColumnDefs(
   });
 }
 
+/** Tabulator 6: freeze parent column groups only; strip leaf-level ``frozen``. */
+function applyColumnGroupFreeze(
+  defs: ColumnDefinition[],
+  count: number,
+): ColumnDefinition[] {
+  return defs.map((def, index) => {
+    const next = { ...def } as ColumnDefinition & {
+      frozen?: string;
+      columns?: ColumnDefinition[];
+    };
+    if (!Array.isArray(next.columns) || next.columns.length === 0) {
+      delete next.frozen;
+      return next as ColumnDefinition;
+    }
+    next.columns = next.columns.map((child) => {
+      const leaf = { ...child } as ColumnDefinition & { frozen?: unknown };
+      delete leaf.frozen;
+      return leaf as ColumnDefinition;
+    });
+    if (index < count) {
+      (next as { frozen?: boolean | string }).frozen = "left";
+    } else {
+      delete next.frozen;
+    }
+    return next as ColumnDefinition;
+  });
+}
+
+function appendColumnCssClass(def: ColumnDefinition, className: string): void {
+  const existing = typeof def.cssClass === "string" ? def.cssClass.trim() : "";
+  def.cssClass = existing ? `${existing} ${className}` : className;
+}
+
 function hasSemanticSeparator(rowMeta: RowObject["__rowMeta"]): boolean {
   if (!rowMeta) return false;
   if (rowMeta.separator_before === true) return true;
@@ -124,6 +157,9 @@ export function createDataTable(
       | "leagueNavigation"
       | "teamVsTeamMetric"
       | "tournamentCutRowStyling"
+      | "freezeColumnGroupCount"
+      | "boldColumnGroupIndexes"
+      | "resizableColumns"
       | "playerColorOrder"
       | "performanceTeamName"
     >
@@ -359,6 +395,12 @@ export function createDataTable(
 
   // Detect group structure: if every group title is empty, render flat.
   const hasGroupTitles = columnsForBuild.some((g) => g.title && g.title.trim() !== "");
+  const freezeColumnGroupCount = rawOptions.freezeColumnGroupCount ?? 0;
+  const boldColumnGroupIndexes = new Set(rawOptions.boldColumnGroupIndexes ?? []);
+  const useGroupedLayout =
+    hasGroupTitles ||
+    (freezeColumnGroupCount > 0 && columnsForBuild.length > 1) ||
+    (boldColumnGroupIndexes.size > 0 && columnsForBuild.length > 1);
 
   if (useStripedColumnGroups && hasGroupTitles) {
     assignGroupStripeCss(columnsForBuild);
@@ -390,6 +432,11 @@ export function createDataTable(
 
       if (useStripedColumnGroups && hasGroupTitles) {
         element.classList.add("col-group-" + info.groupIndex);
+      }
+
+      if (boldColumnGroupIndexes.has(info.groupIndex)) {
+        element.classList.add("tab-col-group-bold");
+        element.style.setProperty("font-weight", "600", "important");
       }
 
       if (isHighlighted) {
@@ -492,7 +539,7 @@ export function createDataTable(
   // ----- Build Tabulator column definitions -----
   let tabulatorColumns: ColumnDefinition[] = [];
 
-  if (!hasGroupTitles) {
+  if (!useGroupedLayout) {
     columnsForBuild.forEach((group, groupIndex) => {
       if (!Array.isArray(group.columns)) return;
       const groupFrozen = group.frozen === "left" || group.frozen === "right" ? group.frozen : null;
@@ -564,6 +611,9 @@ export function createDataTable(
             if (hasPerColumnFrozen && colFrozen) {
               (def as { frozen?: string }).frozen = colFrozen;
             }
+            if (boldColumnGroupIndexes.has(groupIndex)) {
+              appendColumnCssClass(def, "tab-col-group-bold");
+            }
             return def;
           })
           .filter((c): c is ColumnDefinition => c !== null);
@@ -579,7 +629,11 @@ export function createDataTable(
       .filter((g): g is ColumnDefinition => g !== null);
   }
 
-  tabulatorColumns = stripFrozenFromTabulatorColumnDefs(tabulatorColumns);
+  if (freezeColumnGroupCount > 0 && useGroupedLayout) {
+    tabulatorColumns = applyColumnGroupFreeze(tabulatorColumns, freezeColumnGroupCount);
+  } else {
+    tabulatorColumns = stripFrozenFromTabulatorColumnDefs(tabulatorColumns);
+  }
 
   if (!tabulatorColumns.length) {
     console.warn("[DataTable] No Tabulator column definitions");
@@ -616,6 +670,7 @@ export function createDataTable(
     columns: tabulatorColumns,
     columnDefaults: {
       vertAlign: "middle",
+      ...(rawOptions.resizableColumns === false ? { resizable: false } : {}),
     },
     layout: isCompactLayout ? "fitData" : "fitColumns",
     responsiveLayout: false,
@@ -630,6 +685,8 @@ export function createDataTable(
       settings.stripedRows ? "is-striped-rows" : null,
       useStripedColumnGroups ? "is-striped-column-groups" : null,
       tournamentCutRowStyling ? "is-tournament-cut-rows" : null,
+      freezeColumnGroupCount > 0 ? "has-frozen-column-groups" : null,
+      rawOptions.resizableColumns === false ? "is-no-column-resize" : null,
       rawOptions.leagueNavigation ? "has-league-cell-navigation" : null,
     ]
       .filter(Boolean)
@@ -658,6 +715,8 @@ export function createDataTable(
             ? cellMetadataMap[rowData.__rowIndex]?.[rankFieldForCut]
             : undefined;
         applyTournamentCutRowAccent(rowElement, cutMeta);
+        const root = container.querySelector(".tabulator") as HTMLElement | null;
+        if (root) paintRowCellsSolid(rowElement, root, true, freezeColumnGroupCount);
         return;
       }
 
@@ -692,6 +751,11 @@ export function createDataTable(
         rowElement.style.removeProperty("--row-accent-color");
         rowElement.style.removeProperty("--row-accent-overlay");
       }
+
+      if (freezeColumnGroupCount > 0) {
+        const root = container.querySelector(".tabulator") as HTMLElement | null;
+        if (root) paintRowCellsSolid(rowElement, root, false, freezeColumnGroupCount);
+      }
     },
   };
 
@@ -716,6 +780,11 @@ export function createDataTable(
   }
 
   // Post-render: highlight class application + hide empty group header rows
+  const syncRowCellPaint = () => {
+    if (!tournamentCutRowStyling && freezeColumnGroupCount <= 0) return;
+    paintAllRowCellsSolid(container, tournamentCutRowStyling, freezeColumnGroupCount);
+  };
+
   tabulator.on("tableBuilt", () => {
     runPostRender(
       container,
@@ -724,6 +793,9 @@ export function createDataTable(
       useStripedColumnGroups,
       settings.tooltips,
     );
+    syncRowCellPaint();
+    const holder = container.querySelector(".tabulator-tableholder");
+    holder?.addEventListener("scroll", syncRowCellPaint, { passive: true });
   });
   tabulator.on("dataProcessed", () => {
     runPostRender(
@@ -733,6 +805,7 @@ export function createDataTable(
       useStripedColumnGroups,
       settings.tooltips,
     );
+    syncRowCellPaint();
   });
 
   return {
@@ -906,6 +979,9 @@ function isRankPositionColumn(
       | "leagueNavigation"
       | "teamVsTeamMetric"
       | "tournamentCutRowStyling"
+      | "freezeColumnGroupCount"
+      | "boldColumnGroupIndexes"
+      | "resizableColumns"
       | "playerColorOrder"
       | "performanceTeamName"
     >
@@ -933,6 +1009,9 @@ function buildColumnDefinition(
       | "leagueNavigation"
       | "teamVsTeamMetric"
       | "tournamentCutRowStyling"
+      | "freezeColumnGroupCount"
+      | "boldColumnGroupIndexes"
+      | "resizableColumns"
       | "playerColorOrder"
       | "performanceTeamName"
     >
@@ -1031,6 +1110,69 @@ function applyNativeTooltips(container: HTMLElement, data: TableData): void {
     const text = cellEl.textContent?.trim() ?? "";
     if (text) cellEl.setAttribute("title", text);
   });
+}
+
+/** Opaque per-cell fill — transparent row washes bleed on frozen cols when scrolling. */
+function rowCellSolidBackground(rowElement: HTMLElement, tableRoot: HTMLElement): string {
+  const surface = getComputedStyle(tableRoot).getPropertyValue("--color-surface").trim() || "#ffffff";
+  const surfaceSubtle = getComputedStyle(tableRoot).getPropertyValue("--color-surface-subtle").trim();
+  if (rowElement.classList.contains("tab-row-accent")) {
+    const accent = rowElement.style.getPropertyValue("--row-accent-color").trim();
+    if (accent) {
+      return `color-mix(in srgb, ${accent} 12%, ${surface})`;
+    }
+  }
+  if (rowElement.classList.contains("tabulator-row-even") && surfaceSubtle) {
+    return surfaceSubtle;
+  }
+  return surface;
+}
+
+function paintRowCellsSolid(
+  rowElement: HTMLElement,
+  tableRoot: HTMLElement,
+  tournamentCutRowStyling: boolean,
+  freezeColumnGroupCount: number,
+): void {
+  const paintCutRow = tournamentCutRowStyling && rowElement.classList.contains("tab-row-accent");
+  const selector = paintCutRow
+    ? ".tabulator-cell"
+    : freezeColumnGroupCount > 0
+      ? ".tabulator-cell.tabulator-frozen"
+      : null;
+  if (!selector) return;
+
+  const solid = rowCellSolidBackground(rowElement, tableRoot);
+  rowElement.querySelectorAll<HTMLElement>(selector).forEach((cell) => {
+    cell.style.setProperty("background-color", solid, "important");
+    cell.style.setProperty("background-image", "none", "important");
+    cell.style.setProperty("opacity", "1", "important");
+  });
+}
+
+function paintAllRowCellsSolid(
+  container: HTMLElement,
+  tournamentCutRowStyling: boolean,
+  freezeColumnGroupCount: number,
+): void {
+  const root = container.classList.contains("tabulator")
+    ? container
+    : ((container.querySelector(".tabulator") as HTMLElement | null) ?? container);
+  container.querySelectorAll<HTMLElement>(".tabulator-row").forEach((row) => {
+    paintRowCellsSolid(row, root, tournamentCutRowStyling, freezeColumnGroupCount);
+  });
+  const headerBg =
+    getComputedStyle(root).getPropertyValue("--color-surface-subtle").trim() ||
+    getComputedStyle(root).getPropertyValue("--color-surface").trim() ||
+    "#f4f4f5";
+  container
+    .querySelectorAll<HTMLElement>(
+      ".tabulator-header .tabulator-col.tabulator-frozen, .tabulator-header .tabulator-col-group.tabulator-frozen",
+    )
+    .forEach((el) => {
+      el.style.setProperty("background-color", headerBg, "important");
+      el.style.setProperty("opacity", "1", "important");
+    });
 }
 
 function ensureTabulatorStripeClasses(

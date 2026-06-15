@@ -231,15 +231,18 @@
   text-align: center;
 }
 
-/* Frozen columns: solid surface background so scroll content doesn't bleed through */
-.ds-tabulator .tabulator-row .tabulator-cell.tabulator-frozen {
-  background-color: var(--color-surface) !important;
+/* Tournament Gesamtwertung: semibold body cells in selected column groups. */
+.ds-tabulator .tabulator-cell.tab-col-group-bold,
+.ds-tabulator .tabulator-col.tab-col-group-bold .tabulator-col-title {
+  font-weight: 600 !important;
 }
 
-.ds-tabulator.is-striped-rows .tabulator-row.tabulator-row-even .tabulator-cell.tabulator-frozen {
-  background-color: var(--color-surface-subtle) !important;
+.ds-tabulator.is-no-column-resize .tabulator-col-resize-handle {
+  display: none;
+  pointer-events: none;
 }
 
+/* Frozen header chrome (body cells painted inline when column groups are frozen). */
 .ds-tabulator .tabulator-header .tabulator-col.tabulator-frozen,
 .ds-tabulator .tabulator-header .tabulator-col-group.tabulator-frozen {
   background-color: var(--color-surface-subtle) !important;

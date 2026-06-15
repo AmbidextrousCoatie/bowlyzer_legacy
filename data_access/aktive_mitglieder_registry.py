@@ -21,6 +21,22 @@ AKTIVE_WORKBOOK_RE = re.compile(r"aktive.*\.xls$", re.IGNORECASE)
 SAISON_DIR_RE = re.compile(r"^saison(\d{4}-\d{2})$", re.IGNORECASE)
 EDV_HEADER_RE = re.compile(r"^edv", re.IGNORECASE)
 DBU_AKTIVE_SOURCE = "dbu_id"
+# League/player stats start at 08/09; omit 2004–07 Aktive exports (phantom 6-digit EDVs).
+DEFAULT_AKTIVE_MIN_SEASON = "2008-09"
+
+
+def resolve_aktive_min_season(value: Optional[str]) -> Optional[str]:
+    """
+    Season floor for Aktive import.
+
+    ``None`` → :data:`DEFAULT_AKTIVE_MIN_SEASON`. Empty string → all seasons (no floor).
+    """
+    if value is None:
+        return DEFAULT_AKTIVE_MIN_SEASON
+    stripped = str(value).strip()
+    if not stripped:
+        return None
+    return stripped
 
 
 @dataclass
@@ -211,11 +227,18 @@ def _season_from_path(root: Path, path: Path) -> str:
     return ""
 
 
-def discover_local_aktive_workbooks(root: Path) -> List[Tuple[str, Path]]:
+def discover_local_aktive_workbooks(
+    root: Path,
+    *,
+    min_season: Optional[str] = None,
+) -> List[Tuple[str, Path]]:
     """
     Find one primary *Aktive Mitglieder* workbook per season under ``root``.
 
     Prefers filenames containing ``Endstand``; otherwise picks the first match.
+
+    When ``min_season`` is set (e.g. ``"2007-08"``), seasons before that label are
+    omitted. Season labels use the ``YYYY-YY`` form from ``saisonYYYY-YY`` folders.
     """
     by_season: Dict[str, List[Path]] = {}
     if not root.is_dir():
@@ -243,6 +266,8 @@ def discover_local_aktive_workbooks(root: Path) -> List[Tuple[str, Path]]:
         preferred = [path for path in paths if "endstand" in path.name.lower()]
         pick = preferred[0] if preferred else paths[0]
         selected.append((season, pick))
+    if min_season:
+        selected = [(season, path) for season, path in selected if season >= min_season]
     return selected
 
 
@@ -251,17 +276,25 @@ def build_registry_dataframe_from_aktive(
     *,
     updated_at: str,
     workbook_paths: Optional[Sequence[Tuple[str, Path]]] = None,
+    min_season: Optional[str] = None,
 ) -> Tuple[pd.DataFrame, AktiveParseStats]:
     """
     Build registry rows from scraped *Aktive Mitglieder* workbooks.
 
     Seasons are applied oldest-first; later seasons refresh canonical names and
-  accumulate prior spellings as aliases.
+    accumulate prior spellings as aliases.
+
+    ``min_season`` drops older *Aktive* seasons (see ``discover_local_aktive_workbooks``).
     """
     from database.paths import legacy_scrape_dir
 
     scrape_root = (root or legacy_scrape_dir()).resolve()
-    selected = list(workbook_paths or discover_local_aktive_workbooks(scrape_root))
+    if workbook_paths is None:
+        selected = discover_local_aktive_workbooks(scrape_root, min_season=min_season)
+    else:
+        selected = list(workbook_paths)
+        if min_season:
+            selected = [(season, path) for season, path in selected if season >= min_season]
     stats = AktiveParseStats(seasons_selected=len(selected))
 
     entries: Dict[str, Dict[str, object]] = {}

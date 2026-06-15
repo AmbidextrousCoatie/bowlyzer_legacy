@@ -23,6 +23,13 @@ def test_normalize_query_season_dash_to_slash():
     assert q["season"] == "15/16"
 
 
+def test_normalize_query_ignores_language_param():
+    """React buildUrl appends language=; cache keys use i18n_service language instead."""
+    q = normalize_query_for_key({"database": "db_x", "language": "de", "season": "22/23"}, "db_x")
+    assert q == {"database": "db_x", "season": "22/23"}
+    assert "language" not in q
+
+
 def test_effective_database_falls_back_to_config():
     eff = effective_database_id(None)
     assert isinstance(eff, str) and eff

@@ -14,6 +14,8 @@ from data_access.players_registry import (
     merge_registry_dataframes,
     registry_accepts_all_names_for_id,
     registry_lookup_by_id,
+    registry_name_index,
+    resolve_player_id_for_name,
     resolve_player_name_for_id,
     write_players_registry,
 )
@@ -104,6 +106,209 @@ def test_build_registry_from_configs(tmp_path: Path, monkeypatch) -> None:
     assert "Schmidt, Heike" in marriage["aliases"]
 
 
+def test_resolve_particle_and_generation_identity() -> None:
+    lookup = registry_lookup_by_id(
+        pd.DataFrame(
+            [
+                {
+                    "player_id": "7439",
+                    "canonical_name": "Weverberg, Susanne van",
+                    "source": "dbu_id",
+                    "updated_at": "t",
+                    "aliases": "Van Weverberg, Susanne",
+                },
+                {
+                    "player_id": "7408",
+                    "canonical_name": "Glasl jun., Hans-Jürgen",
+                    "source": "dbu_id",
+                    "updated_at": "t",
+                    "aliases": "Glasl, Hans-Jürgen|Hans-Jürgen Glasl",
+                },
+            ]
+        )
+    )
+    resolved, kind = resolve_player_name_for_id("Weverberg Van, Susanne", "7439", lookup)
+    assert kind in {"identity", "reassembly"}
+    assert resolved == "Weverberg, Susanne van"
+
+    resolved_glasl, kind_glasl = resolve_player_name_for_id(
+        "Hans-Jürgen Glasl sen.", "7408", lookup
+    )
+    assert kind_glasl in {"identity", "reassembly"}
+    assert resolved_glasl in {"Glasl jun., Hans-Jürgen", "Glasl, Hans-Jürgen", "Hans-Jürgen Glasl"}
+
+
+def test_resolve_abbreviated_given_name() -> None:
+    lookup = registry_lookup_by_id(
+        pd.DataFrame(
+            [
+                {
+                    "player_id": "7253",
+                    "canonical_name": "Kortenacker, Hans-Jürgen",
+                    "source": "dbu_id",
+                    "updated_at": "t",
+                    "aliases": "Kortenacker, Hans Jürgen",
+                }
+            ]
+        )
+    )
+    resolved, kind = resolve_player_name_for_id("Kortenacker, Hans", "7253", lookup)
+    assert kind == "abbrev"
+    assert resolved == "Kortenacker, Hans-Jürgen"
+
+
+def test_resolve_two_token_reversal_against_single_candidate() -> None:
+    lookup = registry_lookup_by_id(
+        pd.DataFrame(
+            [
+                {
+                    "player_id": "25604",
+                    "canonical_name": "Seltmann, Dominic",
+                    "source": "dbu_id",
+                    "updated_at": "t",
+                    "aliases": "Seltmann, Dominik",
+                }
+            ]
+        )
+    )
+    resolved, kind = resolve_player_name_for_id("Dominik Seltmann", "25604", lookup)
+    assert kind == "reassembly"
+    assert resolved == "Seltmann, Dominik"
+
+    typo, kind_typo = resolve_player_name_for_id("Sltmann, Dominik", "25604", lookup)
+    assert kind_typo == "close"
+    assert typo == "Seltmann, Dominik"
+
+    nickname, kind_nick = resolve_player_name_for_id("Seltmann, Dominic", "25604", lookup)
+    assert kind_nick == "exact"
+    assert nickname == "Seltmann, Dominic"
+
+
+def test_resolve_substring_given_name() -> None:
+    lookup = registry_lookup_by_id(
+        pd.DataFrame(
+            [
+                {
+                    "player_id": "7596",
+                    "canonical_name": "Groll, Alexander",
+                    "source": "dbu_id",
+                    "updated_at": "t",
+                    "aliases": "Groll, Alex",
+                },
+                {
+                    "player_id": "25354",
+                    "canonical_name": "Huber, Carina-Maren",
+                    "source": "dbu_id",
+                    "updated_at": "t",
+                    "aliases": "Huber, Carina|Huber, Carina Mareen",
+                },
+            ]
+        )
+    )
+    alex, kind_alex = resolve_player_name_for_id("Groll, Alex", "7596", lookup)
+    assert kind_alex in {"exact", "abbrev", "substring"}
+    assert alex in {"Groll, Alex", "Groll, Alexander"}
+
+    longer, kind_longer = resolve_player_name_for_id("Groll, Alexander", "7596", lookup)
+    assert kind_longer == "exact"
+    assert longer == "Groll, Alexander"
+
+    lookup_nick_only = registry_lookup_by_id(
+        pd.DataFrame(
+            [
+                {
+                    "player_id": "7596",
+                    "canonical_name": "Groll, Alexander",
+                    "source": "dbu_id",
+                    "updated_at": "t",
+                    "aliases": "",
+                }
+            ]
+        )
+    )
+    nick, kind_nick = resolve_player_name_for_id("Groll, Alex", "7596", lookup_nick_only)
+    assert kind_nick in {"abbrev", "substring"}
+    assert nick == "Groll, Alexander"
+
+    carina, kind_carina = resolve_player_name_for_id("Huber, Carina Mareen", "25354", lookup)
+    assert kind_carina in {"exact", "abbrev", "substring"}
+    assert carina in {"Huber, Carina Mareen", "Huber, Carina-Maren"}
+
+    short_carina, kind_short = resolve_player_name_for_id("Huber, Carina", "25354", lookup)
+    assert kind_short in {"exact", "abbrev", "substring"}
+    assert short_carina in {"Huber, Carina", "Huber, Carina-Maren"}
+
+    assert registry_accepts_all_names_for_id(
+        "7596",
+        {"Groll, Alex", "Groll, Alexander"},
+        lookup,
+    )
+    assert registry_accepts_all_names_for_id(
+        "25354",
+        {"Huber, Carina", "Huber, Carina Mareen", "Huber, Carina-Maren"},
+        lookup,
+    )
+
+
+def test_resolve_maximilian_substring_and_dual_typo() -> None:
+    lookup = registry_lookup_by_id(
+        pd.DataFrame(
+            [
+                {
+                    "player_id": "25822",
+                    "canonical_name": "Kammermeier, Maximilian",
+                    "source": "dbu_id",
+                    "updated_at": "t",
+                    "aliases": "Maximilian Kammermeier",
+                },
+                {
+                    "player_id": "38309",
+                    "canonical_name": "Pafford, Mark",
+                    "source": "dbu_id",
+                    "updated_at": "t",
+                    "aliases": "Pfafford, Mark",
+                },
+            ]
+        )
+    )
+    max_name, max_kind = resolve_player_name_for_id("Kammermeier, Max", "25822", lookup)
+    assert max_kind in {"abbrev", "substring"}
+    assert max_name == "Kammermeier, Maximilian"
+
+    marc, marc_kind = resolve_player_name_for_id("Paffort, Marc", "38309", lookup)
+    assert marc_kind == "close"
+    assert marc == "Pafford, Mark"
+
+
+def test_resolve_player_id_for_name() -> None:
+    registry = pd.DataFrame(
+        [
+            {
+                "player_id": "25977",
+                "canonical_name": "Erhard, Hannelore",
+                "source": "dbu_id",
+                "updated_at": "t",
+                "aliases": "",
+            },
+            {
+                "player_id": "38424",
+                "canonical_name": "Gulvadi, Sanat",
+                "source": "dbu_id",
+                "updated_at": "t",
+                "aliases": "",
+            },
+        ]
+    )
+    lookup = registry_lookup_by_id(registry)
+    index = registry_name_index(registry)
+    pid, kind = resolve_player_id_for_name("Erhard, Hannelore", index, lookup)
+    assert kind == "exact"
+    assert pid == "25977"
+    gulvadi_pid, g_kind = resolve_player_id_for_name("Gulvadi, Sanat", index, lookup)
+    assert g_kind == "exact"
+    assert gulvadi_pid == "38424"
+
+
 def test_resolve_typo_close_match() -> None:
     lookup = registry_lookup_by_id(
         pd.DataFrame(
@@ -162,6 +367,54 @@ def test_registry_accepts_subset_of_marriage_names() -> None:
     )
     assert registry_accepts_all_names_for_id("16116", {"Müller, Heike", "Förster, Heike"}, lookup)
     assert not registry_accepts_all_names_for_id("16116", {"Müller, Heike", "Wagner, Heike"}, lookup)
+
+
+def test_apply_players_registry_normalizes_format_alias_to_canonical() -> None:
+    registry = pd.DataFrame(
+        [
+            {
+                "player_id": "12248",
+                "canonical_name": "Burghardt, Mario",
+                "source": "dbu_id",
+                "updated_at": "2026-06-09T00:00:00+00:00",
+                "aliases": "Mario Burghardt",
+            }
+        ]
+    )
+    frame = pd.DataFrame(
+        {
+            Columns.player_id: ["12248", "12248"],
+            Columns.player_name: ["Mario Burghardt", "Burghardt, Mario"],
+        }
+    )
+    out, stats = apply_players_registry(frame, registry)
+    assert out[Columns.player_name].tolist() == ["Burghardt, Mario", "Burghardt, Mario"]
+    assert stats["registry_alias_to_canonical"] == 1
+    assert stats["registry_unchanged"] == 1
+
+
+def test_apply_players_registry_keeps_marriage_alias() -> None:
+    registry = pd.DataFrame(
+        [
+            {
+                "player_id": "16116",
+                "canonical_name": "Förster, Heike",
+                "source": "same_person_alias",
+                "updated_at": "2026-06-09T00:00:00+00:00",
+                "aliases": "Müller, Heike",
+            }
+        ]
+    )
+    frame = pd.DataFrame(
+        {
+            Columns.player_id: ["16116", "16116"],
+            Columns.player_name: ["Müller, Heike", "Förster, Heike"],
+        }
+    )
+    out, stats = apply_players_registry(frame, registry)
+    assert out[Columns.player_name].tolist() == ["Müller, Heike", "Förster, Heike"]
+    assert stats["registry_alias_to_canonical"] == 0
+    assert stats["registry_unchanged"] == 2
 
 
 def test_apply_players_registry_typo_not_forced_canonical() -> None:

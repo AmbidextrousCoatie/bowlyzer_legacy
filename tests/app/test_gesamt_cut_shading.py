@@ -80,6 +80,8 @@ def test_gesamt_cut_shade_rank_matches_net_sort_rank(svc: TournamentService) -> 
     assert player_col.title_key == "player"
     hcp_col = next(c for g in lb.columns for c in g.columns if c.field == "handicap_display")
     assert hcp_col.width == "55px"
+    first_round_col = next(c for g in lb.columns for c in g.columns if c.field.startswith("round_"))
+    assert first_round_col.width == "80px"
     avg_net_col = next(c for g in lb.columns for c in g.columns if c.field == "avg_net")
     assert avg_net_col.title_key == "table.header.average"
     assert avg_net_col.width == "60px"

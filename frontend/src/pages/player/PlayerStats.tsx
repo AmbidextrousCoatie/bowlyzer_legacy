@@ -10,6 +10,7 @@ import {
 } from "../../hooks/usePlayer";
 import { useTranslations } from "../../hooks/useTranslations";
 import { buildPlayerClubHistory } from "../../lib/playerClubHistory";
+import { formatPlayerSearchLabel, resolvePlayerSearchEntry } from "../../lib/playerSearchLabel";
 import { ClubAffiliationHistory } from "./blocks/ClubHistory";
 import { LifetimeStats } from "./blocks/LifetimeStats";
 import { SeasonStats } from "./blocks/SeasonStats";
@@ -31,27 +32,26 @@ export function PlayerStats() {
   // surface a soft warning rather than running queries that 400. The hook is
   // still gated on `enabled`, so no requests fire while this resolves.
   const players = playersQuery.data ?? [];
-  const knownPlayer = useMemo(() => {
-    if (!playerName && !playerId) return null;
-    return (
-      players.find(
-        (p) =>
-          (playerId && p.id === playerId) ||
-          (playerName && p.name.toLowerCase() === playerName.toLowerCase()),
-      ) ?? null
-    );
-  }, [players, playerName, playerId]);
+  const knownPlayer = useMemo(
+    () => resolvePlayerSearchEntry(players, { name: playerName, id: playerId }),
+    [players, playerName, playerId],
+  );
 
-  // If the URL has player_name but the actual lookup resolved a canonical
-  // entry with a slightly different spelling, normalize it once players load.
+  // Fill in missing URL params from the catalog (canonical spelling), but never
+  // override an explicit player_id — homonyms share the same display name.
   useEffect(() => {
-    if (!playersQuery.isSuccess || !knownPlayer || !playerName) return;
-    if (knownPlayer.name !== playerName || (knownPlayer.id && knownPlayer.id !== playerId)) {
-      const next = new URLSearchParams(searchParams);
+    if (!playersQuery.isSuccess || !knownPlayer) return;
+    const next = new URLSearchParams(searchParams);
+    let changed = false;
+    if (knownPlayer.name && knownPlayer.name !== playerName) {
       next.set("player_name", knownPlayer.name);
-      if (knownPlayer.id) next.set("player_id", knownPlayer.id);
-      setSearchParams(next, { replace: true });
+      changed = true;
     }
+    if (knownPlayer.id && !playerId) {
+      next.set("player_id", knownPlayer.id);
+      changed = true;
+    }
+    if (changed) setSearchParams(next, { replace: true });
   }, [playersQuery.isSuccess, knownPlayer, playerName, playerId, searchParams, setSearchParams]);
 
   // Keep season scope valid: if the player doesn't have data in `season`,
@@ -92,6 +92,14 @@ export function PlayerStats() {
     setSearchParams(next, { replace: false });
   }
 
+  const playerSearchValue =
+    knownPlayer && (knownPlayer.id || playerId)
+      ? formatPlayerSearchLabel({
+          name: knownPlayer.name,
+          id: knownPlayer.id || playerId,
+        })
+      : playerName;
+
   const stats = statsQuery.data;
   const lifetime = stats?.lifetime ?? null;
   const seasonRows = stats?.seasons ?? [];
@@ -130,7 +138,7 @@ export function PlayerStats() {
       </header>
 
       <FilterRail
-        playerName={playerName}
+        playerName={playerSearchValue}
         players={players}
         playersLoading={playersQuery.isPending}
         season={season}
@@ -146,7 +154,7 @@ export function PlayerStats() {
           <section className="rounded-sm border border-dashed border-border p-8 text-center">
             <p className="text-body text-muted">
               {t("ui.player.select_player", "Spieler auswählen")} —{" "}
-              {t("ui.player.type_name_placeholder", "Namen eintippen oder aus der Liste wählen.")}
+              {t("ui.player.type_name_placeholder", "Name oder Spieler-ID eingeben…")}
             </p>
           </section>
         )}
@@ -227,7 +235,7 @@ function FilterRail(props: FilterRailProps) {
             value={props.playerName}
             players={props.players}
             isLoading={props.playersLoading}
-            placeholder={t("ui.player.type_name_placeholder", "Name eingeben…")}
+            placeholder={t("ui.player.type_name_placeholder", "Name oder Spieler-ID…")}
             ariaLabel={t("ui.player.select_player", "Spieler auswählen")}
             clearAriaLabel={t("ui.player.clear_player", "Spieler-Auswahl löschen")}
             onSelect={props.onPlayerSelect}

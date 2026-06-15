@@ -55,6 +55,36 @@ def test_same_name_different_ids(tmp_path: Path) -> None:
     assert all(c.group_size_ids == 2 for c in same_name)
 
 
+def test_same_id_skipped_when_registry_covers_aliases(tmp_path: Path, monkeypatch) -> None:
+    import pandas as pd
+
+    rows = [
+        _player_row(season="24/25", name="Mario Burghardt", pid="12248"),
+        _player_row(season="14/15", name="Burghardt, Mario", pid="12248"),
+    ]
+    path = tmp_path / "league.csv"
+    _write_csv(path, rows)
+
+    registry = pd.DataFrame(
+        [
+            {
+                "player_id": "12248",
+                "canonical_name": "Burghardt, Mario",
+                "source": "dbu_id",
+                "updated_at": "t",
+                "aliases": "Mario Burghardt",
+            }
+        ]
+    )
+    monkeypatch.setattr(
+        "data_access.players_registry.load_players_registry_df",
+        lambda: registry,
+    )
+
+    conflicts = audit_player_id_names(path)
+    assert conflicts == []
+
+
 def test_same_id_different_names(tmp_path: Path) -> None:
     rows = [
         _player_row(season="08/09", name="Rotter, Mark-Roland", pid="16005"),
@@ -63,11 +93,27 @@ def test_same_id_different_names(tmp_path: Path) -> None:
     path = tmp_path / "league.csv"
     _write_csv(path, rows)
 
-    conflicts = audit_player_id_names(path, apply_normalization=False)
+    conflicts = audit_player_id_names(
+        path, apply_normalization=False, analyses=[ANALYSIS_MULTI_ID]
+    )
     same_id = [c for c in conflicts if c.issue_type == ISSUE_SAME_ID]
     assert len(same_id) == 2
     assert {c.player_name for c in same_id} == {"Rotter, Mark-Roland", "Rotter Dr., Aurelian"}
     assert all(c.player_id == "16005" for c in same_id)
+
+
+def test_default_audit_does_not_duplicate_same_id_groups(tmp_path: Path) -> None:
+    rows = [
+        _player_row(season="08/09", name="Rotter, Mark-Roland", pid="16005"),
+        _player_row(season="09/10", name="Rotter Dr., Aurelian", pid="16005"),
+    ]
+    path = tmp_path / "league.csv"
+    _write_csv(path, rows)
+
+    conflicts = audit_player_id_names(path, apply_normalization=False)
+    assert len(conflicts) == 2
+    assert all(c.issue_type == ISSUE_SAME_ID_NAME_VARIANTS for c in conflicts)
+    assert not any(c.issue_type == ISSUE_SAME_ID for c in conflicts)
 
 
 def test_different_spellings_are_not_same_name(tmp_path: Path) -> None:
@@ -105,9 +151,9 @@ def test_skips_team_total_and_computed_rows(tmp_path: Path) -> None:
     _write_csv(path, rows)
 
     conflicts = audit_player_id_names(path, apply_normalization=False)
-    same_id = [c for c in conflicts if c.issue_type == ISSUE_SAME_ID]
-    assert len(same_id) == 2
-    assert {c.player_name for c in same_id} == {"Beta, B", "Beta, C"}
+    variants = [c for c in conflicts if c.issue_type == ISSUE_SAME_ID_NAME_VARIANTS]
+    assert len(variants) == 2
+    assert {c.player_name for c in variants} == {"Beta, B", "Beta, C"}
 
 
 def test_majority_autoresolve_same_name(tmp_path: Path) -> None:
@@ -322,6 +368,165 @@ def test_analysis_multi_id_only_skips_name_variants(tmp_path: Path) -> None:
     assert len(conflicts) == 2
     assert all(c.issue_type == ISSUE_SAME_ID for c in conflicts)
     assert all(c.canonical_name == "" for c in conflicts)
+
+
+def test_registry_id_match_skips_false_placeholder_outlier(tmp_path: Path, monkeypatch) -> None:
+    import pandas as pd
+
+    registry = pd.DataFrame(
+        [
+            {
+                "player_id": "7762",
+                "canonical_name": "Windsheimer, Friedrich",
+                "source": "dbu_id",
+                "updated_at": "t",
+                "aliases": "",
+            },
+            {
+                "player_id": "111708",
+                "canonical_name": "Windsheimer, Friedrich",
+                "source": "dbu_id",
+                "updated_at": "t",
+                "aliases": "",
+            },
+        ]
+    )
+    monkeypatch.setattr(
+        "data_access.players_registry.load_players_registry_df",
+        lambda: registry,
+    )
+
+    rows = [
+        _player_row(season="12/13", name="Windsheimer, Friedrich", pid="7762"),
+        _player_row(season="14/15", name="Giuseppe, Giorgini", pid="7762"),
+    ]
+    path = tmp_path / "league.csv"
+    _write_csv(path, rows)
+
+    conflicts = audit_player_id_names(path, analyses=[ANALYSIS_MULTI_NAME])
+    names = {c.player_name for c in conflicts}
+    assert "Windsheimer, Friedrich" not in names
+
+
+def test_same_person_config_skips_name_variants(tmp_path: Path) -> None:
+    rows = [
+        _player_row(season="17/18", name="Schwartz, Janin", pid="38397"),
+        _player_row(season="19/20", name="Theisen, Janin", pid="38397"),
+        _player_row(season="11/12", name="Feuerlein, Andy", pid="16270"),
+        _player_row(season="24/25", name="Feuerlein, Andreas", pid="16270"),
+    ]
+    path = tmp_path / "league.csv"
+    _write_csv(path, rows)
+
+    conflicts = audit_player_id_names(path, analyses=[ANALYSIS_MULTI_NAME])
+    assert conflicts == []
+
+
+def test_different_person_config_skips_vogt_homonym(tmp_path: Path) -> None:
+    rows = [
+        _player_row(season="25/26", name="Vogt, Thomas", pid="10903"),
+        _player_row(season="09/10", name="Vogt, Thomas", pid="25263"),
+    ]
+    path = tmp_path / "league.csv"
+    _write_csv(path, rows)
+
+    conflicts = audit_player_id_names(path)
+    assert not any(c.issue_type == ISSUE_SAME_NAME for c in conflicts)
+
+
+def test_placeholder_bucket_uses_registry_per_name(tmp_path: Path, monkeypatch) -> None:
+    import pandas as pd
+
+    registry = pd.DataFrame(
+        [
+            {
+                "player_id": "25977",
+                "canonical_name": "Erhard, Hannelore",
+                "source": "dbu_id",
+                "updated_at": "t",
+                "aliases": "",
+            },
+            {
+                "player_id": "25978",
+                "canonical_name": "Steiner, Alfred",
+                "source": "dbu_id",
+                "updated_at": "t",
+                "aliases": "",
+            },
+        ]
+    )
+    monkeypatch.setattr(
+        "data_access.players_registry.load_players_registry_df",
+        lambda: registry,
+    )
+    monkeypatch.setattr(
+        "data_access.player_id_name_normalization.apply_player_id_name_normalization",
+        lambda df, **kwargs: (df, {}),
+    )
+
+    rows = [
+        _player_row(season="13/14", name="Erhard, Hannelore", pid="99999"),
+        _player_row(season="13/14", name="Steiner, Alfred", pid="99999"),
+    ]
+    path = tmp_path / "league.csv"
+    _write_csv(path, rows)
+
+    conflicts = audit_player_id_names(path, analyses=[ANALYSIS_MULTI_NAME])
+    assert len(conflicts) == 2
+    erhard = next(c for c in conflicts if c.player_name == "Erhard, Hannelore")
+    steiner = next(c for c in conflicts if c.player_name == "Steiner, Alfred")
+    assert erhard.autoresolve_rule == AUTORESOLVE_PLACEHOLDER
+    assert erhard.proposed_id == "25977"
+    assert erhard.group_size_names == 1
+    assert erhard.peer_player_names == ""
+    assert steiner.proposed_id == "25978"
+
+
+def test_same_id_outlier_splits_from_coherent_cluster(tmp_path: Path, monkeypatch) -> None:
+    import pandas as pd
+
+    registry = pd.DataFrame(
+        [
+            {
+                "player_id": "38429",
+                "canonical_name": "Vu, Hoang Long",
+                "source": "dbu_id",
+                "updated_at": "t",
+                "aliases": "Hoang Long, Vu|Vu, Hong Long",
+            },
+            {
+                "player_id": "38424",
+                "canonical_name": "Gulvadi, Sanat",
+                "source": "dbu_id",
+                "updated_at": "t",
+                "aliases": "",
+            },
+        ]
+    )
+    monkeypatch.setattr(
+        "data_access.players_registry.load_players_registry_df",
+        lambda: registry,
+    )
+    monkeypatch.setattr(
+        "data_access.player_id_name_normalization.apply_player_id_name_normalization",
+        lambda df, **kwargs: (df, {}),
+    )
+
+    rows = [
+        _player_row(season="17/18", name="Vu, Hoang Long", pid="38429"),
+        _player_row(season="17/18", name="Vu, Hong Long", pid="38429"),
+        _player_row(season="17/18", name="Gulvadi, Sanat", pid="38429"),
+    ]
+    path = tmp_path / "league.csv"
+    _write_csv(path, rows)
+
+    conflicts = audit_player_id_names(path, analyses=[ANALYSIS_MULTI_NAME])
+    assert len(conflicts) == 1
+    outlier = conflicts[0]
+    assert outlier.player_name == "Gulvadi, Sanat"
+    assert outlier.player_id == "38429"
+    assert outlier.proposed_id == "38424"
+    assert outlier.autoresolve_rule == AUTORESOLVE_PLACEHOLDER
 
 
 def test_write_conflict_report(tmp_path: Path) -> None:
