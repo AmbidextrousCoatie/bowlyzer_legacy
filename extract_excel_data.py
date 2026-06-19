@@ -2735,18 +2735,71 @@ def _pre_2022_team_match_points(team_total, opponent_total, scoring: dict) -> fl
     return scoring["team_tie"]
 
 
+def _is_phantom_pre_2022_team_name(team_name: str) -> bool:
+    """Weekly bye slot on Spielzettel (opponent team 0), not a ranked club."""
+    text = str(team_name or "").strip()
+    if not text:
+        return True
+    if text in {"0", "00"}:
+        return True
+    return text.lower() in {"bye", "freilos", "pausenspieler"}
+
+
+def _pre_2022_placement_team_count(
+    team_weekly_pins: dict[str, int],
+    number_of_teams: int | None,
+) -> int:
+    """
+    Teams eligible for weekly scratch placement.
+
+    Spielzettel metadata often counts the bye block as an extra team (e.g. 6 blocks
+    for 5 real clubs). Rank only real teams; top club gets N points where N is that count.
+    """
+    ranked_count = len(team_weekly_pins)
+    if ranked_count <= 0:
+        if number_of_teams is not None and int(number_of_teams) > 0:
+            return int(number_of_teams)
+        return 0
+
+    if number_of_teams is not None:
+        meta_count = int(number_of_teams)
+        if meta_count == ranked_count + 1:
+            return ranked_count
+        if meta_count > 0:
+            return meta_count
+    return ranked_count
+
+
 def _pre_2022_weekly_placement_bonuses(
     team_weekly_pins: dict[str, int],
     number_of_teams: int | None,
 ) -> dict[str, float]:
     """
-    Rank teams by Spieltag pinfall; 1st gets N, last gets 1 (N = number_of_teams in league).
+    Rank teams by Spieltag pinfall; 1st gets N, last active gets at least 1.
+
+    No-show teams (zero pinfall) receive 0 bonus while the league still awards
+  6..2 style placement to the teams that played (e.g. 6-team league, one absent).
     """
-    team_count = int(number_of_teams) if number_of_teams and int(number_of_teams) > 0 else len(team_weekly_pins)
+    real_pins = {
+        team: pins
+        for team, pins in team_weekly_pins.items()
+        if not _is_phantom_pre_2022_team_name(team)
+    }
+    team_count = _pre_2022_placement_team_count(real_pins, number_of_teams)
     if team_count <= 0:
         return {}
-    ordered = sorted(team_weekly_pins.items(), key=lambda item: (-item[1], item[0]))
-    return {team: float(max(1, team_count - rank_idx)) for rank_idx, (team, _) in enumerate(ordered)}
+
+    active = sorted(
+        ((team, pins) for team, pins in real_pins.items() if pins > 0),
+        key=lambda item: (-item[1], item[0]),
+    )
+    bonuses: dict[str, float] = {}
+    for rank_idx, (team, _pins) in enumerate(active):
+        bonuses[team] = float(team_count - rank_idx)
+    for team, pins in real_pins.items():
+        if pins <= 0:
+            bonuses[team] = 0.0
+    return bonuses
 
 
 def _pre_2022_max_opponent_rows(number_of_teams) -> int:
@@ -3033,6 +3086,8 @@ def extract_pre_2022_file(
     csv_rows = []
     team_weekly_pins: dict[str, int] = {}
     for index, (block_start, team_name) in enumerate(block_starts):
+        if _is_phantom_pre_2022_team_name(team_name):
+            continue
         block_end = block_starts[index + 1][0] if index + 1 < len(block_starts) else len(spielzettel_df)
         block_rows, weekly_pinfall = _extract_pre_2022_spielzettel_block(
             spielzettel_df,
@@ -3049,8 +3104,7 @@ def extract_pre_2022_file(
             scoring=scoring,
         )
         csv_rows.extend(block_rows)
-        if weekly_pinfall > 0:
-            team_weekly_pins[team_name] = weekly_pinfall
+        team_weekly_pins[team_name] = weekly_pinfall
 
     placement_bonuses = _pre_2022_weekly_placement_bonuses(team_weekly_pins, number_of_teams)
     for team_name, bonus_points in placement_bonuses.items():
@@ -3063,7 +3117,7 @@ def extract_pre_2022_file(
                 location=location or "Unknown",
                 team_name=team_name,
                 players_per_team=int(players_per_team or 4),
-                weekly_pinfall=team_weekly_pins[team_name],
+                weekly_pinfall=team_weekly_pins.get(team_name, 0),
                 placement_bonus=bonus_points,
             )
         )

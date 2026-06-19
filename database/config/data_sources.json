@@ -1,10 +1,15 @@
 {
   "schema_version": 1,
-  "deferred_audits": {
+    "deferred_audits": {
     "player_id_name": {
       "blocks_publish": false,
       "resolve_in": "phase_2b_players_registry",
       "description": "ID/name conflicts reported but do not block publish until players_registry.parquet exists."
+    },
+    "league_standings": {
+      "blocks_publish": false,
+      "resolve_in": "operator_review",
+      "description": "Compare merged standings to Excel Tabelle/TabGes reference; green/yellow/red report only."
     }
   },
   "publish_jobs": [

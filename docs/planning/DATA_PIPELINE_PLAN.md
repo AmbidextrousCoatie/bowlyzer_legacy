@@ -1,7 +1,7 @@
 # Unified data pipeline plan
 
 **Status date:** 2026-06-03 (revised with product decisions)  
-**Companion docs:** [`database/README.md`](../../database/README.md), [`database/data/README.md`](../../database/data/README.md), [`docs/Excel_Extraction.md`](../Excel_Extraction.md), [`docs/GF_DATA_PIPELINE_IMPLEMENTATION_PLAN.md`](../GF_DATA_PIPELINE_IMPLEMENTATION_PLAN.md)  
+**Companion docs:** [`PIPELINE_STATE_OVERVIEW.md`](PIPELINE_STATE_OVERVIEW.md) (current snapshot + traceability), [`database/README.md`](../../database/README.md), [`database/data/README.md`](../../database/data/README.md), [`docs/Excel_Extraction.md`](../Excel_Extraction.md), [`docs/GF_DATA_PIPELINE_IMPLEMENTATION_PLAN.md`](../GF_DATA_PIPELINE_IMPLEMENTATION_PLAN.md)  
 **Scope:** Coherent ingest → publish workflow for all league/tournament/player data; operator UI starting in the React **Diagnose** tab.
 
 ### Locked decisions (2026-06-03)
@@ -12,6 +12,19 @@
 | **League vs tournament Parquets** | **Strict separation** — league job and tournament job each publish their own Parquet; no mixed “do everything” artifact except an explicit optional player view. |
 | **Publish on audit failure** | **Strict by default** — female-league split and future audits block publish; **player ID/name deferred** until Phase 2b (`players_registry`); **`--force-publish`** for other emergencies. |
 | **PDF intake** | **Super low priority** — completionist / archaeologist feature for specific gaps or pre-2009; not on the critical path. |
+
+### Locked decisions (2026-06-03 — incremental pipeline)
+
+| Topic | Decision |
+|-------|----------|
+| **Season keys (storage)** | Hyphen-normalized `25-26` on disk, in manifests, slice paths, and pipeline APIs. Slash `25/26` is **presentation only** (UI / legacy column until migrated). |
+| **Source × era guardrails** | Plausibility checks: pre-2022 adapters, post-2022 adapters, and GF-live each bound to allowed season ranges; violations audited and block or warn. |
+| **Downstream work** | **Impact-only** — re-merge, re-publish, and re-warm only artifacts whose dependency dimensions intersect changed seasons (not full blob). |
+| **Registry blast radius** | Player registry changes re-resolve names only in seasons where affected `player_id` rows exist. |
+| **Tournament slices** | Season-level partitions when canonical schema is generalized; avoid event-level slices unless volume forces sub-partitioning. |
+| **Diagnose UI** | **Executive summary** (KPIs, blockers, last delta) + **source×stage×season grid** below; extends `/diagnose/datenpipeline`. |
+
+See [`PIPELINE_STATE_OVERVIEW.md`](PIPELINE_STATE_OVERVIEW.md) §10–15 for detail.
 
 ---
 
@@ -272,15 +285,20 @@ Priority: **super low**. Use only to close specific gaps or explore pre-2009 whe
     pdf_sheet/            # future
   stages/
     {source_id}/
-      intake/
-      raw/
-      sanitized/
-      canonical/
+      {season_key}/          # hyphen, e.g. 25-26
+        intake/
+        raw/
+        sanitized/
+        canonical/             # slice fingerprint per season
   merge/
     league/
+      by_season/               # optional materialized partitions
+        {season_key}.parquet
       duplicates.csv
-      league_results_merged.parquet   # copy or write-through to published
+      league_results_merged.parquet   # stitched view or monolith during migration
     tournament/
+      by_season/
+        {season_key}.parquet
       tournaments_postprocessed.parquet
   audit/
     player_id_name_conflicts.csv
@@ -298,7 +316,40 @@ database/data/            # published only (synced to VPS)
   *.json configs
 ```
 
-**Migration strategy:** keep existing paths working; add `sources/` + `runs/` incrementally; enforce **job-separated** publishes (already mostly true — formalize in manifest and CLI flags).
+**Migration strategy:** keep existing paths working; add `sources/` + `runs/` + **season-keyed slices** incrementally; enforce **job-separated** publishes (already mostly true — formalize in manifest and CLI flags).
+
+### 2.3.1 Season keys
+
+- **Pipeline canonical:** `YY-YY` hyphen (`25-26`). All slice paths, manifest `season_index`, and registry JSON use this form.
+- **Presentation:** UI and German labels render `25/26` via formatter; URL may use hyphen (`?season=25-26`) per nginx guidance.
+- **Parquet column `Season`:** legacy values may remain slash until a publish migration; read paths accept both; new partition writers emit hyphen.
+
+Shared helper (target): `data_access.season_key.normalize_season_key()` — not the app-layer `season_query` module (slash for legacy DF lookups).
+
+### 2.3.2 Source × era guardrails
+
+Each entry in `data_sources.json` references bounds in `source_era_bounds.json`:
+
+| Adapter class | `format_era` | Typical season range |
+|---------------|--------------|----------------------|
+| Legacy Excel / scrape | `pre2022` | `08-09` … `21-22` |
+| Legacy Excel (newer sheets) | `post2022` | `22-23` … |
+| GF league | `gf_live` | `22-23` … (configurable floor) |
+
+Validate at canonical write and before merge stitch. Output: `audit/source_era_violations.csv`; **error** severity blocks slice publish.
+
+GF rows in pre-2022 seasons or pre2022 adapter output in GF-only seasons are never silently merged.
+
+### 2.3.3 Impact-only downstream invalidation
+
+Manifest records `changed_seasons` and projects **impact**:
+
+- **Partitions:** rewrite `merge/league/by_season/{season_key}.parquet` only for changed keys.
+- **Revision index:** bump season / league / club entries in the intersection set.
+- **Cache warm:** `warm_league_cache*` with `--seasons` / targeted leagues — no full `--rebuild` when impact is narrow.
+- **Registry:** if `players_registry` changes, re-run name resolution only for seasons containing touched `player_id` values.
+
+`manifest.impact` block (target shape): `{ changed_seasons, leagues, clubs, player_ids, endpoints[] }`.
 
 ### 2.4 Orchestrator (target)
 
@@ -370,7 +421,7 @@ Present on **every** row in `league_results_merged` and `tournaments_postprocess
 |--------|---------------|------|
 | **Event Type** | `league` \| `tournament` | Stream discriminator |
 | **Event** | string | Competition identifier — league id (`BayL`, `LL S`, …) or tournament title (`Südbayerische Meisterschaft`, …) |
-| **Season** | string | Season label (`24/25`, …) |
+| **Season** | string | Season label — storage/manifest use `25-26`; UI may show `25/26` |
 | **Date** | string (ISO or legacy) | Match / playing day |
 | **Player** | string | Display name on the sheet (normalized via registry + rules) |
 | **Player ID** | string | EDV id |
@@ -522,29 +573,48 @@ Keeps separation:
 - **Content health** (existing): Liga-Wochen, Anomalien, Club-Matrix.
 - **Operational health** (new): sources, stages, publish artifacts, last run.
 
-### 3.2 Information architecture
+### 3.2 Information architecture — two tiers
+
+**Tier 1 — Executive** (current KPI strip + delta/blockers):
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
 │ Diagnose › Datenpipeline                                     │
-│ Active database: db_real_merged  [selector unchanged]        │
 ├─────────────────────────────────────────────────────────────┤
-│ KPI strip (4 tiles)                                          │
-│  Published league │ Tournaments │ Player hybrid │ Last build   │
+│ EXECUTIVE                                                    │
+│  [Publish ok/warn] [Δ seasons: 25-26] [Audits] [Last run]   │
+│  KPI tiles: league rows │ tournaments │ registry │ staleness │
+│  Blockers list (era violations, missing artifacts, forced)   │
 ├─────────────────────────────────────────────────────────────┤
-│ Sources table                                                │
-│  source id │ stream │ stage │ rows │ mtime │ status │ action │
+```
+
+**Tier 2 — Grid** (Phase 2c — source × stage, expandable to season):
+
+```text
+│ GRID  stream [league ▼]  [only changed]                      │
+│        intake   raw   sanitized   canonical   merged   pub   │
+│ gf_league   ·     ·       ·          ok         ok      ok    │
+│   └ 25-26   ·     ·       ·          ok+fpr    —       —     │
+│   └ 24-25   ·     ·       ·          ok        ok      ok    │
+│ legacy_excel  ·   ·       ·          ok        ok      ok    │
+│ legacy_scrape ·   ·       ·          ok        ok      ok    │
 ├─────────────────────────────────────────────────────────────┤
-│ Publish artifacts (per job)                                  │
-│  job │ file │ rows │ era split │ inputs │ audit │ forced?   │
-├─────────────────────────────────────────────────────────────┤
-│ Players registry (when present)                              │
-│  ids │ last update │ unresolved audit count                  │
-├─────────────────────────────────────────────────────────────┤
-│ Audits (work dir, if readable)                               │
-│  report │ rows │ blocks publish? │ link to import scripts    │
-├─────────────────────────────────────────────────────────────┤
-│ Runbook links → Excel_Extraction.md, build commands          │
+│ Publish artifacts │ Audits │ Runbook links                  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+Cell semantics: `empty` | `stale` | `ok` | `warn` | `error` | `blocked`. Season sub-rows show fingerprint, row count, `format_era`, guardrail status.
+
+**Legacy detail tables** (Phase 1 — keep below grid): sources table, publish artifacts, audits, build commands.
+
+### 3.2.1 Information architecture (Phase 1 baseline)
+
+Shipped 2026-06 — tables below the fold until grid lands:
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│ KPI strip │ Sources table │ Publish artifacts │ Audits      │
+│ Runbook / build commands                                     │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -555,6 +625,8 @@ Keeps separation:
 | **1a** (starter) | `GET /pipeline/status` | Published artifact metadata (mtime, size, exists, row_count), manifest summary, audits; **absolute paths only when** `BOWLYZER_PIPELINE_EXPOSE_PATHS=1` or non-`/app/` data dir (hidden in prod container by default) |
 | **1b** | same | Per-source stage from `runs/latest.json` manifest |
 | **2** | `GET /pipeline/sources` | Full source registry + GF last run from `pipeline/…/logs/` |
+| **2c** | `GET /pipeline/status` | `season_index`, `manifest_diff`, `impact_summary` |
+| **2c** | `GET /pipeline/guardrails` | Era violation report from last validate pass |
 | **3** | `POST /pipeline/trigger` | Dev-only: shell out to ingest (guard with env flag) |
 
 **Status semantics:**
@@ -623,9 +695,20 @@ Until then, Diagnose tab is sufficient.
 - [ ] Import annotated audit CSV rows into registry (not only JSON configs).
 - [ ] Re-enable **blocking** publish on player ID/name when registry is live (`data_sources.json` → `blocks_publish: true`).
 
+### Phase 2c — Season slices, guardrails, impact (planned)
+
+- [ ] `data_access/season_key.py` — `normalize_season_key()` (`25/26` → `25-26`)
+- [ ] `database/config/source_era_bounds.json` + validate in merge/canonical writers
+- [ ] `scripts/build_season_index.py` — per-season fingerprints in manifest
+- [ ] Manifest `changed_seasons` + `impact` block (diff vs previous `runs/*.json`)
+- [ ] `merge_league_sources --only-seasons 25-26` prototype
+- [ ] Targeted cache warm from `manifest.impact`
+- [ ] Diagnose: executive delta row + source×stage×season grid (`DataPipeline.tsx`)
+- [ ] Tournament: season partitions after canonical schema generalization (`tournament_format_era`)
+
 ### Phase 3 — Work dir layout migration
 
-- [ ] Introduce `work_dir/sources/` + `work_dir/runs/` without breaking existing paths.
+- [ ] Introduce `work_dir/sources/` + `work_dir/stages/{source_id}/{season_key}/` without breaking existing paths.
 - [ ] `build_published_dataset.py --write-manifest` default on.
 
 ### Phase 4 — PDF intake (archaeologist — defer)
@@ -659,6 +742,11 @@ Low priority; only when a specific season/league gap is identified.
 | 7 | `data_sources.json` vs code registry? | JSON registry for metadata; adapters stay Python. |
 | 8 | Historical Excel path? | Env `BOWLYZER_EXCEL_ARCHIVE_DIR`. |
 | 9 | Expose work dir on VPS? | **No** — manifest + published artifacts only. |
+| 10 | Season key on disk? | **Hyphen** `25-26`; slash is presentation only. |
+| 11 | Era guardrails? | **Yes** — pre2022 / post2022 / GF-live bound to season ranges; violations audited. |
+| 12 | Downstream on change? | **Impact-only** re-merge, publish partition, cache warm. |
+| 13 | Tournament partition grain? | **Season** default; event sub-slices only if volume threshold exceeded. |
+| 14 | Pipeline UI shape? | **Executive + grid** on Datenpipeline page. |
 
 ---
 

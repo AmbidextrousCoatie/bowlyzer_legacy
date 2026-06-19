@@ -6,6 +6,7 @@ import { NavigationQuerySanitizer } from "./components/NavigationQuerySanitizer"
 import { Sidebar } from "./components/Sidebar";
 import { ClubMatrix } from "./pages/diagnosis/ClubMatrix";
 import { LeagueWeekMatrix } from "./pages/diagnosis/LeagueWeekMatrix";
+import { LeagueStandingsValidation } from "./pages/diagnosis/LeagueStandingsValidation";
 import { DataOddities } from "./pages/diagnosis/DataOddities";
 import { DataPipeline } from "./pages/diagnosis/DataPipeline";
 import { DesignSystem } from "./pages/diagnosis/DesignSystem";
@@ -36,6 +37,7 @@ function App() {
                 <Route path="/spieler" element={<PlayerStats />} />
                 <Route path="/diagnose/club-matrix" element={<ClubMatrix />} />
                 <Route path="/diagnose/liga-wochen" element={<LeagueWeekMatrix />} />
+                <Route path="/diagnose/liga-validierung" element={<LeagueStandingsValidation />} />
                 <Route path="/diagnose/daten-anomalien" element={<DataOddities />} />
                 <Route path="/diagnose/datenpipeline" element={<DataPipeline />} />
                 <Route path="/diagnose/design-system" element={<DesignSystem />} />

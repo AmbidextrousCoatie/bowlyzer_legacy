@@ -303,6 +303,7 @@ def get_pipeline_status() -> Dict[str, Any]:
 
     audits = {
         "player_id_name_conflicts": _audit_report(work_dir / "player_id_name_conflicts.csv"),
+        "league_standings_validation": _audit_report(work_dir / "league_standings_validation.csv"),
     }
 
     latest_mtime = max(
@@ -345,6 +346,7 @@ def get_pipeline_status() -> Dict[str, Any]:
             "player_id_name_normalization": compute_player_id_name_normalization_fingerprint(),
             "player_name_normalization": compute_player_name_normalization_fingerprint(),
             "team_name_normalization": _config_fingerprint(config_dir / "team_name_normalization.json"),
+            "league_week_schema": _config_fingerprint(config_dir / "league_week_schema.json"),
         },
         "audits": audits,
         "docs": {

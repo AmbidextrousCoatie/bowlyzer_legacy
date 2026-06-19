@@ -1,0 +1,231 @@
+"""Tests for league season points budget."""
+
+from data_access.league_points_budget import (
+    analyze_total_points,
+    compute_league_points_budget,
+    detect_points_one_off_correction,
+    points_per_match,
+    weekly_match_points_budget,
+)
+
+
+def test_bayl_24_25_weekly_budget_matches_standings_sum():
+    budget = compute_league_points_budget(
+        league="BayL",
+        season="24/25",
+        number_of_teams=10,
+        reference_weeks=4,
+        games_per_week=9,
+        data_format="data_format_post_2022",
+    )
+    assert budget.points_per_match == 6.0
+    assert budget.weekly_match_points == 270.0
+    assert budget.season_total_points == 1080.0
+
+
+def test_kl_n2_23_24_expected_total_matches_excel_reference():
+    budget = compute_league_points_budget(
+        league="KL N2",
+        season="23/24",
+        number_of_teams=4,
+        reference_weeks=5,
+        games_per_week=6,
+        data_format="data_format_post_2022",
+    )
+    assert budget.season_total_points == 360.0
+
+
+def test_analyze_total_points_flags_excel_aggregate_error():
+    budget = compute_league_points_budget(
+        league="KL N2",
+        season="23/24",
+        number_of_teams=4,
+        reference_weeks=5,
+        games_per_week=6,
+    )
+    ref_ok, comp_ok, explained, message = analyze_total_points(
+        reference_total=360.0,
+        computed_total=300.0,
+        budget=budget,
+        points_mismatches=[
+            "RW 69 Lichtenhof Stein 8: ref pts 117.5 vs computed 95.5",
+            "Castra Regina Regensburg 3: ref pts 100.5 vs computed 88.5",
+            "Donaubowler Regensburg 3: ref pts 99.0 vs computed 81.0",
+        ],
+    )
+    assert ref_ok is True
+    assert comp_ok is False
+    assert explained is False
+    assert "computed total" in message
+
+    ref_ok2, comp_ok2, explained2, message2 = analyze_total_points(
+        reference_total=420.0,
+        computed_total=360.0,
+        budget=budget,
+        points_mismatches=[
+            "Team A: ref pts 120 vs computed 90",
+            "Team B: ref pts 100 vs computed 70",
+        ],
+    )
+    assert ref_ok2 is False
+    assert comp_ok2 is True
+    assert explained2 is True
+    assert "likely" in message2
+
+
+def test_points_per_match_3pt_system():
+    assert points_per_match("liga_bayern_3pt", players_per_team=4) == 7.0
+    assert weekly_match_points_budget(10, 9, 7.0) == 315.0
+
+
+def test_pre_2022_five_team_phantom_bye_budget_matches_excel_reference():
+    """A S1 10/11: 5 real teams, Spielzettel metadata counts 6 incl. bye."""
+    budget = compute_league_points_budget(
+        league="A S1",
+        season="10/11",
+        number_of_teams=5,
+        reference_weeks=8,
+        games_per_week=5,
+        data_format="data_format_pre_2022",
+        phantom_bye=True,
+    )
+    assert budget.weekly_match_points == 30.0
+    assert budget.weekly_placement_points == 15.0
+    assert budget.weekly_total_points == 45.0
+    assert budget.season_total_points == 360.0
+
+
+def test_pre_2022_an2_expected_total_includes_placement_bonus():
+    budget = compute_league_points_budget(
+        league="A N2",
+        season="09/10",
+        number_of_teams=8,
+        reference_weeks=8,
+        games_per_week=7,
+        data_format="data_format_pre_2022",
+    )
+    assert budget.points_per_match == 2.0
+    assert budget.weekly_match_points == 56.0
+    assert budget.weekly_placement_points == 36.0
+    assert budget.season_total_points == 736.0
+
+
+def test_no_show_weekly_reduction_escalates():
+    from data_access.league_points_budget import (
+        apply_no_show_adjustments,
+        no_show_weekly_reduction,
+    )
+
+    assert no_show_weekly_reduction(0) == 0.0
+    assert no_show_weekly_reduction(1) == 1.0
+    assert no_show_weekly_reduction(2) == 3.0
+    assert no_show_weekly_reduction(3) == 6.0
+
+    budget = compute_league_points_budget(
+        league="BL S1 (D)",
+        season="10/11",
+        number_of_teams=6,
+        reference_weeks=8,
+        games_per_week=5,
+        data_format="data_format_pre_2022",
+    )
+    assert budget.season_total_points == 408.0
+    adjusted = apply_no_show_adjustments(budget, {5: 1})
+    assert adjusted.season_total_points == 407.0
+    assert adjusted.expected_weekly_points(5) == 50.0
+    assert adjusted.expected_weekly_points(1) == 51.0
+
+
+def test_detect_no_show_explained_mismatch_accepts_an2_week5_pattern():
+    from data_access.league_points_budget import detect_no_show_explained_mismatch
+
+    explained, remark = detect_no_show_explained_mismatch(
+        team_count=8,
+        no_show_teams_by_week={5: ["SG Rottendorf 5"]},
+        reference_weekly={5: 91.0},
+        computed_weekly={5: 84.0},
+        reference_total=735.0,
+        computed_total=728.0,
+        points_mismatches=[
+            "BC Comet Nürnberg 3: ref pts 160.0 vs computed 159.0",
+            "Mainfranken Bamberg 4: ref pts 134.0 vs computed 133.0",
+            "RW 69 Lichtenhof Stein 3: ref pts 134.0 vs computed 133.0",
+            "Strikers Geldersheim 3: ref pts 94.0 vs computed 93.0",
+            "BC Großlangheim 3: ref pts 62.0 vs computed 61.0",
+            "Kleeblatt Fürth 2: ref pts 41.0 vs computed 40.0",
+            "Pinkiller Lichtenfels 3: ref pts 33.0 vs computed 32.0",
+        ],
+    )
+    assert explained is True
+    assert "SG Rottendorf 5" in remark
+    assert "W5" in remark
+
+
+def test_detect_no_show_explained_mismatch_rejects_wrong_gap():
+    from data_access.league_points_budget import detect_no_show_explained_mismatch
+
+    explained, _remark = detect_no_show_explained_mismatch(
+        team_count=8,
+        no_show_teams_by_week={5: ["SG Rottendorf 5"]},
+        reference_weekly={5: 91.0},
+        computed_weekly={5: 80.0},
+        reference_total=735.0,
+        computed_total=724.0,
+        points_mismatches=[],
+    )
+    assert explained is False
+
+
+def test_detect_points_one_off_correction_accepts_computed_an2_case():
+    corrected, remark = detect_points_one_off_correction(
+        reference_total=736.0,
+        computed_total=735.0,
+        expected_total=736.0,
+        points_mismatches=[
+            "SG Rottendorf 4: ref pts 146.0 vs computed 145.0",
+        ],
+        teams_match=True,
+        positions_match=True,
+        pins_match=True,
+        reference_total_points_ok=True,
+        computed_total_points_ok=False,
+    )
+    assert corrected is True
+    assert "SG Rottendorf 4" in remark
+    assert "accepted computed" in remark
+
+
+def test_detect_points_one_off_correction_when_excel_total_one_high():
+    corrected, remark = detect_points_one_off_correction(
+        reference_total=737.0,
+        computed_total=736.0,
+        expected_total=736.0,
+        points_mismatches=[
+            "OK Bowlers Bindlach 2: ref pts 99.0 vs computed 98.0",
+        ],
+        teams_match=True,
+        positions_match=True,
+        pins_match=True,
+        reference_total_points_ok=False,
+        computed_total_points_ok=True,
+    )
+    assert corrected is True
+    assert "OK Bowlers Bindlach 2" in remark
+    assert "schema" in remark
+
+
+def test_detect_points_one_off_correction_rejects_multi_point_gap():
+    corrected, _remark = detect_points_one_off_correction(
+        reference_total=736.0,
+        computed_total=733.0,
+        expected_total=736.0,
+        points_mismatches=[
+            "SG Rottendorf 4: ref pts 146.0 vs computed 143.0",
+        ],
+        teams_match=True,
+        positions_match=True,
+        pins_match=True,
+        reference_total_points_ok=True,
+        computed_total_points_ok=False,
+    )
+    assert corrected is False

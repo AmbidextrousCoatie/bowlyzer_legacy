@@ -1,0 +1,21 @@
+{
+  "season_cutoff": "20/21",
+  "pre_cutoff_weeks": 8,
+  "post_cutoff_weeks": 6,
+  "bayernliga_league_ids": ["BayL", "BayL (D)"],
+  "bayernliga_weeks": 6,
+  "overrides": [
+    {
+      "league": "LL S",
+      "season": "09/10",
+      "expected_weeks": 13,
+      "note": "full round-robin (team count), pre-cutoff exception"
+    },
+    {
+      "league": "LL S (D)",
+      "season": "09/10",
+      "expected_weeks": 13,
+      "note": "full round-robin (team count), pre-cutoff exception"
+    }
+  ]
+}

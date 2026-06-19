@@ -34,11 +34,32 @@ export const SPIELER_QUERY_KEYS = ["player_name", "player_id"] as const;
 /** Liga drill-down on `/liga` only (`season` is also used on `/club` and `/turnier`). */
 export const LIGA_QUERY_KEYS = ["league", "week", "division"] as const;
 
-const SEASON_QUERY_SCOPES = ["/liga", "/club", "/turnier", "/spieler"] as const;
+const SEASON_QUERY_SCOPES = [
+  "/liga",
+  "/club",
+  "/turnier",
+  "/spieler",
+  "/diagnose/liga-validierung",
+] as const;
+
+/** Liga-Validierung page filters (not shared with other routes). */
+export const STANDINGS_VALIDATION_QUERY_KEYS = [
+  "non_green",
+  "weeks_complete",
+  "categories",
+  "statuses",
+] as const;
 
 function keepsSeasonQuery(targetPath: string): boolean {
   return SEASON_QUERY_SCOPES.some(
     (prefix) => targetPath === prefix || targetPath.startsWith(`${prefix}/`),
+  );
+}
+
+function keepsStandingsValidationQuery(targetPath: string): boolean {
+  return (
+    targetPath === "/diagnose/liga-validierung" ||
+    targetPath.startsWith("/diagnose/liga-validierung/")
   );
 }
 
@@ -73,6 +94,9 @@ export function searchParamsForPath(
   }
   if (!keepsSeasonQuery(targetPath)) {
     next.delete("season");
+  }
+  if (!keepsStandingsValidationQuery(targetPath)) {
+    for (const key of STANDINGS_VALIDATION_QUERY_KEYS) next.delete(key);
   }
   return next;
 }

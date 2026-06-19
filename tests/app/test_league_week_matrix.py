@@ -76,10 +76,8 @@ def test_get_league_week_matrix_team_counts_and_missing_weeks():
     cell = south_l5["seasons"]["24/25"]
     assert cell["league_id"] == "BZOL S1"
     assert cell["team_count"] == 3
-    assert cell["expected_weeks"] == 3
-    assert cell["missing_weeks"] == []
-    assert cell["label"] == "✓"
-    assert cell["status"] == "ok"
+    assert cell["expected_weeks"] == 6
+    assert cell["missing_weeks"] == [4, 5, 6]
 
     bayl = next(row for row in result["rows"] if row["league"] == "BayL")
     bayl_cell = bayl["seasons"]["23/24"]
@@ -140,11 +138,13 @@ def test_bl_bzol_merge_avoids_cross_era_false_positives():
     merged = next(row for row in result["rows"] if row["league"] == "BL N1 / BZOL N1")
 
     old_season = merged["seasons"]["15/16"]
-    assert old_season["label"] == "✓"
+    assert old_season["expected_weeks"] == 8
+    assert old_season["missing_weeks"] == [4, 5, 6, 7, 8]
     assert old_season["league_id"] == "BL N1"
 
     new_season = merged["seasons"]["24/25"]
-    assert new_season["label"] == "✓"
+    assert new_season["expected_weeks"] == 6
+    assert new_season["missing_weeks"] == [5, 6]
     assert new_season["league_id"] == "BZOL N1"
 
     # No phantom missing-week row for the other short id in the same season.

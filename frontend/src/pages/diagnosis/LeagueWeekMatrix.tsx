@@ -56,7 +56,7 @@ export function LeagueWeekMatrix() {
         <p className="text-body text-muted mt-2 max-w-[72ch]">
           {t(
             "ui.diagnosis.week_matrix_desc",
-            "Zeilen sind Ligen, Spalten Saisons. Pro Zelle fehlende Spieltage oder ✓ wenn vollständig. Erwartete Spieltage: Bayernliga immer 6, sonst Anzahl Teams in der Liga (historisch oft mehr als 6).",
+            "Zeilen sind Ligen, Spalten Saisons. Pro Zelle fehlende Spieltage oder ✓ wenn vollständig. Erwartete Spieltage: Bayernliga 6; vor 20/21 meist 8; ab 20/21 meist 6 (siehe league_week_schema.json für Ausnahmen).",
           )}
         </p>
       </header>

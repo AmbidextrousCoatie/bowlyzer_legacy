@@ -210,6 +210,8 @@ def build_publish_manifest(
     player_audit = summary.get("player_id_name_audit") or {}
     detail_rows = int(player_audit.get("detail_rows") or 0)
     player_deferred = "player_id_name" in set(deferred_audit_ids)
+    standings_audit = summary.get("league_standings_audit") or {}
+    standings_status = str(standings_audit.get("status") or "skipped")
     audits: Dict[str, Any] = {
         "female_league_split": {
             "status": "skipped" if skip_female_league_audit else "ok",
@@ -219,6 +221,12 @@ def build_publish_manifest(
             "report": str(player_audit.get("report") or ""),
             "detail_rows": detail_rows,
             "deferred_until": DEFERRED_UNTIL_PLAYERS_REGISTRY if player_deferred else None,
+        },
+        "league_standings": {
+            "status": standings_status,
+            "report": str(standings_audit.get("report") or ""),
+            "evaluated": int(standings_audit.get("evaluated") or 0),
+            "counts": dict(standings_audit.get("counts") or {}),
         },
     }
 

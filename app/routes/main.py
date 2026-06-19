@@ -99,6 +99,19 @@ def pipeline_status():
         return jsonify({'error': str(e)}), 500
 
 
+@bp.route('/pipeline/league_standings_validation')
+def pipeline_league_standings_validation():
+    """League season standings validation (Excel reference vs merged data)."""
+    try:
+        from app.services.league_standings_validation_service import get_league_standings_validation
+
+        season = (request.args.get("season") or "").strip() or None
+        league = (request.args.get("league") or "").strip() or None
+        return jsonify(get_league_standings_validation(season=season, league=league))
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 @bp.route('/get-data-sources-info')
 def get_data_sources_info():
     try:

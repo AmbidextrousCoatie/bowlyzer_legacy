@@ -41,7 +41,7 @@ from app.utils.league_level5_merge import (
     merged_league_label,
     resolve_league_id_for_season,
 )
-from app.utils.league_week_expectations import expected_weeks_for_league
+from app.utils.league_week_expectations import expected_weeks_for_league_season, schema_rule_summary
 # from data_access.series_data import calculate_series_data, get_player_series_data, get_team_series_data
 
 class ColumnWidths:
@@ -305,7 +305,7 @@ class LeagueService:
         - missing weeks -> comma-separated week numbers
         """
         _ = expected_weeks  # deprecated global override
-        empty = {"seasons": [], "rows": [], "expected_weeks_rule": "bayernliga=6,else=team_count"}
+        empty = {"seasons": [], "rows": [], "expected_weeks_rule": schema_rule_summary()}
 
         matrix_cols = [
             Columns.season,
@@ -398,7 +398,11 @@ class LeagueService:
                     weeks_by_league_season=grouped,
                     team_counts_by_league_season=team_counts,
                 )
-                expected_count = expected_weeks_for_league(link_league or row_label, team_count)
+                expected_count = expected_weeks_for_league_season(
+                    link_league or row_label,
+                    season,
+                    team_count=team_count,
+                )
                 if team_count == 0 and not available_weeks:
                     season_cells[season] = {
                         "label": "",
@@ -446,7 +450,7 @@ class LeagueService:
         return {
             "seasons": seasons,
             "rows": rows,
-            "expected_weeks_rule": "bayernliga=6,else=team_count",
+            "expected_weeks_rule": schema_rule_summary(),
         }
 
     def _liga_deep_link_params(

@@ -1,6 +1,8 @@
 import { Fragment } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { usePipelineStatus } from "../../hooks/usePipelineStatus";
 import { useTranslations } from "../../hooks/useTranslations";
+import { querySuffixForPath } from "../../lib/navigationQuery";
 
 const STATUS_ROW: Record<string, string> = {
   ok: "text-emerald-700 dark:text-emerald-400",
@@ -38,6 +40,7 @@ function formatRows(count: number | null | undefined): string {
 
 export function DataPipeline() {
   const { t } = useTranslations();
+  const [searchParams] = useSearchParams();
   const query = usePipelineStatus();
   const data = query.data;
 
@@ -317,6 +320,30 @@ export function DataPipeline() {
                 {data.audits.player_id_name_conflicts?.exists
                   ? `${data.audits.player_id_name_conflicts.detail_rows ?? "?"} Zeilen`
                   : "—"}
+              </dd>
+              <dt className="text-muted">Liga-Validierung</dt>
+              <dd>
+                {data.audits.league_standings_validation?.exists ? (
+                  <>
+                    {data.audits.league_standings_validation.detail_rows ?? "?"} Zeilen ·{" "}
+                    <Link
+                      to={`/diagnose/liga-validierung${querySuffixForPath("/diagnose/liga-validierung", searchParams)}`}
+                      className="text-primary underline-offset-2 hover:underline"
+                    >
+                      {t("ui.diagnosis.standings_validation_open", "Details")}
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    — ·{" "}
+                    <Link
+                      to={`/diagnose/liga-validierung${querySuffixForPath("/diagnose/liga-validierung", searchParams)}`}
+                      className="text-primary underline-offset-2 hover:underline"
+                    >
+                      {t("ui.diagnosis.standings_validation_open", "Details")}
+                    </Link>
+                  </>
+                )}
               </dd>
               {exposePaths && (
                 <>
