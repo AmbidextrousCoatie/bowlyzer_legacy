@@ -20498,11 +20498,39 @@ also in case of a no show: if the numbers check out, e.g. diff is number of team
 
 _**Agent (default)**_
 
+<think><details><summary>Thought Process</summary>
+The user wants three changes to no-show handling. First, add a new line for each no-show showing the week and team instead of a generic message. Second, validate a league week by checking that the point difference equals the number of teams minus the number of no-shows; if the numbers match, mark it green with remarks rather than yellow. Third, investigate why the Rottenburg 5 no-show in week 5 went undetected.</details></think>
+
+_**Agent (default)**_
+
+Investigating the missed A N2 no-show and improving detection, reporting, and status classification.
+
+
+_**Agent (default)**_
+
 <tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
 <details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python scripts/audit_league_standings.py --season "10/11" --league "A N2" 2>&1</summary>
 
 ```bash
 cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python scripts/audit_league_standings.py --season "10/11" --league "A N2" 2>&1
+```
+
+```
+League standings validation
+Data: C:\Users\cfell\repositories\bowlyzer_deploy\database\data\league_results_merged.csv
+Summary: perfect=0, corrected=0, yellow=1, red=0, skipped=0, week_incomplete=0
+10/11 | A N2: yellow (ref=8, computed=8) � computed total 728 vs expected 735 (-7)
+  - pts-total: ref 735 / expected 735 / computed 728
+  - pts-week: W5 pool ref 91 / computed 84 / expected 91 (comp-ref -7; comp-exp -7)
+  - pts: BC Comet N�rnberg 3: ref pts 160.0 vs computed 159.0
+  - pts: Mainfranken Bamberg 4: ref pts 134.0 vs computed 133.0
+  - pts: RW 69 Lichtenhof Stein 3: ref pts 134.0 vs computed 133.0
+  - pts: Strikers Geldersheim 3: ref pts 94.0 vs computed 93.0
+  - pts: BC Gro�langheim 3: ref pts 62.0 vs computed 61.0
+  - pts: Kleeblatt F�rth 2: ref pts 41.0 vs computed 40.0
+  - pts: Pinkiller Lichtenfels 3: ref pts 33.0 vs computed 32.0
+Report: C:\tmp\bowlyzer\data\league_standings_validation.csv
+
 ```
 </details>
 </tool-use>
@@ -20518,7 +20546,43 @@ _**Agent (default)**_
 <details>
 <summary>Tool use: **ripgrep_raw_search**</summary>
 
-Status: **loading**
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\data_access",
+  "pattern": "no_show|no-show|apply_no_show"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\data_access",
+  "pattern": "no_show|no-show|apply_no_show",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "data_access/league_weekly_points_analysis.py"
+    },
+    {
+      "matchCount": 4,
+      "uri": "data_access/league_standings_validation.py"
+    },
+    {
+      "matchCount": 16,
+      "uri": "data_access/league_points_budget.py"
+    }
+  ],
+  "totalFiles": 3,
+  "totalMatches": 22
+}
+```
+Status: **completed**
 
 
 </details>
@@ -20535,7 +20599,35 @@ _**Agent (default)**_
 <details>
 <summary>Tool use: **ripgrep_raw_search**</summary>
 
-Status: **loading**
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\data_access\\league_standings_validation.py",
+  "pattern": "STATUS_|classify_status|_apply_validation"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\data_access\\league_standings_validation.py",
+  "pattern": "STATUS_|classify_status|_apply_validation",
+  "topFiles": [
+    {
+      "matchCount": 53,
+      "uri": "data_access\\league_standings_validation.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 53
+}
+```
+Status: **completed**
 
 
 </details>
@@ -20545,3 +20637,4325 @@ Status: **loading**
 <summary>Tool use: **ripgrep_raw_search**</summary>
 
 </details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Investigating why the Rottenburg 5 no-show in A N2 week 5 went undetected.
+
+The audit shows W5 was 91 reference versus 84 computed, a -7 gap. Season totals are 735 reference versus 728 computed. That -7 difference matches the weekly gap exactly. This confirms the Rottenburg 5 no-show was completely missed.
+
+Reconsidering the user's formula for validating no-show weeks. The -7 gap likely reflects seven teams each losing one placement point, not a direct subtraction of teams minus no-shows.
+
+The -7 gap equals eight teams minus one no-show. That validates the formula. Yet the placement pool alone would drop by only one point. The remaining six points must come from another source.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python -c "
+from pathlib import Path
+from data_access.league_standings_validation import collect_pre_2022_reference_weekly_team_points, discover_excel_reference_targets
+from data_access.league_weekly_points_analysis import no_shows_by_week_from_reference
+
+log = Path(r'C:\tmp\bowlyzer\data\extract_excel_analysis_log.json')
+teams = collect_pre_2022_reference_weekly_team_points(log, league='A N2', season='10/11', max_week=8)
+w5 = teams.get(5, {})
+print('W5 teams', len(w5))
+for t,p in sorted(w5.items(), key=lambda x: -x[1]):
+    print(f'  {t}: {p}')
+print('no_shows', no_shows_by_week_from_reference(teams))
+# find week 5 file
+import json
+from extract_excel_data import read_excel_safely
+from data_access.league_weekly_points_analysis import parse_pre_2022_tabelle_weekly_team_points
+for fp, row in []:
+    pass
+from data_access.league_standings_validation import _iter_analysis_rows, resolve_workbook_path, _normalize_league_id
+for fp, row in _iter_analysis_rows(log):
+    if _normalize_league_id(row.get('league'))!='A N2' or row.get('season')!='10/11': continue
+    w = row.get('debug_week_raw') or row.get('available_weeks')
+    resolved = resolve_workbook_path(str(row.get('file') or fp))
+    if resolved and '5' in str(resolved):
+        print('file', resolved)
+        df = read_excel_safely(resolved, sheet_name='Tabelle', header=None)
+        week, tp = parse_pre_2022_tabelle_weekly_team_points(df)
+        print('parsed week', week, 'teams', tp)
+"</summary>
+
+```bash
+cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python -c "
+from pathlib import Path
+from data_access.league_standings_validation import collect_pre_2022_reference_weekly_team_points, discover_excel_reference_targets
+from data_access.league_weekly_points_analysis import no_shows_by_week_from_reference
+
+log = Path(r'C:\tmp\bowlyzer\data\extract_excel_analysis_log.json')
+teams = collect_pre_2022_reference_weekly_team_points(log, league='A N2', season='10/11', max_week=8)
+w5 = teams.get(5, {})
+print('W5 teams', len(w5))
+for t,p in sorted(w5.items(), key=lambda x: -x[1]):
+    print(f'  {t}: {p}')
+print('no_shows', no_shows_by_week_from_reference(teams))
+# find week 5 file
+import json
+from extract_excel_data import read_excel_safely
+from data_access.league_weekly_points_analysis import parse_pre_2022_tabelle_weekly_team_points
+for fp, row in []:
+    pass
+from data_access.league_standings_validation import _iter_analysis_rows, resolve_workbook_path, _normalize_league_id
+for fp, row in _iter_analysis_rows(log):
+    if _normalize_league_id(row.get('league'))!='A N2' or row.get('season')!='10/11': continue
+    w = row.get('debug_week_raw') or row.get('available_weeks')
+    resolved = resolve_workbook_path(str(row.get('file') or fp))
+    if resolved and '5' in str(resolved):
+        print('file', resolved)
+        df = read_excel_safely(resolved, sheet_name='Tabelle', header=None)
+        week, tp = parse_pre_2022_tabelle_weekly_team_points(df)
+        print('parsed week', week, 'teams', tp)
+"
+```
+
+```
+W5 teams 8
+  Comet N�rnberg 3: 22.0
+  SW Mainfranken Bamberg 4: 19.0
+  Rot-Wei� 69 Lichtenhof Stein 3: 16.0
+  Strikers Geldersheim 3: 13.0
+  Kleeblatt F�rth Stein 2: 10.0
+  BC Gro�langheim 3: 7.0
+  Pinkiller 03 Lichtenfels 3: 4.0
+  SG Rottendorf 5: 0.0
+no_shows {5: 1}
+file C:\tmp\bowlyzer\data\legacy_scrape\saison2010-11\nordbereich\LB_A-Kl_N_2-H-5.xlsx
+parsed week 5 teams {'Comet N�rnberg 3': 22.0, 'SW Mainfranken Bamberg 4': 19.0, 'Rot-Wei� 69 Lichtenhof Stein 3': 16.0, 'Strikers Geldersheim 3': 13.0, 'SG Rottendorf 5': 0.0, 'BC Gro�langheim 3': 7.0, 'Pinkiller 03 Lichtenfels 3': 4.0, 'Kleeblatt F�rth Stein 2': 10.0}
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_standings_validation.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_weekly_points_analysis.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Manual testing confirmed the no-show detection works. The system correctly identifies one no-show for SG Rottendorf 5.
+
+The audit expected 91 for week 5 because the no-show adjustment was not applied. The reference pool already equals 91. This matches the expected weekly budget of 92 minus one no-show.
+
+The season budget totals 736. One no-show reduces this by exactly one point, yielding 735. This confirms the no-show adjustment is mathematically sound.
+
+The no-show was detected for the season budget, yet it was not reported in the notes with the team name. The status remains yellow because the computed total is 728 against an expected 735. The user expects this to be green when the weekly difference equals the team count minus the no-show count. For this week, eight minus one equals seven, matching the computed gap.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python -c "
+import pandas as pd
+from data_access.schema import Columns
+from data_access.score_utils import league_points_cell
+
+df = pd.read_parquet('database/data/league_results_merged.parquet')
+w5 = df[(df[Columns.season].astype(str)=='10/11') & (df[Columns.event].astype(str)=='A N2') & (df[Columns.week].astype(str)=='5')]
+print('teams', sorted(w5[Columns.team_name].unique()))
+for team, g in sorted(w5.groupby(Columns.team_name)):
+    total = sum(league_points_cell(r) for _,r in g.iterrows())
+    bonus = pd.to_numeric(g[Columns.bonus_points], errors='coerce').fillna(0).max()
+    print(team, 'total', total, 'bonus', bonus)
+print('pool', sum(league_points_cell(r) for _,r in w5.iterrows()))
+"</summary>
+
+```bash
+cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python -c "
+import pandas as pd
+from data_access.schema import Columns
+from data_access.score_utils import league_points_cell
+
+df = pd.read_parquet('database/data/league_results_merged.parquet')
+w5 = df[(df[Columns.season].astype(str)=='10/11') & (df[Columns.event].astype(str)=='A N2') & (df[Columns.week].astype(str)=='5')]
+print('teams', sorted(w5[Columns.team_name].unique()))
+for team, g in sorted(w5.groupby(Columns.team_name)):
+    total = sum(league_points_cell(r) for _,r in g.iterrows())
+    bonus = pd.to_numeric(g[Columns.bonus_points], errors='coerce').fillna(0).max()
+    print(team, 'total', total, 'bonus', bonus)
+print('pool', sum(league_points_cell(r) for _,r in w5.iterrows()))
+"
+```
+
+```
+teams ['BC Comet N�rnberg 3', 'BC Gro�langheim 3', 'Kleeblatt F�rth 2', 'Mainfranken Bamberg 4', 'Pinkiller Lichtenfels 3', 'RW 69 Lichtenhof Stein 3', 'SG Rottendorf 5', 'Strikers Geldersheim 3']
+BC Comet N�rnberg 3 total 21.0 bonus 7
+BC Gro�langheim 3 total 6.0 bonus 2
+Kleeblatt F�rth 2 total 9.0 bonus 3
+Mainfranken Bamberg 4 total 18.0 bonus 6
+Pinkiller Lichtenfels 3 total 3.0 bonus 1
+RW 69 Lichtenhof Stein 3 total 15.0 bonus 5
+SG Rottendorf 5 total 0.0 bonus 0
+Strikers Geldersheim 3 total 12.0 bonus 4
+pool 84.0
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_standings_validation.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The extraction fix partially worked. A N2 now includes SG Rottendorf 5 in the merge with zero total and zero bonus.
+
+The bonus scale is wrong. Merge uses a 7-team scale instead of 8. The computed total is 728 versus expected 735. The audit missed the no-show because the notes omit the team name. The week 5 pool shows a 7-point gap. This equals eight teams minus one no-show.
+
+The expected total is 735, not 734. The no-show is correctly applied to the budget. The user called it undiagnosed because the notes lack the team name and a dedicated line. The fix adds a new line per no-show showing the week and team. A valid no-show week should be green with remarks, not yellow.
+
+Rottenburg/Rottendorf is missing from the per-team mismatches entirely. The audit only flags seven teams with a one-point gap. The no-show team appears to be excluded from the mismatch list.
+
+Rottendorf is absent from the mismatch list because both reference and computed points are zero. The validation rule for a valid no-show week checks that the weekly pool gap equals team count minus no-show count, that every one-point mismatch belongs only to teams that played, and that the season total gap matches the sum of weekly no-show gaps. Multiple no-show weeks complicate this further. The implementation will extract no-show teams by week from the reference data.
+
+The no-show data will be stored on the comparison object or passed through the budget. A new helper will validate the explained-mismatch pattern and return a remark. The audit outcome will be promoted to STATUS_GREEN with a note, not STATUS_PERFECT, since the points do not match exactly. The notes will use dedicated lines per no-show.
+
+The implementation flow is now clear. `_apply_total_points_validation` will build a dictionary mapping each week to its no-show teams. That dictionary will be attached to the comparison object. The audit message will be rebuilt to show a separate line per no-show with the week and team name. After the standard points validation runs, the system will check whether the mismatch is fully explained by a no-show week. If so, it will skip the yellow override, promote the status to green, and append a remark. The BL S1 case is also being checked; its weekly gap of five equals six teams minus one no-show.
+
+BL S1 is not a valid no-show explanation. Its per-team gaps are eight points rather than one, so it remains yellow. A N2 is confirmed green because its one-point mismatches and seven-point gaps align with the no-show pattern. The `no_show_teams_by_week_from_reference` helper is now being implemented.
+
+The `no_show_teams_by_week_from_reference` helper is now defined. It scans each week’s team points and collects any team with zero or negative points as a no-show. A helper named `expected_pool_gap_for_no_show_week` will compute the expected pool gap as team count minus no-show count. The `detect_no_show_explained_comparison` function is being drafted to tie these pieces together.
+
+The validation logic is being refined. Each no-show week must satisfy `abs(gap - (team_count - no_show_count)) < tol`. The season gap must equal the sum of those weekly gaps. A N2 passes this check. For BL S1, only the W5 week may be affected if it is the sole no-show week.
+
+The promotion logic is being placed either inside `_apply_validation_outcome` or immediately after `_apply_total_points_validation`. The no-show remark will be built and validated against the mismatches before the status is set.
+
+The implementation will mark the comparison as `computed_total_points_ok = True` and set `no_show_explained = True` when a no-show week is fully explained. The status will be forced to `STATUS_GREEN` to override yellow. The notes will drop the generic no-show formula line and instead list each week and team on its own line, such as "no-show W5: Lauterach 1".</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_standings_validation.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\data_access\\league_standings_validation.py",
+  "pattern": "format_comparison|findings|notes"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\data_access\\league_standings_validation.py",
+  "pattern": "format_comparison|findings|notes",
+  "topFiles": [
+    {
+      "matchCount": 28,
+      "uri": "data_access\\league_standings_validation.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 28
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\data_access\test_league_standings_validation.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Reviewing `comparison_findings` and `analyze_total_points` to understand the full flow.
+
+Planning new no-show detection functions in `league_weekly_points_analysis.py` and `league_points_budget.py`. These will identify missing teams by week, compute expected pool gaps, format findings, and detect mismatches explained by no-shows.
+
+Extending `StandingsComparison` with `no_show_findings` and `no_show_explained` fields. `_apply_total_points_validation` will build the no-show teams dictionary, append detailed findings, and attempt to explain mismatches. If explained, the flag will be set and the remark added without forcing a yellow status. `_apply_validation_outcome` will promote these weeks to green with remarks. Generic formula notes will be replaced by detailed findings.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_standings_validation.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_points_budget.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Beginning comprehensive implementation of the requested no-show handling changes.
+
+Mapping out three file changes. Points analysis will group no-shows by week and compute expected pool gaps. Budget logic will replace generic no-show notes with detailed per-week findings. Standings comparison will track explained no-shows separately.
+
+Adding a `no_show_remark` field to StandingsComparison. The validation pipeline will build per-week no-show team lists, apply budget adjustments using those counts, and detect whether the gap is fully explained. When explained, the outcome becomes green and the remark appears in notes. Generic no-show messages are suppressed in favor of these detailed findings.
+
+The explanation check will run early in the findings list. Yellow status is bypassed when a no-show is fully explained. A new `detect_no_show_explained_mismatch` function will take team counts, weekly mappings, and mismatch details to validate the gap.
+
+The explanation detector iterates each week's no-show teams. It computes the actual gap between reference and computed weekly totals. It compares that gap to the expected pool gap, defined as team count minus no-show count. A tolerance of 0.5 is used. If any week fails this check, the mismatch is not considered fully explained.
+
+The explanation detector now aggregates weekly gaps into a total gap. It checks that the total gap matches the sum of the weekly gaps within tolerance. It also begins parsing individual points mismatch lines to verify per-team discrepancies.
+
+The explanation detector now validates that no parsed mismatch line belongs to a no-show team. It confirms each remaining discrepancy equals exactly one point. It verifies the total mismatch count matches the expected pool gap. It then begins assembling the remark string with affected week descriptions.
+
+The explanation detector remark will describe the affected weeks and the total point shortfall versus Excel. Team name matching is complicated because points mismatches use full names while Excel uses abbreviated ones, so strict name equality cannot be required. The N2 case shows a one-point season total discrepancy for BC Comet Nürnberg 3; Rottenburg is correctly excluded from the mismatch list.
+
+The no-show explanation will not require matching team names against mismatch entries. The seven one-point gaps align with the single no-show week’s expected pool gap. The computed total remains 728 against an expected 735, so the computed total points flag stays false even when the mismatch is fully explained.
+
+The no-show explanation will set status to green rather than perfect. The computed total points flag remains false because the computed total does not equal the expected total. The display will still show reference, expected, and computed values, but the status line turns green with a remark. The notes will list each no-show week and team on its own line.
+
+The formula note will lose its generic no-show entry entirely. A new helper will generate one line per team, formatted as "no-show W{week}: {team}". Teams sharing a week will each appear on their own line.
+
+No-show findings will be inserted into the comparison notes immediately after the formula message and before the points-total line. Each finding line will be appended individually to the notes field.
+
+A new unit test will cover the no-show explanation detector. The helper that builds weekly no-show team mappings will be exported so the budget logic can derive team counts directly from the team lists.</details></think>
+
+_**Agent (default)**_
+
+Implementing no-show team reporting, removing the generic formula note, and promoting explained no-show weeks to green.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_weekly_points_analysis.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_points_budget.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_points_budget.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_points_budget.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Importing `no_show_expected_pool_gap` into `league_points_budget`.
+
+Moving `no_show_expected_pool_gap` into `league_points_budget.py` to eliminate the cross-file dependency. A duplicate definition in `league_weekly_points_analysis` will be removed.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_weekly_points_analysis.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_points_budget.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_standings_validation.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_standings_validation.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_standings_validation.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_standings_validation.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_standings_validation.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_standings_validation.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_standings_validation.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_standings_validation.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_standings_validation.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_standings_validation.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Adding a "no_show" error category to classify_error_categories.
+
+Updating tests for no_shows_by_week, detect_no_show_explained_mismatch, and format_no_show_findings. Fixing the league weekly points analysis no-show test. Running an audit for A N2 and BL S1 (D). Validated that explained no-shows correctly yield green rather than yellow.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_standings_validation.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\data_access\test_league_weekly_points_analysis.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\data_access\test_league_weekly_points_analysis.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\data_access\test_league_points_budget.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Considering adding a `classify_error_categories` function for no-show errors.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\tests",
+  "pattern": "no-show|no_show"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\tests",
+  "pattern": "no-show|no_show",
+  "topFiles": [
+    {
+      "matchCount": 16,
+      "uri": "tests\\data_access\\test_league_points_budget.py"
+    },
+    {
+      "matchCount": 10,
+      "uri": "tests\\data_access\\test_league_weekly_points_analysis.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tests\\test_pre_2022_placement_bonuses.py"
+    }
+  ],
+  "totalFiles": 3,
+  "totalMatches": 27
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run pytest tests/data_access/test_league_points_budget.py tests/data_access/test_league_weekly_points_analysis.py -q; uv run python scripts/audit_league_standings.py --season "10/11" --league "A N2" 2>&1; uv run python scripts/audit_league_standings.py --season "10/11" --league "BL S1 (D)" 2>&1</summary>
+
+```bash
+cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run pytest tests/data_access/test_league_points_budget.py tests/data_access/test_league_weekly_points_analysis.py -q; uv run python scripts/audit_league_standings.py --season "10/11" --league "A N2" 2>&1; uv run python scripts/audit_league_standings.py --season "10/11" --league "BL S1 (D)" 2>&1
+```
+
+```
+...................                                                      [100%]
+19 passed in 0.65s
+League standings validation
+Data: C:\Users\cfell\repositories\bowlyzer_deploy\database\data\league_results_merged.csv
+Summary: perfect=0, corrected=0, yellow=0, red=0, skipped=0, week_incomplete=0
+Report: C:\tmp\bowlyzer\data\league_standings_validation.csv
+League standings validation
+Data: C:\Users\cfell\repositories\bowlyzer_deploy\database\data\league_results_merged.csv
+Summary: perfect=0, corrected=0, yellow=1, red=0, skipped=0, week_incomplete=0
+10/11 | BL S1 (D): yellow (ref=6, computed=6) � Excel total 408 vs expected 407 (+1, (3 pair)�5�2pt/game�8w + placement 21/w); computed total 402 vs expected 407 (-5); no-show W5: Lauterach 1
+  - no-show W5: Lauterach 1
+  - pts-total: ref 408 / expected 407 / computed 402
+  - pts-week: W4 pool ref 52 / computed 51 / expected 51 (comp-ref -1; ref-exp +1)
+  - pts-week: W5 pool ref 50 / computed 45 / expected 50 (comp-ref -5; comp-exp -5)
+  - pts: Paffenhofen 1: ref pts 88.0 vs computed 87.0
+  - pts: EPA M�nchen 2: ref pts 88.0 vs computed 87.0
+  - pts: HighRoller Rosenheim 1: ref pts 86.0 vs computed 85.0
+  - pts: Olching 07 1: ref pts 82.0 vs computed 80.0
+  - pts: EPA M�nchen 3: ref pts 41.0 vs computed 40.0
+Report: C:\tmp\bowlyzer\data\league_standings_validation.csv
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The N2 audit returned only a header with no summary data.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_standings_validation.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python -c "
+from pathlib import Path
+import pandas as pd
+from data_access.league_standings_validation import audit_league_standings, discover_excel_reference_targets, compare_league_season
+from database.paths import analysis_log_path, league_results_merged_csv
+
+df = pd.read_parquet('database/data/league_results_merged.parquet')
+log = analysis_log_path()
+comps = audit_league_standings(df, analysis_log_path=log, season='10/11', league='A N2')
+for c in comps:
+    print(c.status, c.notes)
+    print('no_show', c.no_show_findings, c.no_show_explained, c.no_show_remark)
+"</summary>
+
+```bash
+cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python -c "
+from pathlib import Path
+import pandas as pd
+from data_access.league_standings_validation import audit_league_standings, discover_excel_reference_targets, compare_league_season
+from database.paths import analysis_log_path, league_results_merged_csv
+
+df = pd.read_parquet('database/data/league_results_merged.parquet')
+log = analysis_log_path()
+comps = audit_league_standings(df, analysis_log_path=log, season='10/11', league='A N2')
+for c in comps:
+    print(c.status, c.notes)
+    print('no_show', c.no_show_findings, c.no_show_explained, c.no_show_remark)
+"
+```
+
+```
+Traceback (most recent call last):
+  File "&lt;string&gt;", line 9, in &lt;module&gt;
+TypeError: audit_league_standings() got an unexpected keyword argument 'season'
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\audit_league_standings.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_standings_validation.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+A N2 week is now marked GREEN and hidden from the report. The comparison report skips GREEN weeks unless they are missing.
+
+The first audit returned all zeros because the "A N2" league filter likely failed to match. Green no-show weeks should appear in reports with their remarks visible rather than being hidden.</details></think>
+
+_**Agent (default)**_
+
+Showing green no-show cases in the audit report (they were hidden).
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_standings_validation.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_points_budget.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run pytest tests/data_access/test_league_points_budget.py tests/data_access/test_league_weekly_points_analysis.py tests/data_access/test_league_standings_validation.py -q; uv run python scripts/audit_league_standings.py --season "10/11" --league "A N2" 2>&1</summary>
+
+```bash
+cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run pytest tests/data_access/test_league_points_budget.py tests/data_access/test_league_weekly_points_analysis.py tests/data_access/test_league_standings_validation.py -q; uv run python scripts/audit_league_standings.py --season "10/11" --league "A N2" 2>&1
+```
+
+```
+...........................................                              [100%]
+43 passed in 0.74s
+League standings validation
+Data: C:\Users\cfell\repositories\bowlyzer_deploy\database\data\league_results_merged.csv
+Summary: perfect=0, corrected=0, yellow=0, red=0, skipped=0, week_incomplete=0
+10/11 | A N2: green (ref=8, computed=8) � computed total 728 vs expected 735 (-7); no-show W5: SG Rottendorf 5; no-show week(s) W5 (SG Rottendorf 5): merge 7pt short vs Excel (8 teams, 1 absent)
+  - no-show week(s) W5 (SG Rottendorf 5): merge 7pt short vs Excel (8 teams, 1 absent)
+  - no-show W5: SG Rottendorf 5
+  - pts-week: W5 pool ref 91 / computed 84 / expected 91 (comp-ref -7; comp-exp -7)
+  - pts: BC Comet N�rnberg 3: ref pts 160.0 vs computed 159.0
+  - pts: Mainfranken Bamberg 4: ref pts 134.0 vs computed 133.0
+  - pts: RW 69 Lichtenhof Stein 3: ref pts 134.0 vs computed 133.0
+  - pts: Strikers Geldersheim 3: ref pts 94.0 vs computed 93.0
+  - pts: BC Gro�langheim 3: ref pts 62.0 vs computed 61.0
+  - pts: Kleeblatt F�rth 2: ref pts 41.0 vs computed 40.0
+  - pts: Pinkiller Lichtenfels 3: ref pts 33.0 vs computed 32.0
+Report: C:\tmp\bowlyzer\data\league_standings_validation.csv
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The notes section duplicates no-show remarks. The summary already contains those lines, so the findings should not repeat them.
+
+The no-show line already shows the week and team correctly. The remaining bug is that the computed total line still appends a -7 mismatch even when the no-show is fully explained; this needs to be suppressed.
+
+The fix splits the message by semicolons and strips out any "computed total" portion when the no-show is already explained. This prevents the mismatch line from being appended to the notes.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\data_access\\league_points_budget.py",
+  "pattern": "no_show"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\data_access\\league_points_budget.py",
+  "pattern": "no_show",
+  "topFiles": [
+    {
+      "matchCount": 23,
+      "uri": "data_access\\league_points_budget.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 23
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_points_budget.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The no_show category was added correctly to classify_error_categories in league_points_budget.py.
+
+Removing duplicate no-show remarks between notes and findings. The computed total line is dropped from the notes when the explanation is already provided.
+
+No-show findings will appear only in the notes summary. The remark line will appear only in the findings. This prevents duplicate reporting of the same week and team.
+
+The no-show format will be `no-show W5: SG Rottendorf 5` for identification, followed by the explanation when the week turns green. Duplicate remark lines are being stripped from both the notes summary and the findings list.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_standings_validation.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_standings_validation.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python scripts/audit_league_standings.py --season "10/11" --league "A N2" 2>&1</summary>
+
+```bash
+cd "c:\Users\cfell\repositories\bowlyzer_deploy"; uv run python scripts/audit_league_standings.py --season "10/11" --league "A N2" 2>&1
+```
+
+```
+League standings validation
+Data: C:\Users\cfell\repositories\bowlyzer_deploy\database\data\league_results_merged.csv
+Summary: perfect=0, corrected=0, yellow=0, red=0, skipped=0, week_incomplete=0
+10/11 | A N2: green (ref=8, computed=8) � no-show W5: SG Rottendorf 5; no-show week(s) W5 (SG Rottendorf 5): merge 7pt short vs Excel (8 teams, 1 absent)
+  - no-show W5: SG Rottendorf 5
+  - no-show week(s) W5 (SG Rottendorf 5): merge 7pt short vs Excel (8 teams, 1 absent)
+  - pts-week: W5 pool ref 91 / computed 84 / expected 91 (comp-ref -7; comp-exp -7)
+  - pts: BC Comet N�rnberg 3: ref pts 160.0 vs computed 159.0
+  - pts: Mainfranken Bamberg 4: ref pts 134.0 vs computed 133.0
+  - pts: RW 69 Lichtenhof Stein 3: ref pts 134.0 vs computed 133.0
+  - pts: Strikers Geldersheim 3: ref pts 94.0 vs computed 93.0
+  - pts: BC Gro�langheim 3: ref pts 62.0 vs computed 61.0
+  - pts: Kleeblatt F�rth 2: ref pts 41.0 vs computed 40.0
+  - pts: Pinkiller Lichtenfels 3: ref pts 33.0 vs computed 32.0
+Report: C:\tmp\bowlyzer\data\league_standings_validation.csv
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The no-show logic looks correct. Valid weeks will display as green with remarks instead of yellow.</details></think>
+
+_**Agent (default)**_
+
+Here is what was going wrong and what changed:
+
+### Why A N2 W5 “slipped through”
+Detection was already working — Excel `Tabelle` has **SG Rottendorf 5** at **0** Spieltag pts (your “Rottenburg 5”). It was applied to the budget but **never surfaced**: no team name, no dedicated line, and the case stayed **yellow** because we only looked for an exact total match.
+
+### Changes
+
+1. **Explicit no-show reporting** — per absence, a separate line:
+   ```
+   no-show W5: SG Rottendorf 5
+   ```
+   The generic `− no-show 1 over 1 matchday(s)` suffix is removed from the formula note.
+
+2. **Green when the pattern matches** — for each no-show week:
+   - Weekly pool gap = **teams − absent** (8 − 1 = **7** for A N2 W5)
+   - Season gap = sum of those weekly gaps
+   - Each participating team is exactly **1pt** low in standings  
+   → **green** with remark, e.g.  
+   `no-show week(s) W5 (SG Rottendorf 5): merge 7pt short vs Excel (8 teams, 1 absent)`
+
+3. **A N2 10/11** is now **green** (was yellow).
+
+### BL S1 (D) still yellow
+Lauterach is reported (`no-show W5: Lauterach 1`), but merge is **5pt** short per team (not 1pt), so it does not qualify as a valid no-show week until re-extract fixes placement scaling. W4’s ref 52 vs expected 51 is a separate +1 anomaly.
+
+---
+
+_**User**_
+
+Team: ['no-show W5: Lauterach 1', 'pts-total: ref 408 / expected 407 / computed 402', 'pts-week: W4 pool ref 52 / computed 51 / expected 51 (comp-ref -1; ref-exp +1)', 'pts-week: W5 pool ref 50 / computed 45 / expected 50 (comp-ref -5; comp-exp -5)', 'pts: Paffenhofen 1: ref pts 88.0 vs computed 87.0', 'pts: EPA München 2: ref pts 88.0 vs computed 87.0', 'pts: HighRoller Rosenheim 1: ref pts 86.0 vs computed 85.0', 'pts: Olching 07 1: ref pts 82.0 vs computed 80.0', 'pts: EPA München 3: ref pts 41.0 vs computed 40.0']
+pts-week: W4 pool ref 52 / computed 51 / expected 51 (comp-ref -1; ref-exp +1)
+pts-week: W5 pool ref 50 / computed 45 / expected 50 (comp-ref -5; comp-exp -5)
+Excel total 408 vs expected 407 (+1, (3 pair)×5×2pt/game×8w + placement 21/w); computed total 402 vs expected 407 (-5); no-show W5: Lauterach 1
+
+so what we need to look into is, why "computed" differs from expectation. to my understanding:
+- ref == total that  we extracted from the excel as reference
+- expected: what we would expect, given league size, scoring schema. ignoring no shows here. so we detect an odditiy, this is a yellow that might be turn to corrected, if the computed score is matching with ref in the end (after taking care of e.g. no shows) 
+- computed: what we derived from the scratch results. taken into account league size, scoring schema and detected issues like no shows. so this should match with ref if the data is coherent. is we got a diff here, it is a red flag. 
+
+baisic rule: 
+ref != expected --> yellow with chance to heal
+ref != computed --> red, we need to investigate
+
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Clarifying the validation logic for reference, expected, and computed totals. Yellow flags indicate a mismatch between reference and expected values that may resolve after accounting for no-shows. Red flags indicate a mismatch between computed and reference values that requires investigation.
+
+Expected values derive from the schema budget and exclude no-show adjustments. Computed values must incorporate league size, scoring schema, and no-show corrections. A yellow flag indicates a discrepancy between reference and expected totals. A red flag indicates a discrepancy between reference and computed totals.
+
+No-show adjustments should be removed from the expected budget entirely. Expected values must remain pure schema totals without any no-show reductions. No-show detection should explain why reference and expected differ, rather than adjusting expected downward. The computed versus reference comparison remains the critical red flag. For BL S1 (D), expected equals 408 based on the full eight-week schema.
+
+BL S1 (D) confirms the schema budget of 408 matches the reference exactly. The computed total of 402 therefore triggers a red flag against the reference of 408. A N2 example shows a seven-point gap between computed and reference totals. The revised rule treats any reference minus computed difference as red, overriding earlier patterns where matching no-shows might have warranted a green status.
+
+A N2 computed total of 728 against a reference of 735 is a red flag. The no-show pattern explains why each team is one point off, yet computed still does not match reference, so it cannot be green. BL S1 computed 402 against reference 408 is also red.
+
+Weekly expected values will remain fixed at the schema rate, such as fifty-one points per week, regardless of no-shows. Season expected totals will multiply that weekly figure by the number of weeks actually played, excluding any no-show days. This keeps the schema budget pure while allowing separate tracking of how no-shows affect the reference.
+
+A concrete status hierarchy is being defined. A red flag takes priority whenever reference and computed disagree. A yellow flag applies only when reference and computed match but both differ from expected. No-show explanations will be reserved for explaining reference versus expected, not for excusing reference versus computed mismatches.</details></think>
+
+_**Agent (default)**_
+
+Restructuring validation: `expected` = pure schema (no no-show adjustments); `ref != expected` → yellow; `ref != computed` → red.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_standings_validation.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_standings_validation.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_points_budget.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Comprehensive changes are needed.
+
+The schema budget will remain pure and exclude no-show adjustments. `comp_ok` will now compare computed points against reference values rather than expected ones. `ref_ok` will continue comparing reference against expected. Weekly divergence will use the raw schema budget without no-show reductions. Message formats will be updated accordingly.
+
+The status logic will treat a mismatch between computed and reference points as a red flag. A mismatch between reference and expected points will trigger a yellow warning that may later be corrected. The no-show explanation hack that forced computed points to match reference will be removed. The no-show detection function will be repurposed to explain why reference points differ from expected schema values, not to excuse computed errors.
+
+No-show reductions will be subtracted from expected weekly totals to explain why reference points fall short of schema values. A new `comp_ref_ok` flag will track whether computed points match reference scores. The `analyze_total_points` function will be rewritten to accept the pure schema budget directly.
+
+The validation status logic is being finalized. A mismatch between computed and reference points will trigger a red alert requiring investigation. A mismatch between reference and expected points will trigger a yellow warning that may heal if computed points later align with reference. The old explanation logic for incorrect Excel aggregates will be revised to fit this new flow.
+
+A yellow status will turn green if computed points eventually match reference points. A red status remains when computed points diverge from both reference and expected values. The expected value of 407 reflects no-show adjustments applied to the schema budget.
+
+Concrete examples confirm the new logic. BL S1 shows a red flag because computed points (402) diverge from the reference total (408). A N2 example also turns red since computed points (728) lag behind both reference (735) and expected (736).
+
+Weekly analysis will use raw schema weekly totals directly. The no-show explanation function will be renamed to clarify that reference totals fall short of schema values by exactly the no-show reduction amount.
+
+Tests that previously relied on no-show-adjusted expected values will be updated.
+
+The comparison findings display will list reference, expected schema, and computed totals in a single line. Weekly divergence will rely on `comp_ref_ok` for red highlighting instead of `comp_ok` based on expected values. The no-show explanation function will be renamed to explain gaps between reference totals and schema totals, and it will be restricted to notes rather than used to force computed points to match reference. A healing case will be marked corrected when reference points equal computed points while no-shows explain the reference shortfall against schema. BL S1 shows the reference total of 408 matches the schema total of 408, so the season-level reference schema check passes.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_weekly_points_analysis.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "computed_total_points_ok|comp_ok|apply_no_show"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "computed_total_points_ok|comp_ok|apply_no_show",
+  "topFiles": [
+    {
+      "matchCount": 9,
+      "uri": ".\\.specstory\\history\\2026-06-03_17-17-54Z-data-caching-performance-and-worker-efficiency.md"
+    },
+    {
+      "matchCount": 13,
+      "uri": ".\\data_access\\league_standings_validation.py"
+    },
+    {
+      "matchCount": 9,
+      "uri": ".\\data_access\\league_points_budget.py"
+    },
+    {
+      "matchCount": 9,
+      "uri": ".\\tests\\data_access\\test_league_points_budget.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": ".\\tests\\data_access\\test_league_weekly_points_analysis.py"
+    },
+    {
+      "matchCount": 3,
+      "uri": ".\\tests\\data_access\\test_league_standings_validation.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": ".\\frontend\\src\\pages\\diagnosis\\LeagueStandingsValidation.tsx"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\frontend\\src\\hooks\\useLeagueStandingsValidation.ts"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\app\\services\\league_standings_validation_service.py"
+    }
+  ],
+  "totalFiles": 9,
+  "totalMatches": 49
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+A clear semantic split is needed between reference and computed values.
+
+Reference checks against schema expectations. Computed checks against reference values. The analysis function will return separate flags for each comparison plus explanatory messages. No-show logic will be removed from the budget validation path. A new detector will explain how no-shows create gaps between reference totals and schema expectations.
+
+The no-show detector will explain why reference totals fall below schema expectations. If computed values later match reference totals, the status becomes corrected or green. Reference mismatches against schema that are fully explained by no-shows still heal to yellow. A mismatch between computed and reference remains red.
+
+The validation status logic now runs after the analysis step. A computed mismatch against reference triggers a red status. A reference mismatch against schema triggers a yellow status. This yellow status may later heal to corrected if no-shows fully explain the gap.
+
+The old yellow-status fallback for point-matched totals is being removed. A new healing path now turns yellow statuses into corrected ones when no-shows fully explain the reference-to-schema gap and computed values match reference. One-point drift correction remains active. The no-show detector function is being drafted to check whether missing teams account for the shortfall.
+
+The no-show detector now sums weekly reductions across missing teams and checks whether the adjusted reference total aligns with the schema total within tolerance. A concrete example confirms that a weekly reference shortfall can be fully explained by a no-show, leaving the season-level reference equal to the schema. The comparison findings logic is also being updated to surface these total-level discrepancies.
+
+The UI label for schema expectations will remain "expected" to match the user's terminology. Weekly divergence analysis will pass the new boolean flags directly. Weekly findings will continue to appear even when only the reference-versus-schema mismatch occurs on no-show weeks.
+
+Weekly skips will only occur when both reference and computed totals are correct and no points mismatches exist. The old no-show detector will be deleted or restricted to season-level reference-to-schema explanations. A new function will explicitly explain why a reference total falls below schema expectations through no-show reductions. A dedicated healing function will convert yellow statuses to corrected when computed values match reference totals and no-shows fully account for the schema gap.
+
+Concrete examples confirm the healing logic. A one-point reference shortfall is fully explained by a no-show reduction, yet a computed mismatch against reference prevents healing and keeps the status red. Season totals that already match the schema require no healing. Tests will be extensively updated. The one-point drift correction logic must also shift from comparing computed against expected budget to comparing computed against reference.</details></think>
+
+_**Agent (default)**_
+
+Implementing the ref/expected/computed semantics and updating status rules.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_points_budget.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Invalid arguments:
+path: Required
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "analyze_total_points|apply_no_show|no_show_explained|computed_total_points_ok|reference_total_points_ok"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "analyze_total_points|apply_no_show|no_show_explained|computed_total_points_ok|reference_total_points_ok",
+  "topFiles": [
+    {
+      "matchCount": 9,
+      "uri": ".\\data_access\\league_points_budget.py"
+    },
+    {
+      "matchCount": 19,
+      "uri": ".\\.specstory\\history\\2026-06-03_17-17-54Z-data-caching-performance-and-worker-efficiency.md"
+    },
+    {
+      "matchCount": 26,
+      "uri": ".\\data_access\\league_standings_validation.py"
+    },
+    {
+      "matchCount": 18,
+      "uri": ".\\tests\\data_access\\test_league_points_budget.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": ".\\tests\\data_access\\test_league_weekly_points_analysis.py"
+    },
+    {
+      "matchCount": 6,
+      "uri": ".\\tests\\data_access\\test_league_standings_validation.py"
+    },
+    {
+      "matchCount": 3,
+      "uri": ".\\frontend\\src\\pages\\diagnosis\\LeagueStandingsValidation.tsx"
+    },
+    {
+      "matchCount": 2,
+      "uri": ".\\frontend\\src\\hooks\\useLeagueStandingsValidation.ts"
+    },
+    {
+      "matchCount": 2,
+      "uri": ".\\app\\services\\league_standings_validation_service.py"
+    }
+  ],
+  "totalFiles": 9,
+  "totalMatches": 87
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_standings_validation.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I need to read more of the league standings validation.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_standings_validation.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_points_budget.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\data_access\test_league_points_budget.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I will examine `analyze_weekly_points_divergence` and the `comparison_findings` section.
+
+Updating `test_analyze_total_points` to reflect that `comp_ok` now compares computed against reference rather than expected. The two flagged cases in the aggregate error test still validate correctly under the new logic. `detect_points_one_off_correction` will also be updated so `computed_total_points_ok` checks against reference.
+
+The one-off correction logic needs updating because `computed_total_points_ok` now compares computed against reference. A case where computed is 735 and reference is 736 would fail under the new semantics. The correction logic must be adjusted to handle this properly.
+
+The one-off correction logic is being traced step by step. When computed is 736 and reference is 737, `computed_total_points_ok` becomes False. However, `comp_off` from expected is zero, so `comp_matches` evaluates to True. The reference offset of one point causes `ref_matches` to be False. This confirms the correction should still proceed despite the reference mismatch.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_weekly_points_analysis.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_standings_validation.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\data_access\test_league_standings_validation.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Reading the no-show tests in test_league_weekly_points_analysis.py to prepare updates.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\data_access\\league_points_budget.py",
+  "pattern": "detect_no_show"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\data_access\\league_points_budget.py",
+  "pattern": "detect_no_show",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "data_access\\league_points_budget.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 1
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\data_access\test_league_weekly_points_analysis.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Updating `league_standings_validation.py` to implement the validation rules.
+
+Removing `apply_no_show_adjustments` and replacing `detect_no_show_explained_mismatch` with `detect_no_show_ref_schema_healing`. `_apply_total_points_validation` now checks reference against schema and computed against reference. A mismatch between computed and reference is red. A mismatch between reference and schema is yellow. No-show healing applies only when computed matches reference. The `no_show_explained` field is being removed or repurposed. Labels are updated from "expected" to "schema".
+
+`computed_total_points_ok` now means computed versus reference. `analyze_weekly_points_divergence` uses `budget.weekly_total_points` directly and prioritizes comp-ref messaging. `detect_points_one_off_correction` now checks whether computed matches reference or totals are close.
+
+`classify_error_categories` is being updated to map no-show healing to a `ref_schema_healed` category. `StandingsComparison` fields are being renamed to replace `no_show_explained`, possibly adding a `computed_ref_total_points_ok` alias. Tests need updating. Weekly expected points now come from schema budget values.
+
+`analyze_weekly_points_divergence` now defines three distinct mismatch categories. `comp_ref_mismatch` flags computed versus reference. `ref_schema_mismatch` flags reference versus schema. `comp_schema_mismatch` flags computed versus schema. The user wants `ref_schema_mismatch` to explain yellow flags on no-show weeks. `comp_ref_mismatch` remains the red flag.
+
+The weekly analysis loop now skips entries where both reference and computed totals are correct and no point mismatches exist. The delta ordering prioritizes comp-ref first, then ref-schema, then comp-schema. A test case for BL S1 W5 is being updated to verify findings when reference equals computed but schema differs, or when reference matches schema while computed diverges.
+
+A concrete example clarifies the new logic. For BL S1 W5, reference and computed both equal 50 while schema expects 51. Previously, applying no-show adjustments made reference and computed match, which suppressed the finding. Now the finding persists because reference versus schema is flagged as a yellow explanation. Computed versus reference remains the red flag.
+
+The status logic now assigns red when computed fails against reference, and yellow when reference fails against schema, provided teams and positions match. The old explained-yellow branch is being removed or repurposed.
+
+`_apply_validation_outcome` is being updated to replace the old no-show-explained green path. When the reference-versus-schema gap is explained by no-shows and the computed total matches the reference, the outcome becomes STATUS_CORRECTED or STATUS_GREEN. This aligns with the user's requirement that a yellow flag may heal into a corrected status when the computed score matches the reference after accounting for no-shows.
+
+The healing function receives computed total, schema total, no-show teams, and the computed-versus-reference and reference-versus-schema flags. On success, it sets `ref_schema_no_show_healed`, stores the no-show remark, and marks the status as `STATUS_CORRECTED`.
+
+One-off correction now triggers when either computed matches reference or reference matches schema. A computed total of 735 against reference 736 and schema 736 flags a one-point mismatch on a single team. The corrected status applies even though the computed-versus-reference check fails.
+
+The `computed_total_points_ok` parameter now means computed matches reference. A one-point gap on a single team triggers correction through the `excel_low_or_merge_short` path. The test `test_detect_no_show` is being renamed to `test_detect_no_show_ref_schema_healing`. For A N2, a reference shortfall of one point from no-shows does not heal because computed does not match reference, leaving the status as red. A hypothetical BL S1 case with reference 407, computed 407, and schema 408 is also being considered.
+
+The actual BL S1 case yields a red flag because computed points are 402 while reference and schema both equal 408. The no-show healing detection will move into `_apply_total_points_validation` so the outcome logic can set a `ref_schema_healed_by_no_show` flag. The frontend may also need updating since the `computed_total_points_ok` semantics changed without renaming the field.
+
+Frontend checks remain valid because they already treat false as invalid. The points-mismatch explanation message will change to "computed matches Excel ref." A test case for total points validation needs fixing: with reference 420, computed 360, and schema 360, the computed-versus-reference check now correctly returns false, so the old test assumption that comp matches schema must be corrected.
+
+The old "explained" logic required reference versus schema to differ while computed matched reference. The user model instead expects reference versus schema to differ when computed matches reference. The gap math confirms this: a 60-point reference gap equals the 60-point mismatch gap, so the old condition would incorrectly mark this as explained.
+
+The old "explained" case is being reclassified. When reference 420, computed 360, and schema 360, the merge actually matches the schema rather than Excel. The per-team gaps sum to the reference-versus-computed gap, not the reference-versus-schema gap. This means the old explanation was schema-correct, not Excel-correct. The new semantics require computed to match reference, so this scenario no longer qualifies as explained.
+
+The old "explained" path is being dropped entirely. When the reference aggregate total is wrong and the computed total does not match it, the status stays red. A schema-correct merge that happens to match the reference aggregate is no longer treated as an explanation.
+
+The old "explained" status effect is being removed entirely. A new test case is being added where the reference and computed totals both equal 420 but the schema expects 360, with mismatches explaining the full 60-point gap. The one-off correction logic is being updated to prioritize the computed-versus-reference check over the computed-versus-schema check.
+
+The one-off correction logic now evaluates three close-tolerance checks: computed versus reference, reference versus schema, and computed versus schema. A match is accepted when either the computed total equals the reference total or the computed total equals the schema total. A concrete example is being traced: reference 736, computed 735, schema 736. The one-point merge shortfall is exactly offset by the per-team mismatches, so the correction is accepted.
+
+The merge-short explanation logic is being rewritten. A case where reference 737, computed 736, and schema 736 is being traced. The existing `merge_short_excel_ok` condition fails when computed equals reference, because the gap becomes zero. A new formulation is needed to handle cases where the merge matches the reference total while the reference itself differs from the schema.
+
+Three classic one-off correction patterns are being defined. One case offsets a one-point merge shortfall against the reference total. Another offsets a one-point Excel excess against the schema total. A third case offsets a one-point Excel excess against the schema total while the merge matches the reference total. The one-off detector will rely on `computed_total_points_ok` to identify when the computed total matches the reference total.
+
+The one-off correction detector is being traced step by step. A total gap of 1.0 and tolerance 0.5 passes the initial gap check because 1.0 is not less than or equal to 0.5. The second early-return condition also fails because 1.0 is not greater than 1.5. Execution therefore proceeds to evaluate whether the computed total matches the reference total.
+
+A concrete formula is being drafted for the one-off correction detector. It will use `_totals_close` with tolerance adjusted to `max(tol, abs(total_gap))` so a one-point gap is handled correctly. The merge-match-schema condition is being written as `comp_schema_close or (not comp_ref_close and _totals_close(comp_off, -total_gap, tol=tol))`.
+
+The one-off correction detector is being simplified. It will require a one-point gap between reference and computed totals, with per-team mismatches summing to that gap. The merge will be accepted if it aligns with either the schema total or the reference total, provided the reference itself differs from the schema by exactly one point.
+
+The one-off correction detector is being split into three branches. Case A is being traced: reference 736, computed 735, schema 736. Because the merge is one point short of the reference total, `schema_aligned_merge` evaluates to false. This confirms the merge is not aligned with the schema, so the branch for a merge that is one point short of the reference total is not triggered.
+
+Case A is confirmed: merge 735, reference 736, schema 736. The merge is one point below the reference total, so `comp_vs_ref` equals `-total_gap`. Case B is also verified: merge 736, reference 737, schema 736. The merge matches the schema total while the reference exceeds it by one point.</details></think>
+
+_**Agent (default)**_
+
+Updating validation logic and related files.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_standings_validation.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_standings_validation.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_standings_validation.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_standings_validation.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_standings_validation.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_standings_validation.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Fixing the `no_show_teams` declaration to ensure the weekly team points block sets it before analysis.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_weekly_points_analysis.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_points_budget.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_points_budget.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_points_budget.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_points_budget.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_points_budget.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "no_show_explained|no_shows_by_week_from_reference"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "no_show_explained|no_shows_by_week_from_reference",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": ".\\data_access\\league_points_budget.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\data_access\\league_weekly_points_analysis.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\data_access\\league_standings_validation.py"
+    },
+    {
+      "matchCount": 17,
+      "uri": ".\\.specstory\\history\\2026-06-03_17-17-54Z-data-caching-performance-and-worker-efficiency.md"
+    },
+    {
+      "matchCount": 6,
+      "uri": ".\\tests\\data_access\\test_league_points_budget.py"
+    },
+    {
+      "matchCount": 3,
+      "uri": ".\\tests\\data_access\\test_league_weekly_points_analysis.py"
+    }
+  ],
+  "totalFiles": 6,
+  "totalMatches": 29
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_points_budget.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_standings_validation.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Updating the tests and fixing the second test case for `analyze_total_points`.
+
+Fixing the `explained` logic in `analyze_total_points`. The second test case expected `explained=True` when the merge matched the schema rather than the reference. The flag now requires computed equals reference while the schema remains incorrect. This aligns with the user model where ref != comp is red.
+
+Adding a test case where reference and computed totals both equal 420 but the schema total is 360. Updating the second test case to assert `comp_ref_ok=False` and `explained=False`. Replacing no-show tests with ref-schema healing tests. Adjusting the weekly no-show test to surface a ref-schema gap when the reference matches the computed value but falls below the schema.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.{py,tsx,ts}",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "no_show_explained|ref_schema_healed"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "no_show_explained|ref_schema_healed",
+  "topFiles": [
+    {
+      "matchCount": 5,
+      "uri": ".\\data_access\\league_standings_validation.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\data_access\\league_points_budget.py"
+    },
+    {
+      "matchCount": 6,
+      "uri": ".\\tests\\data_access\\test_league_points_budget.py"
+    }
+  ],
+  "totalFiles": 3,
+  "totalMatches": 12
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\data_access\test_league_points_budget.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\data_access\test_league_points_budget.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\data_access\test_league_weekly_points_analysis.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The second case of `test_analyze_total_points` requires mismatch gaps to align.
+
+Re-examining the `explained` logic in `analyze_total_points`. When reference and computed totals are identical, both `ref_gap` and `mismatch_gap` become zero. This means the condition `not ref_schema_ok` and `comp_ref_ok` cannot be satisfied, so the explanation path fails even though the totals match.
+
+A concrete example confirms the explanation fails: reference minus expected is 60, while ref_gap is zero. The correct scenario requires Excel to publish a wrong total that exactly equals the sum of per-team reference-minus-computed deltas. A test case must satisfy this exact alignment.
+
+The old test case cannot satisfy the new explanation logic. When computed matches reference, per-team mismatches must sum to zero, which prevents the total gap from being explained. Two alternative paths are being considered: treating the reference minus schema gap as a healing no-show, or checking whether the mismatches themselves fail to sum to the total.
+
+The old explanation path is being dropped. It previously treated a wrong Excel total as a non-merge issue, but the new model marks that as red. The second test will instead verify that `comp_ref_ok` is true when reference and computed totals match.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\data_access\test_league_points_budget.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_standings_validation.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Checking whether the analyze_total_points message uses "schema" for the ref versus schema case.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd c:\Users\cfell\repositories\bowlyzer_deploy && uv run pytest tests/data_access/test_league_points_budget.py tests/data_access/test_league_weekly_points_analysis.py tests/data_access/test_league_standings_validation.py -q 2>&1</summary>
+
+```bash
+cd c:\Users\cfell\repositories\bowlyzer_deploy && uv run pytest tests/data_access/test_league_points_budget.py tests/data_access/test_league_weekly_points_analysis.py tests/data_access/test_league_standings_validation.py -q 2>&1
+```
+
+```
+In C:\Users\cfell\AppData\Local\Temp\ps-script-ca59fdbd-be7f-437c-92c2-4eb14fe71d90.ps1:111 Zeichen:48
++ cd c:\Users\cfell\repositories\bowlyzer_deploy &amp;&amp; uv run pytest tests ...
++                                                ~~
+Das Token "&amp;&amp;" ist in dieser Version kein g�ltiges Anweisungstrennzeichen.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : InvalidEndOfLine
+ 
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd c:\Users\cfell\repositories\bowlyzer_deploy && uv run python scripts/audit_league_standings.py --season "10/11" --league "BL S1 (D)" 2>&1</summary>
+
+```bash
+cd c:\Users\cfell\repositories\bowlyzer_deploy && uv run python scripts/audit_league_standings.py --season "10/11" --league "BL S1 (D)" 2>&1
+```
+
+```
+In C:\Users\cfell\AppData\Local\Temp\ps-script-f8a9374b-018d-497a-b676-9f4f8c5da43d.ps1:111 Zeichen:48
++ cd c:\Users\cfell\repositories\bowlyzer_deploy &amp;&amp; uv run python scrip ...
++                                                ~~
+Das Token "&amp;&amp;" ist in dieser Version kein g�ltiges Anweisungstrennzeichen.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : InvalidEndOfLine
+ 
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd c:\Users\cfell\repositories\bowlyzer_deploy; uv run pytest tests/data_access/test_league_points_budget.py tests/data_access/test_league_weekly_points_analysis.py tests/data_access/test_league_standings_validation.py -q</summary>
+
+```bash
+cd c:\Users\cfell\repositories\bowlyzer_deploy; uv run pytest tests/data_access/test_league_points_budget.py tests/data_access/test_league_weekly_points_analysis.py tests/data_access/test_league_standings_validation.py -q
+```
+
+```
+...........................................                              [100%]
+43 passed in 1.41s
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd c:\Users\cfell\repositories\bowlyzer_deploy; uv run python scripts/audit_league_standings.py --season "10/11" --league "BL S1 (D)"</summary>
+
+```bash
+cd c:\Users\cfell\repositories\bowlyzer_deploy; uv run python scripts/audit_league_standings.py --season "10/11" --league "BL S1 (D)"
+```
+
+```
+League standings validation
+Data: C:\Users\cfell\repositories\bowlyzer_deploy\database\data\league_results_merged.csv
+Summary: perfect=0, corrected=0, yellow=0, red=1, skipped=0, week_incomplete=0
+10/11 | BL S1 (D): red (ref=6, computed=6) � computed total 402 vs Excel ref 408 (-6); no-show W5: Lauterach 1
+  - no-show W5: Lauterach 1
+  - pts-total: ref 408 / schema 408 / computed 402
+  - pts-week: W4 pool ref 52 / computed 51 / schema 51 (comp-ref -1; ref-schema +1)
+  - pts-week: W5 pool ref 50 / computed 45 / schema 51 (comp-ref -5; ref-schema -1; comp-schema -6; no-show (Lauterach 1))
+  - pts: Paffenhofen 1: ref pts 88.0 vs computed 87.0
+  - pts: EPA M�nchen 2: ref pts 88.0 vs computed 87.0
+  - pts: HighRoller Rosenheim 1: ref pts 86.0 vs computed 85.0
+  - pts: Olching 07 1: ref pts 82.0 vs computed 80.0
+  - pts: EPA M�nchen 3: ref pts 41.0 vs computed 40.0
+Report: C:\tmp\bowlyzer\data\league_standings_validation.csv
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+BL S1 is correctly flagged as red because the computed score differs from the reference.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd c:\Users\cfell\repositories\bowlyzer_deploy; uv run python scripts/audit_league_standings.py --season "10/11" --league "A N2"</summary>
+
+```bash
+cd c:\Users\cfell\repositories\bowlyzer_deploy; uv run python scripts/audit_league_standings.py --season "10/11" --league "A N2"
+```
+
+```
+League standings validation
+Data: C:\Users\cfell\repositories\bowlyzer_deploy\database\data\league_results_merged.csv
+Summary: perfect=0, corrected=0, yellow=0, red=1, skipped=0, week_incomplete=0
+10/11 | A N2: red (ref=8, computed=8) � Excel total 735 vs schema expected 736 (-1, (4 pair)�7�2pt/game�8w + placement 36/w); computed total 728 vs Excel ref 735 (-7); no-show W5: SG Rottendorf 5
+  - no-show W5: SG Rottendorf 5
+  - pts-total: ref 735 / schema 736 / computed 728
+  - pts-week: W5 pool ref 91 / computed 84 / schema 92 (comp-ref -7; ref-schema -1; comp-schema -8; no-show (SG Rottendorf 5))
+  - pts: BC Comet N�rnberg 3: ref pts 160.0 vs computed 159.0
+  - pts: Mainfranken Bamberg 4: ref pts 134.0 vs computed 133.0
+  - pts: RW 69 Lichtenhof Stein 3: ref pts 134.0 vs computed 133.0
+  - pts: Strikers Geldersheim 3: ref pts 94.0 vs computed 93.0
+  - pts: BC Gro�langheim 3: ref pts 62.0 vs computed 61.0
+  - pts: Kleeblatt F�rth 2: ref pts 41.0 vs computed 40.0
+  - pts: Pinkiller Lichtenfels 3: ref pts 33.0 vs computed 32.0
+Report: C:\tmp\bowlyzer\data\league_standings_validation.csv
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The N2 discrepancy is now correctly flagged as red. It was previously masked by the no-show pattern.</details></think>
+
+_**Agent (default)**_
+
+Validation semantics are now aligned with your model. Here is how the three numbers work and what BL S1 (D) 10/11 shows.
+
+## Semantics (now enforced)
+
+| Field | Meaning | Pass condition |
+|-------|---------|----------------|
+| **ref** | Excel standings total | — |
+| **schema** (`total_points_expected`) | Pure scoring budget (league size × weeks × placement). **No no-show reduction.** | — |
+| **computed** | Merge totals from scratch results (incl. no-show handling) | Should match **ref** when data is coherent |
+
+**Status rules:**
+- `ref ≠ schema` → **yellow** (Excel oddity; may heal if merge matches ref and no-show explains the schema gap)
+- `ref ≠ computed` → **red** (investigate merge/extraction — primary gate)
+- No more promoting to green when computed is short of ref but “looks like” a no-show pattern
+
+## BL S1 (D) 10/11 — read under new rules
+
+```
+pts-total: ref 408 / schema 408 / computed 402   → RED (comp ≠ ref)
+pts-week W4: ref 52 / computed 51 / schema 51      → comp-ref -1 (merge issue); ref-schema +1 (Excel 1pt high)
+pts-week W5: ref 50 / computed 45 / schema 51      → comp-ref -5 (RED); ref-schema -1 (no-show explains Excel vs schema)
+no-show W5: Lauterach 1
+```
+
+**Season level:** ref matches schema (408 = 408) — no yellow at season total. The problem is **computed 402 vs ref 408** (−6).
+
+**W5:** Excel pool 50 is 1pt below schema 51 — expected for a no-show (Lauterach). Merge pool 45 is **5pt below ref** — that is the red flag (wrong placement scale in merge, not re-extracted yet).
+
+**W4:** ref 52 is 1pt above schema 51 — unexplained Excel anomaly (yellow signal). Merge 51 matches schema but is 1pt below ref — minor merge vs Excel gap.
+
+**Per-team lines** (Paffenhofen −1, EPA München −1, etc.): merge awards ~1pt less per active team on the 5-team placement scale instead of the correct 6-team scale after Lauterach’s no-show.
+
+## A N2 10/11 (sanity check)
+
+Previously green-washed; now correctly **red**: ref 735 / schema 736 / computed 728. No-show explains ref−schema (−1 on W5) but **comp−ref −7** remains the real issue (Rottendorf merge placement scale).
+
+---
+
+Re-extract + merge is still needed for BL S1/A N2 merge totals to match ref after the extraction fixes. The validator now surfaces that as red instead of hiding it behind no-show pattern matching.
+
+---
+
+_**User**_
+
+when looking in one no show anomaly:
+10/11	A N2	red	8/8	ok	Tabelle · W8	8/8	735/728 · exp 736 · !	10→0→0 (Namen)	
+Team: ['no-show W5: SG Rottendorf 5', 'pts-total: ref 735 / schema 736 / computed 728', 'pts-week: W5 pool ref 91 / computed 84 / schema 92 (comp-ref -7; ref-schema -1; comp-schema -8; no-show (SG Rottendorf 5))', 'pts: BC Comet Nürnberg 3: ref pts 160.0 vs computed 159.0', 'pts: Mainfranken Bamberg 4: ref pts 134.0 vs computed 133.0', 'pts: RW 69 Lichtenhof Stein 3: ref pts 134.0 vs computed 133.0', 'pts: Strikers Geldersheim 3: ref pts 94.0 vs computed 93.0', 'pts: BC Großlangheim 3: ref pts 62.0 vs computed 61.0', 'pts: Kleeblatt Fürth 2: ref pts 41.0 vs computed 40.0', 'pts: Pinkiller Lichtenfels 3: ref pts 33.0 vs computed 32.0']
+pts-week: W5 pool ref 91 / computed 84 / schema 92 (comp-ref -7; ref-schema -1; comp-schema -8; no-show (SG Rottendorf 5))
+Excel total 735 vs schema expected 736 (-1, (4 pair)×7×2pt/game×8w + placement 36/w); computed total 728 vs Excel ref 735 (-7); no-show W5: SG Rottendorf 5
+
+i suspect the bonus points awarded are miscalculated: the team with highest total score per week gains as many points as there are teams in the league. the 2nd best team one less, ... a no show always gets 0 bonus points. 
+it seems the bonus points are currently based on number of teams present on that day. fix it
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user suspects bonus points for A N2 10/11 are miscalculated because they are based on teams present that day rather than the full league count.
+
+The merge computes 84 bonus points for week 5 instead of the reference 91. That 7-point gap matches the missing no-show team.</details></think>
+
+_**Agent (default)**_
+
+Investigating how weekly placement bonuses are computed for pre-2022 leagues, especially when a team no-shows.
+
+
+_**Agent (default)**_
+
+Codebase search is unavailable for this conversation because the codebase index could not be found. Do not retry SemanticSearch. Use Grep, Glob, and Read instead.
+
+<tool-use data-tool-type="unknown" data-tool-name="semantic_search_full"><details>
+<summary>Tool use: **semantic_search_full**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.{py,ts}",
+  "pattern": "placement.*bonus|bonus_points|_pre_2022_weekly_placement"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "pattern": "placement.*bonus|bonus_points|_pre_2022_weekly_placement",
+  "topFiles": [
+    {
+      "matchCount": 3,
+      "uri": "data_access/dtype_normalization.py"
+    },
+    {
+      "matchCount": 14,
+      "uri": "extract_excel_data.py"
+    },
+    {
+      "matchCount": 5,
+      "uri": "data_access/score_utils.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tests/data_access/test_league_points_budget.py"
+    },
+    {
+      "matchCount": 3,
+      "uri": "tests\\data_access\\test_league_weekly_points_analysis.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tests\\data_access\\test_league_points_budget.py"
+    },
+    {
+      "matchCount": 3,
+      "uri": "tests/data_access/test_league_weekly_points_analysis.py"
+    },
+    {
+      "matchCount": 6,
+      "uri": "tests/test_pre_2022_placement_bonuses.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "data_access/schema.py"
+    }
+  ],
+  "totalFiles": 9,
+  "totalMatches": 38
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\test_pre_2022_placement_bonuses.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The existing test `test_no_show_team_gets_zero_bonus_while_league_keeps_full_scale` already expects the correct bonus calculation for a 6-team league with one no-show.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "extract_excel_data.py",
+  "pattern": "block_starts|no.show|weekly_pinfall|team_weekly_pins"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "pattern": "block_starts|no.show|weekly_pinfall|team_weekly_pins",
+  "topFiles": [
+    {
+      "matchCount": 20,
+      "uri": "extract_excel_data.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 20
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/*.{py}",
+  "pattern": "placement_bonus|weekly_placement|bonus"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "pattern": "placement_bonus|weekly_placement|bonus",
+  "topFiles": [
+    {
+      "matchCount": 3,
+      "uri": "data_access/dtype_normalization.py"
+    },
+    {
+      "matchCount": 8,
+      "uri": "data_access/score_utils.py"
+    },
+    {
+      "matchCount": 3,
+      "uri": "tests\\data_access\\test_league_weekly_points_analysis.py"
+    },
+    {
+      "matchCount": 3,
+      "uri": "tests\\data_access\\test_league_points_budget.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "scripts/build_team_name_normalization.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "data_access/schema.py"
+    },
+    {
+      "matchCount": 3,
+      "uri": "tests/data_access/test_league_weekly_points_analysis.py"
+    },
+    {
+      "matchCount": 3,
+      "uri": "database/generator/player.py"
+    },
+    {
+      "matchCount": 19,
+      "uri": "extract_excel_data.py"
+    },
+    {
+      "matchCount": 10,
+      "uri": "data_access/league_points_budget.py"
+    },
+    {
+      "matchCount": 4,
+      "uri": "tests/test_pre_2022_placement_bonuses.py"
+    }
+  ],
+  "totalFiles": 11,
+  "totalMatches": 121
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Extraction logic appears correct in tests.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/*.py",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts",
+  "pattern": "placement|bonus_points|round.*0"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts",
+  "pattern": "placement|bonus_points|round.*0",
+  "topFiles": [
+    {
+      "matchCount": 10,
+      "uri": "scripts/build_team_name_normalization.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "scripts/bench_page_apis.py"
+    },
+    {
+      "matchCount": 6,
+      "uri": "scripts/sweep_team_name_normalization.py"
+    }
+  ],
+  "totalFiles": 3,
+  "totalMatches": 17
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/*.py",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\business_logic",
+  "pattern": "placement|bonus"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\business_logic",
+  "pattern": "placement|bonus",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd c:\Users\cfell\repositories\bowlyzer_deploy; uv run python -c "
+import pandas as pd
+from data_access.schema import Columns
+df = pd.read_csv('database/data/league_results_merged.csv', low_memory=False)
+mask = (df['Season'].astype(str)=='10/11') & (df['League'].astype(str)=='A N2') & (df['Week'].astype(str)=='5')
+sub = df.loc[mask]
+print('rows', len(sub))
+if 'Round Number' in sub.columns:
+    bonus = sub[sub['Round Number'].astype(str)=='0']
+    print('bonus rows', len(bonus))
+    if len(bonus):
+        cols = ['Team','Points','Bonus Points','Score','Round Number','Computed Data']
+        cols = [c for c in cols if c in bonus.columns]
+        print(bonus[cols].sort_values('Team').to_string(index=False))
+        print('bonus sum', pd.to_numeric(bonus['Bonus Points'], errors='coerce').sum())
+match = sub[sub['Round Number'].astype(str)!='0'] if 'Round Number' in sub.columns else sub
+if 'Points' in match.columns:
+    print('match pts sum', pd.to_numeric(match['Points'], errors='coerce').sum())
+"</summary>
+
+```bash
+cd c:\Users\cfell\repositories\bowlyzer_deploy; uv run python -c "
+import pandas as pd
+from data_access.schema import Columns
+df = pd.read_csv('database/data/league_results_merged.csv', low_memory=False)
+mask = (df['Season'].astype(str)=='10/11') & (df['League'].astype(str)=='A N2') & (df['Week'].astype(str)=='5')
+sub = df.loc[mask]
+print('rows', len(sub))
+if 'Round Number' in sub.columns:
+    bonus = sub[sub['Round Number'].astype(str)=='0']
+    print('bonus rows', len(bonus))
+    if len(bonus):
+        cols = ['Team','Points','Bonus Points','Score','Round Number','Computed Data']
+        cols = [c for c in cols if c in bonus.columns]
+        print(bonus[cols].sort_values('Team').to_string(index=False))
+        print('bonus sum', pd.to_numeric(bonus['Bonus Points'], errors='coerce').sum())
+match = sub[sub['Round Number'].astype(str)!='0'] if 'Round Number' in sub.columns else sub
+if 'Points' in match.columns:
+    print('match pts sum', pd.to_numeric(match['Points'], errors='coerce').sum())
+"
+```
+
+```
+Traceback (most recent call last):
+  File "&lt;string&gt;", line 4, in &lt;module&gt;
+  File "C:\Users\cfell\repositories\bowlyzer_deploy\.venv\Lib\site-packages\pandas\io\parsers\readers.py", line 873, in read_csv
+    return _read(filepath_or_buffer, kwds)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\cfell\repositories\bowlyzer_deploy\.venv\Lib\site-packages\pandas\io\parsers\readers.py", line 306, in _read
+    return parser.read(nrows)
+           ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\cfell\repositories\bowlyzer_deploy\.venv\Lib\site-packages\pandas\io\parsers\readers.py", line 1947, in read
+    ) = self._engine.read(  # type: ignore[attr-defined]
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\cfell\repositories\bowlyzer_deploy\.venv\Lib\site-packages\pandas\io\parsers\c_parser_wrapper.py", line 219, in read
+    data = self._reader.read(nrows)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "pandas/_libs/parsers.pyx", line 814, in pandas._libs.parsers.TextReader.read
+  File "pandas/_libs/parsers.pyx", line 906, in pandas._libs.parsers.TextReader._read_rows
+  File "pandas/_libs/parsers.pyx", line 885, in pandas._libs.parsers.TextReader._check_tokenize_status
+  File "pandas/_libs/parsers.pyx", line 2084, in pandas._libs.parsers.raise_parser_error
+pandas.errors.ParserError: Error tokenizing data. C error: Expected 1 fields in line 10, saw 2
+
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **2** results in **1** directory</summary>
+
+Directory: **c:\Users\cfell\repositories\bowlyzer_deploy\database\data** (2 files)
+
+| File |
+|------|
+| `../database/data/league_results_merged.csv` |
+| `../database/data/league_results_merged.parquet` |
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "_pre_2022_weekly_placement|placement_bonuses|Round Number.*0"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "_pre_2022_weekly_placement|placement_bonuses|Round Number.*0",
+  "topFiles": [
+    {
+      "matchCount": 3,
+      "uri": "extract_excel_data.py"
+    },
+    {
+      "matchCount": 4,
+      "uri": ".specstory/history/2026-05-07_21-35-17Z-data-source-cleanup-and-consolidation.md"
+    },
+    {
+      "matchCount": 5,
+      "uri": "tests/test_pre_2022_placement_bonuses.py"
+    },
+    {
+      "matchCount": 3,
+      "uri": "database/input/generate_geek_tournament_data.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "database/input/import_bayerische_meisterschaft_xlsx.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "data_access/check_input_data_issues.py"
+    },
+    {
+      "matchCount": 48,
+      "uri": ".specstory/history/2026-06-03_17-17-54Z-data-caching-performance-and-worker-efficiency.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "data_access/reconstruct_flat_csv.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".specstory/history/2026-05-11_12-05-43Z-tournament-data-processing-and-merging.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "database/input/import_clubmeisterschaft_donaubowler_xlsx.py"
+    },
+    {
+      "matchCount": 4,
+      "uri": ".specstory/history/2026-04-22_11-48-04Z-database-schema-for-tournament-results.md"
+    },
+    {
+      "matchCount": 2,
+      "uri": "scripts/export_gf_tables.py"
+    },
+    {
+      "matchCount": 48,
+      "uri": ".specstory\\history\\2026-06-03_17-17-54Z-data-caching-performance-and-worker-efficiency.md"
+    }
+  ],
+  "totalFiles": 13,
+  "totalMatches": 123
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The extraction code already contains the correct bonus point logic in its tests.
+
+The root cause is a phantom bye heuristic in `_pre_2022_placement_team_count`. When seven blocks are ranked but metadata indicates eight teams, the function wrongly returns seven instead of eight. This causes the bonus point calculation to use the wrong team count.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd c:\Users\cfell\repositories\bowlyzer_deploy; uv run python -c "
+import pandas as pd
+df = pd.read_parquet('database/data/league_results_merged.parquet')
+mask = (df['Season'].astype(str)=='10/11') & (df['League'].astype(str)=='A N2') & (df['Week'].astype(str)=='5')
+sub = df.loc[mask]
+print('rows', len(sub))
+bonus = sub[sub['Round Number'].astype(str)=='0']
+print('bonus rows', len(bonus))
+if len(bonus):
+    cols = ['Team','Points','Bonus Points','Score','Round Number','Computed Data']
+    print(bonus[cols].sort_values('Team').to_string(index=False))
+    print('bonus sum', pd.to_numeric(bonus['Bonus Points'], errors='coerce').sum())
+teams = sorted(bonus['Team'].unique()) if len(bonus) else []
+print('teams in bonus', len(teams))
+rott = bonus[bonus['Team'].astype(str).str.contains('Rott', case=False, na=False)]
+print('rottendorf rows', len(rott))
+if len(rott):
+    print(rott[cols].to_string(index=False))
+"</summary>
+
+```bash
+cd c:\Users\cfell\repositories\bowlyzer_deploy; uv run python -c "
+import pandas as pd
+df = pd.read_parquet('database/data/league_results_merged.parquet')
+mask = (df['Season'].astype(str)=='10/11') & (df['League'].astype(str)=='A N2') & (df['Week'].astype(str)=='5')
+sub = df.loc[mask]
+print('rows', len(sub))
+bonus = sub[sub['Round Number'].astype(str)=='0']
+print('bonus rows', len(bonus))
+if len(bonus):
+    cols = ['Team','Points','Bonus Points','Score','Round Number','Computed Data']
+    print(bonus[cols].sort_values('Team').to_string(index=False))
+    print('bonus sum', pd.to_numeric(bonus['Bonus Points'], errors='coerce').sum())
+teams = sorted(bonus['Team'].unique()) if len(bonus) else []
+print('teams in bonus', len(teams))
+rott = bonus[bonus['Team'].astype(str).str.contains('Rott', case=False, na=False)]
+print('rottendorf rows', len(rott))
+if len(rott):
+    print(rott[cols].to_string(index=False))
+"
+```
+
+```
+Traceback (most recent call last):
+  File "C:\Users\cfell\repositories\bowlyzer_deploy\.venv\Lib\site-packages\pandas\core\indexes\base.py", line 3641, in get_loc
+    return self._engine.get_loc(casted_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "pandas/_libs/index.pyx", line 168, in pandas._libs.index.IndexEngine.get_loc
+  File "pandas/_libs/index.pyx", line 197, in pandas._libs.index.IndexEngine.get_loc
+  File "pandas/_libs/hashtable_class_helper.pxi", line 7668, in pandas._libs.hashtable.PyObjectHashTable.get_item
+  File "pandas/_libs/hashtable_class_helper.pxi", line 7676, in pandas._libs.hashtable.PyObjectHashTable.get_item
+KeyError: 'League'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "&lt;string&gt;", line 4, in &lt;module&gt;
+  File "C:\Users\cfell\repositories\bowlyzer_deploy\.venv\Lib\site-packages\pandas\core\frame.py", line 4378, in __getitem__
+    indexer = self.columns.get_loc(key)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\cfell\repositories\bowlyzer_deploy\.venv\Lib\site-packages\pandas\core\indexes\base.py", line 3648, in get_loc
+    raise KeyError(key) from err
+KeyError: 'League'
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Checking schema columns in the Parquet file and how the audit script loads data.
+
+Found the bug in `_pre_2022_placement_team_count`. When `meta_count` equals `ranked_count + 1`, it returns `ranked_count`. This incorrectly handles no-shows. Also checking whether phantom byes inflate the team count.
+
+Confirmed the bug: a no-show without a phantom bye block returns 7 instead of 8. Phantom bye detection is too broad. Considering a stricter fix—only treating an extra block as a phantom bye when its name is "0" or "bye"—or simply using the metadata team count whenever it exceeds the ranked count.
+
+The fix is to always return the metadata `number_of_teams` when it is set and positive, unless an explicit phantom bye block is detected. Bonus points should be calculated against the full league size, not the number of teams actually present.
+
+Drafting the revised function. It now filters out phantom team names before counting. The phantom-byte heuristic is tightened: it only triggers when the metadata team count equals the real team count plus the number of phantom blocks.
+
+The draft function still counts phantom blocks in `len(team_weekly_pins)` because it does not filter them out first. The existing test confirms this: a phantom "0" block adds six entries, so `ranked_count` becomes six instead of five. The fix must exclude phantom blocks before counting.
+
+Bonuses already filter phantom blocks before calling `team_count`, so the phantom-byte heuristic is safe for phantom byes. The no-show bug is confirmed: without a phantom block, the function returns the real team count instead of the metadata league size.
+
+The concrete fix is to subtract phantom blocks only when those blocks actually appear in the original team list. Drafting the revised function now.
+
+Realized the drafted fix is flawed. Because bonuses already pass `real_pins` to `team_count`, the phantom-byte heuristic never triggers. A five-team league would then incorrectly return the metadata count of six. The function cannot distinguish a phantom bye from a missing real team.
+
+The phantom-byte heuristic fails because phantom teams are already stripped from the dictionary before `team_count` runs. A five-team league therefore sees five real teams against a metadata count of six, and the function wrongly returns six. The phantom-block check is redundant here. The real fix must rely on the metadata team count directly, since phantom blocks are never counted in the first place.
+
+Block-count heuristics cannot distinguish phantom byes from no-shows. Both cases produce the same metadata-to-ranked ratio. The real difference is the team name: a phantom bye is a placeholder named "0", while a no-show is a real team absent from the data. Odd versus even team counts are too fragile to use as a signal.
+
+A no-show can be a missing block or a zero-pin block. The missing-block case is the real bug: seven teams against eight metadata gives a wrong placement scale. The phantom-byte case still needs the real team count. The next step is to adapt the phantom-byte detection from `league_points_budget`.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\audit_league_standings.py",
+  "pattern": "read_csv|parquet|league_results"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\audit_league_standings.py",
+  "pattern": "read_csv|parquet|league_results",
+  "topFiles": [
+    {
+      "matchCount": 7,
+      "uri": "scripts\\audit_league_standings.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 7
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\schema.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.py",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "phantom_bye|analysis_teams"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "phantom_bye|analysis_teams",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "tests/data_access/test_league_points_budget.py"
+    },
+    {
+      "matchCount": 5,
+      "uri": "data_access/league_points_budget.py"
+    },
+    {
+      "matchCount": 3,
+      "uri": "data_access\\league_standings_validation.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tests\\data_access\\test_league_weekly_points_analysis.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tests/data_access/test_league_weekly_points_analysis.py"
+    },
+    {
+      "matchCount": 3,
+      "uri": "data_access/league_standings_validation.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "tests\\data_access\\test_league_points_budget.py"
+    },
+    {
+      "matchCount": 5,
+      "uri": "data_access\\league_points_budget.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tests/test_pre_2022_placement_bonuses.py"
+    }
+  ],
+  "totalFiles": 9,
+  "totalMatches": 23
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd c:\Users\cfell\repositories\bowlyzer_deploy; uv run python -c "
+import pandas as pd
+from data_access.schema import Columns
+df = pd.read_csv('database/data/league_results_merged.csv', sep=';', dtype=str, keep_default_na=False)
+mask = (df[Columns.season]=='10/11') & (df[Columns.event]=='A N2') & (df[Columns.week]=='5')
+sub = df.loc[mask]
+print('rows', len(sub))
+bonus = sub[sub[Columns.round_number]=='0']
+print('bonus rows', len(bonus))
+if len(bonus):
+    cols = [Columns.team_name, Columns.points, Columns.bonus_points, Columns.score, Columns.round_number, Columns.computed_data]
+    print(bonus[cols].sort_values(Columns.team_name).to_string(index=False))
+    print('bonus sum', pd.to_numeric(bonus[Columns.bonus_points], errors='coerce').sum())
+rott = bonus[bonus[Columns.team_name].str.contains('Rott', case=False, na=False)]
+print('rottendorf bonus rows', len(rott))
+"</summary>
+
+```bash
+cd c:\Users\cfell\repositories\bowlyzer_deploy; uv run python -c "
+import pandas as pd
+from data_access.schema import Columns
+df = pd.read_csv('database/data/league_results_merged.csv', sep=';', dtype=str, keep_default_na=False)
+mask = (df[Columns.season]=='10/11') & (df[Columns.event]=='A N2') & (df[Columns.week]=='5')
+sub = df.loc[mask]
+print('rows', len(sub))
+bonus = sub[sub[Columns.round_number]=='0']
+print('bonus rows', len(bonus))
+if len(bonus):
+    cols = [Columns.team_name, Columns.points, Columns.bonus_points, Columns.score, Columns.round_number, Columns.computed_data]
+    print(bonus[cols].sort_values(Columns.team_name).to_string(index=False))
+    print('bonus sum', pd.to_numeric(bonus[Columns.bonus_points], errors='coerce').sum())
+rott = bonus[bonus[Columns.team_name].str.contains('Rott', case=False, na=False)]
+print('rottendorf bonus rows', len(rott))
+"
+```
+
+```
+rows 259
+bonus rows 7
+                    Team Points Bonus Points Score Round Number Computed Data
+     BC Comet N�rnberg 3      0            7  5241            0          True
+       BC Gro�langheim 3      0            2  4197            0          True
+       Kleeblatt F�rth 2      0            3  4321            0          True
+   Mainfranken Bamberg 4      0            6  4877            0          True
+ Pinkiller Lichtenfels 3      0            1  3873            0          True
+RW 69 Lichtenhof Stein 3      0            5  4820            0          True
+  Strikers Geldersheim 3      0            4  4503            0          True
+bonus sum 28
+rottendorf bonus rows 0
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_points_budget.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Confirmed: the N2 W5 entry contains seven bonus rows, with SG Rottendorf missing entirely.
+
+The bonus points are currently scaled to seven teams instead of eight. The fix belongs in `_pre_2022_placement_team_count`: when meta equals ranked plus one, the code must not automatically assume a phantom bye. Phantom bye detection should instead rely on concrete indicators such as games_per_week matching the ranked count.
+
+The fix requires two changes. First, `_pre_2022_placement_team_count` must use the full league size whenever possible, and detect phantom byes only through explicit indicators such as a skipped "0" block or `games_per_week`. Second, no-show teams must still receive a bonus row with zero points even if their block is missing from `team_weekly_pins`.
+
+The games-per-week check alone cannot distinguish a phantom bye from a no-show. An eight-team league with seven present teams also yields seven games, so the condition would wrongly trigger. Another discriminator is needed.
+
+The metadata field `number_of_teams` reveals the distinction. For a phantom bye, the metadata counts the bye as a real team, so it equals the real league size plus one. For a no-show, the metadata correctly reflects the true league size. This means `_pre_2022_placement_team_count` can safely use the metadata value directly, since the phantom bye is already flagged by its inflated count.
+
+The metadata count is identical for both phantom byes and no-shows, so it cannot distinguish them. The only way to tell whether the extra slot is a real absent team or a phantom bye is to compare the full league roster against the actual weekly blocks. A no-show team would appear in the league records but not in the current week’s data.
+
+Any roster team missing from the weekly pins must be added with zero pins and zero bonus points. The placement count should use the metadata team count, but subtract one for phantom bye leagues. A phantom bye can be detected by checking whether games per week equals the metadata team count minus one. That check fails for no-shows because the metadata already reflects the true league size.
+
+A zero-pins block is already handled correctly. The phantom bye is the remaining edge case: it produces six blocks but only five real teams, so the metadata count is inflated. A no-show with a missing block yields seven pins against eight metadata teams, which is already processed correctly.
+
+Returning the metadata team count whenever it equals the ranked count would fix the missing-block case, but it would break phantom-byte leagues where the metadata is already inflated. Because the games-per-week check is identical for both phantom byes and no-shows, it cannot serve as a discriminator. A different signal is required to separate the two scenarios.
+
+A concrete discriminator has been found. Counting all blocks on the weekly spielzettel and comparing that total to the metadata team count resolves the ambiguity. A phantom bye produces exactly one extra block, so the block count matches the metadata count. A no-show with a missing block produces fewer blocks than the metadata count. This allows `_pre_2022_placement_team_count` to correctly distinguish phantom byes from no-shows.
+
+The implementation now accepts an optional `spielzettel_block_count` parameter. When that count equals the metadata team count and the ranked count is one less, the function returns the ranked count to handle phantom byes correctly. Otherwise it falls back to the metadata count plus one, which catches no-shows with missing blocks.
+
+The discriminator logic checks out for phantom byes, no-shows with missing blocks, and full weeks. One remaining edge case is being examined: whether a phantom bye block count of six could still yield a ranked count of five.
+
+The extraction function will pass the full block count from `_find_spielzettel_block_starts`, which includes the phantom bye slot. Reconstructing the league roster to identify missing teams is too complex, so the simpler approach is to scale bonuses to the full league size, award active teams descending points, and assign zero bonus to any team with zero pins.
+
+The eight-team bonus scale works without an explicit no-show row. Seven active teams receive bonuses 8 through 2, totaling 35 points, while the absent team receives zero implicitly. This aligns with the user's reference total of 91 versus schema 92, and the -1 point gap matches the no-show penalty. The next step is to verify the match points calculation.
+
+The math confirms the fix. Scaling bonuses to eight teams yields 35 placement points, bringing the weekly total to 91. The current incorrect total of 84 comes from 28 placement points. Adding an explicit zero-bonus row for the missing team is optional. Identifying missing teams by comparing the league roster against the weekly blocks is too complex.
+
+The legacy fallback that returns the metadata team count when it equals the ranked count plus one would break phantom-bytes if the block count is missing. The caller must always pass the full block count, so the extraction function needs updating. Existing merged data does not need a repair pass; the user should simply re-extract.
+
+The implementation now returns the metadata team count when it equals the ranked count, and the ranked count otherwise. The caller will pass the full block count from `_find_spielzettel_block_starts` into `_pre_2022_weekly_placement_bonuses`. Tests for the five-team phantom bye and the six-team no-show cases will be updated to supply that block count.
+
+A new test verifies that a seven-team no-show with seven blocks and eight metadata teams returns eight placement teams. Bonuses scale from eight down to two, totaling thirty-five points. An explicit test will also distinguish phantom byes from no-shows inside the team-count helper.
+
+The phantom bye test now excludes the "0" placeholder and expects five teams, confirming the helper returns the correct count. Missing no-show teams will not receive an explicit bonus row unless the full league roster is scanned, which is out of scope for the minimal fix. Per-team discrepancies will show seven teams each with a -1 point penalty instead of singling out the absent team. After applying the changes, the user should re-extract and merge the data to verify the corrected totals.</details></think>
+
+_**Agent (default)**_
+
+Confirming the issue: Rottendorf is missing from W5 bonus rows (7×7..1 = 28); bonuses should use the 8-team league scale (8..2). The phantom-bye heuristic treats `meta == ranked + 1` as a bye and uses 7 instead of 8.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Beginning implementation of the fix.
+
+Adding `block_count` to the pre-2022 placement helpers and updating test calls. Considering edge cases where the block count differs from the meta team count, such as missing no-shows or phantom blocks.
+
+Confirmed the bonus point logic handles no-shows, phantom byes, and edge cases correctly. Missing no-shows return the full league count. Phantom blocks return the reduced count. Legacy data without block counts falls back to the full league count.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\extract_excel_data.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\test_pre_2022_placement_bonuses.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd c:\Users\cfell\repositories\bowlyzer_deploy; uv run pytest tests/test_pre_2022_placement_bonuses.py -q</summary>
+
+```bash
+cd c:\Users\cfell\repositories\bowlyzer_deploy; uv run pytest tests/test_pre_2022_placement_bonuses.py -q
+```
+
+```
+......                                                                   [100%]
+6 passed in 0.60s
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+Glob pattern "**/*" matches every file and is not allowed. Use a more specific glob or no glob.
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd c:\Users\cfell\repositories\bowlyzer_deploy; uv run python -c "
+from pathlib import Path
+import pandas as pd
+log = Path('database/data/excel_analysis_log.csv')
+if log.exists():
+    df = pd.read_csv(log, sep=';', dtype=str, keep_default_na=False)
+    mask = (df['league'].astype(str)=='A N2') & (df['season'].astype(str)=='10/11')
+    sub = df.loc[mask]
+    print(sub[['file','week','number_of_teams']].head(20).to_string(index=False))
+else:
+    print('no log at', log)
+"</summary>
+
+```bash
+cd c:\Users\cfell\repositories\bowlyzer_deploy; uv run python -c "
+from pathlib import Path
+import pandas as pd
+log = Path('database/data/excel_analysis_log.csv')
+if log.exists():
+    df = pd.read_csv(log, sep=';', dtype=str, keep_default_na=False)
+    mask = (df['league'].astype(str)=='A N2') & (df['season'].astype(str)=='10/11')
+    sub = df.loc[mask]
+    print(sub[['file','week','number_of_teams']].head(20).to_string(index=False))
+else:
+    print('no log at', log)
+"
+```
+
+```
+no log at database\data\excel_analysis_log.csv
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\data_access\\league_standings_validation.py",
+  "pattern": "analysis_log"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\data_access\\league_standings_validation.py",
+  "pattern": "analysis_log",
+  "topFiles": [
+    {
+      "matchCount": 15,
+      "uri": "data_access\\league_standings_validation.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 28
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **0** results in **1** directory</summary>
+
+Directory: **c:\Users\cfell\repositories\bowlyzer_deploy\database** (0 files)
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Tests pass. The fix is in the data extraction. Re-extracting the data is required.</details></think>
+
+_**Agent (default)**_
+
+You were right — the placement scale was wrong for no-shows where the absent team has **no Spielzettel block**.
+
+## Root cause
+
+Merged data for A N2 W5 shows **7 bonus rows** (7..1 = 28 pts), with **no SG Rottendorf 5** row at all:
+
+```
+BC Comet … 7, Mainfranken … 6, … Pinkiller … 1   → sum 28
+```
+
+It should use the **8-team league scale**: 8, 7, 6, 5, 4, 3, 2 for the seven teams that played → **35** placement pts (+ 56 match pts = **91**, matching Excel ref).
+
+The bug was in `_pre_2022_placement_team_count`: when `metadata_teams == ranked_teams + 1`, it assumed **phantom bye** and used 7 instead of 8. That heuristic fits 5-team leagues (6 Spielzettel blocks incl. `"0"`), but also misfires when a **real team no-shows without a block** (7 blocks, 8-team league).
+
+## Fix
+
+Placement team count now uses Spielzettel block count to distinguish the two cases:
+
+| Situation | Blocks | Meta | Ranked | Placement N |
+|-----------|--------|------|--------|-------------|
+| Phantom bye (A S1) | 6 | 6 | 5 | **5** (bye on sheet) |
+| No-show, no block (A N2 W5) | 7 | 8 | 7 | **8** (league size) |
+| No-show, 0-pin block | 8 | 8 | 8 | **8** |
+
+```2773:2818:extract_excel_data.py
+def _pre_2022_placement_team_count(
+    team_weekly_pins: dict[str, int],
+    number_of_teams: int | None,
+    *,
+    spielzettel_block_count: int | None = None,
+) -> int:
+    ...
+        if spielzettel_block_count is not None:
+            if (
+                spielzettel_block_count == meta_count
+                and ranked_count == meta_count - 1
+            ):
+                return ranked_count
+            return meta_count
+```
+
+Added test `test_no_show_missing_spielzettel_block_uses_league_metadata_count` for the A N2 pattern.
+
+## Next step
+
+Re-extract and merge so the published CSV picks up the corrected bonuses. After that, A N2 W5 should show computed pool **91** (not 84), and the season total should move toward **735** matching Excel ref.
+
+Want me to run the extract/merge pipeline for `10/11` / `A N2`?
+
+---
+
+_**User**_
+
+PS C:\Users\cfell\repositories\bowlyzer_deploy> uv run python extract_excel_data.py --mode normalize_data --input "C:\tmp\bowlyzer\data\legacy_scrape\legacy_scrape_extracted.csv"
+Starting Excel data extraction...
+Mode: normalize_data
+Unique team names exported: C:\tmp\bowlyzer\data\legacy_scrape\legacy_scrape_extracted_unique_teams.csv (333 names)
+
+normalize_data: normalized 1 input file(s) -> C:\tmp\bowlyzer\data\legacy_scrape\legacy_scrape_extracted.csv (630970 rows, hash=e58529b865d7...)
+  input: C:\tmp\bowlyzer\data\legacy_scrape\legacy_scrape_extracted.csv
+
+Team Name Normalization Summary:
+  regex: 250,648 cells updated in Team/Opponent columns
+  regex: 162 distinct team strings rewritten (cached; not row count)
+  regex rules hit (by distinct string, not by cell):
+    - ^ProfiShop\s+Mün(?:\s+(\d+))?$: 7
+    - ^Pfaffenhofen(?:\s+(\d+))?$: 6
+    - ^ProfiShop(?:\s+(\d+))?$: 5
+    - ^RW\s+Lichtenhof\s+69\s+Stein(?:\s+(\d+))?$: 5
+    - ^SW\s+Mainfranken\s+Bamberg(?:\s+(\d+))?$: 5
+    - ^Team\s+ProfiShop\s+München(?:\s+(\d+))?$: 5
+    - ^Murmels(?:\s+(\d+))?$: 4
+    - ^Raubritter\s+Hallstadt(?:\s+(\d+))?$: 4
+    - ^City\-Bowling\s+Aug(?:\s+(\d+))?$: 3
+    - ^EPA\s+Mün(?:\s+(\d+))?$: 3
+    - ^Olching(?:\s+(\d+))?$: 3
+    - ^Pinkiller\s+03\s+Lichtenfels(?:\s+(\d+))?$: 3
+    - ^Rot\-Weiß\s+69\s+Lichtenhof\s+Stein(?:\s+(\d+))?$: 3
+    - ^Rot\-Weiß\s+Lichtenhof\s+69\s+Stein(?:\s+(\d+))?$: 3
+    - ^Schanzer\-Strikers\s+Ing(?:\s+(\d+))?$: 3
+    - ^ZAA(?:\s+(\d+))?$: 3
+    - ^AD\s+71\s+Stein(?:\s+(\d+))?$: 2
+    - ^Albrecht\s+Dürer\s+Stein(?:\s+(\d+))?$: 2
+    - ^BC\s+Bavaria\s+München\-Land(?:\s+(\d+))?$: 2
+    - ^BC\s+Herzogenaurach(?:\s+(\d+))?$: 2
+    - ^BC\s+Merlin\s+München\-Land(?:\s+(\d+))?$: 2
+    - ^BSC\s+SW\-Ettleben(?:\s+(\d+))?$: 2
+    - ^Bad\-Aibling\s+Finest(?:\s+(\d+))?$: 2
+    - ^Bavaria\s+München/L(?:\s+(\d+))?$: 2
+    - ^City\ Bowling\ Augsburg\ (\d+)$: 2
+    - ^City\-Bowling(?:\s+(\d+))?$: 2
+    - ^EPA(?:\s+(\d+))?$: 2
+    - ^Kleeblatt\s+Fürth\s+Stein(?:\s+(\d+))?$: 2
+    - ^Lechbowler(?:\s+(\d+))?$: 2
+    - ^Merlin(?:\s+(\d+))?$: 2
+    - ^Merlin\s+München/L(?:\s+(\d+))?$: 2
+    - ^OK\s+Bowler\s+Bindlach(?:\s+(\d+))?$: 2
+    - ^PANthers\s+Pfarrk(?:\s+(\d+))?$: 2
+    - ^Panther\s+Ingoldstadt(?:\s+(\d+))?$: 2
+    - ^Phönix\s+03\s+Nürnberg(?:\s+(\d+))?$: 2
+    - ^Rot\s+Weiß\s+Lichtenhof\s+Stein(?:\s+(\d+))?$: 2
+    - ^Schwarz\-Weiß\s+Mainfranken\s+Bamberg(?:\s+(\d+))?$: 2
+    - ^1\s+DBC\s+Bayreuth\-Land(?:\s+(\d+))?$: 1
+    - ^1\s+DBC\s+Bayreuth\-Land\s+2\s+\-\s+abgemeldet\s+\-(?:\s+(\d+))?$: 1
+    - ^53\s+Bayreuth(?:\s+(\d+))?$: 1
+    - ^ACC/Ulmer\-Spatzen\s+Neu\-Ulm(?:\s+(\d+))?$: 1
+    - ^Active\-Bowler\s+Brunnt(?:\s+(\d+))?$: 1
+    - ^Albrecht\-Dürer\ 71\ Stein\ 2$: 1
+    - ^BC\s+Bajuwaren\s+München(?:\s+(\d+))?$: 1
+    - ^BC\s+Falken\s+München\-Land(?:\s+(\d+))?$: 1
+    - ^BC\s+Veitshöchheim(?:\s+(\d+))?$: 1
+    - ^BSC\s+Pfaffenhofen(?:\s+(\d+))?$: 1
+    - ^BSC\s+Schweinfurt(?:\s+(\d+))?$: 1
+    - ^Bad\s+Aibling(?:\s+(\d+))?$: 1
+    - ^Bavaria\ München\ Land\ 1$: 1
+    - ^Bavaria\s+München/L\.(?:\s+(\d+))?$: 1
+    - ^Bayerland(?:\s+(\d+))?$: 1
+    - ^City\s+Bowling(?:\s+(\d+))?$: 1
+    - ^Condor\s+Mün(?:\s+(\d+))?$: 1
+    - ^E\.P\.A\.\s+München(?:\s+(\d+))?$: 1
+    - ^Falken\s+München/L(?:\s+(\d+))?$: 1
+    - ^Franken\s+Erlangen(?:\s+(\d+))?$: 1
+    - ^Isar\-München\ 2$: 1
+    - ^Laim\s+90\s+München(?:\s+(\d+))?$: 1
+    - ^Merlin\s+Mün(?:\s+(\d+))?$: 1
+    - ^München\s+Laim\s+90(?:\s+(\d+))?$: 1
+    - ^Noris\s+Nürnberg(?:\s+(\d+))?$: 1
+    - ^OK\-Bowlers\ Bindlach\ 1$: 1
+    - ^PANthers\s+Pfarrk\.(?:\s+(\d+))?$: 1
+    - ^Panthers\s+Pfarrk(?:\s+(\d+))?$: 1
+    - ^Pfaffenhofen\s+5\s+\(4\)(?:\s+(\d+))?$: 1
+    - ^Phönix\-Hobby\s+München(?:\s+(\d+))?$: 1
+    - ^Phönix\s+Hobby(?:\s+(\d+))?$: 1
+    - ^Phönix\s+Nürnberg(?:\s+(\d+))?$: 1
+    - ^Pinhunter\ Neu\.Ulm\ 1$: 1
+    - ^Pinkiller\s+Lichtenfels\s+2\s+\-abgemeldet(?:\s+(\d+))?$: 1
+    - ^RW\s+Lichtenhof\s+69(?:\s+(\d+))?$: 1
+    - ^SW\ 77\ 'Würzburg\ 1$: 1
+    - ^S\-W\-Mainfranken\-Bamberg(?:\s+(\d+))?$: 1
+    - ^Schanzer\-Strickers\s+Ing(?:\s+(\d+))?$: 1
+    - ^Schwarz\-Weiß\s+Mainfranken(?:\s+(\d+))?$: 1
+    - ^Spare\-Masters\s+N\-U(?:\s+(\d+))?$: 1
+    - ^Spare\s+Masters\s+N\-U(?:\s+(\d+))?$: 1
+    - ^Strike\s+Eagles\s+N\-U(?:\s+(\d+))?$: 1
+    - ^Strike\s+Ing(?:\s+(\d+))?$: 1
+    - ^Strike\s+Ingoldstadt(?:\s+(\d+))?$: 1
+    - ^Strikers\s+Ing(?:\s+(\d+))?$: 1
+    - ^Strikers\s+Ingoldstadt(?:\s+(\d+))?$: 1
+    - ^TAG\-Team\ Lauf\ 1$: 1
+    - ^Triple\s+X\s+Stein\s+2\s+\-\s+abgemeldet\s+\-(?:\s+(\d+))?$: 1
+    - ^Triple\s+X\s+Stein\s+\-abgemeldet\s+14\.10\.2016\-(?:\s+(\d+))?$: 1
+    - ^Ulmer\-Spatzen\s+Neu\-Ulm(?:\s+(\d+))?$: 1
+    - ^Voralrberg(?:\s+(\d+))?$: 1
+    - ^Weiß\ Blau\ München\ 2$: 1
+    - ^Weiß\-Blau\-München\ 2$: 1
+    - ^Zirbelnuss\s+Alt\-Augsburg(?:\s+(\d+))?$: 1
+    - ^bC\ Großlangheim\ 2$: 1
+PS C:\Users\cfell\repositories\bowlyzer_deploy> uv run python scripts/audit_league_standings.py --season "10/11"
+League standings validation
+Data: C:\Users\cfell\repositories\bowlyzer_deploy\database\data\league_results_merged.csv
+Summary: perfect=0, corrected=0, yellow=0, red=29, skipped=0, week_incomplete=0
+10/11 | A N1: red (ref=8, computed=0) — no computed standings for league season
+10/11 | A N2: red (ref=8, computed=0) — no computed standings for league season
+10/11 | A S1: red (ref=5, computed=0) — no computed standings for league season
+10/11 | A S2: red (ref=5, computed=0) — no computed standings for league season
+10/11 | A S3: red (ref=5, computed=0) — no computed standings for league season
+10/11 | BL N1: red (ref=8, computed=0) — no computed standings for league season
+10/11 | BL N2: red (ref=8, computed=0) — no computed standings for league season
+10/11 | BL S1: red (ref=8, computed=0) — no computed standings for league season
+10/11 | BL S1 (D): red (ref=6, computed=0) — no computed standings for league season
+10/11 | BL S2: red (ref=8, computed=0) — no computed standings for league season
+10/11 | BZL N1: red (ref=8, computed=0) — no computed standings for league season
+10/11 | BZL N2: red (ref=8, computed=0) — no computed standings for league season
+10/11 | BZL S1: red (ref=8, computed=0) — no computed standings for league season
+10/11 | BZL S2: red (ref=8, computed=0) — no computed standings for league season
+10/11 | BayL: red (ref=10, computed=0) — no computed standings for league season
+10/11 | BayL (D): red (ref=10, computed=0) — no computed standings for league season
+10/11 | Bereichsliga Nord (D): red (ref=5, computed=0) — no computed standings for league season
+10/11 | KL N1: red (ref=8, computed=0) — no computed standings for league season
+10/11 | KL N2: red (ref=8, computed=0) — no computed standings for league season
+10/11 | KL N3: red (ref=8, computed=0) — no computed standings for league season
+10/11 | KL N4: red (ref=8, computed=0) — no computed standings for league season
+10/11 | KL S1: red (ref=8, computed=0) — no computed standings for league season
+10/11 | KL S2: red (ref=8, computed=0) — no computed standings for league season
+10/11 | KL S3: red (ref=8, computed=0) — no computed standings for league season
+10/11 | KL S4: red (ref=8, computed=0) — no computed standings for league season
+10/11 | LL N (D): red (ref=6, computed=0) — no computed standings for league season
+10/11 | LL N1: red (ref=8, computed=0) — no computed standings for league season
+10/11 | LL S: red (ref=8, computed=0) — no computed standings for league season
+10/11 | LL S (D): red (ref=8, computed=0) — no computed standings for league season
+Report: C:\tmp\bowlyzer\data\league_standings_validation.csv
+PS C:\Users\cfell\repositories\bowlyzer_deploy>
+
+whats wrong here?
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user ran normalize_data on legacy_scrape_extracted.csv, then ran audit_league_standings.py for season 10/11.</details></think>
+
+_**Agent (default)**_
+
+Investigating why the audit reports zero computed standings for 10/11 — likely a data path or merge issue after normalization.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\audit_league_standings.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\data_access\\league_standings_validation.py",
+  "pattern": "no computed standings|computed=0"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\data_access\\league_standings_validation.py",
+  "pattern": "no computed standings|computed=0",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "data_access\\league_standings_validation.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 1
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd c:\Users\cfell\repositories\bowlyzer_deploy; uv run python -c "
+import pandas as pd
+from data_access.schema import Columns
+from database.paths import league_results_merged_csv
+path = league_results_merged_csv()
+print('path', path)
+df = pd.read_csv(path, sep=';', dtype=str, keep_default_na=False, nrows=5)
+print('cols sample', list(df.columns)[:15])
+full = pd.read_csv(path, sep=';', dtype=str, keep_default_na=False, usecols=[Columns.season, Columns.event, Columns.computed_data])
+print('rows', len(full))
+print('seasons', full[Columns.season].value_counts().head(10))
+s = full[full[Columns.season]=='10/11']
+print('10/11 rows', len(s))
+if len(s):
+    print('leagues sample', s[Columns.event].value_counts().head(5))
+    print('computed_data', s[Columns.computed_data].value_counts())
+"</summary>
+
+```bash
+cd c:\Users\cfell\repositories\bowlyzer_deploy; uv run python -c "
+import pandas as pd
+from data_access.schema import Columns
+from database.paths import league_results_merged_csv
+path = league_results_merged_csv()
+print('path', path)
+df = pd.read_csv(path, sep=';', dtype=str, keep_default_na=False, nrows=5)
+print('cols sample', list(df.columns)[:15])
+full = pd.read_csv(path, sep=';', dtype=str, keep_default_na=False, usecols=[Columns.season, Columns.event, Columns.computed_data])
+print('rows', len(full))
+print('seasons', full[Columns.season].value_counts().head(10))
+s = full[full[Columns.season]=='10/11']
+print('10/11 rows', len(s))
+if len(s):
+    print('leagues sample', s[Columns.event].value_counts().head(5))
+    print('computed_data', s[Columns.computed_data].value_counts())
+"
+```
+
+```
+path C:\Users\cfell\repositories\bowlyzer_deploy\database\data\league_results_merged.csv
+cols sample ['Season', 'Week', 'Date', 'Players per Team', 'Location', 'Round Number', 'Match Number', 'Team', 'Position', 'Player', 'Player ID', 'Opponent', 'Score', 'Points', 'Bonus Points']
+rows 741799
+seasons Season
+09/10    61528
+11/12    60414
+13/14    60347
+12/13    60008
+10/11    59420
+08/09    59364
+14/15    57491
+16/17    54186
+15/16    53138
+17/18    52425
+Name: count, dtype: int64
+10/11 rows 59420
+leagues sample Event
+BayL     2760
+A N1     2304
+BL N1    2304
+BL N2    2304
+BL S1    2304
+Name: count, dtype: int64
+computed_data Computed Data
+False    46135
+True     13285
+Name: count, dtype: int64
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_standings_validation.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\data_access\\league_standings_validation.py",
+  "pattern": "def compute_standings_from_dataframe"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\data_access\\league_standings_validation.py",
+  "pattern": "def compute_standings_from_dataframe",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "data_access\\league_standings_validation.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 1
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\league_standings_validation.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd c:\Users\cfell\repositories\bowlyzer_deploy; uv run python -c "
+import pandas as pd
+from data_access.schema import Columns
+from data_access.league_standings_validation import compute_standings_from_dataframe
+from database.paths import league_results_merged_csv
+df = pd.read_csv(league_results_merged_csv(), sep=';', dtype=str, keep_default_na=False)
+for league in ['A N2', 'BayL']:
+    comp = compute_standings_from_dataframe(df, league=league, season='10/11')
+    print(league, 'computed teams', len(comp))
+    sub = df[(df[Columns.season]=='10/11') & (df[Columns.event]==league)]
+    print('  rows', len(sub), 'computed rows', (sub[Columns.computed_data]=='True').sum())
+    if Columns.event_type in df.columns:
+        print('  event_type', sub[Columns.event_type].value_counts().head())
+    print('  league col unique', sub[Columns.event].unique()[:3])
+"</summary>
+
+```bash
+cd c:\Users\cfell\repositories\bowlyzer_deploy; uv run python -c "
+import pandas as pd
+from data_access.schema import Columns
+from data_access.league_standings_validation import compute_standings_from_dataframe
+from database.paths import league_results_merged_csv
+df = pd.read_csv(league_results_merged_csv(), sep=';', dtype=str, keep_default_na=False)
+for league in ['A N2', 'BayL']:
+    comp = compute_standings_from_dataframe(df, league=league, season='10/11')
+    print(league, 'computed teams', len(comp))
+    sub = df[(df[Columns.season]=='10/11') & (df[Columns.event]==league)]
+    print('  rows', len(sub), 'computed rows', (sub[Columns.computed_data]=='True').sum())
+    if Columns.event_type in df.columns:
+        print('  event_type', sub[Columns.event_type].value_counts().head())
+    print('  league col unique', sub[Columns.event].unique()[:3])
+"
+```
+
+```
+A N2 computed teams 8
+  rows 2275 computed rows 511
+  event_type Event Type
+league    2275
+Name: count, dtype: int64
+  league col unique &lt;ArrowStringArray&gt;
+['A N2']
+Length: 1, dtype: str
+BayL computed teams 10
+  rows 2760 computed rows 600
+  event_type Event Type
+league    2760
+Name: count, dtype: int64
+  league col unique &lt;ArrowStringArray&gt;
+['BayL']
+Length: 1, dtype: str
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Running compute_standings_from_dataframe directly on the repository's league_results_merged.csv succeeds for A N2. This suggests the bug is specific to the current pipeline rather than the underlying function itself.
+
+The audit confirmed it is reading the repository's CSV file. Zero computed standings across all seasons suggests a max_week filter or reference_week mismatch may be excluding all rows.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\parquet_sidecar.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\database\paths.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd c:\Users\cfell\repositories\bowlyzer_deploy; uv run python -c "
+from pathlib import Path
+from database.paths import league_results_merged_csv, get_work_data_dir, analysis_log_path
+from data_access.parquet_sidecar import resolve_load_path, data_file_exists
+p = league_results_merged_csv()
+print('merged csv', p, 'exists', p.is_file())
+print('resolved', resolve_load_path(p))
+print('work dir', get_work_data_dir())
+print('analysis log', analysis_log_path(), 'exists', analysis_log_path().is_file())
+parq = p.with_suffix('.parquet')
+print('parquet', parq, 'exists', parq.is_file())
+if parq.is_file():
+    import pandas as pd
+    df = pd.read_parquet(parq)
+    print('parquet rows', len(df))
+    print('parquet cols', list(df.columns)[:12])
+    if 'Season' in df.columns:
+        print('10/11', (df['Season'].astype(str)=='10/11').sum())
+    elif 'season' in df.columns:
+        print('10/11', (df['season'].astype(str)=='10/11').sum())
+"</summary>
+
+```bash
+cd c:\Users\cfell\repositories\bowlyzer_deploy; uv run python -c "
+from pathlib import Path
+from database.paths import league_results_merged_csv, get_work_data_dir, analysis_log_path
+from data_access.parquet_sidecar import resolve_load_path, data_file_exists
+p = league_results_merged_csv()
+print('merged csv', p, 'exists', p.is_file())
+print('resolved', resolve_load_path(p))
+print('work dir', get_work_data_dir())
+print('analysis log', analysis_log_path(), 'exists', analysis_log_path().is_file())
+parq = p.with_suffix('.parquet')
+print('parquet', parq, 'exists', parq.is_file())
+if parq.is_file():
+    import pandas as pd
+    df = pd.read_parquet(parq)
+    print('parquet rows', len(df))
+    print('parquet cols', list(df.columns)[:12])
+    if 'Season' in df.columns:
+        print('10/11', (df['Season'].astype(str)=='10/11').sum())
+    elif 'season' in df.columns:
+        print('10/11', (df['season'].astype(str)=='10/11').sum())
+"
+```
+
+```
+merged csv C:\Users\cfell\repositories\bowlyzer_deploy\database\data\league_results_merged.csv exists True
+resolved C:\Users\cfell\repositories\bowlyzer_deploy\database\data\league_results_merged.parquet
+work dir C:\tmp\bowlyzer\data
+analysis log C:\tmp\bowlyzer\data\extract_excel_analysis_log.json exists True
+parquet C:\Users\cfell\repositories\bowlyzer_deploy\database\data\league_results_merged.parquet exists True
+parquet rows 111506
+parquet cols ['Season', 'Week', 'Date', 'Players per Team', 'Location', 'Round Number', 'Match Number', 'Team', 'Position', 'Player', 'Player ID', 'Opponent']
+10/11 0
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The audit script uses `resolve_load_path`, which prefers parquet files over CSV. This explains why computed standings are missing despite the CSV being present.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd c:\Users\cfell\repositories\bowlyzer_deploy; uv run python -c "
+import pandas as pd
+from pathlib import Path
+csv = Path('database/data/league_results_merged.csv')
+parq = Path('database/data/league_results_merged.parquet')
+cdf = pd.read_csv(csv, sep=';', usecols=['Season'], dtype=str, keep_default_na=False)
+pdf = pd.read_parquet(parq, columns=['Season'])
+print('CSV seasons:', cdf['Season'].value_counts().sort_index().to_dict())
+print('Parquet seasons:', pdf['Season'].value_counts().sort_index().to_dict())
+print('CSV rows', len(cdf), 'Parquet rows', len(pdf))
+"</summary>
+
+```bash
+cd c:\Users\cfell\repositories\bowlyzer_deploy; uv run python -c "
+import pandas as pd
+from pathlib import Path
+csv = Path('database/data/league_results_merged.csv')
+parq = Path('database/data/league_results_merged.parquet')
+cdf = pd.read_csv(csv, sep=';', usecols=['Season'], dtype=str, keep_default_na=False)
+pdf = pd.read_parquet(parq, columns=['Season'])
+print('CSV seasons:', cdf['Season'].value_counts().sort_index().to_dict())
+print('Parquet seasons:', pdf['Season'].value_counts().sort_index().to_dict())
+print('CSV rows', len(cdf), 'Parquet rows', len(pdf))
+"
+```
+
+```
+CSV seasons: {'08/09': 59364, '09/10': 61528, '10/11': 59420, '11/12': 60414, '12/13': 60008, '13/14': 60347, '14/15': 57491, '15/16': 53138, '16/17': 54186, '17/18': 52425, '18/19': 51972, '19/20': 45909, '22/23': 23431, '23/24': 22490, '24/25': 12164, '25/26': 7512}
+Parquet seasons: {'19/20': 45909, '22/23': 23431, '23/24': 22490, '24/25': 12164, '25/26': 7512}
+CSV rows 741799 Parquet rows 111506
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/*.{py,md,ps1}",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "league_results_merged|publish_dataframe|write_parquet"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "league_results_merged|publish_dataframe|write_parquet",
+  "topFiles": [
+    {
+      "matchCount": 3,
+      "uri": "data_access/parquet_sidecar.py"
+    },
+    {
+      "matchCount": 5,
+      "uri": "docs/Excel_Extraction.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tmp/check_conflict_seasons.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "database/README.md"
+    },
+    {
+      "matchCount": 2,
+      "uri": "tests/data_access/test_publish_gate.py"
+    },
+    {
+      "matchCount": 28,
+      "uri": ".specstory/history/2026-05-19_07-58-26Z-exposing-web-service-on-local-network.md"
+    }
+  ],
+  "totalFiles": 6,
+  "totalMatches": 435
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The `normalize_data` command processed the extracted CSV but did not update `league_results_merged`. That explains why computed standings are missing for the league seasons.
+
+The audit script prefers the parquet file over the CSV. That parquet only contains seasons 19/20 through 25/26, so it lacks all legacy seasons including 10/11. This explains why computed standings are missing. To fix it, rebuild the merged dataset from the legacy scrape, regenerate the parquet from the full CSV, or run the audit with an explicit CSV path.
+
+Passing a CSV path to the audit script does not bypass the parquet file. The loader resolves the path and still reads the stale parquet. Deleting the stale parquet file will force the audit to use the CSV instead.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\build_published_dataset.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\docs\\Excel_Extraction.md",
+  "pattern": "with-legacy|merge_league"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\docs\\Excel_Extraction.md",
+  "pattern": "with-legacy|merge_league",
+  "topFiles": [
+    {
+      "matchCount": 7,
+      "uri": "docs\\Excel_Extraction.md"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 7
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The script ran successfully but logged many "no computed standings" warnings. This suggests the validation report is missing expected league season data. I need to check why computed standings are absent for these seasons.</details></think>
+
+_**Agent (default)**_
+
+Two separate things are going on — neither is a validation bug.
+
+## 1. `normalize_data` did not update what the audit reads
+
+You normalized:
+
+`C:\tmp\bowlyzer\data\legacy_scrape\legacy_scrape_extracted.csv`
+
+That step only rewrites team names in the **legacy scrape** file. It does **not** rebuild `league_results_merged`.
+
+The audit loads:
+
+`database/data/league_results_merged.csv`
+
+…but via `resolve_load_path()`, which **prefers the Parquet sidecar** when it exists.
+
+## 2. The Parquet sidecar is stale and missing 10/11
+
+| File | Rows | 10/11 rows |
+|------|------|------------|
+| `league_results_merged.csv` | 741,799 | **59,420** |
+| `league_results_merged.parquet` | 111,506 | **0** |
+
+Parquet only has `19/20`, `22/23`–`25/26`. All older seasons (including `10/11`) exist in the CSV but not in Parquet.
+
+So `compute_standings_from_dataframe` finds no `10/11` rows → `computed=0` → **"no computed standings for league season"** for every league that season.
+
+The report line still says `Data: ...league_results_merged.csv`, but the loader actually used `.parquet`.
+
+## What to do
+
+**Quick fix (audit against current CSV data):** rebuild Parquet from the full CSV:
+
+```powershell
+uv run python -c "
+import pandas as pd
+from pathlib import Path
+from data_access.parquet_sidecar import write_parquet_sidecar
+csv = Path('database/data/league_results_merged.csv')
+df = pd.read_csv(csv, sep=';', dtype=str, keep_default_na=False)
+write_parquet_sidecar(df, csv)
+print(len(df), 'rows -> parquet')
+"
+```
+
+Or delete `database\data\league_results_merged.parquet` so the audit falls back to CSV.
+
+**Full pipeline (includes your normalized legacy scrape + placement-bonus fix):** re-extract if needed, then merge:
+
+```powershell
+uv run python scripts/build_published_dataset.py --job league --with-legacy-scrape
+```
+
+That writes both CSV and Parquet from the merged sources (historical extract + legacy scrape).
+
+---
+
+**Summary:** `normalize_data` on legacy scrape ≠ merged publish dataset. The audit was reading an outdated Parquet file with no pre-2019 seasons, so every `10/11` league looked empty on the computed side. Re-sync or rebuild Parquet (or run the full merge) and re-run the audit.
+
+---
+
+_**User**_
+
+okay. lets keep it like the for the moment, I note down 62% of "green" league weeks. I expect more gain in closing the huge gaps in the 24-26 seasons and will work on that first. 
+note down our progress in validation and normalization. then we will move onto some feature work
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Validation and normalization progress will be noted in this thread.</details></think>

@@ -444,3 +444,60 @@ Optional filter: stream (`league` | `tournament` | `player`), season range, show
 
 Wire format uses **hyphen season keys**; frontend formatter maps to `25/26` for display.
 
+---
+
+## 16. Validation & normalization progress (2026-06)
+
+**Baseline (operator note):** ~**62% green** league×season comparisons in standings validation. Priority for closing gaps: **24/25–25/26** seasons first (GF / recent pipeline), then legacy Excel seasons.
+
+### Standings validation semantics (implemented)
+
+Three totals per league×season:
+
+| Label | Meaning | Pass / signal |
+|-------|---------|----------------|
+| **ref** | Excel Tabellen / TabGes aggregate | — |
+| **schema** (`total_points_expected`) | Pure scoring budget (league size × weeks × placement). **No** no-show reduction. | `ref ≠ schema` → **yellow** (Excel oddity; may heal) |
+| **computed** | Merge totals from scratch + placement bonuses | Must match **ref** when data is coherent → `ref ≠ computed` → **red** |
+
+Weekly pool lines (`pts-week`) use **schema** for expected weekly budget; primary merge issue is **comp-ref**. No-show weeks annotate **ref-schema** gap + team name; they no longer green-wash a **comp-ref** mismatch.
+
+**Healing:** `ref` below schema explained by documented no-shows, merge matches Excel ref → **corrected** (not green while computed still diverges).
+
+**Operator:** `uv run python scripts/audit_league_standings.py [--season …] [--league …]` → `{work}/league_standings_validation.csv` + Diagnose UI.
+
+### Normalization (team names)
+
+- Rules in `database/config/team_name_normalization.json`; applied in `normalize_data` / merge (`normalize_extracted_dataframe`).
+- Typical run: `uv run python extract_excel_data.py --mode normalize_data --input "{work}/legacy_scrape/legacy_scrape_extracted.csv"`.
+- Last normalize pass example: ~250k Team/Opponent cells, 162 distinct strings (legacy scrape).
+
+**Note:** `normalize_data` on legacy scrape **does not** rebuild `league_results_merged`; run `build_published_dataset.py --with-legacy-scrape` (or league merge) to publish.
+
+### Extraction fixes (pre-2022 placement bonuses)
+
+- **Phantom bye** (5 real teams, 6 Spielzettel blocks incl. `"0"`): placement scale **N = 5**, not 6 (`_pre_2022_placement_team_count` uses Spielzettel block count vs metadata).
+- **No-show** (real team absent): placement scale stays **league size N** (e.g. 8-team league → 8..2 for active teams, 0 for absent). Fixed case: absent team has **no** Spielzettel block (A N2 W5 pattern).
+- Tests: `tests/test_pre_2022_placement_bonuses.py`.
+
+**Pending until re-extract + merge:** legacy cases still red where merge CSV predates fix (e.g. BL S1 (D) 10/11, A N2 10/11 W5) — merge awards 7-team scale instead of 8.
+
+### Known footguns (accepted for now)
+
+| Issue | Symptom | Mitigation |
+|-------|---------|------------|
+| **Parquet sidecar stale** | Audit shows `computed=0` / “no computed standings” for old seasons while CSV has data | `resolve_load_path` prefers `.parquet`; rebuild from full CSV or delete stale sidecar before audit |
+| **normalize ≠ publish** | Team names fixed in work dir but merged file unchanged | Run `build_published_dataset.py` after normalize |
+| **Pre-2022 weekly ref** | `pts-week` missing `ref` before Tabellen weekly parse | `collect_pre_2022_reference_weekly_team_points` + week schema |
+
+### Deferred / next validation work
+
+- Re-extract + merge for pre-2022 placement bonus alignment on affected seasons.
+- W4 unexplained Excel ref+1 (BL S1 10/11) — yellow, not merge.
+- Parquet/CSV sync policy in publish gate (optional).
+- **Not in scope now:** further validation tuning until 24–26 season gaps are reduced.
+
+### Feature work
+
+Resume product/feature tasks after 24–26 data-quality pass (per operator plan).
+

@@ -120,30 +120,28 @@ def test_parse_pre_2022_tabelle_weekly_points_pool():
     assert parse_pre_2022_tabelle_weekly_points_pool(df) == {5: 27.0}
 
 
-def test_analyze_weekly_points_uses_no_show_adjusted_expected():
-    from data_access.league_points_budget import apply_no_show_adjustments
-
-    budget = apply_no_show_adjustments(
-        compute_league_points_budget(
-            league="BL S1 (D)",
-            season="10/11",
-            number_of_teams=6,
-            reference_weeks=8,
-            games_per_week=5,
-            data_format="data_format_pre_2022",
-        ),
-        {5: 1},
+def test_analyze_weekly_points_flags_ref_schema_gap_on_no_show_week():
+    budget = compute_league_points_budget(
+        league="BL S1 (D)",
+        season="10/11",
+        number_of_teams=6,
+        reference_weeks=8,
+        games_per_week=5,
+        data_format="data_format_pre_2022",
     )
     lines = analyze_weekly_points_divergence(
         reference_weekly={5: 50.0},
         computed_weekly={5: 50.0},
         budget=budget,
+        no_show_teams_by_week={5: ["Lauterach 1"]},
         reference_total_ok=True,
         computed_total_ok=True,
         has_points_mismatches=False,
         include_when_totals_ok=True,
     )
-    assert lines == []
+    assert len(lines) == 1
+    assert "ref-schema -1" in lines[0]
+    assert "no-show (Lauterach 1)" in lines[0]
 
 
 def test_no_shows_by_week_from_reference():

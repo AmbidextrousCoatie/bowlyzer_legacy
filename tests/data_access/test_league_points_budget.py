@@ -56,21 +56,18 @@ def test_analyze_total_points_flags_excel_aggregate_error():
     assert ref_ok is True
     assert comp_ok is False
     assert explained is False
-    assert "computed total" in message
+    assert "Excel ref" in message
 
-    ref_ok2, comp_ok2, explained2, message2 = analyze_total_points(
+    ref_ok2, comp_ref_ok2, explained2, message2 = analyze_total_points(
         reference_total=420.0,
-        computed_total=360.0,
+        computed_total=420.0,
         budget=budget,
-        points_mismatches=[
-            "Team A: ref pts 120 vs computed 90",
-            "Team B: ref pts 100 vs computed 70",
-        ],
+        points_mismatches=[],
     )
     assert ref_ok2 is False
-    assert comp_ok2 is True
-    assert explained2 is True
-    assert "likely" in message2
+    assert comp_ref_ok2 is True
+    assert explained2 is False
+    assert "schema" in message2
 
 
 def test_points_per_match_3pt_system():
@@ -136,44 +133,38 @@ def test_no_show_weekly_reduction_escalates():
     assert adjusted.expected_weekly_points(1) == 51.0
 
 
-def test_detect_no_show_explained_mismatch_accepts_an2_week5_pattern():
-    from data_access.league_points_budget import detect_no_show_explained_mismatch
+def test_detect_no_show_ref_schema_healing_accepts_excel_below_schema():
+    from data_access.league_points_budget import detect_no_show_ref_schema_healing
 
-    explained, remark = detect_no_show_explained_mismatch(
-        team_count=8,
-        no_show_teams_by_week={5: ["SG Rottendorf 5"]},
-        reference_weekly={5: 91.0},
-        computed_weekly={5: 84.0},
+    healed, remark = detect_no_show_ref_schema_healing(
         reference_total=735.0,
-        computed_total=728.0,
-        points_mismatches=[
-            "BC Comet Nürnberg 3: ref pts 160.0 vs computed 159.0",
-            "Mainfranken Bamberg 4: ref pts 134.0 vs computed 133.0",
-            "RW 69 Lichtenhof Stein 3: ref pts 134.0 vs computed 133.0",
-            "Strikers Geldersheim 3: ref pts 94.0 vs computed 93.0",
-            "BC Großlangheim 3: ref pts 62.0 vs computed 61.0",
-            "Kleeblatt Fürth 2: ref pts 41.0 vs computed 40.0",
-            "Pinkiller Lichtenfels 3: ref pts 33.0 vs computed 32.0",
-        ],
+        computed_total=735.0,
+        schema_total=736.0,
+        no_show_teams_by_week={5: ["SG Rottendorf 5"]},
+        comp_ref_ok=True,
+        ref_schema_ok=False,
+        teams_match=True,
+        positions_match=True,
     )
-    assert explained is True
+    assert healed is True
     assert "SG Rottendorf 5" in remark
     assert "W5" in remark
 
 
-def test_detect_no_show_explained_mismatch_rejects_wrong_gap():
-    from data_access.league_points_budget import detect_no_show_explained_mismatch
+def test_detect_no_show_ref_schema_healing_rejects_when_merge_differs_from_excel():
+    from data_access.league_points_budget import detect_no_show_ref_schema_healing
 
-    explained, _remark = detect_no_show_explained_mismatch(
-        team_count=8,
-        no_show_teams_by_week={5: ["SG Rottendorf 5"]},
-        reference_weekly={5: 91.0},
-        computed_weekly={5: 80.0},
+    healed, _remark = detect_no_show_ref_schema_healing(
         reference_total=735.0,
-        computed_total=724.0,
-        points_mismatches=[],
+        computed_total=728.0,
+        schema_total=736.0,
+        no_show_teams_by_week={5: ["SG Rottendorf 5"]},
+        comp_ref_ok=False,
+        ref_schema_ok=False,
+        teams_match=True,
+        positions_match=True,
     )
-    assert explained is False
+    assert healed is False
 
 
 def test_detect_points_one_off_correction_accepts_computed_an2_case():

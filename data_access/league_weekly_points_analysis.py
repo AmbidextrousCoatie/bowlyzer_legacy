@@ -332,11 +332,13 @@ def analyze_weekly_points_divergence(
     reference_total_ok: bool = True,
     computed_total_ok: bool = True,
     has_points_mismatches: bool = False,
+    no_show_teams_by_week: Optional[Mapping[int, Sequence[str]]] = None,
 ) -> list[str]:
     """
-    List matchdays where the league points pool differs (ref/computed/expected).
+    List matchdays where the league points pool differs (ref/computed/schema).
 
-    Expected per week is ``budget.expected_weekly_points(week)`` (includes no-show adjustments).
+  *expected* is the pure scoring-schema weekly budget (ignores no-shows).
+  Primary merge issue: ``comp-ref`` (computed vs Excel reference).
     """
     if not include_when_totals_ok:
         if reference_total_ok and computed_total_ok and not has_points_mismatches:
@@ -351,9 +353,10 @@ def analyze_weekly_points_divergence(
     if not weeks:
         return []
 
+    no_show_by_week = no_show_teams_by_week or {}
     lines: list[str] = []
     for week in weeks:
-        expected_weekly = float(budget.expected_weekly_points(week))
+        expected_weekly = float(budget.weekly_total_points)
         if expected_weekly <= 0:
             continue
         ref = float(reference_weekly.get(week, 0.0))
@@ -363,23 +366,26 @@ def analyze_weekly_points_divergence(
         ref_part = f"{ref:g}" if has_ref else "—"
         comp_part = f"{comp:g}" if has_comp else "—"
 
-        ref_mismatch = has_ref and not _close(ref, expected_weekly)
-        comp_mismatch = has_comp and not _close(comp, expected_weekly)
-        cross_mismatch = has_ref and has_comp and not _close(ref, comp)
-        if not (ref_mismatch or comp_mismatch or cross_mismatch):
+        comp_ref_mismatch = has_ref and has_comp and not _close(ref, comp)
+        ref_schema_mismatch = has_ref and not _close(ref, expected_weekly)
+        comp_schema_mismatch = has_comp and not _close(comp, expected_weekly)
+        if not (comp_ref_mismatch or ref_schema_mismatch or comp_schema_mismatch):
             continue
 
         delta_parts: list[str] = []
-        if has_ref and has_comp and not _close(ref, comp):
+        if comp_ref_mismatch:
             delta_parts.append(f"comp-ref {comp - ref:+g}")
-        if has_comp and not _close(comp, expected_weekly):
-            delta_parts.append(f"comp-exp {comp - expected_weekly:+g}")
-        if has_ref and not _close(ref, expected_weekly):
-            delta_parts.append(f"ref-exp {ref - expected_weekly:+g}")
+        if ref_schema_mismatch:
+            delta_parts.append(f"ref-schema {ref - expected_weekly:+g}")
+        if comp_schema_mismatch:
+            delta_parts.append(f"comp-schema {comp - expected_weekly:+g}")
+        if int(week) in no_show_by_week and ref_schema_mismatch:
+            absent = ", ".join(no_show_by_week[int(week)])
+            delta_parts.append(f"no-show ({absent})")
 
         delta_note = f" ({'; '.join(delta_parts)})" if delta_parts else ""
         lines.append(
             f"pts-week: W{week} pool ref {ref_part} / computed {comp_part} / "
-            f"expected {expected_weekly:g}{delta_note}"
+            f"schema {expected_weekly:g}{delta_note}"
         )
     return lines

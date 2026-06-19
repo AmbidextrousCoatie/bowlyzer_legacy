@@ -1,8 +1,8 @@
 {
   "manifest_format_version": 1,
   "data_schema_version": 2,
-  "run_id": "20260617T165518Z",
-  "published_at": "2026-06-17T16:55:18.971120+00:00",
+  "run_id": "20260619T151252Z",
+  "published_at": "2026-06-19T15:12:52.586375+00:00",
   "forced": false,
   "blocking_audit_ids": [],
   "deferred_audit_ids": [],
@@ -22,7 +22,7 @@
       "deprecated": false,
       "logical_path": "C:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\data\\tournaments_postprocessed.csv",
       "parquet_path": "C:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\data\\tournaments_postprocessed.parquet",
-      "row_count": 4358,
+      "row_count": 4370,
       "columns": [
         "Season",
         "Date",
@@ -64,7 +64,7 @@
           "unique_rows_after_dedupe": null
         }
       ],
-      "size_bytes": 60532
+      "size_bytes": 60674
     },
     {
       "job": "players_registry",

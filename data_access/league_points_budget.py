@@ -324,114 +324,105 @@ def analyze_total_points(
     tol: float = 0.5,
 ) -> tuple[bool, bool, bool, str]:
     """
-    Return (reference_ok, computed_ok, mismatch_explained_by_ref_total, message).
+    Return (reference_schema_ok, computed_ref_ok, mismatch_explained_by_ref_total, message).
 
-    When Excel's aggregate points pool is wrong but merge matches the schema budget,
-    per-team point deltas often mirror the ref-vs-computed total gap.
+    *reference_schema_ok* — Excel total vs pure scoring-schema budget (ignores no-shows).
+    *computed_ref_ok* — merge total vs Excel reference (the coherence check).
     """
     expected = budget.season_total_points
-    ref_ok = _totals_close(reference_total, expected, tol=tol)
-    comp_ok = _totals_close(computed_total, expected, tol=tol)
+    ref_schema_ok = _totals_close(reference_total, expected, tol=tol)
+    comp_ref_ok = _totals_close(computed_total, reference_total, tol=tol)
 
     ref_gap = reference_total - computed_total
     mismatch_gap = _sum_points_mismatch_delta(points_mismatches)
     explained = (
         bool(points_mismatches)
-        and not ref_ok
-        and comp_ok
+        and not ref_schema_ok
+        and comp_ref_ok
         and _totals_close(ref_gap, mismatch_gap, tol=max(tol, 1.0))
         and _totals_close(reference_total - expected, ref_gap, tol=max(tol, 1.0))
     )
 
     parts: list[str] = []
-    if not ref_ok:
+    if not ref_schema_ok:
         parts.append(
-            f"Excel total {reference_total:g} vs expected {expected:g} "
+            f"Excel total {reference_total:g} vs schema expected {expected:g} "
             f"({reference_total - expected:+g}, {budget.formula_note()})"
         )
-    if not comp_ok:
+    if not comp_ref_ok:
         parts.append(
-            f"computed total {computed_total:g} vs expected {expected:g} "
-            f"({computed_total - expected:+g})"
+            f"computed total {computed_total:g} vs Excel ref {reference_total:g} "
+            f"({computed_total - reference_total:+g})"
         )
     if explained:
         parts.append(
             "per-team point gaps likely reflect wrong Excel standings total, not merge scoring"
         )
-    elif points_mismatches and not ref_ok and comp_ok:
+    elif points_mismatches and not ref_schema_ok and comp_ref_ok:
         parts.append(
-            f"Excel total off by {reference_total - expected:+g}; computed matches schema budget"
+            f"Excel total off by {reference_total - expected:+g}; merge matches Excel ref"
         )
 
-    return ref_ok, comp_ok, explained, "; ".join(parts)
+    return ref_schema_ok, comp_ref_ok, explained, "; ".join(parts)
 
 
-def detect_no_show_explained_mismatch(
+def no_shows_explain_ref_schema_shortfall(
     *,
-    team_count: int,
+    reference_total: float,
+    schema_total: float,
     no_show_teams_by_week: Mapping[int, Sequence[str]],
-    reference_weekly: Mapping[int, float],
-    computed_weekly: Mapping[int, float],
+    tol: float = 0.5,
+) -> bool:
+    """Excel season total is below schema only by documented no-show penalties."""
+    if not no_show_teams_by_week:
+        return False
+    reduction = sum(
+        no_show_weekly_reduction(len(teams)) for teams in no_show_teams_by_week.values()
+    )
+    return _totals_close(reference_total, schema_total - reduction, tol=tol)
+
+
+def detect_no_show_ref_schema_healing(
+    *,
     reference_total: float,
     computed_total: float,
-    points_mismatches: Sequence[str],
+    schema_total: float,
+    no_show_teams_by_week: Mapping[int, Sequence[str]],
+    comp_ref_ok: bool,
+    ref_schema_ok: bool,
+    teams_match: bool,
+    positions_match: bool,
     tol: float = 0.5,
 ) -> tuple[bool, str]:
     """
-  Return True when merge is short vs Excel only by the no-show placement pattern.
+    Excel below schema because of no-shows, but merge matches Excel — acceptable.
 
-  Each absent team drops the weekly pool by one point vs a full matchday; each
-  participating team is 1pt low in season standings (N teams - K absent = N-K per week).
+    ref != schema expected, ref == computed, no-show penalties explain the schema gap.
     """
-    if not no_show_teams_by_week or team_count <= 0:
+    if not (teams_match and positions_match and comp_ref_ok and not ref_schema_ok):
+        return False, ""
+    if not no_shows_explain_ref_schema_shortfall(
+        reference_total=reference_total,
+        schema_total=schema_total,
+        no_show_teams_by_week=no_show_teams_by_week,
+        tol=tol,
+    ):
         return False, ""
 
-    weekly_gaps: list[tuple[int, float]] = []
-    for week, absent_teams in no_show_teams_by_week.items():
-        absent_count = len(absent_teams)
-        if absent_count <= 0:
-            continue
-        if int(week) not in reference_weekly or int(week) not in computed_weekly:
-            return False, ""
-        gap = float(reference_weekly[int(week)]) - float(computed_weekly[int(week)])
-        expected_gap = no_show_expected_pool_gap(team_count, absent_count)
-        if not _totals_close(gap, expected_gap, tol=tol):
-            return False, ""
-        weekly_gaps.append((int(week), gap))
-
-    if not weekly_gaps:
-        return False, ""
-
-    total_gap = float(reference_total) - float(computed_total)
-    if not _totals_close(total_gap, sum(gap for _, gap in weekly_gaps), tol=max(tol, 1.0)):
-        return False, ""
-
-    parsed = [_parse_points_mismatch_line(str(line)) for line in points_mismatches]
-    if points_mismatches and any(item is None for item in parsed):
-        return False, ""
-
-    expected_mismatch_teams = sum(
-        int(team_count) - len(absent_teams) for absent_teams in no_show_teams_by_week.values()
+    reduction = sum(
+        no_show_weekly_reduction(len(teams)) for teams in no_show_teams_by_week.values()
     )
-    if len(parsed) != expected_mismatch_teams:
-        return False, ""
-
-    for item in parsed:
-        assert item is not None
-        _team, ref_pts, comp_pts = item
-        if abs((ref_pts - comp_pts) - 1.0) > tol:
-            return False, ""
-
-    absence_count = sum(len(teams) for teams in no_show_teams_by_week.values())
-    week_labels = ", ".join(f"W{week}" for week, _ in weekly_gaps)
+    week_labels = ", ".join(
+        f"W{week}" for week in sorted(no_show_teams_by_week)
+    )
     team_labels = ", ".join(
         team
         for week in sorted(no_show_teams_by_week)
         for team in no_show_teams_by_week[week]
     )
     remark = (
-        f"no-show week(s) {week_labels} ({team_labels}): merge {total_gap:g}pt short "
-        f"vs Excel ({team_count} teams, {absence_count} absent)"
+        f"no-show {week_labels} ({team_labels}): Excel {reduction:g}pt below schema; "
+        f"merge matches Excel ref ({reference_total:g})"
     )
     return True, remark
 
@@ -504,33 +495,32 @@ def detect_points_one_off_correction(
         if abs(ref_pts - comp_pts) > max_gap + tol:
             return False, ""
 
-    ref_off = float(reference_total) - float(expected_total)
-    comp_off = float(computed_total) - float(expected_total)
-    ref_matches = reference_total_points_ok or _totals_close(ref_off, 0, tol=tol)
-    comp_matches = computed_total_points_ok or _totals_close(comp_off, 0, tol=tol)
+    ref_vs_schema = float(reference_total) - float(expected_total)
+    comp_vs_schema = float(computed_total) - float(expected_total)
+    comp_vs_ref = float(computed_total) - float(reference_total)
 
-    excel_high = ref_matches and not comp_matches and _totals_close(ref_off, total_gap, tol=tol)
-    excel_low_or_merge_short = (
-        comp_matches and not ref_matches and _totals_close(ref_off, total_gap, tol=tol)
+    trusted_merge = (
+        _totals_close(ref_vs_schema, 0, tol=tol)
+        and _totals_close(comp_vs_ref, -total_gap, tol=tol)
+    ) or (
+        _totals_close(comp_vs_schema, 0, tol=tol)
+        and _totals_close(ref_vs_schema, total_gap, tol=tol)
     )
-    merge_short_excel_ok = (
-        ref_matches and not comp_matches and _totals_close(comp_off, -total_gap, tol=tol)
-    )
-    if not (excel_high or excel_low_or_merge_short or merge_short_excel_ok):
+    if not trusted_merge:
         return False, ""
 
     first_team = parsed_lines[0][0]  # type: ignore[index]
-    if comp_matches and not ref_matches:
+    if _totals_close(comp_vs_schema, 0, tol=tol) and not _totals_close(ref_vs_schema, 0, tol=tol):
         detail = (
-            f"Excel standings total +{abs(ref_off):g}pt vs schema; "
-            f"merge matches expected on {first_team}"
+            f"Excel standings total {ref_vs_schema:+g}pt vs schema; "
+            f"merge matches schema on {first_team}"
         )
     else:
         detail = f"{abs(total_gap):g}pt vs Excel on {first_team}"
     remark = (
         f"accepted computed standings: {detail} "
         f"(Excel total {reference_total:g}, computed {computed_total:g}, "
-        f"expected {expected_total:g})"
+        f"schema {expected_total:g})"
     )
     return True, remark
 
@@ -569,7 +559,7 @@ def classify_error_categories(comparison: object) -> list[str]:
         categories.append("total_points_comp")
     if getattr(comparison, "points_mismatch_explained_by_total", False):
         categories.append("points_excel_total")
-    if getattr(comparison, "no_show_explained", False):
+    if getattr(comparison, "ref_schema_healed_by_no_show", False):
         categories.append("no_show")
     if getattr(comparison, "weekly_points_findings", None):
         categories.append("weekly_points")

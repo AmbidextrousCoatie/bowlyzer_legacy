@@ -2748,12 +2748,19 @@ def _is_phantom_pre_2022_team_name(team_name: str) -> bool:
 def _pre_2022_placement_team_count(
     team_weekly_pins: dict[str, int],
     number_of_teams: int | None,
+    *,
+    spielzettel_block_count: int | None = None,
 ) -> int:
     """
-    Teams eligible for weekly scratch placement.
+    League size for weekly scratch placement (top team gets N bonus points).
 
     Spielzettel metadata often counts the bye block as an extra team (e.g. 6 blocks
-    for 5 real clubs). Rank only real teams; top club gets N points where N is that count.
+    for 5 real clubs). A missing real club (no-show) is *not* a bye: metadata still
+    reflects league size and placement stays on the full N..1 scale.
+
+    When ``spielzettel_block_count`` is supplied, phantom bye is detected only when
+    every metadata slot appears on the sheet (``block_count == meta``) but one slot
+    is the non-club bye (``ranked_count == meta - 1`` after skipping phantom names).
     """
     ranked_count = len(team_weekly_pins)
     if ranked_count <= 0:
@@ -2763,29 +2770,42 @@ def _pre_2022_placement_team_count(
 
     if number_of_teams is not None:
         meta_count = int(number_of_teams)
-        if meta_count == ranked_count + 1:
+        if meta_count <= 0:
             return ranked_count
-        if meta_count > 0:
+        if spielzettel_block_count is not None:
+            if (
+                spielzettel_block_count == meta_count
+                and ranked_count == meta_count - 1
+            ):
+                return ranked_count
             return meta_count
+        return meta_count
+
     return ranked_count
 
 
 def _pre_2022_weekly_placement_bonuses(
     team_weekly_pins: dict[str, int],
     number_of_teams: int | None,
+    *,
+    spielzettel_block_count: int | None = None,
 ) -> dict[str, float]:
     """
     Rank teams by Spieltag pinfall; 1st gets N, last active gets at least 1.
 
-    No-show teams (zero pinfall) receive 0 bonus while the league still awards
-  6..2 style placement to the teams that played (e.g. 6-team league, one absent).
+    N is the league team count from metadata, not the number of teams that played.
+    No-show teams (zero pinfall or absent from Spielzettel) receive 0 bonus.
     """
     real_pins = {
         team: pins
         for team, pins in team_weekly_pins.items()
         if not _is_phantom_pre_2022_team_name(team)
     }
-    team_count = _pre_2022_placement_team_count(real_pins, number_of_teams)
+    team_count = _pre_2022_placement_team_count(
+        real_pins,
+        number_of_teams,
+        spielzettel_block_count=spielzettel_block_count,
+    )
     if team_count <= 0:
         return {}
 
@@ -3106,7 +3126,11 @@ def extract_pre_2022_file(
         csv_rows.extend(block_rows)
         team_weekly_pins[team_name] = weekly_pinfall
 
-    placement_bonuses = _pre_2022_weekly_placement_bonuses(team_weekly_pins, number_of_teams)
+    placement_bonuses = _pre_2022_weekly_placement_bonuses(
+        team_weekly_pins,
+        number_of_teams,
+        spielzettel_block_count=len(block_starts),
+    )
     for team_name, bonus_points in placement_bonuses.items():
         csv_rows.append(
             _pre_2022_placement_bonus_row(

@@ -13,10 +13,9 @@ import pandas as pd
 
 from data_access.league_points_budget import (
     analyze_total_points,
-    apply_no_show_adjustments,
     classify_error_categories,
     compute_league_points_budget,
-    detect_no_show_explained_mismatch,
+    detect_no_show_ref_schema_healing,
     detect_points_one_off_correction,
     phantom_bye_league,
     resolve_real_team_count_for_budget,
@@ -27,7 +26,6 @@ from data_access.league_weekly_points_analysis import (
     compute_weekly_points_pool_from_dataframe,
     format_no_show_findings,
     no_show_teams_by_week_from_reference,
-    no_shows_by_week_from_reference,
     parse_reference_weekly_points_pool,
     weekly_pool_from_team_points,
 )
@@ -105,7 +103,7 @@ class StandingsComparison:
     points_auto_corrected: bool = False
     correction_remark: str = ""
     no_show_findings: List[str] = field(default_factory=list)
-    no_show_explained: bool = False
+    ref_schema_healed_by_no_show: bool = False
     no_show_remark: str = ""
     weekly_points_findings: List[str] = field(default_factory=list)
     error_categories: List[str] = field(default_factory=list)
@@ -1174,14 +1172,11 @@ def _apply_total_points_validation(
             sheet_name=reference_sheet,
             ref_week=ref_weeks,
         )
+    no_show_teams: Dict[int, List[str]] = {}
     if target.data_format == "data_format_pre_2022" and weekly_team_points:
         no_show_teams = no_show_teams_by_week_from_reference(weekly_team_points)
         comparison.no_show_findings = format_no_show_findings(no_show_teams)
-        budget = apply_no_show_adjustments(
-            budget,
-            no_shows_by_week_from_reference(weekly_team_points),
-        )
-    ref_ok, comp_ok, explained, message = analyze_total_points(
+    ref_schema_ok, comp_ref_ok, explained, message = analyze_total_points(
         reference_total=ref_total,
         computed_total=comp_total,
         budget=budget,
@@ -1190,7 +1185,8 @@ def _apply_total_points_validation(
     comparison.total_points_reference = ref_total
     comparison.total_points_computed = comp_total
     comparison.total_points_expected = budget.season_total_points
-    comparison.reference_total_points_ok = ref_ok
+    comparison.reference_total_points_ok = ref_schema_ok
+    comparison.computed_total_points_ok = comp_ref_ok
     comp_weekly = compute_weekly_points_pool_from_dataframe(
         league_df,
         league=target.league,
@@ -1201,35 +1197,24 @@ def _apply_total_points_validation(
         reference_weekly=ref_weekly,
         computed_weekly=comp_weekly,
         budget=budget,
-        reference_total_ok=ref_ok,
-        computed_total_ok=comp_ok,
+        no_show_teams_by_week=no_show_teams,
+        reference_total_ok=ref_schema_ok,
+        computed_total_ok=comp_ref_ok,
         has_points_mismatches=bool(comparison.points_mismatches),
     )
-    no_show_teams = (
-        no_show_teams_by_week_from_reference(weekly_team_points)
-        if weekly_team_points
-        else {}
-    )
-    no_show_explained, no_show_remark = detect_no_show_explained_mismatch(
-        team_count=team_count,
-        no_show_teams_by_week=no_show_teams,
-        reference_weekly=ref_weekly,
-        computed_weekly=comp_weekly,
+    healed, no_show_remark = detect_no_show_ref_schema_healing(
         reference_total=ref_total,
         computed_total=comp_total,
-        points_mismatches=comparison.points_mismatches,
+        schema_total=budget.season_total_points,
+        no_show_teams_by_week=no_show_teams,
+        comp_ref_ok=comp_ref_ok,
+        ref_schema_ok=ref_schema_ok,
+        teams_match=comparison.teams_match,
+        positions_match=comparison.positions_match,
     )
-    if no_show_explained:
-        comparison.no_show_explained = True
+    if healed:
+        comparison.ref_schema_healed_by_no_show = True
         comparison.no_show_remark = no_show_remark
-        comp_ok = True
-        if message:
-            message = "; ".join(
-                part
-                for part in message.split("; ")
-                if part and not part.strip().lower().startswith("computed total")
-            )
-    comparison.computed_total_points_ok = comp_ok
     comparison.points_mismatch_explained_by_total = explained
     if message:
         comparison.notes = _append_note(comparison.notes, message)
@@ -1237,10 +1222,12 @@ def _apply_total_points_validation(
         comparison.notes = _append_note(comparison.notes, finding)
     if no_show_remark:
         comparison.notes = _append_note(comparison.notes, no_show_remark)
-    if not ref_ok or not comp_ok:
-        if comparison.points_match and comparison.teams_match and comparison.positions_match:
+    if comparison.teams_match and comparison.positions_match:
+        if not comp_ref_ok:
+            comparison.status = STATUS_RED
+        elif not ref_schema_ok:
             comparison.status = STATUS_YELLOW
-        elif explained and comparison.teams_match and comparison.positions_match:
+        elif explained:
             comparison.status = STATUS_YELLOW
     comparison.error_categories = classify_error_categories(comparison)
     return comparison
@@ -1275,13 +1262,13 @@ def _apply_validation_outcome(comparison: StandingsComparison) -> StandingsCompa
         return comparison
 
     if (
-        comparison.no_show_explained
+        comparison.ref_schema_healed_by_no_show
         and comparison.teams_match
         and comparison.positions_match
         and comparison.pins_match
-        and comparison.reference_total_points_ok
+        and comparison.computed_total_points_ok
     ):
-        comparison.status = STATUS_GREEN
+        comparison.status = STATUS_CORRECTED
         comparison.error_categories = classify_error_categories(comparison)
         return comparison
 
@@ -1499,18 +1486,18 @@ def comparison_findings(item: StandingsComparison) -> List[str]:
     if item.points_auto_corrected and item.correction_remark:
         lines.append(f"corrected: {item.correction_remark}")
     lines.extend(item.no_show_findings)
-    if item.no_show_explained and item.no_show_remark:
+    if item.ref_schema_healed_by_no_show and item.no_show_remark:
         lines.append(item.no_show_remark)
     if item.points_mismatch_explained_by_total:
         lines.append(
             "pts-total: Excel standings aggregate likely wrong "
-            f"(ref {item.total_points_reference:g} vs expected {item.total_points_expected:g}, "
-            f"computed {item.total_points_computed:g} matches schema)"
+            f"(ref {item.total_points_reference:g} vs schema {item.total_points_expected:g}, "
+            f"computed {item.total_points_computed:g} matches Excel ref)"
         )
     elif not item.reference_total_points_ok or not item.computed_total_points_ok:
         lines.append(
             "pts-total: "
-            f"ref {item.total_points_reference:g} / expected {item.total_points_expected:g} / "
+            f"ref {item.total_points_reference:g} / schema {item.total_points_expected:g} / "
             f"computed {item.total_points_computed:g}"
         )
     lines.extend(item.weekly_points_findings)
@@ -1595,7 +1582,7 @@ def format_comparison_report(
     for item in comparisons:
         show = (
             item.status not in {STATUS_GREEN, STATUS_PERFECT}
-            or item.no_show_explained
+            or item.ref_schema_healed_by_no_show
             or item.missing_matchdays
             or item.week_coverage_status not in ("", WEEK_COVERAGE_OK)
         )
