@@ -40,6 +40,7 @@ COPY data_access ./data_access
 COPY database ./database
 COPY pipeline ./pipeline
 COPY deploy ./deploy
+COPY scripts/publish_tournament_parquet.py ./scripts/publish_tournament_parquet.py
 COPY --from=frontend-build /app/frontend/dist ./frontend/dist
 
 # Non-root runtime (matches host user bowlyzer UID 1000 when using setup-bowlyzer-user.sh).

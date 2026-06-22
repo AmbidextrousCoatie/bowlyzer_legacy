@@ -207,6 +207,18 @@ function Sync-RemoteDatabase {
     } else {
         Write-Host '    warning: no Parquet/JSON (or CSV with -SyncDatabaseCsv) in database/data/ to upload'
     }
+
+    $gfTournament = Join-Path $databasePath "input/gf_tables_export/gf_tournaments_2026__combined_postprocessed.csv"
+    if (Test-Path -LiteralPath $gfTournament) {
+        $gfRemoteDir = "${RemoteDir}/work/tournament_inputs"
+        Write-Host "==> SCP: GF tournament snapshot -> ${gfRemoteDir}/ (club import merge)"
+        & ssh @SshOpts $Remote "mkdir -p '${gfRemoteDir}'"
+        if (-not $?) { throw "ssh mkdir tournament_inputs failed" }
+        & scp @SshOpts $gfTournament "${Remote}:${gfRemoteDir}/gf_tournaments_2026__combined_postprocessed.csv"
+        if (-not $?) { throw "scp GF tournament snapshot failed" }
+    } else {
+        Write-Host '    warning: GF tournament snapshot not found locally; club auto-import merge needs it on VPS'
+    }
 }
 
 function Sync-RemoteLeagueCache {

@@ -1,163 +1,286 @@
 # Clubmeisterschaft Donaubowler — auto-import from Dropbox (VPS)
 
 Ongoing tournament: **Clubmeisterschaft Donaubowler 2026**.  
-Goal: while you are away, the VPS pulls the data owner’s Excel from Dropbox, runs the existing importer, and restarts the app so [bowlyzer.online](https://www.bowlyzer.online) shows fresh results.
+Goal: VPS pulls the data owner’s Excel from a **dedicated Dropbox account**, imports, rebuilds **`tournaments_postprocessed.parquet`**, site updates without manual PC deploy.
 
-**Clubpokal** (separate team KO over multiple months) is **not** this pipeline — it will get its own importer later.
+**Clubpokal** (team KO) is **not** this pipeline.
 
-**No manual “import on PC + deploy -SyncDatabase” during vacation** — set this up during the **dry-run week** before you leave.
+---
+
+## Who runs as what
+
+| Action | User | Notes |
+|--------|------|--------|
+| Install scripts, rclone, import, timer | **`bowlyzer`** | Default; no root |
+| `apt install rclone` | **root** | One-time OS package |
+| `loginctl enable-linger bowlyzer` | **root** | One-time; timer runs after reboot without login |
+| Docker import / merge | **`bowlyzer`** | Via `docker` group |
+| App container | **`bowlyzer`** | Existing compose setup |
+
+Legacy `/etc/bowlyzer/` and system-wide systemd units are **not** used anymore.
 
 ---
 
 ## Architecture
 
 ```text
-Dropbox folder (data owner)
+Dedicated Dropbox user (folder shared by data owner)
         │
-        ▼  rclone sync (systemd timer every 12 min)
-/var/lib/bowlyzer/clubmeisterschaft/inbox/*.xlsx
+        ▼  step 1: rclone sync (user systemd timer, every 12 min)
+~/bowlyzer/work/clubmeisterschaft/inbox/Clubpokal DB 2026.xlsx
         │
-        ▼  clubmeisterschaft_auto_import.sh
-        │    · stable-file wait (Excel double-save)
-        │    · sha256 skip if unchanged
-        │    · docker run → import_clubmeisterschaft_donaubowler_xlsx.py
-        │    · writes ~/bowlyzer/database/data/…
+        ▼  step 2: stable-file wait + sha256 (skip if unchanged)
+        ▼  step 3: docker → import_clubmeisterschaft_donaubowler_xlsx.py
+        │         → tournament_manual_postprocessed.csv
+        ▼  step 4: docker → publish_tournament_parquet.py
+        │         GF snapshot (host) + manual → tournaments_postprocessed.parquet
         ▼
-docker compose restart bowlyzer
+~/bowlyzer/database/data/tournaments_postprocessed.parquet  (bind-mount :ro)
         │
-        ▼
-nginx → bowlyzer.online /turnier?…Clubmeisterschaft…
+        ▼  app reloads on parquet mtime (no restart by default)
+bowlyzer.online /turnier?…Clubmeisterschaft…
 ```
 
 | Artifact | Path |
 |----------|------|
-| Auto-import script | `scripts/clubmeisterschaft_auto_import.sh` |
-| VPS installer | `scripts/install_clubmeisterschaft_auto_import.sh` |
-| Env template | `deploy/vps/clubmeisterschaft-import.env.example` |
-| systemd units | `deploy/vps/clubmeisterschaft-import.{service,timer}` |
-| Importer | `database/input/import_clubmeisterschaft_donaubowler_xlsx.py` |
+| Import script (on PATH) | `~/bin/clubmeisterschaft_auto_import.sh` |
+| Config | `~/.config/bowlyzer/clubmeisterschaft-import.env` |
+| rclone config | `~/.config/rclone/rclone.conf` |
+| Inbox / work / state | `~/bowlyzer/work/clubmeisterschaft/` |
+| GF regional snapshot | `~/bowlyzer/work/tournament_inputs/gf_tournaments_2026__combined_postprocessed.csv` |
+| User systemd units | `~/.config/systemd/user/clubmeisterschaft-import.{service,timer}` |
 
 ---
 
-## Quick install (VPS)
-
-From your **Windows** machine (after `deploy.config.ps1` exists):
+## Phase A — PC (once)
 
 ```powershell
+.\deploy\deploy.ps1 -SkipBuild -SyncDatabase
 .\deploy\install_clubmeisterschaft_auto_import.ps1
 ```
 
-Or on the **VPS** (git clone or scp repo there):
-
-```bash
-cd ~/bowlyzer-src   # your clone path
-sudo ./scripts/install_clubmeisterschaft_auto_import.sh
-sudo nano /etc/bowlyzer/clubmeisterschaft-import.env   # set CLUBMEISTERSCHAFT_RCLONE_SRC
-```
-
----
-
-## One-time VPS setup
-
-### 1. Deploy a current image (before dry-run week)
-
-On Windows:
+Optional timer + linger in one go:
 
 ```powershell
-.\deploy\deploy.ps1 -SyncDatabase
+.\deploy\install_clubmeisterschaft_auto_import.ps1 -EnableTimer -EnableLinger
 ```
 
-The image must include `openpyxl` and the latest importer.
-
-### 2. Install rclone and link Dropbox
-
-```bash
-sudo apt install -y rclone
-rclone config   # new remote, e.g. name "dropbox", type Dropbox
-```
-
-Ask the data owner for a **dedicated subfolder** (not a public link). Example:
-
-`dropbox:Clubmeisterschaft Donaubowler 2026/`
-
-In `/etc/bowlyzer/clubmeisterschaft-import.env`:
-
-```bash
-CLUBMEISTERSCHAFT_RCLONE_SRC=dropbox:Clubmeisterschaft Donaubowler 2026
-```
-
-### 3. Env file
-
-Installed by `install_clubmeisterschaft_auto_import.sh` from `deploy/vps/clubmeisterschaft-import.env.example`.
-
-Key variables:
-
-| Variable | Purpose |
-|----------|---------|
-| `BOWLYZER_DIR` | `/home/bowlyzer/bowlyzer` — compose + `database/` |
-| `CLUBMEISTERSCHAFT_RCLONE_SRC` | rclone source path |
-| `CLUBMEISTERSCHAFT_INBOX` | `/var/lib/bowlyzer/clubmeisterschaft/inbox` |
-| `IMPORT_DATE` / `IMPORT_YEAR` | Passed to importer |
+(`-EnableLinger` SSHs as **root** once for `loginctl enable-linger bowlyzer`.)
 
 ---
 
-## Dry-run week (7 days before vacation)
+## Phase B — Dropbox (dedicated account)
 
-Do **not** enable the systemd timer until day 6–7.
+1. Create a **new Dropbox user** — not your personal account.
+2. Data owner shares the workbook (ideally inside a **folder** — simplest for rclone).
+3. Canonical workbook name: `Clubpokal DB 2026.xlsx` (dated copies excluded).
 
-| Day | Action | Success check |
-|-----|--------|----------------|
-| 1 | `rclone lsd dropbox:` and `rclone ls "$CLUBMEISTERSCHAFT_RCLONE_SRC"` | Correct file visible |
-| 1 | `clubmeisterschaft_auto_import.sh --sync-only` | XLSX in inbox |
-| 2 | `--dry-run` after owner saves | “would import” + new hash |
-| 3 | Full run (no flags) | Import logs; site matches Excel |
-| 4 | Owner updates; full run; then run again | Second: `unchanged … skip` |
-| 5 | Overlap two runs | Second: lock message |
-| 6 | `install_clubmeisterschaft_auto_import.sh --enable-timer` | Timer fires on changes only |
-| 7 | Monitor `journalctl` | Vacation-ready |
+### How sharing affects rclone
+
+| How data owner shared | Visible in `rclone ls dropbox_bowlyzer:`? | What to do |
+|----------------------|------------------------------------------|------------|
+| **Folder** added to your Dropbox | Yes | `CLUBMEISTERSCHAFT_RCLONE_SRC=dropbox_bowlyzer:FolderName` |
+| **Folder** shared only (not in your tree) | No (use shared-folders flag) | `SHARED_FOLDERS=1` or **Add to Dropbox** in browser |
+| **Single file** shared directly | `rclone ls … --dropbox-shared-files` | `SHARED_FILES=1` + `rclone cat` (not `copyto`) |
+
+`rclone copyto` fails on shared files (`OpenOptions not supported`). The import script uses
+`rclone cat` instead. **Simplest production setup:** data owner shares the file → log into the
+dedicated Dropbox account in a browser → **Add to Dropbox** → then use normal folder sync.
+
+Optional curl fallback if the link is downloadable without login:
 
 ```bash
-set -a && source /etc/bowlyzer/clubmeisterschaft-import.env && set +a
+CLUBMEISTERSCHAFT_DROPBOX_SHARED_URL=https://www.dropbox.com/scl/fi/.../Clubpokal-DB-2026.xlsx?dl=0
+```
+
+For a **directly shared file** via rclone API:
+
+```bash
+# Production: data owner shared the xlsx directly (not a folder in your tree)
+CLUBMEISTERSCHAFT_RCLONE_SRC=dropbox_bowlyzer:Clubpokal DB 2026.xlsx
+CLUBMEISTERSCHAFT_RCLONE_SHARED_FILES=1
+CLUBMEISTERSCHAFT_XLSX_NAME=Clubpokal DB 2026.xlsx
+```
+
+`rclone ls … --dropbox-shared-files` may show size `0` — that is normal for the listing API;
+verify with `rclone cat … --dropbox-shared-files > /tmp/test.xlsx` and check file size (~20 KB).
+
+```bash
+CLUBMEISTERSCHAFT_RCLONE_SRC=dropbox_bowlyzer:Clubmeisterschaft_Donaubowler
+CLUBMEISTERSCHAFT_RCLONE_SHARED_FILES=0
+```
+
+Test: `clubmeisterschaft_auto_import.sh --sync-only`
+
+---
+
+## Phase C — VPS setup (as bowlyzer)
+
+```bash
+# one-time OS package (root)
+sudo apt install -y rclone
+
+# as bowlyzer
+cd ~/bowlyzer-src
+./scripts/install_clubmeisterschaft_auto_import.sh
+
+rclone config   # remote name: dropbox
+
+nano ~/.config/bowlyzer/clubmeisterschaft-import.env
+# CLUBMEISTERSCHAFT_RCLONE_SRC=dropbox:YourFolder
+
+./scripts/bootstrap_clubmeisterschaft_dropbox.sh
+```
+
+---
+
+## Phase D — Dry-run
+
+```bash
+set -a && source ~/.config/bowlyzer/clubmeisterschaft-import.env && set +a
 
 clubmeisterschaft_auto_import.sh --sync-only
 clubmeisterschaft_auto_import.sh --dry-run
 clubmeisterschaft_auto_import.sh
-clubmeisterschaft_auto_import.sh   # should skip
-```
-
-Before day 6:
-
-```bash
-tar czf ~/bowlyzer-database-backup-$(date +%F).tgz -C /home/bowlyzer bowlyzer/database
+clubmeisterschaft_auto_import.sh   # unchanged … skip
 ```
 
 ---
 
-## Production timer (after dry-run)
+## Phase E — Enable timer
 
 ```bash
-sudo ./scripts/install_clubmeisterschaft_auto_import.sh --enable-timer
-journalctl -u clubmeisterschaft-import.service -f
+./scripts/install_clubmeisterschaft_auto_import.sh --enable-timer
+
+# once as root (timers after reboot without login):
+sudo ./scripts/install_clubmeisterschaft_linger.sh
+```
+
+```bash
+journalctl --user -u clubmeisterschaft-import.service -f
+```
+
+If you previously installed system-wide units:
+
+```bash
+sudo systemctl disable --now clubmeisterschaft-import.timer 2>/dev/null || true
 ```
 
 ---
 
-## Failure modes
+## Root-only summary
 
-| Symptom | Fix |
-|---------|-----|
-| Always “unchanged” | Owner didn’t save; wrong `CLUBMEISTERSCHAFT_RCLONE_SRC` |
-| “Workbook still changing” | Normal; wait for next timer tick |
-| Site stale after import | `docker compose -f ~/bowlyzer/docker-compose.prod.yml restart bowlyzer` |
-| `Another import is running` | Overlap — safe; increase timer interval if noisy |
-| Importer error | Redeploy image: `.\deploy\deploy.ps1` |
+| Command | Why root |
+|---------|----------|
+| `apt install rclone` | system packages |
+| `install_clubmeisterschaft_linger.sh` | `loginctl enable-linger` |
+
+Everything else: **bowlyzer**.
 
 ---
 
 ## Rollback
 
 ```bash
-sudo systemctl disable --now clubmeisterschaft-import.timer
-# restore database/ from backup if needed
-docker compose -f /home/bowlyzer/bowlyzer/docker-compose.prod.yml restart bowlyzer
+systemctl --user disable --now clubmeisterschaft-import.timer
 ```
+
+Restore `~/bowlyzer/database/` from backup if needed.
+
+---
+
+## Email on new workbook
+
+When the workbook **hash changes** and import + parquet publish succeed, the script emails
+`CLUBMEISTERSCHAFT_NOTIFY_EMAIL` the **full run log** (rclone, import, publish, warnings).
+
+Set SMTP in `~/.config/bowlyzer/clubmeisterschaft-import.env` (file mode **600**).
+If `NOTIFY_SMTP_HOST` is unset, import still runs; a log line notes that email was skipped.
+
+### IONOS (VPS + `bowlyzer.online` mail) — recommended
+
+Your setup is a good match: the VPS does **not** send mail directly. It logs in to **IONOS Mail**
+(`smtp.ionos.com`) like Thunderbird would — outbound port **587**, authenticated relay.
+IONOS VPS often blocks raw **port 25**; that does not matter here.
+
+**1. Mailbox in IONOS**
+
+In the IONOS control panel → **Email** → use an existing address (e.g. `chris@bowlyzer.online`)
+or create one (e.g. `notifications@bowlyzer.online`).
+
+**2. Password**
+
+- **No 2FA on webmail:** use the normal mailbox password.
+- **2FA enabled:** regular password will **not** work for SMTP. In [IONOS Webmail](https://mail.ionos.com)
+  → top-right account menu → **Login & Security** → create an **app password** and use that as
+  `NOTIFY_SMTP_PASS`.
+
+**3. Env on VPS** (`~/.config/bowlyzer/clubmeisterschaft-import.env`)
+
+```bash
+CLUBMEISTERSCHAFT_NOTIFY_EMAIL=chris@bowlyzer.online
+NOTIFY_EMAIL_FROM=chris@bowlyzer.online
+NOTIFY_SMTP_HOST=smtp.ionos.com
+NOTIFY_SMTP_PORT=587
+NOTIFY_SMTP_USER=chris@bowlyzer.online
+NOTIFY_SMTP_PASS=your-mailbox-or-app-password
+NOTIFY_SMTP_STARTTLS=1
+```
+
+| Variable | IONOS value | Notes |
+|----------|-------------|--------|
+| `NOTIFY_SMTP_HOST` | `smtp.ionos.com` | Same for `.de` / `.com` domains |
+| `NOTIFY_SMTP_PORT` | `587` or `465` | 587 + `NOTIFY_SMTP_STARTTLS=1`, or 465 + `NOTIFY_SMTP_SSL=1` |
+| `NOTIFY_SMTP_USER` | Full email address | Not just `chris` — must be `chris@bowlyzer.online` |
+| `NOTIFY_EMAIL_FROM` | Same mailbox (or alias on same domain) | IONOS may reject if From domain ≠ auth user |
+| `NOTIFY_SMTP_PASS` | Mailbox or app password | Prefer separate file (below) |
+
+**Port 465:** If 587 returns `535`, try IONOS’s SSL port instead:
+
+```bash
+NOTIFY_SMTP_PORT=465
+NOTIFY_SMTP_SSL=1
+NOTIFY_SMTP_STARTTLS=0
+```
+
+**4. Keep password out of the main env file (optional)**
+
+```bash
+printf '%s\n' 'your-app-password' > ~/.config/bowlyzer/notify-smtp.pass
+chmod 600 ~/.config/bowlyzer/notify-smtp.pass
+```
+
+In `clubmeisterschaft-import.env`:
+
+```bash
+NOTIFY_SMTP_PASS_FILE=/home/bowlyzer/.config/bowlyzer/notify-smtp.pass
+# omit NOTIFY_SMTP_PASS
+```
+
+**5. Load env and test**
+
+```bash
+chmod 600 ~/.config/bowlyzer/clubmeisterschaft-import.env
+set -a && source ~/.config/bowlyzer/clubmeisterschaft-import.env && set +a
+
+printf 'Bowlyzer SMTP test\n' > /tmp/notify-test.txt
+python3 ~/bowlyzer/scripts/send_notify_email.py \
+  --to chris@bowlyzer.online \
+  --subject "Bowlyzer notify test" \
+  --body-file /tmp/notify-test.txt
+```
+
+**Typical errors**
+
+| Message | Fix |
+|---------|-----|
+| `535 Authentication credentials invalid` | Wrong password; or 2FA on → use app password; user must be full email |
+| `Sender address rejected` | Set `NOTIFY_EMAIL_FROM` to the same address as `NOTIFY_SMTP_USER` |
+| Connection timeout on 587 | Rare on IONOS VPS; check `ufw`/firewall allows **outbound** 587 |
+| `535` on 587 but Thunderbird works | Try port **465** with `NOTIFY_SMTP_SSL=1` and `NOTIFY_SMTP_STARTTLS=0` |
+| `NOTIFY_SMTP_HOST unset` | Env not loaded in systemd — vars must be in `clubmeisterschaft-import.env` (service uses `EnvironmentFile`) |
+
+### Other providers (Resend, SendGrid, …)
+
+Same env shape; use the provider’s SMTP host, port 587, and API key or SMTP credentials.
+Useful if you do not host mail on IONOS.

@@ -13,7 +13,7 @@ Workbook layout (Clubmeisterschaft 2026 export):
 
 Handicap per game: max(0, 0.7 * (reference_score - a_priori_average))  [pins, rounded half up to nearest int]
 
-Player IDs: resolved from merged league CSV (Player / Player ID) with robust name matching.
+Player IDs: resolved from merged league data (CSV or Parquet) and ``players_registry.parquet``.
 
 Output:
 - database/data/tournament_clubmeisterschaft_donaubowler_2026_postprocessed.csv (batch snapshot)
@@ -34,7 +34,7 @@ import re
 import sys
 from collections import Counter
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Iterable, List, Mapping, Optional, Tuple
 
 from openpyxl import load_workbook
 
@@ -218,34 +218,86 @@ def _handicap_per_game_pins(reference: float, ap_avg: float) -> int:
     return _arith_round_int_pins(0.7 * diff)
 
 
-def _build_player_id_lookup(league_csv: Path) -> Dict[str, str]:
-    """
-    Returns best Player ID per normalized name across league rows.
-    Chooses most frequent Player ID per normalized name.
-    """
-    if not league_csv.is_file():
-        return {}
-
+def _lookup_from_league_rows(rows: Iterable[Mapping[str, str]]) -> Dict[str, str]:
+    """Best Player ID per normalized name from league row dicts."""
     id_counts: Dict[str, Counter] = {}
-    with league_csv.open("r", encoding="utf-8-sig", newline="") as f:
-        reader = csv.DictReader(f, delimiter=";")
-        for row in reader:
-            if str(row.get("Input Data", "")).strip().lower() not in ("true", "1", "yes"):
-                continue
-            name = str(row.get("Player", "") or "").strip()
-            if not name or name.lower() == "team total":
-                continue
-            pid = str(row.get("Player ID", "") or "").strip()
-            if not pid or pid == "0":
-                continue
-            for key in _name_variants(name):
-                id_counts.setdefault(key, Counter())[pid] += 1
+    for row in rows:
+        if str(row.get("Input Data", "")).strip().lower() not in ("true", "1", "yes"):
+            continue
+        name = str(row.get("Player", "") or "").strip()
+        if not name or name.lower() == "team total":
+            continue
+        pid = str(row.get("Player ID", "") or "").strip()
+        if not pid or pid == "0":
+            continue
+        for key in _name_variants(name):
+            id_counts.setdefault(key, Counter())[pid] += 1
 
     best: Dict[str, str] = {}
     for key, ctr in id_counts.items():
         if ctr:
             best[key] = ctr.most_common(1)[0][0]
     return best
+
+
+def _lookup_from_league_csv(league_csv: Path) -> Dict[str, str]:
+    if not league_csv.is_file():
+        return {}
+    with league_csv.open("r", encoding="utf-8-sig", newline="") as f:
+        reader = csv.DictReader(f, delimiter=";")
+        return _lookup_from_league_rows(reader)
+
+
+def _lookup_from_league_parquet(logical_csv: Path) -> Dict[str, str]:
+    try:
+        from data_access.parquet_sidecar import data_file_exists, resolve_load_path
+    except ImportError:
+        return {}
+    if not data_file_exists(logical_csv):
+        return {}
+    load_path = resolve_load_path(logical_csv)
+    if load_path.suffix.lower() != ".parquet":
+        return {}
+    import pandas as pd
+
+    df = pd.read_parquet(load_path)
+    rows = [{str(k): str(v if v is not None else "") for k, v in row.items()} for row in df.to_dict("records")]
+    return _lookup_from_league_rows(rows)
+
+
+def _lookup_from_players_registry() -> Dict[str, str]:
+    try:
+        from data_access.players_registry import (
+            candidate_names_for_entry,
+            load_players_registry_df,
+            registry_lookup_by_id,
+        )
+    except ImportError:
+        return {}
+    registry = load_players_registry_df()
+    if registry is None or registry.empty:
+        return {}
+    out: Dict[str, str] = {}
+    for pid, entry in registry_lookup_by_id(registry).items():
+        for label in candidate_names_for_entry(entry):
+            for key in _name_variants(label):
+                out.setdefault(key, pid)
+    return out
+
+
+def _build_player_id_lookup(league_csv: Path) -> Dict[str, str]:
+    """
+    Player ID lookup for club tournament import.
+
+    VPS often has league Parquet only (no CSV). Falls back to ``players_registry.parquet``.
+    """
+    lookup = _lookup_from_league_csv(league_csv)
+    if not lookup:
+        lookup = _lookup_from_league_parquet(league_csv)
+    registry_lookup = _lookup_from_players_registry()
+    for key, pid in registry_lookup.items():
+        lookup.setdefault(key, pid)
+    return lookup
 
 
 def _resolve_player_id(
@@ -361,7 +413,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--league-csv",
         type=str,
         default=str(DEFAULT_LEAGUE_CSV),
-        help="Merged league CSV for Player ID lookup.",
+        help="Logical league data path for Player ID lookup (CSV or Parquet sidecar).",
     )
     p.add_argument("--season", type=str, default="", help="Season label, e.g. 25/26 (default: from --year).")
     p.add_argument("--year", type=int, default=2026, help="Calendar year for default season label.")

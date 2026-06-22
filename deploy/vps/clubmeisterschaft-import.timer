@@ -1,11 +1,1 @@
-[Unit]
-Description=Poll Clubmeisterschaft Donaubowler Dropbox every 12 minutes
-
-[Timer]
-OnBootSec=5min
-OnUnitActiveSec=12min
-AccuracySec=1min
-Persistent=true
-
-[Install]
-WantedBy=timers.target
+# Deprecated: use deploy/vps/user/ + install as bowlyzer (user systemd).

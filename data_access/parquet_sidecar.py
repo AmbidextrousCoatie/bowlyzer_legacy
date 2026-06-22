@@ -47,10 +47,12 @@ def read_parquet_sidecar(parquet_path: Path) -> pd.DataFrame:
 
 
 def write_parquet_sidecar(df: pd.DataFrame, logical_csv_path: Path) -> Path:
-    """Write ``<csv_stem>.parquet`` next to the logical CSV path."""
+    """Write ``<csv_stem>.parquet`` next to the logical CSV path (atomic replace)."""
     out = parquet_sidecar_path(logical_csv_path)
     out.parent.mkdir(parents=True, exist_ok=True)
-    df.to_parquet(out, index=False)
+    tmp = out.with_suffix(out.suffix + ".tmp")
+    df.to_parquet(tmp, index=False)
+    tmp.replace(out)
     return out
 
 

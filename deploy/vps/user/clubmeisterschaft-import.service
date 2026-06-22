@@ -1,0 +1,14 @@
+[Unit]
+Description=Bowl-A-Lyzer Clubmeisterschaft Donaubowler Dropbox import
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=-%h/.config/bowlyzer/clubmeisterschaft-import.env
+ExecStart=%h/bin/clubmeisterschaft_auto_import.sh
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target

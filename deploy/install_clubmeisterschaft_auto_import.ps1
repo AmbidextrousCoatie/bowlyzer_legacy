@@ -1,13 +1,14 @@
-# Push Clubmeisterschaft auto-import scripts to the VPS and run the installer.
+# Push Clubmeisterschaft auto-import scripts to the VPS and run the installer as bowlyzer.
 # Requires deploy/deploy.config.ps1 (same as deploy.ps1).
 
 #Requires -Version 5.1
 [CmdletBinding()]
 param(
     [string] $RemoteHost,
-    [string] $RemoteUser = "root",
-    [string] $RemoteDir = "/root/bowlyzer-src",
-    [switch] $EnableTimer
+    [string] $RemoteUser = "bowlyzer",
+    [string] $RemoteDir = "/home/bowlyzer/bowlyzer-src",
+    [switch] $EnableTimer,
+    [switch] $EnableLinger
 )
 
 $ErrorActionPreference = "Stop"
@@ -17,6 +18,7 @@ if (Test-Path $ConfigPath) {
     $cfg = & $ConfigPath
     if ($cfg.RemoteHost) { $RemoteHost = $cfg.RemoteHost }
     if ($cfg.RemoteUser) { $RemoteUser = $cfg.RemoteUser }
+    if ($cfg.RemoteDir) { $RemoteDir = $cfg.RemoteDir }
 }
 if (-not $RemoteHost) {
     throw "Set RemoteHost in deploy/deploy.config.ps1 or pass -RemoteHost"
@@ -25,16 +27,44 @@ if (-not $RemoteHost) {
 $Remote = "${RemoteUser}@${RemoteHost}"
 $EnableArg = if ($EnableTimer) { " --enable-timer" } else { "" }
 
-Write-Host "==> ensuring remote dir $RemoteDir"
+function Send-UnixLfFile {
+    param(
+        [Parameter(Mandatory = $true)][string] $LocalPath,
+        [Parameter(Mandatory = $true)][string] $RemoteDest
+    )
+    if ($LocalPath -match '\.sh$') {
+        $text = [System.IO.File]::ReadAllText($LocalPath) -replace "`r`n", "`n" -replace "`r", "`n"
+        $temp = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), [System.IO.Path]::GetRandomFileName() + ".sh")
+        [System.IO.File]::WriteAllText($temp, $text, [System.Text.UTF8Encoding]::new($false))
+        try {
+            scp $temp "${Remote}:${RemoteDest}"
+            if ($LASTEXITCODE -ne 0) { throw "scp failed for $LocalPath" }
+        }
+        finally {
+            Remove-Item -LiteralPath $temp -Force -ErrorAction SilentlyContinue
+        }
+    }
+    else {
+        scp $LocalPath "${Remote}:${RemoteDest}"
+        if ($LASTEXITCODE -ne 0) { throw "scp failed for $LocalPath" }
+    }
+}
+
+Write-Host "==> ensuring remote dir $RemoteDir (as $RemoteUser)"
 ssh $Remote "mkdir -p '$RemoteDir'"
 if ($LASTEXITCODE -ne 0) { throw "ssh mkdir failed" }
 
 $paths = @(
+    "scripts/publish_tournament_parquet.py",
+    "scripts/send_notify_email.py",
     "scripts/clubmeisterschaft_auto_import.sh",
+    "database/input/import_clubmeisterschaft_donaubowler_xlsx.py",
+    "scripts/bootstrap_clubmeisterschaft_dropbox.sh",
     "scripts/install_clubmeisterschaft_auto_import.sh",
+    "scripts/install_clubmeisterschaft_linger.sh",
     "deploy/vps/clubmeisterschaft-import.env.example",
-    "deploy/vps/clubmeisterschaft-import.service",
-    "deploy/vps/clubmeisterschaft-import.timer"
+    "deploy/vps/user/clubmeisterschaft-import.service",
+    "deploy/vps/user/clubmeisterschaft-import.timer"
 )
 foreach ($rel in $paths) {
     $local = Join-Path $RepoRoot $rel
@@ -45,24 +75,31 @@ foreach ($rel in $paths) {
     }
     $remotePath = "$RemoteDir/$($rel -replace '\\','/')"
     Write-Host "==> scp $rel"
-    scp $local "${Remote}:${remotePath}"
-    if ($LASTEXITCODE -ne 0) { throw "scp failed for $rel" }
+    Send-UnixLfFile -LocalPath $local -RemoteDest $remotePath
 }
 
-Write-Host "==> normalizing shell script line endings on VPS"
-ssh $Remote "sed -i 's/\r$//' '$RemoteDir'/scripts/*.sh && chmod +x '$RemoteDir'/scripts/*.sh"
-if ($LASTEXITCODE -ne 0) { throw "sed/chmod failed" }
+Write-Host "==> chmod scripts on VPS"
+    ssh $Remote "mkdir -p '$RemoteDir'/database/input; chmod +x '$RemoteDir'/scripts/*.sh"
 
-Write-Host "==> remote install"
-$remoteCmd = "cd '$RemoteDir' && sudo ./scripts/install_clubmeisterschaft_auto_import.sh$EnableArg"
+Write-Host "==> install as $RemoteUser (no root)"
+$remoteCmd = "cd '$RemoteDir'; ./scripts/install_clubmeisterschaft_auto_import.sh$EnableArg"
 ssh $Remote $remoteCmd
 if ($LASTEXITCODE -ne 0) { throw "remote install failed" }
 
+if ($EnableLinger -or $EnableTimer) {
+    Write-Host "==> enable linger (root, one-time - timers survive reboot without login)"
+    $lingerCmd = "cd '$RemoteDir'; ./scripts/install_clubmeisterschaft_linger.sh"
+    ssh "root@${RemoteHost}" $lingerCmd
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "warning: linger install failed (run manually: sudo ./scripts/install_clubmeisterschaft_linger.sh on VPS)"
+    }
+}
+
 Write-Host ""
-Write-Host "==> next on VPS"
-Write-Host "  1. sudo apt install -y rclone && rclone config"
-Write-Host "  2. sudo nano /etc/bowlyzer/clubmeisterschaft-import.env"
-Write-Host "  3. set -a && source /etc/bowlyzer/clubmeisterschaft-import.env && set +a"
-Write-Host "  4. clubmeisterschaft_auto_import.sh --sync-only"
+Write-Host "==> next on VPS (as $RemoteUser)"
+Write-Host "  1. rclone config    # dedicated Dropbox user"
+Write-Host "  2. nano ~/.config/bowlyzer/clubmeisterschaft-import.env"
+Write-Host "  3. ./scripts/bootstrap_clubmeisterschaft_dropbox.sh"
 Write-Host ""
-Write-Host "See docs/CLUBMEISTERSCHAFT_AUTO_IMPORT.md for dry-run week."
+Write-Host "Logs: journalctl --user -u clubmeisterschaft-import.service -f"
+Write-Host "See docs/CLUBMEISTERSCHAFT_AUTO_IMPORT.md"
