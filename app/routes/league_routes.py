@@ -16,6 +16,7 @@ from app.utils.league_utils import (
     get_league_long_name_map,
     resolve_league_long_name,
 )
+from app.utils.tournament_utils import get_tournament_abbreviation_lookup
 from app.utils.season_query import normalize_season_query_value
 from app.config.database_config import database_config
 from app.cache.league_response_cache import league_cache_put, league_cache_try_get
@@ -1036,7 +1037,8 @@ def get_translations():
                     "ui.player.error_loading_for_player", "ui.player.no_season_data",
                     "ui.player.player_not_found", "ui.player.player_not_found_desc"
                 ]
-            }
+            },
+            "tournament_abbreviations": get_tournament_abbreviation_lookup(),
         })
     except Exception as e:
         return jsonify({

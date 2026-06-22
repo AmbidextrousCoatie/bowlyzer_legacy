@@ -8,6 +8,7 @@ from business_logic.statistics import calculate_score_average_player, calculate_
 from business_logic.server import Server
 from app.services.statistics_service import StatisticsService
 from app.models.statistics_models import PlayerStatistics
+from app.utils.json_safe import to_json_int
 from typing import Dict, List, Any, Optional, Tuple
 
 OVERALL_CUMULATIVE_SCORE_COL = "Overall Cumulative Score"
@@ -177,6 +178,123 @@ class PlayerService:
             games_df[Columns.score] = pd.to_numeric(games_df[Columns.score], errors="coerce")
             games_df = games_df.dropna(subset=[Columns.score])
         return games_df
+
+    def _build_period_stats(
+        self,
+        games_df: pd.DataFrame,
+        *,
+        competition_name,
+        row_team_name,
+        row_club,
+    ) -> List[Dict[str, Any]]:
+        """Per matchday (league week) or tournament stage averages for highlight boxes."""
+        if games_df is None or games_df.empty or Columns.score not in games_df.columns:
+            return []
+
+        from data_access.competition_schema import competition_event_column
+
+        work = games_df.copy()
+        if Columns.event_type in work.columns:
+            is_tournament = (
+                work[Columns.event_type].fillna("").astype(str).str.strip().str.lower().eq("tournament")
+            )
+        else:
+            is_tournament = pd.Series(False, index=work.index)
+
+        periods: List[Dict[str, Any]] = []
+
+        def append_period(*, chunk: pd.DataFrame, is_tourn: bool, period_kind: str, period_value: str, period_number: Any) -> None:
+            if chunk.empty:
+                return
+            games = len(chunk)
+            if games <= 0:
+                return
+            avg = mean_scores(chunk[Columns.score])
+            if avg is None:
+                return
+            season_val = ""
+            if Columns.season in chunk.columns:
+                seasons = [str(s).strip() for s in chunk[Columns.season].dropna().unique().tolist() if str(s).strip()]
+                season_val = seasons[0] if seasons else ""
+            comp = competition_name(chunk)
+            team_num = None
+            if Columns.team_name in chunk.columns:
+                tn = row_team_name(chunk)
+                if tn:
+                    m = re.search(r"\s+(\d+)\s*$", tn)
+                    if m:
+                        team_num = int(m.group(1))
+            periods.append(
+                {
+                    "season": season_val,
+                    "competition": comp,
+                    "is_tournament": bool(is_tourn),
+                    "period_kind": period_kind,
+                    "period_value": str(period_value).strip(),
+                    "period_number": to_json_int(period_number) if period_number is not None else None,
+                    "games": int(games),
+                    "average": float(round(float(avg), 2)),
+                    "club": row_club(chunk),
+                    "team_name": row_team_name(chunk),
+                    "team_number": team_num,
+                    "row_type": "period",
+                }
+            )
+
+        league_work = work.loc[~is_tournament]
+        if not league_work.empty and Columns.week in league_work.columns:
+            league_work = league_work.copy()
+            league_work["_week"] = pd.to_numeric(league_work[Columns.week], errors="coerce")
+            league_work = league_work.dropna(subset=["_week"])
+            if not league_work.empty:
+                comp_col = competition_event_column(league_work) or Columns.league_name
+                if comp_col in league_work.columns:
+                    group_cols = [Columns.season, comp_col, "_week"]
+                    for keys, chunk in league_work.groupby(group_cols, dropna=False):
+                        season_key, comp_key, week_key = keys
+                        comp_label = str(comp_key).strip()
+                        if not comp_label or pd.isna(week_key):
+                            continue
+                        append_period(
+                            chunk=chunk,
+                            is_tourn=False,
+                            period_kind="week",
+                            period_value=str(int(week_key)),
+                            period_number=int(week_key),
+                        )
+
+        tourn_work = work.loc[is_tournament]
+        if not tourn_work.empty:
+            tourn_work = tourn_work.copy()
+            if Columns.round_number in tourn_work.columns:
+                tourn_work["_round"] = pd.to_numeric(tourn_work[Columns.round_number], errors="coerce")
+            else:
+                tourn_work["_round"] = pd.NA
+            comp_col = competition_event_column(tourn_work) or Columns.event_name
+            if comp_col in tourn_work.columns:
+                group_cols = [Columns.season, comp_col, "_round"]
+                if Columns.round_name in tourn_work.columns:
+                    group_cols.append(Columns.round_name)
+                for keys, chunk in tourn_work.groupby(group_cols, dropna=False):
+                    season_key = keys[0]
+                    comp_key = keys[1]
+                    round_key = keys[2]
+                    round_name = ""
+                    if Columns.round_name in tourn_work.columns and len(keys) > 3:
+                        round_name = str(keys[3]).strip()
+                    comp_label = str(comp_key).strip()
+                    if not comp_label or pd.isna(round_key):
+                        continue
+                    label = round_name or f"Round {int(round_key)}"
+                    append_period(
+                        chunk=chunk,
+                        is_tourn=True,
+                        period_kind="round",
+                        period_value=label,
+                        period_number=int(round_key),
+                    )
+
+        return periods
 
     def _subset_ranking_frame(
         self,
@@ -632,6 +750,12 @@ class PlayerService:
                     })
 
         collected_data = dict(seasons=season_stats)
+        collected_data["periods"] = self._build_period_stats(
+            games_df,
+            competition_name=competition_name,
+            row_team_name=row_team_name,
+            row_club=row_club,
+        )
 
         # calculate the lifetime stats
         

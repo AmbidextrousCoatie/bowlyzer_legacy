@@ -4,6 +4,7 @@ from app.config.database_config import database_config
 from app.cache.league_response_cache import league_cache_put, league_cache_try_get
 from app.utils.json_safe import json_safe
 from app.utils.league_player_sources import resolve_player_database_id
+from app.utils.season_query import normalize_season_query_value
 
 bp = Blueprint('player', __name__, url_prefix='/player')
 
@@ -60,7 +61,8 @@ def get_lifetime_stats():
    
     player_name = request.args.get('player_name')
     player_id = request.args.get('player_id', '')
-    season = request.args.get('season', 'all')
+    season_raw = request.args.get('season', 'all')
+    season = normalize_season_query_value(season_raw) if season_raw and str(season_raw).strip().lower() != 'all' else 'all'
     
     if not player_name and not player_id:
         return jsonify({'error': 'Player name is required'}), 400

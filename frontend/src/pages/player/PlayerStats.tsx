@@ -11,13 +11,14 @@ import {
 import { useTranslations } from "../../hooks/useTranslations";
 import { buildPlayerClubHistory } from "../../lib/playerClubHistory";
 import { formatPlayerSearchLabel, resolvePlayerSearchEntry } from "../../lib/playerSearchLabel";
-import { ClubAffiliationHistory } from "./blocks/ClubHistory";
 import { LifetimeStats } from "./blocks/LifetimeStats";
+import { CompetitionBreakdownCharts } from "./blocks/CompetitionBreakdownCharts";
+import { PlayerHighlights } from "./blocks/PlayerHighlights";
 import { SeasonStats } from "./blocks/SeasonStats";
 import { TrendChart } from "./blocks/TrendChart";
 
 export function PlayerStats() {
-  const { t } = useTranslations();
+  const { t, formatCompetition } = useTranslations();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const playerName = searchParams.get("player_name") ?? searchParams.get("player") ?? "";
@@ -103,9 +104,10 @@ export function PlayerStats() {
   const stats = statsQuery.data;
   const lifetime = stats?.lifetime ?? null;
   const seasonRows = stats?.seasons ?? [];
+  const periodRows = stats?.periods ?? [];
   const seasons = seasonsQuery.data ?? [];
 
-  const { currentClub, historyRows } = useMemo(
+  const { currentClub } = useMemo(
     () => buildPlayerClubHistory(stats?.seasons ?? []),
     [stats?.seasons],
   );
@@ -199,9 +201,19 @@ export function PlayerStats() {
                   playerId={playerId || knownPlayer?.id || undefined}
                   t={t}
                 />
-                <SeasonStats seasons={seasonRows} selectedPlayerName={playerName} t={t} />
+                <CompetitionBreakdownCharts
+                  seasons={seasonRows}
+                  t={t}
+                  formatCompetition={formatCompetition}
+                />
+                <PlayerHighlights
+                  seasons={seasonRows}
+                  periods={periodRows}
+                  selectedPlayerName={playerName}
+                  t={t}
+                />
                 <TrendChart seasons={seasonRows} lifetime={lifetime} t={t} />
-                <ClubAffiliationHistory rows={historyRows} t={t} />
+                <SeasonStats seasons={seasonRows} selectedPlayerName={playerName} t={t} />
               </>
             )}
           </>

@@ -51,9 +51,25 @@ export type PlayerSeasonRow = {
   worst_game?: { score?: number | null } | null;
 };
 
+export type PlayerPeriodRow = {
+  season?: string | number | null;
+  competition?: string | null;
+  is_tournament?: boolean | null;
+  period_kind?: "week" | "round" | string | null;
+  period_value?: string | null;
+  period_number?: number | null;
+  games?: number | null;
+  average?: number | null;
+  club?: string | null;
+  team_name?: string | null;
+  team_number?: number | string | null;
+  row_type?: string | null;
+};
+
 export type PlayerStatsResponse = {
   lifetime?: PlayerLifetimeStats | null;
   seasons?: PlayerSeasonRow[] | null;
+  periods?: PlayerPeriodRow[] | null;
 } | null;
 
 export function usePlayerSearch() {

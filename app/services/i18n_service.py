@@ -166,6 +166,64 @@ class I18nService:
             "ui.player.season": {"en": "Season", "de": "Saison"},
             "ui.player.competition": {"en": "Competition", "de": "Wettbewerb"},
             "ui.player.club": {"en": "Club", "de": "Verein"},
+            "ui.player.highlights_heading": {"en": "Player highlights", "de": "Spieler-Highlights"},
+            "ui.player.highlights_hint": {
+                "en": "Career overview — clubs, seasons and competitions at a glance.",
+                "de": "Karriere-Überblick — Clubs, Saisons und Wettbewerbe auf einen Blick.",
+            },
+            "ui.player.highlights_club_affiliation": {
+                "en": "Club affiliation",
+                "de": "Clubzugehörigkeit",
+            },
+            "ui.player.highlights_games_by_club": {"en": "Games by club", "de": "Spiele nach Club"},
+            "ui.player.highlights_avg_by_club": {"en": "Average by club", "de": "Schnitt nach Club"},
+            "ui.player.highlights_avg_by_season": {"en": "Average by season", "de": "Schnitt nach Saison"},
+            "ui.player.highlights_best_tournaments": {
+                "en": "Best tournaments",
+                "de": "Beste Turniere",
+            },
+            "ui.player.highlights_best_competitions": {
+                "en": "Best competitions",
+                "de": "Beste Wettbewerbe",
+            },
+            "ui.player.highlights_best_days": {
+                "en": "Best days",
+                "de": "Beste Spieltage",
+            },
+            "ui.player.period_week": {"en": "Week {n}", "de": "Spieltag {n}"},
+            "ui.player.period_round": {"en": "Round {n}", "de": "Runde {n}"},
+            "ui.player.trend_col": {"en": "Trend", "de": "Trend"},
+            "ui.player.team_col": {"en": "Team", "de": "Mannschaft"},
+            "ui.player.filter_all_details": {"en": "All details", "de": "Alle Details"},
+            "ui.player.filter_league": {"en": "League", "de": "Liga"},
+            "ui.player.filter_tournaments": {"en": "Tournaments", "de": "Turniere"},
+            "ui.player.season_table_filter": {"en": "Table filter", "de": "Tabellenfilter"},
+            "ui.player.cumulative_average_series": {
+                "en": "Cumulative average",
+                "de": "Kumulierter Schnitt",
+            },
+            "ui.player.competition_breakdown_eyebrow": {
+                "en": "Competitions",
+                "de": "Wettbewerbe",
+            },
+            "ui.player.competition_breakdown_title": {
+                "en": "Competition overview",
+                "de": "Wettbewerbsübersicht",
+            },
+            "ui.player.competition_breakdown_hint": {
+                "en": "Average and game share per competition — leagues and tournaments combined.",
+                "de": "Schnitt und Spielanteil je Wettbewerb — Ligen und Turniere zusammen.",
+            },
+            "ui.player.competition_avg_chart": {
+                "en": "Average per competition",
+                "de": "Schnitt je Wettbewerb",
+            },
+            "ui.player.games_share_title": {"en": "Game share", "de": "Spieleanteil"},
+            "ui.player.competition_share": {"en": "Share", "de": "Anteil"},
+            "ui.player.no_competition_data": {
+                "en": "No competition data available.",
+                "de": "Keine Wettbewerbsdaten vorhanden.",
+            },
 
             # Namespaced: Club page (/club) — team drill-down within a club
             "ui.team.page_title": {"en": "Club", "de": "Club"},

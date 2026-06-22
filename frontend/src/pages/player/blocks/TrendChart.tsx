@@ -1,7 +1,10 @@
 import { useMemo } from "react";
 import type { EChartsOption } from "echarts";
 import { EChart } from "../../../lib/charts/EChart";
+import { TEAM_COLOR_PALETTES } from "../../../lib/color-utils";
 import type { PlayerLifetimeStats, PlayerSeasonRow } from "../../../hooks/usePlayer";
+import { buildCumulativeSeasonAverages } from "../../../lib/playerHighlights";
+import { compareSeasonString } from "../../../lib/playerClubHistory";
 
 type Props = {
   seasons: PlayerSeasonRow[];
@@ -9,54 +12,30 @@ type Props = {
   t: (key: string, fallback?: string) => string;
 };
 
-export function TrendChart({ seasons, lifetime, t }: Props) {
-  const seasonTotals = useMemo(
-    () => (seasons ?? []).filter((row) => (row.row_type ?? "season_total") === "season_total"),
-    [seasons],
-  );
+const SEASON_BAR_COLOR = TEAM_COLOR_PALETTES.rainbowPastel[0];
+const CUMULATIVE_LINE_COLOR = TEAM_COLOR_PALETTES.rainbowPastel[8];
+
+export function TrendChart({ seasons, lifetime: _lifetime, t }: Props) {
+  const seasonTotals = useMemo(() => {
+    const totals = (seasons ?? []).filter(
+      (row) => (row.row_type ?? "season_total") === "season_total",
+    );
+    return [...totals].sort((a, b) =>
+      compareSeasonString(String(a.season ?? ""), String(b.season ?? "")),
+    );
+  }, [seasons]);
 
   const option = useMemo<EChartsOption | null>(() => {
     if (seasonTotals.length === 0) return null;
-    const lifetimeAvg = lifetime?.average_score ?? null;
 
     const labels = seasonTotals.map((s, i) => String(s.season ?? `Season ${i + 1}`));
     const seasonAverages = seasonTotals.map((s) => s.average ?? 0);
     const games = seasonTotals.map((s) => s.games ?? 0);
-    const lifetimeLine = lifetimeAvg != null ? seasonTotals.map(() => lifetimeAvg) : null;
+    const cumulative = buildCumulativeSeasonAverages(seasonTotals).map((row) => row.average);
 
-    const allValues = [...seasonAverages, ...(lifetimeLine ?? [])].filter((v) =>
-      Number.isFinite(v),
-    );
+    const allValues = [...seasonAverages, ...cumulative].filter((v) => Number.isFinite(v));
     const min = allValues.length ? Math.floor(Math.min(...allValues) - 5) : 0;
     const max = allValues.length ? Math.ceil(Math.max(...allValues) + 5) : 250;
-
-    const seriesAverage = {
-      name: t("ui.player.season_average_series", "Saisonschnitt"),
-      type: "line" as const,
-      data: seasonAverages,
-      smooth: false,
-      symbol: "circle",
-      symbolSize: (_v: unknown, params: { dataIndex: number }) => {
-        const g = games[params.dataIndex] ?? 0;
-        return Math.max(8, Math.min(30, g / 5));
-      },
-      lineStyle: { width: 2, color: "#2563eb" },
-      itemStyle: { color: "#2563eb" },
-      z: 3,
-    };
-
-    const seriesLifetime = lifetimeLine
-      ? {
-          name: t("ui.player.all_time_average_series", "Karriere-Schnitt"),
-          type: "line" as const,
-          data: lifetimeLine,
-          smooth: false,
-          showSymbol: false,
-          lineStyle: { width: 1.5, type: "dashed" as const, color: "#71717a" },
-          itemStyle: { color: "#71717a" },
-          z: 1,
-        }
-      : null;
 
     return {
       animation: false,
@@ -72,7 +51,7 @@ export function TrendChart({ seasons, lifetime, t }: Props) {
           if (!Array.isArray(params) || params.length === 0) return "";
           const idx = params[0].dataIndex;
           const lines = params.map((p) => {
-            const valueStr = Number.isFinite(p.value) ? p.value.toFixed(1) : "—";
+            const valueStr = Number.isFinite(p.value) ? p.value.toFixed(2) : "—";
             return `${p.marker}${p.seriesName}: <b>${valueStr}</b>`;
           });
           const games_ = games[idx] ?? 0;
@@ -81,7 +60,7 @@ export function TrendChart({ seasons, lifetime, t }: Props) {
         },
       },
       legend: { show: true, top: 0 },
-      grid: { left: 50, right: 20, top: 30, bottom: 40, containLabel: true },
+      grid: { left: 50, right: 20, top: 36, bottom: 40, containLabel: true },
       xAxis: {
         type: "category",
         data: labels,
@@ -95,9 +74,29 @@ export function TrendChart({ seasons, lifetime, t }: Props) {
         min,
         max,
       },
-      series: seriesLifetime ? [seriesAverage, seriesLifetime] : [seriesAverage],
+      series: [
+        {
+          name: t("ui.player.season_average_series", "Saisonschnitt"),
+          type: "bar",
+          data: seasonAverages,
+          barMaxWidth: 48,
+          itemStyle: { color: SEASON_BAR_COLOR },
+          z: 2,
+        },
+        {
+          name: t("ui.player.cumulative_average_series", "Kumulierter Schnitt"),
+          type: "line",
+          data: cumulative,
+          smooth: false,
+          symbol: "circle",
+          symbolSize: 8,
+          lineStyle: { width: 2.5, color: CUMULATIVE_LINE_COLOR },
+          itemStyle: { color: CUMULATIVE_LINE_COLOR },
+          z: 3,
+        },
+      ],
     };
-  }, [seasonTotals, lifetime, t]);
+  }, [seasonTotals, t]);
 
   return (
     <section>
@@ -105,7 +104,7 @@ export function TrendChart({ seasons, lifetime, t }: Props) {
         <p className="text-label uppercase text-muted mb-1.5">
           {t("ui.player.performance_trend", "Leistungsverlauf")}
         </p>
-        <h2 className="text-h2">{t("ui.player.performance_trend", "Leistungsverlauf")}</h2>
+        <h2 className="text-h2">{t("ui.player.performance_trend", "Leistungstrend")}</h2>
       </div>
       {option ? (
         <div className="rounded-sm border border-border bg-surface p-3">

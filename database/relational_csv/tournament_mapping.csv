@@ -1,0 +1,12 @@
+id,long_name,format,gender_scope,aliases
+NBM M,Nordbayerische Meisterschaft,einzel,male,Nordbayerische Meisterschaft Männer Einzel|Nordbayerische Meisterschaft - Männer Einzel
+NBM D,Nordbayerische Meisterschaft Damen Einzel,einzel,female,Nordbayerische Meisterschaft - Damen Einzel|Nordbayerische Meisterschaft - Frauen Einzel
+NBM M D,Nordbayerische Meisterschaft Männer Doppel,doppel,male,Nordbayerische Meisterschaft - Männer Doppel
+SBM M,Südbayerische Meisterschaft,einzel,male,Südbayerische Meisterschaft Männer Einzel|Südbayerische Meisterschaft - Männer Einzel
+SBM D,Südbayerische Meisterschaft Damen Einzel,einzel,female,Südbayerische Meisterschaft - Damen Einzel|Südbayerische Meisterschaft - Frauen Einzel
+SBM M D,Südbayerische Meisterschaft Männer Doppel,doppel,male,Südbayerische Meisterschaft - Männer Doppel
+BM M,Bayerische Meisterschaft - Männer Einzel,einzel,male,Bayerische Meisterschaft Männer Einzel
+BM D,Bayerische Meisterschaft - Frauen Einzel,einzel,female,Bayerische Meisterschaft Damen Einzel|Bayerische Meisterschaft - Damen Einzel
+BM M D,Bayerische Meisterschaft Männer Doppel,doppel,male,Bayerische Meisterschaft - Männer Doppel
+BM D D,Bayerische Meisterschaft Damen Doppel,doppel,female,Bayerische Meisterschaft - Damen Doppel|Bayerische Meisterschaft - Frauen Doppel
+CM DB 26,Clubmeisterschaft Donaubowler 2026,einzel,mixed,Clubpokal Donaubowler 2026
