@@ -18,7 +18,15 @@ export type PlayerHighlightsOptions = CompetitionLinkContext & {
   formatPeriod?: (row: PlayerPeriodRow) => string;
 };
 
-export const PLAYER_HIGHLIGHTS_TOP_N = 5;
+export const PLAYER_HIGHLIGHTS_TOP_N = 10;
+
+export type BuildPlayerHighlightsArgs = {
+  scope: "all" | "player";
+  seasons: PlayerSeasonRow[];
+  periods?: PlayerPeriodRow[];
+  playerCompetitions?: PlayerSeasonRow[];
+  playerSeasonTotals?: PlayerSeasonRow[];
+};
 
 export type PlayerHighlightEntry = {
   id: string;
@@ -64,10 +72,58 @@ function formatRank(rank: number | null | undefined, competitors: number | null 
   return competitors ? `${rank} / ${competitors}` : String(rank);
 }
 
+function playerPageHref(name: string, id?: string | null): string {
+  const params: Record<string, string> = { player_name: name };
+  if (id) params.player_id = id;
+  return buildUrl("/spieler", params);
+}
+
+function joinDetail(...parts: Array<string | number | null | undefined>): string | undefined {
+  const text = parts.map((p) => String(p ?? "").trim()).filter(Boolean).join(" · ");
+  return text || undefined;
+}
+
+function buildAllPlayersClubAffiliation(rows: PlayerSeasonRow[]): PlayerHighlightEntry[] {
+  const byPlayer = new Map<string, PlayerSeasonRow[]>();
+  for (const row of competitionRows(rows)) {
+    const player = String(row.player_name ?? "").trim();
+    if (!player) continue;
+    const list = byPlayer.get(player) ?? [];
+    list.push(row);
+    byPlayer.set(player, list);
+  }
+
+  return [...byPlayer.entries()]
+    .map(([player, playerRows]) => {
+      const { historyRows } = buildPlayerClubHistory(playerRows);
+      const latest = historyRows[0];
+      if (!latest) return null;
+      const games = playerRows.reduce((sum, row) => sum + (row.games ?? 0), 0);
+      const playerId = String(playerRows.find((r) => r.player_id)?.player_id ?? "").trim();
+      return {
+        player,
+        playerId,
+        club: latest.club,
+        period: latest.period,
+        games,
+      };
+    })
+    .filter((entry): entry is NonNullable<typeof entry> => entry != null)
+    .sort((a, b) => b.games - a.games || a.player.localeCompare(b.player, "de"))
+    .slice(0, PLAYER_HIGHLIGHTS_TOP_N)
+    .map((entry, idx) => ({
+      id: `club-aff-${entry.player}-${idx}`,
+      label: entry.player,
+      value: entry.club,
+      detail: joinDetail(entry.period, `${entry.games} Spiele`),
+      href: playerPageHref(entry.player, entry.playerId),
+      title: `${entry.player} · ${entry.club}`,
+    }));
+}
+
 export function buildPlayerHighlights(
-  rows: PlayerSeasonRow[] | null | undefined,
+  input: BuildPlayerHighlightsArgs,
   options?: PlayerHighlightsOptions,
-  periods?: PlayerPeriodRow[] | null,
 ): PlayerHighlightsData {
   const empty: PlayerHighlightsData = {
     clubAffiliation: [],
@@ -78,20 +134,34 @@ export function buildPlayerHighlights(
     bestCompetitions: [],
     bestDays: [],
   };
-  if (!rows?.length) return empty;
 
-  const { historyRows } = buildPlayerClubHistory(rows);
-  const clubAffiliation: PlayerHighlightEntry[] = historyRows
-    .slice(0, PLAYER_HIGHLIGHTS_TOP_N)
-    .map((row, idx) => ({
-      id: `club-${row.club}-${idx}`,
-      label: row.club,
-      value: row.period,
-      href: buildUrl("/club", { club: row.club }),
-    }));
+  const scope = input.scope;
+  const chartRows = input.seasons ?? [];
+  const highlightCompetitions =
+    scope === "all" ? (input.playerCompetitions ?? []) : competitionRows(chartRows);
+  const highlightSeasonTotals =
+    scope === "all" ? (input.playerSeasonTotals ?? []) : seasonTotalRows(chartRows);
+  const periods = input.periods ?? [];
+
+  if (!chartRows.length && !highlightCompetitions.length && !periods.length) return empty;
+
+  const clubAffiliation: PlayerHighlightEntry[] =
+    scope === "all"
+      ? buildAllPlayersClubAffiliation(highlightCompetitions)
+      : (() => {
+          const { historyRows } = buildPlayerClubHistory(chartRows);
+          return historyRows.slice(0, PLAYER_HIGHLIGHTS_TOP_N).map((row, idx) => ({
+            id: `club-${row.club}-${idx}`,
+            label: row.club,
+            value: row.period,
+            detail: options?.selectedPlayerName || undefined,
+            href: buildUrl("/club", { club: row.club }),
+          }));
+        })();
 
   const byClub = new Map<string, { games: number; pins: number }>();
-  for (const row of competitionRows(rows)) {
+  const clubSourceRows = scope === "all" ? highlightCompetitions : competitionRows(chartRows);
+  for (const row of clubSourceRows) {
     const club = normalizeClub(row.club);
     if (!club) continue;
     const games = row.games ?? 0;
@@ -133,7 +203,7 @@ export function buildPlayerHighlights(
       href: buildUrl("/club", { club: entry.club }),
     }));
 
-  const avgBySeason: PlayerHighlightEntry[] = seasonTotalRows(rows)
+  const avgBySeason: PlayerHighlightEntry[] = highlightSeasonTotals
     .filter((r) => r.average != null && Number.isFinite(r.average))
     .sort(
       (a, b) =>
@@ -141,14 +211,24 @@ export function buildPlayerHighlights(
         compareSeasonString(String(a.season ?? ""), String(b.season ?? "")),
     )
     .slice(0, PLAYER_HIGHLIGHTS_TOP_N)
-    .map((row, idx) => ({
-      id: `avg-season-${row.season}-${idx}`,
-      label: String(row.season ?? "—"),
-      value: formatAvg(row.average),
-      detail: row.games != null ? `${row.games} Spiele` : undefined,
-    }));
+    .map((row, idx) => {
+      const player = String(row.player_name ?? "").trim();
+      const club = normalizeClub(row.club);
+      return {
+        id: `avg-season-${row.season}-${player || idx}`,
+        label: scope === "all" && player ? player : String(row.season ?? "—"),
+        value: formatAvg(row.average),
+        detail: joinDetail(
+          scope === "all" ? String(row.season ?? "") : undefined,
+          club,
+          row.games != null ? `${row.games} Spiele` : undefined,
+        ),
+        href: scope === "all" && player ? playerPageHref(player, row.player_id) : undefined,
+        title: scope === "all" && player ? `${player} · ${row.season}` : undefined,
+      };
+    });
 
-  const bestTournaments: PlayerHighlightEntry[] = competitionRows(rows)
+  const bestTournaments: PlayerHighlightEntry[] = highlightCompetitions
     .filter((r) => r.is_tournament && r.rank != null && Number.isFinite(r.rank))
     .sort(
       (a, b) =>
@@ -158,20 +238,37 @@ export function buildPlayerHighlights(
     .slice(0, PLAYER_HIGHLIGHTS_TOP_N)
     .map((row, idx) => {
       const fullName = String(row.competition ?? "—");
+      const player = String(row.player_name ?? "").trim();
+      const club = normalizeClub(row.club);
       return {
-        id: `tournament-${row.competition}-${row.season}-${idx}`,
-        label: formatCompetitionLabel(fullName, {
-          isTournament: true,
-          tournamentAbbreviations: options?.tournamentAbbreviations,
-        }),
+        id: `tournament-${row.competition}-${row.season}-${player || idx}`,
+        label:
+          scope === "all" && player
+            ? player
+            : formatCompetitionLabel(fullName, {
+                isTournament: true,
+                tournamentAbbreviations: options?.tournamentAbbreviations,
+              }),
         title: fullName,
         value: formatRank(row.rank, row.competitors),
-        detail: String(row.season ?? ""),
-        href: options ? buildCompetitionEventPath(row, options) ?? undefined : undefined,
+        detail: joinDetail(
+          formatCompetitionLabel(fullName, {
+            isTournament: true,
+            tournamentAbbreviations: options?.tournamentAbbreviations,
+          }),
+          row.season,
+          club,
+        ),
+        href:
+          scope === "all" && player
+            ? playerPageHref(player, row.player_id)
+            : options
+              ? buildCompetitionEventPath(row, options) ?? undefined
+              : undefined,
       };
     });
 
-  const bestCompetitions: PlayerHighlightEntry[] = competitionRows(rows)
+  const bestCompetitions: PlayerHighlightEntry[] = highlightCompetitions
     .filter((r) => r.average != null && Number.isFinite(r.average))
     .sort(
       (a, b) =>
@@ -183,26 +280,31 @@ export function buildPlayerHighlights(
     .map((row, idx) => {
       const fullName = String(row.competition ?? "—");
       const isTournament = !!row.is_tournament;
-      const label = isTournament
+      const player = String(row.player_name ?? "").trim();
+      const club = normalizeClub(row.club);
+      const compLabel = isTournament
         ? formatCompetitionLabel(fullName, {
             isTournament: true,
             tournamentAbbreviations: options?.tournamentAbbreviations,
           })
         : fullName;
       return {
-        id: `comp-${row.competition}-${row.season}-${idx}`,
-        label,
+        id: `comp-${row.competition}-${row.season}-${player || idx}`,
+        label: scope === "all" && player ? player : compLabel,
         title: isTournament ? fullName : undefined,
         value: formatAvg(row.average),
-        detail: [row.season, row.games != null ? `${row.games} Spiele` : null]
-          .filter(Boolean)
-          .join(" · "),
-        href: options ? buildCompetitionEventPath(row, options) ?? undefined : undefined,
+        detail: joinDetail(compLabel, row.season, club, row.games != null ? `${row.games} Spiele` : null),
+        href:
+          scope === "all" && player
+            ? playerPageHref(player, row.player_id)
+            : options
+              ? buildCompetitionEventPath(row, options) ?? undefined
+              : undefined,
       };
     });
 
   const formatPeriod = options?.formatPeriod;
-  const bestDays: PlayerHighlightEntry[] = (periods ?? [])
+  const bestDays: PlayerHighlightEntry[] = periods
     .filter((r) => r.average != null && Number.isFinite(r.average))
     .sort(
       (a, b) =>
@@ -214,21 +316,31 @@ export function buildPlayerHighlights(
     .map((row, idx) => {
       const fullName = String(row.competition ?? "—");
       const isTournament = !!row.is_tournament;
+      const player = String(row.player_name ?? "").trim();
+      const club = normalizeClub(row.club);
       const compLabel = isTournament
         ? formatCompetitionLabel(fullName, {
             isTournament: true,
             tournamentAbbreviations: options?.tournamentAbbreviations,
           })
         : fullName;
-      const headline = formatCompetitionWithSeason(compLabel, row.season);
+      const headline =
+        scope === "all" && player
+          ? player
+          : formatCompetitionWithSeason(compLabel, row.season);
       const periodDetail = formatPeriod ? formatPeriod(row) : String(row.period_value ?? "");
       return {
-        id: `day-${row.competition}-${row.season}-${row.period_kind}-${row.period_number}-${idx}`,
+        id: `day-${row.competition}-${row.season}-${row.period_kind}-${row.period_number}-${player || idx}`,
         label: headline,
-        title: [fullName, periodDetail].filter(Boolean).join(" · "),
+        title: joinDetail(fullName, periodDetail, player, club),
         value: formatAvg(row.average),
-        detail: periodDetail,
-        href: options ? buildPeriodEventPath(row, options) ?? undefined : undefined,
+        detail: joinDetail(formatCompetitionWithSeason(compLabel, row.season), periodDetail, club),
+        href:
+          scope === "all" && player
+            ? playerPageHref(player, row.player_id)
+            : options
+              ? buildPeriodEventPath(row, options) ?? undefined
+              : undefined,
       };
     });
 

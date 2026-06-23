@@ -4,6 +4,7 @@ import { PlayerSearch } from "../../components/PlayerSearch";
 import { seasonForUrlQuery } from "../../lib/api";
 import {
   type PlayerSearchEntry,
+  isAllPlayersScope,
   usePlayerLifetimeStats,
   usePlayerSearch,
   usePlayerSeasons,
@@ -14,7 +15,6 @@ import { formatPlayerSearchLabel, resolvePlayerSearchEntry } from "../../lib/pla
 import { LifetimeStats } from "./blocks/LifetimeStats";
 import { CompetitionBreakdownCharts } from "./blocks/CompetitionBreakdownCharts";
 import { PlayerHighlights } from "./blocks/PlayerHighlights";
-import { SeasonStats } from "./blocks/SeasonStats";
 import { TrendChart } from "./blocks/TrendChart";
 
 export function PlayerStats() {
@@ -29,17 +29,15 @@ export function PlayerStats() {
   const seasonsQuery = usePlayerSeasons(playerName, playerId);
   const statsQuery = usePlayerLifetimeStats(playerName, playerId, season);
 
-  // If the URL points at a player not present in the current data source,
-  // surface a soft warning rather than running queries that 400. The hook is
-  // still gated on `enabled`, so no requests fire while this resolves.
   const players = playersQuery.data ?? [];
   const knownPlayer = useMemo(
-    () => resolvePlayerSearchEntry(players, { name: playerName, id: playerId }),
+    () =>
+      playerName || playerId
+        ? resolvePlayerSearchEntry(players, { name: playerName, id: playerId })
+        : null,
     [players, playerName, playerId],
   );
 
-  // Fill in missing URL params from the catalog (canonical spelling), but never
-  // override an explicit player_id — homonyms share the same display name.
   useEffect(() => {
     if (!playersQuery.isSuccess || !knownPlayer) return;
     const next = new URLSearchParams(searchParams);
@@ -55,8 +53,6 @@ export function PlayerStats() {
     if (changed) setSearchParams(next, { replace: true });
   }, [playersQuery.isSuccess, knownPlayer, playerName, playerId, searchParams, setSearchParams]);
 
-  // Keep season scope valid: if the player doesn't have data in `season`,
-  // fall back to "all".
   useEffect(() => {
     if (!seasonsQuery.isSuccess) return;
     if (season === "all") return;
@@ -74,7 +70,6 @@ export function PlayerStats() {
       next.delete("player_name");
       next.delete("player");
       next.delete("player_id");
-      next.delete("season");
       setSearchParams(next, { replace: false });
       return;
     }
@@ -93,6 +88,7 @@ export function PlayerStats() {
     setSearchParams(next, { replace: false });
   }
 
+  const hasPlayerSelection = !!(playerName || playerId);
   const playerSearchValue =
     knownPlayer && (knownPlayer.id || playerId)
       ? formatPlayerSearchLabel({
@@ -102,19 +98,23 @@ export function PlayerStats() {
       : playerName;
 
   const stats = statsQuery.data;
+  const allPlayersScope = isAllPlayersScope(stats);
   const lifetime = stats?.lifetime ?? null;
   const seasonRows = stats?.seasons ?? [];
   const periodRows = stats?.periods ?? [];
   const seasons = seasonsQuery.data ?? [];
 
   const { currentClub } = useMemo(
-    () => buildPlayerClubHistory(stats?.seasons ?? []),
-    [stats?.seasons],
+    () => buildPlayerClubHistory(hasPlayerSelection ? (stats?.seasons ?? []) : []),
+    [hasPlayerSelection, stats?.seasons],
   );
 
-  const hasSelection = !!(playerName || playerId);
   const hasResolvedPlayers = playersQuery.isSuccess;
-  const playerNotFound = hasSelection && hasResolvedPlayers && !knownPlayer;
+  const playerNotFound = hasPlayerSelection && hasResolvedPlayers && !knownPlayer;
+
+  const headlineSuffix = hasPlayerSelection
+    ? playerName
+    : t("ui.player.all_players_scope", "Alle Spieler");
 
   return (
     <div className="mx-auto max-w-[1280px] px-8 pt-12 pb-24">
@@ -124,16 +124,12 @@ export function PlayerStats() {
         </p>
         <h1 className="text-h1">
           {t("ui.player.stats_headline", "Spielerstatistiken")}
-          {playerName ? (
+          {" "}
+          · <span className="text-muted font-normal">{headlineSuffix}</span>
+          {hasPlayerSelection && currentClub ? (
             <>
               {" "}
-              · <span className="text-muted font-normal">{playerName}</span>
-              {currentClub ? (
-                <>
-                  {" "}
-                  · <span className="text-muted font-normal">{currentClub}</span>
-                </>
-              ) : null}
+              · <span className="text-muted font-normal">{currentClub}</span>
             </>
           ) : null}
         </h1>
@@ -145,22 +141,13 @@ export function PlayerStats() {
         playersLoading={playersQuery.isPending}
         season={season}
         seasons={seasons}
-        seasonsLoading={seasonsQuery.isPending && hasSelection}
+        seasonsLoading={seasonsQuery.isPending}
         onPlayerSelect={selectPlayer}
         onSeasonSelect={selectSeason}
         t={t}
       />
 
       <div className="mt-10 space-y-12">
-        {!hasSelection && (
-          <section className="rounded-sm border border-dashed border-border p-8 text-center">
-            <p className="text-body text-muted">
-              {t("ui.player.select_player", "Spieler auswählen")} —{" "}
-              {t("ui.player.type_name_placeholder", "Name oder Spieler-ID eingeben…")}
-            </p>
-          </section>
-        )}
-
         {playerNotFound && (
           <section className="rounded-sm border border-warning/40 bg-surface p-6 text-small text-foreground">
             <strong>{t("ui.player.player_not_found", "Spieler nicht gefunden")}:</strong>{" "}
@@ -172,7 +159,7 @@ export function PlayerStats() {
           </section>
         )}
 
-        {hasSelection && !playerNotFound && (
+        {!playerNotFound && (
           <>
             {statsQuery.isError && (
               <section className="rounded-sm border border-danger-fg/40 bg-surface p-6 text-small text-danger-fg">
@@ -188,17 +175,18 @@ export function PlayerStats() {
               (!stats || (!stats.lifetime && (!stats.seasons || stats.seasons.length === 0))) && (
                 <section className="rounded-sm border border-dashed border-border p-6 text-small text-muted">
                   {t(
-                    "ui.player.no_data_for_player_desc",
-                    "Für diesen Spieler liegen keine Daten in der aktuellen Datenquelle vor.",
+                    "ui.player.no_data_desc",
+                    "Für die aktuelle Auswahl liegen keine Daten in der Datenquelle vor.",
                   )}
                 </section>
               )}
 
-            {statsQuery.isSuccess && stats && (
+            {statsQuery.isSuccess && stats && stats.lifetime && (
               <>
                 <LifetimeStats
                   stats={lifetime}
-                  playerId={playerId || knownPlayer?.id || undefined}
+                  playerId={hasPlayerSelection ? playerId || knownPlayer?.id || undefined : undefined}
+                  allPlayersScope={allPlayersScope}
                   t={t}
                 />
                 <CompetitionBreakdownCharts
@@ -207,13 +195,15 @@ export function PlayerStats() {
                   formatCompetition={formatCompetition}
                 />
                 <PlayerHighlights
+                  scope={allPlayersScope ? "all" : "player"}
                   seasons={seasonRows}
                   periods={periodRows}
+                  playerCompetitions={stats.player_competitions ?? []}
+                  playerSeasonTotals={stats.player_season_totals ?? []}
                   selectedPlayerName={playerName}
                   t={t}
                 />
                 <TrendChart seasons={seasonRows} lifetime={lifetime} t={t} />
-                <SeasonStats seasons={seasonRows} selectedPlayerName={playerName} t={t} />
               </>
             )}
           </>
@@ -237,7 +227,7 @@ type FilterRailProps = {
 
 function FilterRail(props: FilterRailProps) {
   const { t } = props;
-  const showSeasons = !!props.playerName && (props.seasons.length > 0 || props.seasonsLoading);
+  const showSeasons = props.seasons.length > 0 || props.seasonsLoading;
 
   return (
     <div className="sticky top-0 z-10 -mx-8 border-b border-border bg-background/85 px-8 py-3 backdrop-blur">
@@ -249,7 +239,7 @@ function FilterRail(props: FilterRailProps) {
             isLoading={props.playersLoading}
             placeholder={t("ui.player.type_name_placeholder", "Name oder Spieler-ID…")}
             ariaLabel={t("ui.player.select_player", "Spieler auswählen")}
-            clearAriaLabel={t("ui.player.clear_player", "Spieler-Auswahl löschen")}
+            clearAriaLabel={t("ui.player.clear_player", "Alle Spieler anzeigen")}
             onSelect={props.onPlayerSelect}
           />
         </FilterField>

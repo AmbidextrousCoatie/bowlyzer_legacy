@@ -4,10 +4,11 @@ type Props = {
   stats: PlayerLifetimeStats | null | undefined;
   /** EDV player id from the URL / search, shown in Gesamtwerte block. */
   playerId?: string;
+  allPlayersScope?: boolean;
   t: (key: string, fallback?: string) => string;
 };
 
-export function LifetimeStats({ stats, playerId, t }: Props) {
+export function LifetimeStats({ stats, playerId, allPlayersScope = false, t }: Props) {
   const totalGames = stats?.total_games ?? null;
   const totalPins = stats?.total_pins ?? null;
   const avg = stats?.average_score ?? null;
@@ -65,7 +66,9 @@ export function LifetimeStats({ stats, playerId, t }: Props) {
             label={t("ui.player.best_season", "Beste Saison")}
             value={
               bestSeason?.season
-                ? `${bestSeason.season} (${formatDecimal(bestSeason.average ?? null, 2)})`
+                ? allPlayersScope && bestSeason.player_name
+                  ? `${bestSeason.player_name} · ${bestSeason.season} (${formatDecimal(bestSeason.average ?? null, 2)})`
+                  : `${bestSeason.season} (${formatDecimal(bestSeason.average ?? null, 2)})`
                 : "—"
             }
             mono={false}
@@ -74,7 +77,9 @@ export function LifetimeStats({ stats, playerId, t }: Props) {
             label={t("ui.player.most_improved", "Größter Sprung")}
             value={
               mostImproved?.season && mostImproved.improvement != null
-                ? `${mostImproved.season} (+${formatDecimal(mostImproved.improvement, 2)})`
+                ? allPlayersScope && mostImproved.player_name
+                  ? `${mostImproved.player_name} · ${mostImproved.season} (+${formatDecimal(mostImproved.improvement, 2)})`
+                  : `${mostImproved.season} (+${formatDecimal(mostImproved.improvement, 2)})`
                 : "—"
             }
             mono={false}

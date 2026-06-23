@@ -10,8 +10,16 @@ from app.services.statistics_service import StatisticsService
 from app.models.statistics_models import PlayerStatistics
 from app.utils.json_safe import to_json_int
 from typing import Dict, List, Any, Optional, Tuple
+from dataclasses import dataclass
 
 OVERALL_CUMULATIVE_SCORE_COL = "Overall Cumulative Score"
+
+
+@dataclass(frozen=True)
+class _CompetitionRankTable:
+    by_id: Dict[str, int]
+    by_name: Dict[str, int]
+    competitors: int
 
 
 def _csv_bool_is_true(s: pd.Series) -> pd.Series:
@@ -30,6 +38,23 @@ class PlayerService:
         self.data_manager = DataManager(source=database) if database else DataManager()
         self.server = Server(database=database)
         self.stats_service = StatisticsService(database=database)
+
+    @staticmethod
+    def _player_name_from_chunk(chunk: pd.DataFrame) -> str:
+        if chunk is None or chunk.empty or Columns.player_name not in chunk.columns:
+            return ""
+        vals = [str(x).strip() for x in chunk[Columns.player_name].dropna().tolist() if str(x).strip()]
+        return vals[0] if vals else ""
+
+    def _player_id_from_chunk(self, chunk: pd.DataFrame) -> str:
+        if chunk is None or chunk.empty or Columns.player_id not in chunk.columns:
+            return ""
+        vals = [
+            self._normalize_player_id(x)
+            for x in chunk[Columns.player_id].dropna().tolist()
+            if self._normalize_player_id(x)
+        ]
+        return vals[0] if vals else ""
 
     @staticmethod
     def _normalize_player_id(value: Any) -> str:
@@ -62,6 +87,7 @@ class PlayerService:
         player_id: str,
         names: List[str],
         token_stats: Optional[Tuple[Dict[str, int], Dict[str, int]]] = None,
+        registry_lookup: Optional[Dict[str, Dict[str, str]]] = None,
     ) -> str:
         """
         Pick one stable display name per player id.
@@ -71,9 +97,13 @@ class PlayerService:
         cleaned = [str(n).strip() for n in names if str(n).strip()]
         if not cleaned:
             return ""
-        from data_access.players_registry import canonical_name_for_player_id
+        if registry_lookup is not None:
+            entry = registry_lookup.get(self._normalize_player_id(player_id))
+            registry_name = entry["canonical_name"] if entry else ""
+        else:
+            from data_access.players_registry import canonical_name_for_player_id
 
-        registry_name = canonical_name_for_player_id(player_id)
+            registry_name = canonical_name_for_player_id(player_id)
         if registry_name:
             return registry_name
         if len(set(cleaned)) == 1:
@@ -186,6 +216,7 @@ class PlayerService:
         competition_name,
         row_team_name,
         row_club,
+        per_player: bool = False,
     ) -> List[Dict[str, Any]]:
         """Per matchday (league week) or tournament stage averages for highlight boxes."""
         if games_df is None or games_df.empty or Columns.score not in games_df.columns:
@@ -238,8 +269,23 @@ class PlayerService:
                     "team_name": row_team_name(chunk),
                     "team_number": team_num,
                     "row_type": "period",
+                    **(
+                        {
+                            "player_name": self._player_name_from_chunk(chunk),
+                            "player_id": self._player_id_from_chunk(chunk),
+                        }
+                        if per_player
+                        else {}
+                    ),
                 }
             )
+
+        player_group_cols: List[str] = []
+        if per_player:
+            if Columns.player_id in work.columns:
+                player_group_cols.append(Columns.player_id)
+            if Columns.player_name in work.columns:
+                player_group_cols.append(Columns.player_name)
 
         league_work = work.loc[~is_tournament]
         if not league_work.empty and Columns.week in league_work.columns:
@@ -249,9 +295,13 @@ class PlayerService:
             if not league_work.empty:
                 comp_col = competition_event_column(league_work) or Columns.league_name
                 if comp_col in league_work.columns:
-                    group_cols = [Columns.season, comp_col, "_week"]
+                    group_cols = [*player_group_cols, Columns.season, comp_col, "_week"]
                     for keys, chunk in league_work.groupby(group_cols, dropna=False):
-                        season_key, comp_key, week_key = keys
+                        key_tuple = keys if isinstance(keys, tuple) else (keys,)
+                        offset = len(player_group_cols)
+                        season_key = key_tuple[offset]
+                        comp_key = key_tuple[offset + 1]
+                        week_key = key_tuple[offset + 2]
                         comp_label = str(comp_key).strip()
                         if not comp_label or pd.isna(week_key):
                             continue
@@ -272,16 +322,18 @@ class PlayerService:
                 tourn_work["_round"] = pd.NA
             comp_col = competition_event_column(tourn_work) or Columns.event_name
             if comp_col in tourn_work.columns:
-                group_cols = [Columns.season, comp_col, "_round"]
+                group_cols = [*player_group_cols, Columns.season, comp_col, "_round"]
                 if Columns.round_name in tourn_work.columns:
                     group_cols.append(Columns.round_name)
                 for keys, chunk in tourn_work.groupby(group_cols, dropna=False):
-                    season_key = keys[0]
-                    comp_key = keys[1]
-                    round_key = keys[2]
+                    key_tuple = keys if isinstance(keys, tuple) else (keys,)
+                    offset = len(player_group_cols)
+                    season_key = key_tuple[offset]
+                    comp_key = key_tuple[offset + 1]
+                    round_key = key_tuple[offset + 2]
                     round_name = ""
-                    if Columns.round_name in tourn_work.columns and len(keys) > 3:
-                        round_name = str(keys[3]).strip()
+                    if Columns.round_name in tourn_work.columns and len(key_tuple) > offset + 3:
+                        round_name = str(key_tuple[offset + 3]).strip()
                     comp_label = str(comp_key).strip()
                     if not comp_label or pd.isna(round_key):
                         continue
@@ -324,6 +376,178 @@ class PlayerService:
         if tournament_only and Columns.event_type in base.columns:
             base = base.loc[base[Columns.event_type].astype(str).str.strip().str.lower().eq("tournament")]
         return self._safe_player_rows(base)
+
+    def _league_competition_rank_table(self, season_value: Any, league_value: str) -> _CompetitionRankTable:
+        base = self._subset_ranking_frame(season_value, league_value=league_value)
+        if base.empty or Columns.player_name not in base.columns or Columns.score not in base.columns:
+            return _CompetitionRankTable({}, {}, 0)
+        work = base.copy()
+        work[Columns.score] = pd.to_numeric(work[Columns.score], errors="coerce")
+        work = work.dropna(subset=[Columns.score])
+        if work.empty:
+            return _CompetitionRankTable({}, {}, 0)
+
+        by_id: Dict[str, int] = {}
+        competitors = 0
+        if Columns.player_id in work.columns:
+            work[Columns.player_id] = work[Columns.player_id].astype(str).map(self._normalize_player_id)
+            grouped = (
+                work.groupby(Columns.player_id, dropna=False)[Columns.score]
+                .apply(mean_scores)
+                .sort_values(ascending=False)
+            )
+            competitors = int(len(grouped))
+            rank_series = grouped.rank(method="min", ascending=False)
+            by_id = {str(k): int(v) for k, v in rank_series.items() if str(k).strip()}
+
+        grouped_name = (
+            work.groupby(Columns.player_name, dropna=False)[Columns.score]
+            .apply(mean_scores)
+            .sort_values(ascending=False)
+        )
+        if not competitors:
+            competitors = int(len(grouped_name))
+        rank_name = grouped_name.rank(method="min", ascending=False)
+        by_name = {str(k): int(v) for k, v in rank_name.items() if str(k).strip()}
+        return _CompetitionRankTable(by_id, by_name, competitors)
+
+    def _tournament_competition_rank_table(self, season_value: Any, event_value: str) -> _CompetitionRankTable:
+        base = self._subset_ranking_frame(
+            season_value,
+            event_value=event_value,
+            tournament_only=True,
+        )
+        if base.empty or Columns.player_name not in base.columns:
+            return _CompetitionRankTable({}, {}, 0)
+
+        totals = None
+        totals_by_id: Optional[pd.Series] = None
+        if (
+            OVERALL_CUMULATIVE_SCORE_COL in base.columns
+            and Columns.round_number in base.columns
+            and Columns.game_number in base.columns
+        ):
+            work = base.copy()
+            work[Columns.round_number] = pd.to_numeric(work[Columns.round_number], errors="coerce")
+            work[Columns.game_number] = pd.to_numeric(work[Columns.game_number], errors="coerce")
+            work[OVERALL_CUMULATIVE_SCORE_COL] = pd.to_numeric(
+                work[OVERALL_CUMULATIVE_SCORE_COL], errors="coerce"
+            )
+            work = work.dropna(subset=[OVERALL_CUMULATIVE_SCORE_COL])
+            if not work.empty:
+                sort_cols = [Columns.player_name, Columns.round_number, Columns.game_number]
+                work = work.sort_values(by=sort_cols, ascending=[True, True, True])
+                latest = work.groupby(Columns.player_name, dropna=False).tail(1)
+                totals = (
+                    latest.groupby(Columns.player_name, dropna=False)[OVERALL_CUMULATIVE_SCORE_COL]
+                    .max()
+                    .sort_values(ascending=False)
+                )
+                if Columns.player_id in base.columns:
+                    work_id = base.copy()
+                    work_id[Columns.player_id] = work_id[Columns.player_id].astype(str).map(self._normalize_player_id)
+                    work_id[Columns.round_number] = pd.to_numeric(work_id[Columns.round_number], errors="coerce")
+                    work_id[Columns.game_number] = pd.to_numeric(work_id[Columns.game_number], errors="coerce")
+                    work_id[OVERALL_CUMULATIVE_SCORE_COL] = pd.to_numeric(
+                        work_id[OVERALL_CUMULATIVE_SCORE_COL], errors="coerce"
+                    )
+                    work_id = work_id.dropna(subset=[OVERALL_CUMULATIVE_SCORE_COL])
+                    work_id = work_id.sort_values(
+                        by=[Columns.player_id, Columns.round_number, Columns.game_number],
+                        ascending=[True, True, True],
+                    )
+                    latest_id = work_id.groupby(Columns.player_id, dropna=False).tail(1)
+                    totals_by_id = (
+                        latest_id.groupby(Columns.player_id, dropna=False)[OVERALL_CUMULATIVE_SCORE_COL]
+                        .max()
+                        .sort_values(ascending=False)
+                    )
+        elif Columns.score in base.columns:
+            work = base.copy()
+            work[Columns.score] = pd.to_numeric(work[Columns.score], errors="coerce").fillna(0)
+            totals = (
+                work.groupby(Columns.player_name, dropna=False)[Columns.score]
+                .sum()
+                .sort_values(ascending=False)
+            )
+            if Columns.player_id in base.columns:
+                work_id = base.copy()
+                work_id[Columns.player_id] = work_id[Columns.player_id].astype(str).map(self._normalize_player_id)
+                work_id[Columns.score] = pd.to_numeric(work_id[Columns.score], errors="coerce").fillna(0)
+                totals_by_id = (
+                    work_id.groupby(Columns.player_id, dropna=False)[Columns.score]
+                    .apply(sum_scores)
+                    .sort_values(ascending=False)
+                )
+
+        if totals is None and totals_by_id is None:
+            return _CompetitionRankTable({}, {}, 0)
+
+        by_name: Dict[str, int] = {}
+        competitors = 0
+        if totals is not None:
+            competitors = int(len(totals))
+            rank_name = totals.rank(method="min", ascending=False)
+            by_name = {str(k): int(v) for k, v in rank_name.items() if str(k).strip()}
+
+        by_id: Dict[str, int] = {}
+        if totals_by_id is not None:
+            if not competitors:
+                competitors = int(len(totals_by_id))
+            rank_id = totals_by_id.rank(method="min", ascending=False)
+            by_id = {str(k): int(v) for k, v in rank_id.items() if str(k).strip()}
+
+        return _CompetitionRankTable(by_id, by_name, competitors)
+
+    @staticmethod
+    def _lookup_competition_rank(
+        table: _CompetitionRankTable,
+        player_value: str,
+        player_id_value: str,
+        *,
+        normalize_player_id: Any,
+    ) -> Tuple[Optional[int], int]:
+        pid_norm = normalize_player_id(player_id_value)
+        if pid_norm and pid_norm in table.by_id:
+            return table.by_id[pid_norm], table.competitors
+        if player_value and player_value in table.by_name:
+            return table.by_name[player_value], table.competitors
+        return None, table.competitors
+
+    @staticmethod
+    def _is_tournament_chunk(cdf: pd.DataFrame) -> bool:
+        return bool(
+            Columns.event_type in cdf.columns
+            and cdf[Columns.event_type].astype(str).str.lower().eq("tournament").any()
+        )
+
+    def _build_competition_rank_cache(
+        self,
+        games_df: pd.DataFrame,
+        *,
+        comp_group_col: str,
+    ) -> Dict[Tuple[Any, str, bool], _CompetitionRankTable]:
+        keys: set[Tuple[Any, str, bool]] = set()
+        if comp_group_col not in games_df.columns:
+            return {}
+        for season_value, season_data in games_df.groupby(Columns.season, dropna=False):
+            group_cols = [comp_group_col]
+            if Columns.team_name in season_data.columns:
+                group_cols.append(Columns.team_name)
+            for comp_key, cdf in season_data.groupby(group_cols, dropna=False):
+                comp_name = comp_key[0] if isinstance(comp_key, tuple) else comp_key
+                if pd.isna(comp_name):
+                    continue
+                keys.add((season_value, str(comp_name).strip(), self._is_tournament_chunk(cdf)))
+
+        cache: Dict[Tuple[Any, str, bool], _CompetitionRankTable] = {}
+        for season_value, comp_name, is_tournament in keys:
+            key = (season_value, comp_name, is_tournament)
+            if is_tournament:
+                cache[key] = self._tournament_competition_rank_table(season_value, comp_name)
+            else:
+                cache[key] = self._league_competition_rank_table(season_value, comp_name)
+        return cache
 
     def get_all_players(self):
         """Get list of all players for selection"""
@@ -437,12 +661,42 @@ class PlayerService:
     def get_player_seasons(self, player_name: str, player_id: str = "") -> List[str]:
         """Get sorted season list for a specific player."""
         if not player_name and not player_id:
-            return []
+            return self.get_all_seasons()
         games_df = self._subset_player_games(player_name, player_id)
         if games_df.empty or Columns.season not in games_df.columns:
             return []
         seasons = [str(s).strip() for s in games_df[Columns.season].dropna().unique().tolist() if str(s).strip()]
         return sorted(seasons)
+
+    def get_all_seasons(self) -> List[str]:
+        """Sorted season list across all players in the current database."""
+        base = self.data_manager.df
+        if base is None or base.empty or Columns.season not in base.columns:
+            return []
+        seasons = [
+            str(s).strip()
+            for s in base[Columns.season].dropna().unique().tolist()
+            if str(s).strip()
+        ]
+        return sorted(seasons)
+
+    def _subset_all_player_games(self, season: str | None = None) -> pd.DataFrame:
+        """All player game rows (optional season filter), without copying unrelated tables."""
+        base = self.data_manager.df
+        if base is None or base.empty:
+            return pd.DataFrame()
+
+        games_df = self._safe_player_rows(base)
+        if season and str(season).strip().lower() != "all":
+            season_norm = str(season).strip()
+            if Columns.season in games_df.columns:
+                games_df = games_df.loc[games_df[Columns.season].astype(str).str.strip().eq(season_norm)]
+
+        if Columns.score in games_df.columns:
+            games_df = games_df.copy()
+            games_df[Columns.score] = pd.to_numeric(games_df[Columns.score], errors="coerce")
+            games_df = games_df.dropna(subset=[Columns.score])
+        return games_df
 
     def get_historical_data(self, player_id: str):
         """Get historical performance data"""
@@ -817,3 +1071,470 @@ class PlayerService:
         }
 
         return collected_data
+
+    @staticmethod
+    def merge_aggregate_lifetime_payloads(parts: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+        """Merge per-season aggregate payloads into one career-wide ``scope=all`` response."""
+        clean = [p for p in parts if p]
+        if not clean:
+            return None
+        if len(clean) == 1:
+            return clean[0]
+
+        merged: Dict[str, Any] = {
+            "scope": "all",
+            "seasons": [],
+            "player_competitions": [],
+            "player_season_totals": [],
+            "periods": [],
+        }
+        part_lifetimes: List[Dict[str, Any]] = []
+        for part in clean:
+            merged["seasons"].extend(part.get("seasons") or [])
+            merged["player_competitions"].extend(part.get("player_competitions") or [])
+            merged["player_season_totals"].extend(part.get("player_season_totals") or [])
+            merged["periods"].extend(part.get("periods") or [])
+            lifetime = part.get("lifetime")
+            if isinstance(lifetime, dict):
+                part_lifetimes.append(lifetime)
+
+        merged["lifetime"] = PlayerService._lifetime_summary_from_merged_aggregate(
+            merged["player_season_totals"],
+            part_lifetimes,
+        )
+        return merged
+
+    @staticmethod
+    def _lifetime_summary_from_merged_aggregate(
+        player_season_totals: List[Dict[str, Any]],
+        part_lifetimes: List[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        total_games = sum(int(r.get("games") or 0) for r in player_season_totals)
+        total_pins = sum(int(r.get("total_pins") or 0) for r in player_season_totals)
+        avg_score = total_pins / total_games if total_games > 0 else 0.0
+
+        best_game = None
+        worst_game = None
+        for lifetime in part_lifetimes:
+            bg = lifetime.get("best_game") if isinstance(lifetime, dict) else None
+            wg = lifetime.get("worst_game") if isinstance(lifetime, dict) else None
+            if isinstance(bg, dict) and bg.get("score") is not None:
+                if best_game is None or int(bg["score"]) > int(best_game["score"]):
+                    best_game = bg
+            if isinstance(wg, dict) and wg.get("score") is not None:
+                if worst_game is None or int(wg["score"]) < int(worst_game["score"]):
+                    worst_game = wg
+
+        best_season_row = max(
+            player_season_totals,
+            key=lambda r: float(r.get("average") or 0),
+            default=None,
+        )
+        best_season = best_season_row.get("season") if best_season_row else None
+        best_season_avg = best_season_row.get("average") if best_season_row else None
+        best_season_player = best_season_row.get("player_name") if best_season_row else None
+
+        most_improved_player = None
+        most_improved_season = None
+        most_improved_improvement = None
+        best_delta = None
+        by_player: Dict[str, List[Dict[str, Any]]] = {}
+        for row in player_season_totals:
+            player_key = str(row.get("player_id") or row.get("player_name") or "").strip()
+            if not player_key:
+                continue
+            by_player.setdefault(player_key, []).append(row)
+
+        for rows in by_player.values():
+            ordered = sorted(rows, key=lambda r: str(r.get("season") or ""))
+            last_avg = None
+            for row in ordered:
+                avg = row.get("average")
+                if avg is None:
+                    continue
+                if last_avg is not None:
+                    delta = float(avg) - float(last_avg)
+                    if best_delta is None or delta > best_delta:
+                        best_delta = delta
+                        most_improved_season = row.get("season")
+                        most_improved_improvement = delta
+                        most_improved_player = row.get("player_name")
+                last_avg = float(avg)
+
+        return {
+            "total_games": int(total_games),
+            "total_pins": int(total_pins),
+            "average_score": float(round(avg_score, 2)),
+            "best_game": best_game or {"score": None, "date": "tbd", "event": "Event"},
+            "worst_game": worst_game or {"score": None, "date": "tbd", "event": "Event"},
+            "best_season": {
+                "season": best_season,
+                "average": float(round(float(best_season_avg), 2)) if best_season_avg is not None else None,
+                "player_name": best_season_player,
+            },
+            "most_improved": {
+                "season": most_improved_season,
+                "improvement": float(round(float(most_improved_improvement), 2))
+                if most_improved_improvement is not None
+                else None,
+                "player_name": most_improved_player,
+            },
+        }
+
+    def get_aggregate_lifetime_stats(self, season: str = "all"):
+        """Lifetime stats across all players (``all`` merges per-season payloads)."""
+        season_norm = str(season).strip() if season is not None else "all"
+        if str(season_norm).lower() == "all":
+            parts = []
+            for season_value in self.get_all_seasons():
+                part = self._aggregate_lifetime_stats_for_season(season_value)
+                if part:
+                    parts.append(part)
+            return self.merge_aggregate_lifetime_payloads(parts)
+        return self._aggregate_lifetime_stats_for_season(season_norm)
+
+    def _aggregate_lifetime_stats_for_season(self, season: str) -> Optional[Dict[str, Any]]:
+        games_df = self._subset_all_player_games(season=season)
+        if games_df.empty:
+            return None
+        return self._build_aggregate_lifetime_stats_from_games(games_df)
+
+    def _build_aggregate_lifetime_stats_from_games(self, games_df: pd.DataFrame) -> Dict[str, Any]:
+        """Aggregate all-player stats for the rows in *games_df* (one season or scoped slice)."""
+
+        def normalize_club(value: Any) -> str:
+            label = str(value).strip() if value is not None else ""
+            if not label:
+                return "-"
+            return re.sub(r"\s+\d+$", "", label)
+
+        def competition_name(df: pd.DataFrame) -> str:
+            from data_access.competition_schema import competition_event_column
+
+            event_col = competition_event_column(df)
+            if event_col:
+                vals = [str(x).strip() for x in df[event_col].dropna().tolist() if str(x).strip()]
+                if vals:
+                    return vals[0]
+            if Columns.league_name in df.columns:
+                vals = [str(x).strip() for x in df[Columns.league_name].dropna().tolist() if str(x).strip()]
+                if vals:
+                    return vals[0]
+            return "Unknown Competition"
+
+        def row_team_name(df: pd.DataFrame) -> str:
+            if Columns.team_name in df.columns:
+                vals = [str(x).strip() for x in df[Columns.team_name].dropna().tolist() if str(x).strip()]
+                if vals:
+                    return vals[0]
+            return ""
+
+        def row_club(df: pd.DataFrame) -> str:
+            if Columns.club in df.columns:
+                vals = [str(x).strip() for x in df[Columns.club].dropna().tolist() if str(x).strip()]
+                if vals:
+                    return normalize_club(vals[0])
+            if Columns.team_name in df.columns:
+                vals = [str(x).strip() for x in df[Columns.team_name].dropna().tolist() if str(x).strip()]
+                if vals:
+                    return normalize_club(vals[0])
+            return "-"
+
+        def event_label(row: pd.Series) -> str:
+            event = ""
+            if Columns.event in row.index and pd.notna(row.get(Columns.event)):
+                event = str(row.get(Columns.event)).strip()
+            elif Columns.event_name in row.index and pd.notna(row.get(Columns.event_name)):
+                event = str(row.get(Columns.event_name)).strip()
+            if not event and Columns.league_name in row and pd.notna(row.get(Columns.league_name)):
+                event = str(row.get(Columns.league_name)).strip()
+            if not event:
+                event = "Event"
+            week_part = ""
+            if Columns.week in row and pd.notna(row.get(Columns.week)):
+                week_part = f" Week {row.get(Columns.week)}"
+            round_part = ""
+            if Columns.round_name in row and pd.notna(row.get(Columns.round_name)):
+                round_part = f" {row.get(Columns.round_name)}"
+            return f"{event}{week_part}{round_part}".strip()
+
+        def comp_group_col(df: pd.DataFrame) -> str:
+            from data_access.competition_schema import competition_event_column
+
+            if Columns.event in df.columns:
+                return Columns.event
+            if Columns.event_name in df.columns:
+                return Columns.event_name
+            return Columns.league_name
+
+        comp_col = comp_group_col(games_df)
+        rank_cache = self._build_competition_rank_cache(games_df, comp_group_col=comp_col)
+
+        registry_lookup: Dict[str, Dict[str, str]] = {}
+        try:
+            from data_access.players_registry import load_players_registry_df, registry_lookup_by_id
+
+            registry_df = load_players_registry_df()
+            if registry_df is not None and not registry_df.empty:
+                registry_lookup = registry_lookup_by_id(registry_df)
+        except Exception:
+            registry_lookup = {}
+
+        def append_competition_row(
+            *,
+            target: List[Dict[str, Any]],
+            season_value: Any,
+            cdf: pd.DataFrame,
+            comp_name: str,
+            player_value: str,
+            player_id_value: str,
+            include_player: bool,
+        ) -> None:
+            comp_games = len(cdf)
+            if comp_games == 0:
+                return
+            comp_pins = sum_scores_float(cdf[Columns.score])
+            comp_avg = comp_pins / comp_games
+            comp_best = cdf[cdf[Columns.score] == cdf[Columns.score].max()].iloc[0]
+            comp_worst = cdf[cdf[Columns.score] == cdf[Columns.score].min()].iloc[0]
+            is_tournament = self._is_tournament_chunk(cdf)
+            rank_key = (season_value, str(comp_name).strip(), is_tournament)
+            rank_table = rank_cache.get(rank_key)
+            if rank_table is None:
+                rank_table = (
+                    self._tournament_competition_rank_table(season_value, str(comp_name))
+                    if is_tournament
+                    else self._league_competition_rank_table(season_value, str(comp_name))
+                )
+                rank_cache[rank_key] = rank_table
+            rank_value, competitors = self._lookup_competition_rank(
+                rank_table,
+                player_value,
+                player_id_value,
+                normalize_player_id=self._normalize_player_id,
+            )
+            row = {
+                "is_tournament": is_tournament,
+                "season": season_value,
+                "competition": str(comp_name).strip() or competition_name(cdf),
+                "club": row_club(cdf),
+                "team_name": row_team_name(cdf),
+                "team_number": (
+                    int(m.group(1))
+                    if (m := re.search(r"\s+(\d+)\s*$", row_team_name(cdf)))
+                    else None
+                ),
+                "games": int(comp_games),
+                "total_pins": int(comp_pins),
+                "average": float(round(comp_avg, 2)),
+                "vs_last_season": None,
+                "rank": rank_value,
+                "competitors": competitors,
+                "row_type": "competition",
+                "best_game": {
+                    "score": int(comp_best.at[Columns.score]),
+                    "date": "tbd",
+                    "event": event_label(comp_best),
+                },
+                "worst_game": {
+                    "score": int(comp_worst.at[Columns.score]),
+                    "date": "tbd",
+                    "event": event_label(comp_worst),
+                },
+            }
+            if include_player:
+                row["player_name"] = player_value
+                row["player_id"] = player_id_value
+            target.append(row)
+
+        season_stats: List[Dict[str, Any]] = []
+        player_competitions: List[Dict[str, Any]] = []
+        player_season_totals: List[Dict[str, Any]] = []
+        token_stats = self._build_name_token_stats(games_df)
+
+        player_group_col = Columns.player_id if Columns.player_id in games_df.columns else Columns.player_name
+
+        for season_value, season_data in games_df.groupby(Columns.season, dropna=False):
+            total_games = len(season_data)
+            total_pins = sum_scores_float(season_data[Columns.score])
+            average = total_pins / total_games if total_games else 0.0
+            best_game = season_data[season_data[Columns.score] == season_data[Columns.score].max()].iloc[0]
+            worst_game = season_data[season_data[Columns.score] == season_data[Columns.score].min()].iloc[0]
+            season_stats.append(
+                {
+                    "season": season_value,
+                    "competition": "All Events",
+                    "club": "",
+                    "games": int(total_games),
+                    "total_pins": int(total_pins),
+                    "average": float(round(average, 2)),
+                    "vs_last_season": None,
+                    "rank": None,
+                    "is_tournament": False,
+                    "row_type": "season_total",
+                    "best_game": {
+                        "score": int(best_game.at[Columns.score]),
+                        "date": "tbd",
+                        "event": event_label(best_game),
+                    },
+                    "worst_game": {
+                        "score": int(worst_game.at[Columns.score]),
+                        "date": "tbd",
+                        "event": event_label(worst_game),
+                    },
+                }
+            )
+
+            comp_col = comp_group_col(season_data)
+            if comp_col in season_data.columns:
+                group_cols = [comp_col]
+                if Columns.team_name in season_data.columns:
+                    group_cols.append(Columns.team_name)
+                for comp_key, cdf in season_data.groupby(group_cols, dropna=False):
+                    comp_name = comp_key[0] if isinstance(comp_key, tuple) else comp_key
+                    if pd.isna(comp_name):
+                        continue
+                    append_competition_row(
+                        target=season_stats,
+                        season_value=season_value,
+                        cdf=cdf,
+                        comp_name=str(comp_name),
+                        player_value="",
+                        player_id_value="",
+                        include_player=False,
+                    )
+
+            for player_key, pdata in season_data.groupby(player_group_col, dropna=False):
+                if Columns.player_id in games_df.columns:
+                    pid = self._normalize_player_id(player_key)
+                    names = pdata[Columns.player_name].dropna().astype(str).tolist()
+                    pname = self._canonical_name_for_player_id(
+                        pid, names, token_stats=token_stats, registry_lookup=registry_lookup
+                    ) or (
+                        names[0] if names else ""
+                    )
+                else:
+                    pname = str(player_key).strip()
+                    pid = ""
+
+                p_games = len(pdata)
+                p_pins = sum_scores_float(pdata[Columns.score])
+                p_avg = p_pins / p_games if p_games else 0.0
+                player_season_totals.append(
+                    {
+                        "season": season_value,
+                        "competition": "All Events",
+                        "club": row_club(pdata),
+                        "games": int(p_games),
+                        "total_pins": int(p_pins),
+                        "average": float(round(p_avg, 2)),
+                        "vs_last_season": None,
+                        "rank": None,
+                        "is_tournament": False,
+                        "row_type": "season_total",
+                        "player_name": pname,
+                        "player_id": pid,
+                    }
+                )
+
+                if comp_col in pdata.columns:
+                    p_group_cols = [comp_col]
+                    if Columns.team_name in pdata.columns:
+                        p_group_cols.append(Columns.team_name)
+                    for comp_key, cdf in pdata.groupby(p_group_cols, dropna=False):
+                        comp_name = comp_key[0] if isinstance(comp_key, tuple) else comp_key
+                        if pd.isna(comp_name):
+                            continue
+                        append_competition_row(
+                            target=player_competitions,
+                            season_value=season_value,
+                            cdf=cdf,
+                            comp_name=str(comp_name),
+                            player_value=pname,
+                            player_id_value=pid,
+                            include_player=True,
+                        )
+
+        periods = self._build_period_stats(
+            games_df,
+            competition_name=competition_name,
+            row_team_name=row_team_name,
+            row_club=row_club,
+            per_player=True,
+        )
+
+        total_games = len(games_df)
+        total_pins = sum_scores_float(games_df[Columns.score])
+        avg_score = total_pins / total_games if total_games > 0 else 0
+        best_game = games_df[games_df[Columns.score] == games_df[Columns.score].max()].iloc[0]
+        worst_game = games_df[games_df[Columns.score] == games_df[Columns.score].min()].iloc[0]
+
+        best_season_row = max(player_season_totals, key=lambda r: r.get("average") or 0, default=None)
+        best_season = best_season_row.get("season") if best_season_row else None
+        best_season_avg = best_season_row.get("average") if best_season_row else None
+        best_season_player = best_season_row.get("player_name") if best_season_row else None
+
+        most_improved_player = None
+        most_improved_season = None
+        most_improved_improvement = None
+        if Columns.season in games_df.columns:
+            best_delta = None
+            for _player_key, pdata in games_df.groupby(player_group_col, dropna=False):
+                if Columns.player_id in games_df.columns:
+                    pid = self._normalize_player_id(_player_key)
+                    names = pdata[Columns.player_name].dropna().astype(str).tolist()
+                    pname = self._canonical_name_for_player_id(
+                        pid, names, token_stats=token_stats, registry_lookup=registry_lookup
+                    ) or (
+                        names[0] if names else ""
+                    )
+                else:
+                    pname = str(_player_key).strip()
+                season_means = pdata.groupby(Columns.season)[Columns.score].apply(mean_scores)
+                improvements = season_means.diff().dropna()
+                if improvements.empty:
+                    continue
+                delta = float(improvements.max())
+                if best_delta is None or delta > best_delta:
+                    best_delta = delta
+                    most_improved_season = improvements.idxmax()
+                    most_improved_improvement = delta
+                    most_improved_player = pname
+
+        best_game_player = self._player_name_from_chunk(best_game.to_frame().T)
+        worst_game_player = self._player_name_from_chunk(worst_game.to_frame().T)
+
+        return {
+            "scope": "all",
+            "seasons": season_stats,
+            "player_competitions": player_competitions,
+            "player_season_totals": player_season_totals,
+            "periods": periods,
+            "lifetime": {
+                "total_games": int(total_games),
+                "total_pins": int(total_pins),
+                "average_score": float(round(avg_score, 2)),
+                "best_game": {
+                    "score": int(best_game.at[Columns.score]),
+                    "date": "tbd",
+                    "event": f"{best_game_player} · {best_game.at[Columns.season]} {event_label(best_game)}".strip(" ·"),
+                },
+                "worst_game": {
+                    "score": int(worst_game.at[Columns.score]),
+                    "date": "tbd",
+                    "event": f"{worst_game_player} · {worst_game.at[Columns.season]} {event_label(worst_game)}".strip(" ·"),
+                },
+                "best_season": {
+                    "season": best_season,
+                    "average": float(round(best_season_avg, 2)) if best_season_avg is not None else None,
+                    "player_name": best_season_player,
+                },
+                "most_improved": {
+                    "season": most_improved_season,
+                    "improvement": float(round(most_improved_improvement, 2))
+                    if most_improved_improvement is not None
+                    else None,
+                    "player_name": most_improved_player,
+                },
+            },
+        }

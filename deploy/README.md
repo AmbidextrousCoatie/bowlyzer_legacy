@@ -91,9 +91,11 @@ uv run python scripts/rebuild_league_caches.py --database db_real_merged
 uv run python scripts/warm_league_cache.py --database db_real_merged --rebuild --warm-clubs --workers 6
 
 # Multi-process warm (tqdm ETA over shards; add --verbose for full child logs)
+uv run python scripts/warm_cache_shard.py --all-published --rebuild --warm-all --max-parallel 12
+# League + clubs only (skip meta charts):
+uv run python scripts/warm_cache_shard.py --database db_real_merged --rebuild --warm-clubs --skip-meta --clubs-per-shard 8 --max-parallel 8
+# Legacy name still works (forwards to warm_cache_shard.py):
 uv run python scripts/warm_league_cache_shard.py --database db_real_merged --rebuild --warm-clubs --max-parallel 8
-# Club deploy only (skip heavy league-wide meta charts). Smaller club batches keep CPU busy:
-uv run python scripts/warm_league_cache_shard.py --database db_real_merged --rebuild --warm-clubs --skip-meta --clubs-per-shard 8 --max-parallel 8
 
 # Deploy data + cache (shipped cache :ro + ./.cache/league-runtime :rw for cache misses)
 .\deploy\deploy.ps1 -SyncDatabase -SyncCache

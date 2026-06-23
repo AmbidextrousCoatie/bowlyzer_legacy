@@ -15,11 +15,13 @@ export type PlayerLifetimeBestGame = {
 export type PlayerLifetimeSeasonRecord = {
   season?: string | null;
   average?: number | null;
+  player_name?: string | null;
 };
 
 export type PlayerLifetimeMostImproved = {
   season?: string | null;
   improvement?: number | null;
+  player_name?: string | null;
 };
 
 export type PlayerLifetimeStats = {
@@ -41,6 +43,8 @@ export type PlayerSeasonRow = {
   club?: string | null;
   team_name?: string | null;
   team_number?: number | string | null;
+  player_name?: string | null;
+  player_id?: string | null;
   games?: number | null;
   total_pins?: number | null;
   average?: number | null;
@@ -58,6 +62,8 @@ export type PlayerPeriodRow = {
   period_kind?: "week" | "round" | string | null;
   period_value?: string | null;
   period_number?: number | null;
+  player_name?: string | null;
+  player_id?: string | null;
   games?: number | null;
   average?: number | null;
   club?: string | null;
@@ -67,10 +73,17 @@ export type PlayerPeriodRow = {
 };
 
 export type PlayerStatsResponse = {
+  scope?: "all" | "player" | null;
   lifetime?: PlayerLifetimeStats | null;
   seasons?: PlayerSeasonRow[] | null;
   periods?: PlayerPeriodRow[] | null;
+  player_competitions?: PlayerSeasonRow[] | null;
+  player_season_totals?: PlayerSeasonRow[] | null;
 } | null;
+
+export function isAllPlayersScope(stats: PlayerStatsResponse | undefined): boolean {
+  return stats?.scope === "all";
+}
 
 export function usePlayerSearch() {
   return useQuery({
@@ -86,11 +99,10 @@ export function usePlayerSeasons(playerName: string, playerId: string) {
     queryFn: () =>
       fetchJson<string[]>(
         buildUrl("/player/get_available_seasons", {
-          player_name: playerName,
-          player_id: playerId,
+          ...(playerName ? { player_name: playerName } : {}),
+          ...(playerId ? { player_id: playerId } : {}),
         }),
       ),
-    enabled: !!playerName || !!playerId,
   });
 }
 
@@ -100,11 +112,10 @@ export function usePlayerLifetimeStats(playerName: string, playerId: string, sea
     queryFn: () =>
       fetchJson<PlayerStatsResponse>(
         buildUrl("/player/get_lifetime_stats", {
-          player_name: playerName,
-          player_id: playerId,
+          ...(playerName ? { player_name: playerName } : {}),
+          ...(playerId ? { player_id: playerId } : {}),
           season: season || "all",
         }),
       ),
-    enabled: !!playerName || !!playerId,
   });
 }

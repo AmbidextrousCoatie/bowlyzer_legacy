@@ -21,8 +21,11 @@ import { useTranslations } from "../../../hooks/useTranslations";
 import { formatPeriodDetail } from "../../../lib/playerPeriodLabel";
 
 type Props = {
+  scope: "all" | "player";
   seasons: PlayerSeasonRow[];
   periods: PlayerPeriodRow[];
+  playerCompetitions: PlayerSeasonRow[];
+  playerSeasonTotals: PlayerSeasonRow[];
   selectedPlayerName: string;
   t: (key: string, fallback?: string) => string;
 };
@@ -35,7 +38,15 @@ type HighlightCategory = {
   entries: PlayerHighlightEntry[];
 };
 
-export function PlayerHighlights({ seasons, periods, selectedPlayerName, t }: Props) {
+export function PlayerHighlights({
+  scope,
+  seasons,
+  periods,
+  playerCompetitions,
+  playerSeasonTotals,
+  selectedPlayerName,
+  t,
+}: Props) {
   const databaseParam =
     typeof window !== "undefined"
       ? new URLSearchParams(window.location.search).get("database")
@@ -44,14 +55,19 @@ export function PlayerHighlights({ seasons, periods, selectedPlayerName, t }: Pr
   const { tournamentAbbreviations } = useTranslations();
 
   const data = buildPlayerHighlights(
-    seasons,
+    {
+      scope,
+      seasons,
+      periods,
+      playerCompetitions,
+      playerSeasonTotals,
+    },
     {
       selectedPlayerName,
       database: databaseParam,
       tournamentAbbreviations,
       formatPeriod: (row) => formatPeriodDetail(row, t),
     },
-    periods,
   );
 
   const categories: HighlightCategory[] = [
@@ -119,12 +135,21 @@ export function PlayerHighlights({ seasons, periods, selectedPlayerName, t }: Pr
             aria-hidden
           />
           <div>
-            <h2 className="text-h3">{t("ui.player.highlights_heading", "Spieler-Highlights")}</h2>
+            <h2 className="text-h3">
+              {scope === "all"
+                ? t("ui.player.highlights_heading_all", "Highlights — alle Spieler")
+                : t("ui.player.highlights_heading", "Spieler-Highlights")}
+            </h2>
             <p className="text-small text-muted mt-1">
-              {t(
-                "ui.player.highlights_hint",
-                "Karriere-Überblick — Clubs, Saisons und Wettbewerbe auf einen Blick.",
-              )}
+              {scope === "all"
+                ? t(
+                    "ui.player.highlights_hint_all",
+                    "Top-10 je Kategorie über alle Einzelleistungen in der Datenquelle.",
+                  )
+                : t(
+                    "ui.player.highlights_hint",
+                    "Karriere-Überblick — Clubs, Saisons und Wettbewerbe auf einen Blick.",
+                  )}
             </p>
           </div>
         </div>

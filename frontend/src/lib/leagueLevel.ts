@@ -55,3 +55,50 @@ export function getLeagueLevel(league: string): number {
   const key = String(league ?? "").trim();
   return LEAGUE_LEVEL_BY_ID[key] ?? 99;
 }
+
+export type LeagueGenderScope = "male" | "female";
+
+/** Short label for all leagues at the same ``level`` (e.g. LL N1 + LL S → ``LL``). */
+const LEAGUE_LEVEL_CLUSTER_LABELS: Record<number, string> = {
+  3: "BayL",
+  4: "LL",
+  5: "BZOL / BL",
+  6: "BZL",
+  7: "KL",
+  8: "A",
+};
+
+export function getLeagueGenderScope(league: string): LeagueGenderScope {
+  const key = String(league ?? "").trim();
+  return key.includes("(D)") ? "female" : "male";
+}
+
+export function getLeagueClusterKey(league: string): string {
+  const key = String(league ?? "").trim();
+  const level = getLeagueLevel(key);
+  if (level === 99) return `l:unknown:${key}`;
+  const gender = getLeagueGenderScope(key);
+  return `l:${level}:${gender}`;
+}
+
+export function getLeagueClusterLabel(level: number, gender: LeagueGenderScope): string {
+  const base = LEAGUE_LEVEL_CLUSTER_LABELS[level];
+  if (!base) return gender === "female" ? `Liga ${level} (D)` : `Liga ${level}`;
+  return gender === "female" ? `${base} (D)` : base;
+}
+
+/** Long label for clustered league tooltips (e.g. ``Landesliga``, ``Bezirksoberliga / Bereichsliga``). */
+const LEAGUE_LEVEL_LONG_LABELS: Record<number, string> = {
+  3: "Bayernliga",
+  4: "Landesliga",
+  5: "Bezirksoberliga / Bereichsliga",
+  6: "Bezirksliga",
+  7: "Kreisliga",
+  8: "A-Klasse",
+};
+
+export function getLeagueClusterLongLabel(level: number, gender: LeagueGenderScope): string {
+  const base = LEAGUE_LEVEL_LONG_LABELS[level];
+  if (!base) return gender === "female" ? `Liga ${level} Damen` : `Liga ${level}`;
+  return gender === "female" ? `${base} Damen` : base;
+}

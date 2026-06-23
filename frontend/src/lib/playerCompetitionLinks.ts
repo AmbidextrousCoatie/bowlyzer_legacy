@@ -19,7 +19,8 @@ export function buildCompetitionEventPath(
 
   if (row.is_tournament) {
     qs.set("tournament", String(row.competition));
-    if (ctx.selectedPlayerName) qs.set("player", ctx.selectedPlayerName);
+    const playerForLink = String(row.player_name ?? "").trim() || ctx.selectedPlayerName;
+    if (playerForLink) qs.set("player", playerForLink);
   } else {
     qs.set("league", String(row.competition));
     const teamForLink =
