@@ -12,7 +12,7 @@ Usage:
   uv run python scripts/warm_league_cache.py --database db_real_merged --benchmark-out .cache/league/bench.json
   uv run python scripts/warm_league_cache.py --database db_real_merged --warm-clubs --warm-clubs-file clubs.txt
   uv run python scripts/warm_league_cache.py --database db_real_merged --phase seasons --season "25/26" --sequential --no-progress
-  uv run python scripts/warm_league_cache_shard.py --database db_real_merged --rebuild --warm-clubs
+  uv run python scripts/warm_cache_shard.py --database db_real_merged --rebuild --warm-clubs
   uv run python scripts/rebuild_league_caches.py --database db_real_merged   # same as --rebuild + full grid
 
 Environment:
@@ -307,11 +307,7 @@ def _league_wide_jobs(ls, database: str, league: str) -> List[Tuple[str, Dict[st
             ql,
             lambda: ls.get_top_individual_performances(league=league).to_dict(),
         ),
-        (
-            "get_record_games",
-            ql,
-            lambda: ls.get_record_games(league=league).to_dict(),
-        ),
+        # get_record_games is an alias of get_record_individual_games — warm one endpoint only.
         (
             "get_record_individual_games",
             ql,
@@ -1439,6 +1435,7 @@ def main() -> int:
         return 1
 
     os.environ.setdefault("LEAGUE_CACHE_ENABLED", "1")
+    os.environ.setdefault("LEAGUE_CACHE_WARM_ON_START", "0")
 
     from app import create_app
     from app.cache.league_response_cache import (
@@ -1468,6 +1465,7 @@ def main() -> int:
     exit_code = 0
     progress: Optional[WarmProgress] = None
     benchmark = None
+    ls0 = None
     if args.benchmark:
         from app.cache.warm_benchmark import WarmBenchmark
 
@@ -1492,6 +1490,7 @@ def main() -> int:
             )
             t_load = time.perf_counter()
             ls0 = LeagueService(database=database)
+            ls0.warm_slice_cache_begin()
             if benchmark is not None:
                 benchmark.data_load_ms = (time.perf_counter() - t_load) * 1000.0
 
@@ -1797,6 +1796,8 @@ def main() -> int:
                         out_path = Path(args.benchmark_out).expanduser().resolve()
                         benchmark.write_json(out_path)
                         _tqdm_write(f"Benchmark JSON: {out_path}")
+            if ls0 is not None:
+                ls0.warm_slice_cache_end()
     except KeyboardInterrupt:
         _request_shutdown("KeyboardInterrupt")
         exit_code = 130

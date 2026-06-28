@@ -16,9 +16,28 @@ export type { CompetitionLinkContext };
 export type PlayerHighlightsOptions = CompetitionLinkContext & {
   tournamentAbbreviations?: Record<string, string>;
   formatPeriod?: (row: PlayerPeriodRow) => string;
+  /** When set, season averages need at least this many games. */
+  minGamesAvgBySeason?: number;
+  /** When set, competition averages need at least this many games. */
+  minGamesBestCompetitions?: number;
+  /** When set, league week averages need at least this many games. */
+  minGamesBestDays?: number;
+  /** With minGamesBestDays: only non-tournament week/round rows. */
+  leagueWeeksOnlyBestDays?: boolean;
 };
 
-export const PLAYER_HIGHLIGHTS_TOP_N = 10;
+export const PLAYER_HIGHLIGHTS_TOP_N_ALL = 10;
+export const PLAYER_HIGHLIGHTS_TOP_N_PLAYER = 5;
+export const PLAYER_HIGHLIGHTS_MIN_GAMES_SEASON = 10;
+export const PLAYER_HIGHLIGHTS_MIN_GAMES_COMPETITION = 10;
+export const PLAYER_HIGHLIGHTS_MIN_GAMES_LEAGUE_WEEK = 5;
+
+/** @deprecated Use {@link playerHighlightsTopN} */
+export const PLAYER_HIGHLIGHTS_TOP_N = PLAYER_HIGHLIGHTS_TOP_N_ALL;
+
+export function playerHighlightsTopN(scope: "all" | "player"): number {
+  return scope === "all" ? PLAYER_HIGHLIGHTS_TOP_N_ALL : PLAYER_HIGHLIGHTS_TOP_N_PLAYER;
+}
 
 export type BuildPlayerHighlightsArgs = {
   scope: "all" | "player";
@@ -34,6 +53,8 @@ export type PlayerHighlightEntry = {
   value: string;
   detail?: string;
   href?: string;
+  /** Optional secondary link (e.g. competition) shown on the detail line. */
+  detailHref?: string;
   /** Full competition name for tooltips when ``label`` is abbreviated. */
   title?: string;
 };
@@ -67,6 +88,17 @@ function formatAvg(value: number | null | undefined): string {
   return value.toFixed(2);
 }
 
+function meetsMinGames(games: number | null | undefined, minGames?: number): boolean {
+  if (minGames == null || minGames <= 0) return true;
+  return (games ?? 0) >= minGames;
+}
+
+function isLeagueWeekPeriod(row: PlayerPeriodRow): boolean {
+  if (row.is_tournament) return false;
+  const kind = String(row.period_kind ?? "").trim().toLowerCase();
+  return kind === "week" || kind === "round" || kind === "";
+}
+
 function formatRank(rank: number | null | undefined, competitors: number | null | undefined): string {
   if (rank == null || !Number.isFinite(rank)) return "—";
   return competitors ? `${rank} / ${competitors}` : String(rank);
@@ -83,7 +115,10 @@ function joinDetail(...parts: Array<string | number | null | undefined>): string
   return text || undefined;
 }
 
-function buildAllPlayersClubAffiliation(rows: PlayerSeasonRow[]): PlayerHighlightEntry[] {
+function buildAllPlayersClubAffiliation(
+  rows: PlayerSeasonRow[],
+  topN: number,
+): PlayerHighlightEntry[] {
   const byPlayer = new Map<string, PlayerSeasonRow[]>();
   for (const row of competitionRows(rows)) {
     const player = String(row.player_name ?? "").trim();
@@ -110,7 +145,7 @@ function buildAllPlayersClubAffiliation(rows: PlayerSeasonRow[]): PlayerHighligh
     })
     .filter((entry): entry is NonNullable<typeof entry> => entry != null)
     .sort((a, b) => b.games - a.games || a.player.localeCompare(b.player, "de"))
-    .slice(0, PLAYER_HIGHLIGHTS_TOP_N)
+    .slice(0, topN)
     .map((entry, idx) => ({
       id: `club-aff-${entry.player}-${idx}`,
       label: entry.player,
@@ -136,6 +171,7 @@ export function buildPlayerHighlights(
   };
 
   const scope = input.scope;
+  const topN = playerHighlightsTopN(scope);
   const chartRows = input.seasons ?? [];
   const highlightCompetitions =
     scope === "all" ? (input.playerCompetitions ?? []) : competitionRows(chartRows);
@@ -147,10 +183,10 @@ export function buildPlayerHighlights(
 
   const clubAffiliation: PlayerHighlightEntry[] =
     scope === "all"
-      ? buildAllPlayersClubAffiliation(highlightCompetitions)
+      ? buildAllPlayersClubAffiliation(highlightCompetitions, topN)
       : (() => {
           const { historyRows } = buildPlayerClubHistory(chartRows);
-          return historyRows.slice(0, PLAYER_HIGHLIGHTS_TOP_N).map((row, idx) => ({
+          return historyRows.slice(0, topN).map((row, idx) => ({
             id: `club-${row.club}-${idx}`,
             label: row.club,
             value: row.period,
@@ -172,7 +208,7 @@ export function buildPlayerHighlights(
 
   const gamesByClub: PlayerHighlightEntry[] = [...byClub.entries()]
     .sort((a, b) => b[1].games - a[1].games || a[0].localeCompare(b[0], "de"))
-    .slice(0, PLAYER_HIGHLIGHTS_TOP_N)
+    .slice(0, topN)
     .map(([club, stats], idx) => ({
       id: `games-${club}-${idx}`,
       label: club,
@@ -194,7 +230,7 @@ export function buildPlayerHighlights(
         (b.games ?? 0) - (a.games ?? 0) ||
         a.club.localeCompare(b.club, "de"),
     )
-    .slice(0, PLAYER_HIGHLIGHTS_TOP_N)
+    .slice(0, topN)
     .map((entry, idx) => ({
       id: `avg-club-${entry.club}-${idx}`,
       label: entry.club,
@@ -204,13 +240,18 @@ export function buildPlayerHighlights(
     }));
 
   const avgBySeason: PlayerHighlightEntry[] = highlightSeasonTotals
-    .filter((r) => r.average != null && Number.isFinite(r.average))
+    .filter(
+      (r) =>
+        r.average != null &&
+        Number.isFinite(r.average) &&
+        meetsMinGames(r.games, options?.minGamesAvgBySeason),
+    )
     .sort(
       (a, b) =>
         (b.average ?? 0) - (a.average ?? 0) ||
         compareSeasonString(String(a.season ?? ""), String(b.season ?? "")),
     )
-    .slice(0, PLAYER_HIGHLIGHTS_TOP_N)
+    .slice(0, topN)
     .map((row, idx) => {
       const player = String(row.player_name ?? "").trim();
       const club = normalizeClub(row.club);
@@ -235,7 +276,7 @@ export function buildPlayerHighlights(
         (a.rank ?? 999) - (b.rank ?? 999) ||
         compareSeasonString(String(b.season ?? ""), String(a.season ?? "")),
     )
-    .slice(0, PLAYER_HIGHLIGHTS_TOP_N)
+    .slice(0, topN)
     .map((row, idx) => {
       const fullName = String(row.competition ?? "—");
       const player = String(row.player_name ?? "").trim();
@@ -269,14 +310,19 @@ export function buildPlayerHighlights(
     });
 
   const bestCompetitions: PlayerHighlightEntry[] = highlightCompetitions
-    .filter((r) => r.average != null && Number.isFinite(r.average))
+    .filter(
+      (r) =>
+        r.average != null &&
+        Number.isFinite(r.average) &&
+        meetsMinGames(r.games, options?.minGamesBestCompetitions),
+    )
     .sort(
       (a, b) =>
         (b.average ?? 0) - (a.average ?? 0) ||
         (b.games ?? 0) - (a.games ?? 0) ||
         String(a.competition ?? "").localeCompare(String(b.competition ?? ""), "de"),
     )
-    .slice(0, PLAYER_HIGHLIGHTS_TOP_N)
+    .slice(0, topN)
     .map((row, idx) => {
       const fullName = String(row.competition ?? "—");
       const isTournament = !!row.is_tournament;
@@ -304,15 +350,23 @@ export function buildPlayerHighlights(
     });
 
   const formatPeriod = options?.formatPeriod;
-  const bestDays: PlayerHighlightEntry[] = periods
-    .filter((r) => r.average != null && Number.isFinite(r.average))
+  const bestDaysSource = options?.leagueWeeksOnlyBestDays
+    ? periods.filter(isLeagueWeekPeriod)
+    : periods;
+  const bestDays: PlayerHighlightEntry[] = bestDaysSource
+    .filter(
+      (r) =>
+        r.average != null &&
+        Number.isFinite(r.average) &&
+        meetsMinGames(r.games, options?.minGamesBestDays),
+    )
     .sort(
       (a, b) =>
         (b.average ?? 0) - (a.average ?? 0) ||
         (b.games ?? 0) - (a.games ?? 0) ||
         compareSeasonString(String(b.season ?? ""), String(a.season ?? "")),
     )
-    .slice(0, PLAYER_HIGHLIGHTS_TOP_N)
+    .slice(0, topN)
     .map((row, idx) => {
       const fullName = String(row.competition ?? "—");
       const isTournament = !!row.is_tournament;

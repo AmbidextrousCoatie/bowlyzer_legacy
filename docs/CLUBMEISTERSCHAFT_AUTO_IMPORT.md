@@ -29,7 +29,8 @@ Dedicated Dropbox user (folder shared by data owner)
         ▼  step 1: rclone sync (user systemd timer, every 12 min)
 ~/bowlyzer/work/clubmeisterschaft/inbox/Clubpokal DB 2026.xlsx
         │
-        ▼  step 2: stable-file wait + sha256 (skip if unchanged)
+        ▼  step 2: stable-file wait + importer fingerprint (skip if unchanged)
+        ▼  on change: dated .xlsx archive under work/clubmeisterschaft/archive/
         ▼  step 3: docker → import_clubmeisterschaft_donaubowler_xlsx.py
         │         → tournament_manual_postprocessed.csv
         ▼  step 4: docker → publish_tournament_parquet.py
@@ -97,9 +98,10 @@ For a **directly shared file** via rclone API:
 
 ```bash
 # Production: data owner shared the xlsx directly (not a folder in your tree)
-CLUBMEISTERSCHAFT_RCLONE_SRC=dropbox_bowlyzer:Clubpokal DB 2026.xlsx
+# Double-quote the whole value — filename contains spaces.
+CLUBMEISTERSCHAFT_RCLONE_SRC="dropbox_bowlyzer:Clubpokal DB 2026.xlsx"
 CLUBMEISTERSCHAFT_RCLONE_SHARED_FILES=1
-CLUBMEISTERSCHAFT_XLSX_NAME=Clubpokal DB 2026.xlsx
+CLUBMEISTERSCHAFT_XLSX_NAME="Clubpokal DB 2026.xlsx"
 ```
 
 `rclone ls … --dropbox-shared-files` may show size `0` — that is normal for the listing API;
@@ -166,6 +168,59 @@ If you previously installed system-wide units:
 sudo systemctl disable --now clubmeisterschaft-import.timer 2>/dev/null || true
 ```
 
+### Timer troubleshooting
+
+Healthy timer:
+
+```bash
+systemctl --user list-timers clubmeisterschaft-import.timer
+# NEXT and LEFT must show a future time — not "-"
+```
+
+| Symptom | Cause / fix |
+|---------|-------------|
+| `NEXT: -`, `Active: active (elapsed)`, no new journal entries | Timer not scheduling — use `OnUnitInactiveSec` (not `OnUnitActiveSec`) for oneshot services; `daemon-reload` + `restart` timer |
+| `disabled` / `inactive (dead)` | Run `install_clubmeisterschaft_auto_import.sh --enable-timer` |
+| `Linger=no` | `sudo loginctl enable-linger bowlyzer` |
+| Inbox stale but Dropbox has new file | Timer not running, or hash skip — run manual import |
+| Import + email every 2 min, same row counts | Fingerprint must use importer `--fingerprint` (parsed sheet rows), not raw file sha256 |
+
+**Env file and spaces:** Values with spaces must be **double-quoted as a whole** (works for both systemd and `source`).
+
+| Format | Result |
+|--------|--------|
+| `VAR=dropbox_bowlyzer:Clubpokal DB 2026.xlsx` | **Broken** — bash runs `DB` as a command; systemd truncates at the first space |
+| `VAR=dropbox_bowlyzer:"Clubpokal DB 2026.xlsx"` | **Broken** — partial quotes; literal `"` passed to rclone |
+| `VAR="dropbox_bowlyzer:Clubpokal DB 2026.xlsx"` | **Correct** — outer quotes stripped by systemd and bash |
+
+```bash
+CLUBMEISTERSCHAFT_RCLONE_SRC="dropbox_bowlyzer:Clubpokal DB 2026.xlsx"
+CLUBMEISTERSCHAFT_RCLONE_SHARED_FILES=1
+CLUBMEISTERSCHAFT_XLSX_NAME="Clubpokal DB 2026.xlsx"
+```
+
+Verify after editing:
+
+```bash
+set -a && source ~/.config/bowlyzer/clubmeisterschaft-import.env && set +a
+printf '%s\n' "$CLUBMEISTERSCHAFT_RCLONE_SRC" "$CLUBMEISTERSCHAFT_XLSX_NAME"
+# expect: dropbox_bowlyzer:Clubpokal DB 2026.xlsx  (no quotes)
+```
+
+After fixing timer unit on VPS:
+
+```bash
+cp ~/bowlyzer/deploy/vps/user/clubmeisterschaft-import.timer ~/.config/systemd/user/
+systemctl --user daemon-reload
+systemctl --user restart clubmeisterschaft-import.timer
+
+# start without blocking the shell (oneshot import can take 1–5+ min)
+systemctl --user start --no-block clubmeisterschaft-import.service
+journalctl --user -u clubmeisterschaft-import.service -f
+```
+
+`systemctl start` (without `--no-block`) **waits until the import finishes** — at least the 30s stable-file sleep, plus Docker when the workbook hash changed. That is normal, not a hang. Ctrl+C only stops `systemctl`, not the import job.
+
 ---
 
 ## Root-only summary
@@ -189,9 +244,21 @@ Restore `~/bowlyzer/database/` from backup if needed.
 
 ---
 
+## Workbook archive on import
+
+When the import **fingerprint** changes, a copy of the workbook is saved before import:
+
+`~/bowlyzer/work/clubmeisterschaft/archive/Clubpokal DB 2026_YYYY_MM_DD.xlsx`
+
+If that name already exists the same day, suffixes increment: `_2`, `_3`, …
+
+Override directory with `CLUBMEISTERSCHAFT_ARCHIVE` in `clubmeisterschaft-import.env`.
+
+---
+
 ## Email on new workbook
 
-When the workbook **hash changes** and import + parquet publish succeed, the script emails
+When the workbook **import fingerprint** changes and import + parquet publish succeed, the script emails
 `CLUBMEISTERSCHAFT_NOTIFY_EMAIL` the **full run log** (rclone, import, publish, warnings).
 
 Set SMTP in `~/.config/bowlyzer/clubmeisterschaft-import.env` (file mode **600**).

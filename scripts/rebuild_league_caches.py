@@ -64,6 +64,36 @@ def _load_warm_module():
     return mod
 
 
+def _run_cache_shard_all_published(
+    *,
+    workers: int,
+    dry_run: bool,
+    skip_players: bool,
+    skip_tournament: bool,
+) -> int:
+    import subprocess
+
+    cmd = [
+        "uv",
+        "run",
+        "python",
+        str(Path(__file__).resolve().parent / "warm_cache_shard.py"),
+        "--all-published",
+        "--warm-all",
+        "--rebuild",
+        "--max-parallel",
+        str(max(1, workers)),
+    ]
+    if dry_run:
+        cmd.append("--dry-run")
+    if skip_players:
+        cmd.append("--skip-players")
+    if skip_tournament:
+        cmd.append("--skip-tournament")
+    proc = subprocess.run(cmd, cwd=ROOT)
+    return int(proc.returncode)
+
+
 def _run_league_rebuild(
     database: str,
     *,
@@ -206,6 +236,17 @@ def main() -> int:
     )
 
     if args.all_published:
+        if args.workers > 0:
+            print(
+                f"=== published stack via warm_cache_shard.py (max_parallel={args.workers}) ==="
+            )
+            return _run_cache_shard_all_published(
+                workers=args.workers,
+                dry_run=args.dry_run,
+                skip_players=args.skip_player,
+                skip_tournament=args.skip_tournament,
+            )
+
         print("=== published league cache (db_real_merged + clubs + club legends) ===")
         code = _run_league_rebuild(
             PUBLISHED_LEAGUE_DATABASE,

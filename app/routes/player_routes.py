@@ -105,3 +105,55 @@ def get_lifetime_stats():
     payload = json_safe(stats)
     league_cache_put("get_lifetime_stats", cache_db, cache_args, payload)
     return jsonify(payload)
+
+
+@bp.route('/get_highest_individual_games')
+def get_highest_individual_games():
+    limit_raw = request.args.get('limit', '10')
+    try:
+        limit = max(1, min(100, int(limit_raw)))
+    except (TypeError, ValueError):
+        limit = 10
+
+    player_name = request.args.get('player_name') or ''
+    player_id = request.args.get('player_id', '')
+    season_raw = request.args.get('season', 'all')
+    season = (
+        normalize_season_query_value(season_raw)
+        if season_raw and str(season_raw).strip().lower() != 'all'
+        else 'all'
+    )
+
+    player_service = get_player_service()
+    cache_db = _player_cache_database(player_service)
+    cache_args = dict(request.args)
+    cache_args["database"] = cache_db
+    cache_args["limit"] = str(limit)
+    hit = league_cache_try_get("get_highest_individual_games", cache_db, cache_args)
+    if hit is not None:
+        return jsonify(hit)
+
+    games = player_service.get_highest_individual_games(
+        limit=limit,
+        player_name=player_name,
+        player_id=player_id,
+        season=season,
+    )
+    payload = json_safe(games)
+    league_cache_put("get_highest_individual_games", cache_db, cache_args, payload)
+    return jsonify(payload)
+
+
+@bp.route('/get_club_300')
+def get_club_300():
+    player_service = get_player_service()
+    cache_db = _player_cache_database(player_service)
+    cache_args = {"database": cache_db}
+    hit = league_cache_try_get("get_club_300", cache_db, cache_args)
+    if hit is not None:
+        return jsonify(hit)
+
+    games = player_service.get_club_300_games()
+    payload = json_safe(games)
+    league_cache_put("get_club_300", cache_db, cache_args, payload)
+    return jsonify(payload)

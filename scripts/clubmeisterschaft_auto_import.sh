@@ -5,7 +5,7 @@
 #
 # Pipeline:
 #   1. rclone sync (dedicated Dropbox folder -> inbox)
-#   2. stable-file wait + sha256 skip if unchanged
+#   2. stable-file wait + importer fingerprint (skip if unchanged); archive dated copy on change
 #   3. docker: import_clubmeisterschaft_donaubowler_xlsx.py -> tournament_manual_postprocessed.csv
 #   4. docker: publish_tournament_parquet.py (host GF snapshot + manual -> parquet)
 #
@@ -23,6 +23,7 @@ DOCKER_IMAGE="${DOCKER_IMAGE:-bowlyzer:release}"
 CLUBMEISTERSCHAFT_INBOX="${CLUBMEISTERSCHAFT_INBOX:-${BOWLYZER_DIR}/work/clubmeisterschaft/inbox}"
 CLUBMEISTERSCHAFT_WORK="${CLUBMEISTERSCHAFT_WORK:-${BOWLYZER_DIR}/work/clubmeisterschaft/work}"
 STATE_DIR="${STATE_DIR:-${BOWLYZER_DIR}/work/clubmeisterschaft}"
+CLUBMEISTERSCHAFT_ARCHIVE="${CLUBMEISTERSCHAFT_ARCHIVE:-${STATE_DIR}/archive}"
 TOURNAMENT_INPUTS_DIR="${TOURNAMENT_INPUTS_DIR:-${BOWLYZER_DIR}/work/tournament_inputs}"
 GF_TOURNAMENT_CSV="${GF_TOURNAMENT_CSV:-${TOURNAMENT_INPUTS_DIR}/gf_tournaments_2026__combined_postprocessed.csv}"
 MANUAL_TOURNAMENT_CSV="${MANUAL_TOURNAMENT_CSV:-${BOWLYZER_DIR}/database/data/tournament_manual_postprocessed.csv}"
@@ -59,6 +60,50 @@ FORCE=0
 log() { printf '[%s] %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*"; }
 die() { log "ERROR: $*"; exit 1; }
 
+run_workbook_fingerprint() {
+  local xlsx="$1"
+  local fp_args=(
+    database/input/import_clubmeisterschaft_donaubowler_xlsx.py
+    --fingerprint
+    --xlsx "/in/clubmeisterschaft_import.xlsx"
+    --date "${IMPORT_DATE}"
+    --year "${IMPORT_YEAR}"
+  )
+  if [[ -n "${IMPORT_SEASON}" ]]; then
+    fp_args+=(--season "${IMPORT_SEASON}")
+  fi
+  docker run --rm \
+    "${IMPORT_MOUNTS[@]}" \
+    -v "${xlsx}:/in/clubmeisterschaft_import.xlsx:ro" \
+    --entrypoint python \
+    "${DOCKER_IMAGE}" \
+    "${fp_args[@]}"
+}
+
+resolve_dated_workbook_archive_path() {
+  local archive_dir="$1" stem="$2" date_tag="$3"
+  local dest="${archive_dir}/${stem}_${date_tag}.xlsx"
+  local n=2
+  while [[ -e "${dest}" ]]; do
+    dest="${archive_dir}/${stem}_${date_tag}_${n}.xlsx"
+    n=$((n + 1))
+  done
+  printf '%s' "${dest}"
+}
+
+archive_imported_workbook() {
+  local src="$1"
+  local name="${CLUBMEISTERSCHAFT_XLSX_NAME:-Clubpokal DB 2026.xlsx}"
+  local stem="${name%.xlsx}"
+  local date_tag
+  date_tag="$(date +%Y_%m_%d)"
+  mkdir -p "${CLUBMEISTERSCHAFT_ARCHIVE}"
+  local dest
+  dest="$(resolve_dated_workbook_archive_path "${CLUBMEISTERSCHAFT_ARCHIVE}" "${stem}" "${date_tag}")"
+  cp -f "${src}" "${dest}"
+  printf '%s' "${dest}"
+}
+
 dropbox_shared_download_url() {
   local url="$1"
   url="${url//dl=0/dl=1}"
@@ -84,7 +129,10 @@ download_workbook_from_shared_url() {
 send_import_notification() {
   local subject="$1"
   local run_log="$2"
-  [[ -n "${CLUBMEISTERSCHAFT_NOTIFY_EMAIL:-}" ]] || return 0
+  if [[ -z "${CLUBMEISTERSCHAFT_NOTIFY_EMAIL:-}" ]]; then
+    log "notify: CLUBMEISTERSCHAFT_NOTIFY_EMAIL unset; skip email"
+    return 0
+  fi
 
   local notify_script="${NOTIFY_SCRIPT:-}"
   if [[ -z "${notify_script}" ]]; then
@@ -127,7 +175,7 @@ Usage: clubmeisterschaft_auto_import.sh [options]
   --sync-only     Only rclone sync; no import
   --skip-restart  Do not restart bowlyzer (default via SKIP_RESTART=1 in env)
   --restart       Restart bowlyzer after successful publish
-  --force         Import even if file hash unchanged
+  --force         Import even if workbook fingerprint unchanged
   -h, --help      This help
 
 Environment (see deploy/vps/clubmeisterschaft-import.env.example):
@@ -136,6 +184,7 @@ Environment (see deploy/vps/clubmeisterschaft-import.env.example):
   CLUBMEISTERSCHAFT_RCLONE_SHARED_FOLDERS 1 for shared folder not in Dropbox tree
   GF_TOURNAMENT_CSV               Host GF regional snapshot (not from Docker image)
   CLUBMEISTERSCHAFT_NOTIFY_EMAIL  Comma-separated; email when workbook hash changes
+  CLUBMEISTERSCHAFT_ARCHIVE       Dated workbook copies on fingerprint change (default: STATE_DIR/archive)
   NOTIFY_SMTP_HOST                SMTP relay (required for notifications)
   SKIP_RESTART                    1 = no container restart (default)
 EOF
@@ -270,28 +319,48 @@ fi
 XLSX_WORK="${CLUBMEISTERSCHAFT_WORK}/clubmeisterschaft_import.xlsx"
 cp -f "${XLSX_SRC}" "${XLSX_WORK}"
 
-NEW_HASH="$(sha256sum "${XLSX_WORK}" | awk '{print $1}')"
+IMPORTER_SCRIPT="${IMPORTER_SCRIPT:-${BOWLYZER_DIR}/database/input/import_clubmeisterschaft_donaubowler_xlsx.py}"
+IMPORT_MOUNTS=()
+if [[ -f "${IMPORTER_SCRIPT}" ]]; then
+  IMPORT_MOUNTS=(-v "${IMPORTER_SCRIPT}:/app/database/input/import_clubmeisterschaft_donaubowler_xlsx.py:ro")
+else
+  die "Missing importer ${IMPORTER_SCRIPT} (run install_clubmeisterschaft_auto_import.sh)"
+fi
+
+docker image inspect "${DOCKER_IMAGE}" >/dev/null 2>&1 || die "Docker image not found: ${DOCKER_IMAGE}"
+
+log "step 2b: workbook fingerprint via ${DOCKER_IMAGE}"
+NEW_HASH="$(run_workbook_fingerprint "${XLSX_WORK}")" || die "Workbook fingerprint failed"
 OLD_HASH=""
 if [[ -f "${LAST_HASH_FILE}" ]]; then
   OLD_HASH="$(tr -d ' \n\r' < "${LAST_HASH_FILE}")"
 fi
 
 if [[ "${FORCE}" -eq 0 && "${NEW_HASH}" == "${OLD_HASH}" ]]; then
-  log "unchanged (${NEW_HASH:0:12}…); skip import"
+  log "unchanged (fingerprint ${NEW_HASH:0:12}…); skip import"
   exit 0
 fi
 
-log "workbook changed (${OLD_HASH:-none} -> ${NEW_HASH:0:12}…)"
+log "workbook changed (fingerprint ${OLD_HASH:-none} -> ${NEW_HASH:0:12}…)"
+
+ARCHIVE_DEST=""
+ARCHIVE_DEST="$(resolve_dated_workbook_archive_path \
+  "${CLUBMEISTERSCHAFT_ARCHIVE}" \
+  "${CLUBMEISTERSCHAFT_XLSX_NAME%.xlsx}" \
+  "$(date +%Y_%m_%d)")"
 
 if [[ "${DRY_RUN}" -eq 1 ]]; then
+  log "dry-run: would archive ${XLSX_WORK} -> ${ARCHIVE_DEST}"
   log "dry-run: would import ${XLSX_WORK}, merge tournaments -> ${TOURNAMENTS_PUBLISHED_CSV}"
   exit 0
 fi
 
+ARCHIVE_DEST="$(archive_imported_workbook "${XLSX_WORK}")"
+log "archived workbook -> ${ARCHIVE_DEST}"
+
 [[ -d "${BOWLYZER_DIR}/database/data" ]] || die "Missing ${BOWLYZER_DIR}/database/data"
 [[ -f "${COMPOSE_FILE}" ]] || die "Missing compose file ${COMPOSE_FILE}"
 [[ -f "${GF_TOURNAMENT_CSV}" ]] || die "Missing GF tournament snapshot ${GF_TOURNAMENT_CSV} (deploy with -SyncDatabase or bootstrap script)"
-docker image inspect "${DOCKER_IMAGE}" >/dev/null 2>&1 || die "Docker image not found: ${DOCKER_IMAGE}"
 
 DOCKER_DATA_MOUNT=(-v "${BOWLYZER_DIR}/database/data:/app/database/data")
 DOCKER_RO_MOUNTS=(
@@ -308,12 +377,6 @@ IMPORT_ARGS=(
 )
 if [[ -n "${IMPORT_SEASON}" ]]; then
   IMPORT_ARGS+=(--season "${IMPORT_SEASON}")
-fi
-
-IMPORTER_SCRIPT="${IMPORTER_SCRIPT:-${BOWLYZER_DIR}/database/input/import_clubmeisterschaft_donaubowler_xlsx.py}"
-IMPORT_MOUNTS=()
-if [[ -f "${IMPORTER_SCRIPT}" ]]; then
-  IMPORT_MOUNTS=(-v "${IMPORTER_SCRIPT}:/app/database/input/import_clubmeisterschaft_donaubowler_xlsx.py:ro")
 fi
 
 log "step 3: import via ${DOCKER_IMAGE}"

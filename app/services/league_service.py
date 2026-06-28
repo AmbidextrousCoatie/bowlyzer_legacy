@@ -66,6 +66,7 @@ class LeagueService:
         self.database = database
         self.adapter = DataAdapterFactory.create_adapter(adapter_type, database=database)
         self.stats_service = StatisticsService(database=database)
+        self._warm_slice_cache: Optional[Dict[Tuple[str, str, bool], pd.DataFrame]] = None
         
         # Register this adapter with DataManager for automatic refresh
         try:
@@ -75,6 +76,43 @@ class LeagueService:
         except ImportError:
             # DataManager not available, continue without registration
             pass
+
+    def warm_slice_cache_begin(self) -> None:
+        """Enable per-(season, league) dataframe memoization for cache warm workers."""
+        self._warm_slice_cache = {}
+
+    def warm_slice_cache_end(self) -> None:
+        self._warm_slice_cache = None
+
+    def _season_league_dataframe(self, league_name: str, season: str, *, computed_data: bool) -> pd.DataFrame:
+        """All rows for (season, league, computed_data); cached during warm when enabled."""
+        season_key = str(season).strip()
+        league_key = str(league_name).strip()
+        cache_key = (season_key, league_key, bool(computed_data))
+        cache = self._warm_slice_cache
+        if cache is not None:
+            cached = cache.get(cache_key)
+            if cached is not None:
+                return cached.copy()
+
+        filters = {
+            Columns.league_name: {"value": league_name, "operator": "eq"},
+            Columns.season: {"value": season, "operator": "eq"},
+            Columns.computed_data: {"value": computed_data, "operator": "eq"},
+        }
+        df = self.adapter.get_filtered_data(filters=filters)
+        if df is None or df.empty:
+            df = pd.DataFrame()
+        if cache is not None:
+            cache[cache_key] = df
+        return df.copy()
+
+    @staticmethod
+    def _filter_dataframe_week(df: pd.DataFrame, week: Optional[int]) -> pd.DataFrame:
+        if df.empty or week is None or Columns.week not in df.columns:
+            return df
+        weeks = pd.to_numeric(df[Columns.week], errors="coerce")
+        return df.loc[weeks == int(week)].copy()
 
     def refresh_data_adapter(self, database: str = None):
         """Refresh the data adapter with the current data source"""
@@ -1971,14 +2009,20 @@ class LeagueService:
                         number_of_individual_scores: int = 3, number_of_team_scores: int = 3,
                         number_of_individual_averages: int = 3, number_of_team_averages: int = 3) -> Dict[str, Any]:
         """Get honor scores for a specific week"""
-        # Create a query for this league, season, and week
-        query_individual = LeagueQuery(season=season, league=league, week=week, computed_data=False)
-        query_team = LeagueQuery(season=season, league=league, week=week, computed_data=True)
-        
-
-        # Get the data
-        league_data_individual = self.adapter.get_filtered_data(query_individual.to_filter_dict())
-        league_data_team = self.adapter.get_filtered_data(query_team.to_filter_dict())
+        if self._warm_slice_cache is not None:
+            league_data_individual = self._filter_dataframe_week(
+                self._season_league_dataframe(league, season, computed_data=False),
+                week,
+            )
+            league_data_team = self._filter_dataframe_week(
+                self._season_league_dataframe(league, season, computed_data=True),
+                week,
+            )
+        else:
+            query_individual = LeagueQuery(season=season, league=league, week=week, computed_data=False)
+            query_team = LeagueQuery(season=season, league=league, week=week, computed_data=True)
+            league_data_individual = self.adapter.get_filtered_data(query_individual.to_filter_dict())
+            league_data_team = self.adapter.get_filtered_data(query_team.to_filter_dict())
         
         if league_data_individual.empty:
             return {
@@ -2076,16 +2120,7 @@ class LeagueService:
     def get_team_averages_simple(self, league_name: str, season: str) -> Dict[str, Any]:
         """Get team averages throughout a season - simple direct query approach"""
         try:
-            # Direct query to get team data for the league and season
-            filters = {
-                Columns.league_name: {'value': league_name, 'operator': 'eq'},
-                Columns.season: {'value': season, 'operator': 'eq'},
-                Columns.computed_data: {'value': False, 'operator': 'eq'},
-
-            }
-            
-            # Get all team data for this league and season
-            team_data = self.adapter.get_filtered_data(filters=filters)
+            team_data = self._season_league_dataframe(league_name, season, computed_data=False)
             
             if team_data.empty:
                 return SeriesData(
@@ -2172,28 +2207,8 @@ class LeagueService:
                 week = self.get_latest_week(season, league)
             week = int(week)
 
-            # Direct query to get all data for this league and season (both individual and team points)
-            # Get individual player data (for scores and averages)
-            individual_filters = {
-                Columns.league_name: {'value': league, 'operator': 'eq'},
-                Columns.season: {'value': season, 'operator': 'eq'},
-                Columns.computed_data: {'value': False, 'operator': 'eq'}
-            }
-            
-            individual_data = self.adapter.get_filtered_data(filters=individual_filters)
-            
-            # Get team bonus data (for team points)
-            team_filters = {
-                Columns.league_name: {'value': league, 'operator': 'eq'},
-                Columns.season: {'value': season, 'operator': 'eq'},
-                Columns.computed_data: {'value': True, 'operator': 'eq'}
-            }
-            
-            team_bonus_data = self.adapter.get_filtered_data(filters=team_filters)
-            
-            # Ensure team_bonus_data is a DataFrame
-            if team_bonus_data is None:
-                team_bonus_data = pd.DataFrame()
+            individual_data = self._season_league_dataframe(league, season, computed_data=False)
+            team_bonus_data = self._season_league_dataframe(league, season, computed_data=True)
             
             # Use individual data for the main league data (scores and averages)
             league_data = individual_data
@@ -2498,21 +2513,8 @@ class LeagueService:
 
     def get_team_points_simple(self, league_name: str, season: str) -> Dict[str, Any]:
         """Get team points throughout a season using direct data adapter queries"""
-        # Get individual player data
-        individual_filters = {
-            Columns.league_name: {'value': league_name, 'operator': 'eq'},
-            Columns.season: {'value': season, 'operator': 'eq'},
-            Columns.computed_data: {'value': False, 'operator': 'eq'}
-        }
-        individual_data = self.adapter.get_filtered_data(filters=individual_filters)
-        
-        # Get team bonus data
-        team_filters = {
-            Columns.league_name: {'value': league_name, 'operator': 'eq'},
-            Columns.season: {'value': season, 'operator': 'eq'},
-            Columns.computed_data: {'value': True, 'operator': 'eq'}
-        }
-        team_data = self.adapter.get_filtered_data(filters=team_filters)
+        individual_data = self._season_league_dataframe(league_name, season, computed_data=False)
+        team_data = self._season_league_dataframe(league_name, season, computed_data=True)
         
         if individual_data.empty and team_data.empty:
             return SeriesData(
@@ -3248,8 +3250,10 @@ class LeagueService:
             if team is not None:
                 filters[Columns.team_name] = {'value': team, 'operator': 'eq'}
     
-            
-            player_data = self.adapter.get_filtered_data(filters=filters)
+            if self._warm_slice_cache is not None and week is None and team is None:
+                player_data = self._season_league_dataframe(league, season, computed_data=False)
+            else:
+                player_data = self.adapter.get_filtered_data(filters=filters)
 
             
             if player_data.empty:
@@ -4150,21 +4154,97 @@ class LeagueService:
         
         try:
             # ========== DATA COLLECTION ==========
-            # Get all teams in the league/season
-            team_filters = {
-                Columns.league_name: {'value': league, 'operator': 'eq'},
-                Columns.season: {'value': season, 'operator': 'eq'},
-                Columns.computed_data: {'value': False, 'operator': 'eq'},
-                Columns.input_data: {'value': True, 'operator': 'eq'}
-            }
-            
-            if week is not None:
-                team_filters[Columns.week] = {'value': week, 'operator': 'eq'}
-            
-            teams_data = self.adapter.get_filtered_data(
-                columns=[Columns.team_name], 
-                filters=team_filters
-            )
+            if self._warm_slice_cache is not None and week is None:
+                teams_data = self._season_league_dataframe(league, season, computed_data=False)
+                if Columns.input_data in teams_data.columns:
+                    teams_data = teams_data[self._computed_data_mask(teams_data[Columns.input_data], want_true=True)]
+                if not teams_data.empty:
+                    teams_data = teams_data[[Columns.team_name]]
+
+                team_matches = self._season_league_dataframe(league, season, computed_data=True)
+                if Columns.input_data in team_matches.columns:
+                    team_matches = team_matches[self._computed_data_mask(team_matches[Columns.input_data], want_true=False)]
+                if Columns.position in team_matches.columns:
+                    team_matches = team_matches[pd.to_numeric(team_matches[Columns.position], errors="coerce") == 0]
+                if not team_matches.empty:
+                    keep_cols = [
+                        c
+                        for c in (
+                            Columns.team_name,
+                            Columns.team_name_opponent,
+                            Columns.score,
+                            Columns.points,
+                            Columns.week,
+                            Columns.round_number,
+                        )
+                        if c in team_matches.columns
+                    ]
+                    team_matches = team_matches[keep_cols]
+
+                individual_data = self._season_league_dataframe(league, season, computed_data=False)
+                if Columns.input_data in individual_data.columns:
+                    individual_data = individual_data[self._computed_data_mask(individual_data[Columns.input_data], want_true=True)]
+                if not individual_data.empty:
+                    keep_cols = [
+                        c
+                        for c in (
+                            Columns.team_name,
+                            Columns.team_name_opponent,
+                            Columns.points,
+                            Columns.week,
+                            Columns.match_number,
+                            Columns.round_number,
+                        )
+                        if c in individual_data.columns
+                    ]
+                    individual_data = individual_data[keep_cols]
+            else:
+                # Get all teams in the league/season
+                team_filters = {
+                    Columns.league_name: {'value': league, 'operator': 'eq'},
+                    Columns.season: {'value': season, 'operator': 'eq'},
+                    Columns.computed_data: {'value': False, 'operator': 'eq'},
+                    Columns.input_data: {'value': True, 'operator': 'eq'}
+                }
+                
+                if week is not None:
+                    team_filters[Columns.week] = {'value': week, 'operator': 'eq'}
+                
+                teams_data = self.adapter.get_filtered_data(
+                    columns=[Columns.team_name], 
+                    filters=team_filters
+                )
+                
+                team_total_filters = {
+                    Columns.league_name: {'value': league, 'operator': 'eq'},
+                    Columns.season: {'value': season, 'operator': 'eq'},
+                    Columns.computed_data: {'value': True, 'operator': 'eq'},
+                    Columns.input_data: {'value': False, 'operator': 'eq'},
+                    Columns.position: {'value': 0, 'operator': 'eq'}  # Team totals have position 0
+                }
+                
+                if week is not None:
+                    team_total_filters[Columns.week] = {'value': week, 'operator': 'eq'}
+                
+                team_matches = self.adapter.get_filtered_data(
+                    columns=[Columns.team_name, Columns.team_name_opponent, Columns.score, Columns.points, Columns.week, Columns.round_number],
+                    filters=team_total_filters
+                )
+                
+                individual_filters = {
+                    Columns.league_name: {'value': league, 'operator': 'eq'},
+                    Columns.season: {'value': season, 'operator': 'eq'},
+                    Columns.computed_data: {'value': False, 'operator': 'eq'},
+                    Columns.input_data: {'value': True, 'operator': 'eq'}
+                }
+                
+                if week is not None:
+                    individual_filters[Columns.week] = {'value': week, 'operator': 'eq'}
+                
+                individual_data = self.adapter.get_filtered_data(
+                    columns=[Columns.team_name, Columns.team_name_opponent, Columns.points, Columns.week, Columns.match_number, Columns.round_number],
+                    filters=individual_filters
+                )
             
             if teams_data.empty:
                 return TableData(
@@ -4176,40 +4256,6 @@ class LeagueService:
                 )
             
             teams = sorted(teams_data[Columns.team_name].unique())
-            
-            # Get team match data (computed team totals)
-            # Team totals have position=0 for both BayL and BZOL N1 structures
-            team_total_filters = {
-                Columns.league_name: {'value': league, 'operator': 'eq'},
-                Columns.season: {'value': season, 'operator': 'eq'},
-                Columns.computed_data: {'value': True, 'operator': 'eq'},
-                Columns.input_data: {'value': False, 'operator': 'eq'},
-                Columns.position: {'value': 0, 'operator': 'eq'}  # Team totals have position 0
-            }
-            
-            if week is not None:
-                team_total_filters[Columns.week] = {'value': week, 'operator': 'eq'}
-            
-            team_matches = self.adapter.get_filtered_data(
-                columns=[Columns.team_name, Columns.team_name_opponent, Columns.score, Columns.points, Columns.week, Columns.round_number],
-                filters=team_total_filters
-            )
-            
-            # Get individual player data for the same matches to calculate total points
-            individual_filters = {
-                Columns.league_name: {'value': league, 'operator': 'eq'},
-                Columns.season: {'value': season, 'operator': 'eq'},
-                Columns.computed_data: {'value': False, 'operator': 'eq'},
-                Columns.input_data: {'value': True, 'operator': 'eq'}
-            }
-            
-            if week is not None:
-                individual_filters[Columns.week] = {'value': week, 'operator': 'eq'}
-            
-            individual_data = self.adapter.get_filtered_data(
-                columns=[Columns.team_name, Columns.team_name_opponent, Columns.points, Columns.week, Columns.match_number, Columns.round_number],
-                filters=individual_filters
-            )
             
             if team_matches.empty:
                 return TableData(

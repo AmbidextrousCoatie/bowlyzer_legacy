@@ -82,6 +82,7 @@ mkdir -p \
   "${BIN_DIR}" \
   "${WORK_ROOT}/clubmeisterschaft/inbox" \
   "${WORK_ROOT}/clubmeisterschaft/work" \
+  "${WORK_ROOT}/clubmeisterschaft/archive" \
   "${WORK_ROOT}/tournament_inputs" \
   "${SYSTEMD_USER_DIR}"
 

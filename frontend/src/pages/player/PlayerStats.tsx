@@ -201,6 +201,8 @@ export function PlayerStats() {
                   playerCompetitions={stats.player_competitions ?? []}
                   playerSeasonTotals={stats.player_season_totals ?? []}
                   selectedPlayerName={playerName}
+                  selectedPlayerId={playerId || knownPlayer?.id || ""}
+                  season={season}
                   t={t}
                 />
                 <TrendChart seasons={seasonRows} lifetime={lifetime} t={t} />

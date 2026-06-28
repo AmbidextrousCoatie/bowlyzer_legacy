@@ -26,6 +26,12 @@ def test_summary_cards_use_net_pins_for_clubmeisterschaft_round_2():
     ).get("cards", [])
 
     by_title = {c["title"]: c for c in cards}
+    leader = by_title.get("Tournament Leader")
+    assert leader is not None
+    assert leader["subtitle"].startswith("\u2300")
+    ranked = svc._avg_net_standings_from_gesamt_pivot(df, through_round=2, include_club=False)
+    assert leader["value"] == str(ranked.iloc[0][Columns.player_name])
+
     stage = by_title.get("Stage Winner")
     assert stage is not None
     assert stage["value"] == "Peter Holten"
@@ -69,18 +75,33 @@ def test_stage_leaderboard_sorted_by_cumulative_net_after_stage():
     assert lb.default_sort == {"field": "total_net", "dir": "desc"}
 
 
-def test_cut_line_uses_cumulative_net_rank_for_clubmeisterschaft():
+def test_cut_line_uses_average_rank_for_clubmeisterschaft():
     df = _clubmeisterschaft_df()
     svc = TournamentService()
     season, tournament = "25/26", "Clubmeisterschaft Donaubowler 2026"
     cards = svc.get_summary_cards(season, tournament, round_number=2, df=df)
     cut = next(c for c in cards["cards"] if c.get("title") == "Cut Line")
-    lb = svc.get_leaderboard_table(season, tournament, round_number=2, df=df)
-    on_cut = [
-        row[1]
-        for i, row in enumerate(lb.data)
-        if (lb.cell_metadata or {}).get(f"{i}:0", {}).get("backgroundColor") == "#ffe8a1"
-    ]
-    assert on_cut
-    assert cut["value"] == on_cut[0]
-    assert cut["value"] != "Peter Holten"
+    cut_pos = svc._resolved_cut_position_for_round(df, 2, season, tournament)
+    assert cut_pos is not None
+    ranked = svc._avg_net_standings_from_gesamt_pivot(df, through_round=2, include_club=False)
+    expected = str(ranked.loc[ranked["rank"].eq(int(cut_pos)), Columns.player_name].iloc[0])
+    assert cut["value"] == expected
+    assert cut["subtitle"].startswith("\u2300")
+
+
+def test_gesamt_cut_line_matches_leaderboard_average_sort():
+    """Gesamt overview: cut-line card follows avg_net sort (Ernest @ 6, not Volkmar by total pins)."""
+    df = _clubmeisterschaft_df()
+    svc = TournamentService()
+    season, tournament = "25/26", "Clubmeisterschaft Donaubowler 2026"
+    cards = svc.get_summary_cards(season, tournament, df=df).get("cards", [])
+    cut = next(c for c in cards if c.get("title") == "Cut Line")
+    assert cut["value"] == "Ernest Roth"
+    assert "201.9" in cut["subtitle"]
+    assert "4038" in cut["subtitle"]
+    leader = next(c for c in cards if c.get("title") == "Tournament Leader")
+    standings = svc._avg_net_standings_from_gesamt_pivot(df, through_round=None, include_club=False)
+    assert leader["value"] == str(standings.iloc[0][Columns.player_name])
+    volkmar = standings.loc[standings[Columns.player_name].eq("Volkmar Hartfeil")].iloc[0]
+    assert int(volkmar["rank"]) == 3
+    assert float(volkmar["avg_net"]) == 210.4

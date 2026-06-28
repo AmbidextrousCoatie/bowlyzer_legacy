@@ -65,3 +65,51 @@ export function buildPeriodEventPath(
   const next = qs.toString();
   return next ? `${target}?${next}` : target;
 }
+
+export type IndividualGameRecord = {
+  player_name?: string | null;
+  player_id?: string | null;
+  score?: number | null;
+  date?: string | null;
+  season?: string | number | null;
+  competition?: string | null;
+  is_tournament?: boolean | null;
+  club?: string | null;
+  team_name?: string | null;
+  team_number?: number | null;
+  week?: number | null;
+  round_number?: number | null;
+};
+
+export function buildIndividualGameEventPath(
+  game: IndividualGameRecord,
+  ctx: CompetitionLinkContext,
+): string | null {
+  if (!game.competition) return null;
+
+  const basePath = buildCompetitionEventPath(
+    {
+      season: game.season,
+      competition: game.competition,
+      is_tournament: game.is_tournament,
+      row_type: "competition",
+      club: game.club,
+      team_name: game.team_name,
+      team_number: game.team_number,
+      player_name: game.player_name,
+      player_id: game.player_id,
+    },
+    ctx,
+  );
+  if (!basePath) return null;
+
+  const [target, query = ""] = basePath.split("?");
+  const qs = new URLSearchParams(query);
+  if (game.is_tournament && game.round_number != null && Number.isFinite(game.round_number)) {
+    qs.set("round", String(game.round_number));
+  } else if (!game.is_tournament && game.week != null && Number.isFinite(game.week)) {
+    qs.set("week", String(game.week));
+  }
+  const next = qs.toString();
+  return next ? `${target}?${next}` : target;
+}

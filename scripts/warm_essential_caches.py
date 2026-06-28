@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """
-Warm heavy API disk caches (season standings + player search catalog).
+Warm heavy API disk caches (season standings, player search, all-players lifetime, tournament).
+
+See also: ``warm_cache_shard.py`` for parallel multi-process warm.
 
 Usage:
   uv run python scripts/warm_essential_caches.py

@@ -1,7 +1,8 @@
 """
 Warm the heaviest disk-backed API caches after data load.
 
-Focused on Liga season overview (per-season standings) and Spieler player search catalog.
+Focused on Liga season overview (per-season standings), Spieler player search catalog,
+and all-players lifetime stats (per season + merged career).
 """
 
 from __future__ import annotations
@@ -70,6 +71,90 @@ def _warm_one(
     return "built"
 
 
+def warm_all_players_lifetime_caches(
+    player_database: str,
+    seasons: List[str],
+    player_service: Any,
+    *,
+    log: Callable[[str], None] = print,
+    tally: Callable[[str], None] | None = None,
+) -> Dict[str, int]:
+    """
+    Warm ``get_lifetime_stats`` for all-players scope: each season, then ``season=all``.
+
+    The career entry is assembled from per-season cache files when possible so a data
+    update in only the latest season can be refreshed incrementally.
+    """
+    from app.cache.league_response_cache import league_cache_try_get
+    from app.services.player_service import PlayerService
+
+    stats = {"built": 0, "hit": 0, "skip_empty": 0, "errors": 0}
+
+    def _tally(status: str) -> None:
+        if tally is not None:
+            tally(status)
+            return
+        if status == "built":
+            stats["built"] += 1
+        elif status == "hit":
+            stats["hit"] += 1
+        elif status == "skip-empty":
+            stats["skip_empty"] += 1
+
+    dbq = {"database": player_database}
+
+    status = _warm_one(
+        "player_get_available_seasons",
+        player_database,
+        dict(dbq),
+        lambda: player_service.get_all_seasons(),
+    )
+    _tally(status)
+    log(f"  player_get_available_seasons (all players) -> {status}")
+
+    for season in seasons:
+        query = {**dbq, "season": season}
+
+        def _build_season(s: str = season) -> Any:
+            payload = player_service.get_aggregate_lifetime_stats(season=s)
+            return json_safe(payload) if payload is not None else None
+
+        try:
+            status = _warm_one("get_lifetime_stats", player_database, query, _build_season)
+            _tally(status)
+            log(f"  get_lifetime_stats all-players season={season!r} -> {status}")
+        except Exception as exc:
+            stats["errors"] += 1
+            log(f"  get_lifetime_stats all-players season={season!r} ERROR: {exc}")
+
+    query_all = {**dbq, "season": "all"}
+
+    def _build_all() -> Any:
+        parts = []
+        for season in seasons:
+            hit = league_cache_try_get(
+                "get_lifetime_stats",
+                player_database,
+                {**dbq, "season": season},
+            )
+            if hit is None:
+                payload = player_service.get_aggregate_lifetime_stats(season="all")
+                return json_safe(payload) if payload is not None else None
+            parts.append(hit)
+        merged = PlayerService.merge_aggregate_lifetime_payloads(parts)
+        return json_safe(merged) if merged is not None else None
+
+    try:
+        status = _warm_one("get_lifetime_stats", player_database, query_all, _build_all)
+        _tally(status)
+        log(f"  get_lifetime_stats all-players season=all -> {status}")
+    except Exception as exc:
+        stats["errors"] += 1
+        log(f"  get_lifetime_stats all-players season=all ERROR: {exc}")
+
+    return stats
+
+
 def warm_player_catalog_cache(
     player_database: str = "db_player_merged_hybrid",
     *,
@@ -121,6 +206,42 @@ def warm_player_catalog_cache(
         except Exception as exc:
             stats["errors"] += 1
             log(f"  [{lang.value}] player_search ERROR: {exc}")
+
+    lifetime_seasons = seasons_for_warmup(player_service.get_all_seasons())
+    log(f"Player cache warmup: {len(lifetime_seasons)} season(s) for all-players lifetime stats.")
+    lt_stats = warm_all_players_lifetime_caches(
+        player_database,
+        lifetime_seasons,
+        player_service,
+        log=log,
+    )
+    for key in ("built", "hit", "skip_empty", "errors"):
+        stats[key] += lt_stats.get(key, 0)
+
+    for endpoint, query, build in (
+        (
+            "get_highest_individual_games",
+            {"database": player_database, "limit": "10"},
+            lambda: json_safe(player_service.get_highest_individual_games(limit=10)),
+        ),
+        (
+            "get_club_300",
+            {"database": player_database},
+            lambda: json_safe(player_service.get_club_300_games()),
+        ),
+    ):
+        try:
+            status = _warm_one(endpoint, player_database, query, build)
+            if status == "built":
+                stats["built"] += 1
+            elif status == "hit":
+                stats["hit"] += 1
+            elif status == "skip-empty":
+                stats["skip_empty"] += 1
+            log(f"  {endpoint} -> {status}")
+        except Exception as exc:
+            stats["errors"] += 1
+            log(f"  {endpoint} ERROR: {exc}")
 
     return stats
 
@@ -216,6 +337,37 @@ def warm_essential_caches(
         except Exception as exc:
             stats["errors"] += 1
             log(f"  [{lang.value}] player_search ERROR: {exc}")
+
+    lifetime_seasons = seasons_for_warmup(player_service.get_all_seasons())
+    log(f"Cache warmup: {len(lifetime_seasons)} season(s) for all-players lifetime stats.")
+    lt_stats = warm_all_players_lifetime_caches(
+        player_database,
+        lifetime_seasons,
+        player_service,
+        log=log,
+        tally=_tally,
+    )
+    stats["errors"] += lt_stats.get("errors", 0)
+
+    for endpoint, query, build in (
+        (
+            "get_highest_individual_games",
+            {"database": player_database, "limit": "10"},
+            lambda: json_safe(player_service.get_highest_individual_games(limit=10)),
+        ),
+        (
+            "get_club_300",
+            {"database": player_database},
+            lambda: json_safe(player_service.get_club_300_games()),
+        ),
+    ):
+        try:
+            status = _warm_one(endpoint, player_database, query, build)
+            _tally(status)
+            log(f"  {endpoint} -> {status}")
+        except Exception as exc:
+            stats["errors"] += 1
+            log(f"  {endpoint} ERROR: {exc}")
 
     log(
         "Cache warmup done: "

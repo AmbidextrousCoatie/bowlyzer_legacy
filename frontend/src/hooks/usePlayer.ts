@@ -119,3 +119,58 @@ export function usePlayerLifetimeStats(playerName: string, playerId: string, sea
       ),
   });
 }
+
+export type IndividualGameRecord = {
+  player_name?: string | null;
+  player_id?: string | null;
+  score?: number | null;
+  date?: string | null;
+  season?: string | number | null;
+  competition?: string | null;
+  is_tournament?: boolean | null;
+  club?: string | null;
+  team_name?: string | null;
+  team_number?: number | null;
+  week?: number | null;
+  round_number?: number | null;
+};
+
+export function useHighestIndividualGames(
+  limit = 10,
+  options: {
+    enabled?: boolean;
+    playerName?: string;
+    playerId?: string;
+    season?: string;
+  } = {},
+) {
+  const {
+    enabled = true,
+    playerName = "",
+    playerId = "",
+    season = "all",
+  } = options;
+
+  return useQuery({
+    queryKey: ["player", "highest-games", limit, playerName, playerId, season],
+    queryFn: () =>
+      fetchJson<IndividualGameRecord[]>(
+        buildUrl("/player/get_highest_individual_games", {
+          limit: String(limit),
+          ...(playerName ? { player_name: playerName } : {}),
+          ...(playerId ? { player_id: playerId } : {}),
+          season: season || "all",
+        }),
+      ),
+    staleTime: 5 * 60_000,
+    enabled: enabled && limit > 0,
+  });
+}
+
+export function useClub300Games() {
+  return useQuery({
+    queryKey: ["player", "club-300"],
+    queryFn: () => fetchJson<IndividualGameRecord[]>(buildUrl("/player/get_club_300")),
+    staleTime: 5 * 60_000,
+  });
+}

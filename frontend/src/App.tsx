@@ -15,6 +15,7 @@ import { PlayerStats } from "./pages/player/PlayerStats";
 import { TeamStats } from "./pages/team/TeamStats";
 import { TournamentStats } from "./pages/tournament/TournamentStats";
 import { Home } from "./pages/Home";
+import { Club300 } from "./pages/Club300";
 import { Impressum } from "./pages/Impressum";
 import { queryClient } from "./lib/queryClient";
 
@@ -30,6 +31,7 @@ function App() {
             <main className="flex-1 min-w-0">
               <Routes>
                 <Route path="/" element={<Home />} />
+                <Route path="/club-300" element={<Club300 />} />
                 <Route path="/liga" element={<LeagueStats />} />
                 <Route path="/turnier" element={<TournamentStats />} />
                 <Route path="/club" element={<TeamStats />} />

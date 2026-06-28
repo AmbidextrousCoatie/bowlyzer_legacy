@@ -1,11 +1,14 @@
 [Unit]
-Description=Poll Clubmeisterschaft Donaubowler Dropbox every 12 minutes
+Description=Poll Clubmeisterschaft Donaubowler Dropbox every 2 minutes
 
 [Timer]
-OnBootSec=5min
-OnUnitActiveSec=12min
-AccuracySec=1min
-Persistent=true
+# OnBootSec: first run after timer enable / user session start.
+OnBootSec=2min
+# OnUnitInactiveSec (not OnUnitActiveSec): repeat 2 min after import *finishes*.
+# OnUnitActiveSec is wrong for Type=oneshot — "active" is only the start instant, so the
+# timer can end up with Trigger: n/a and NEXT: - after re-enable.
+OnUnitInactiveSec=2min
+AccuracySec=30s
 
 [Install]
 WantedBy=timers.target

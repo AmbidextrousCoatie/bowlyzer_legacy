@@ -13,6 +13,7 @@ import {
   Search,
   FileText,
   Settings,
+  Star,
   SunMoon,
   Trophy,
   User,
@@ -46,7 +47,10 @@ const NAV_GROUPS: ReadonlyArray<NavGroupDef> = [
   {
     labelKey: "ui.nav.group_start",
     fallback: "Start",
-    items: [{ path: "/", labelKey: "ui.nav.home", fallback: "Übersicht", icon: HomeIcon }],
+    items: [
+      { path: "/", labelKey: "ui.nav.home", fallback: "Übersicht", icon: HomeIcon },
+      { path: "/club-300", labelKey: "ui.nav.club_300", fallback: "Club 300", icon: Star },
+    ],
   },
   {
     labelKey: "ui.nav.group_play",

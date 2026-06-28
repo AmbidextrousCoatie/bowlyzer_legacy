@@ -138,8 +138,8 @@ def test_field_progress_cut_positions_per_round(svc: TournamentService) -> None:
     assert fp["cut_lines_position"] == [80, 40, 12]
 
 
-def test_cut_line_card_matches_leaderboard_on_cut_player(svc: TournamentService) -> None:
-    """Config-only export: card must use cumulative cut rank for the active round, not round 1."""
+def test_cut_line_card_matches_average_rank_for_active_round(svc: TournamentService) -> None:
+    """Cut-line card uses cumulative average rank for the active round."""
     csv = Path(__file__).resolve().parents[2] / "database" / "data" / "player_stats_merged_plus_tournaments.csv"
     if not csv.is_file():
         pytest.skip("tournament CSV fixture not present")
@@ -152,11 +152,10 @@ def test_cut_line_card_matches_leaderboard_on_cut_player(svc: TournamentService)
 
     cards = svc.get_summary_cards(season, tournament, round_number=2, df=raw)
     cut = next(c for c in cards["cards"] if c.get("title") == "Cut Line")
-    lb = svc.get_leaderboard_table(season, tournament, round_number=2, df=raw)
-    on_cut = [
-        row[1]
-        for i, row in enumerate(lb.data)
-        if (lb.cell_metadata or {}).get(f"{i}:0", {}).get("backgroundColor") == "#ffe8a1"
-    ]
-    assert on_cut
-    assert cut["value"] == on_cut[0]
+    cut_pos = svc._resolved_cut_position_for_round(raw, 2, season, tournament)
+    assert cut_pos is not None
+    ranked = svc._avg_net_standings_from_gesamt_pivot(
+        raw, through_round=2, include_club=svc._has_any_club_value(raw)
+    )
+    expected = str(ranked.loc[ranked["rank"].eq(int(cut_pos)), Columns.player_name].iloc[0])
+    assert cut["value"] == expected

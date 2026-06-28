@@ -58,6 +58,23 @@ NUM_SET_BLOCKS = 6  # six sets in stage 1
 
 EVENT_NAME = "Clubmeisterschaft Donaubowler 2026"
 
+# Workbook-only fields for change detection (no Player ID — league lookup must not affect fingerprint).
+FINGERPRINT_VERSION = "clubmeisterschaft-sheet-v1"
+FINGERPRINT_FIELDS = (
+    "Season",
+    "Date",
+    "Location",
+    "Event Name",
+    "Round Number",
+    "Round Name",
+    "Player",
+    "Game Number",
+    "Score",
+    "Handicap",
+    "Handicap Reference",
+    "A Priori Average",
+)
+
 
 def _rebuild_player_hybrid_local() -> None:
     """League + GF regional tournament export + manual tournament imports (matches database_config)."""
@@ -389,6 +406,46 @@ def _extract_rows_for_sheet(
     return clean_rows, unmatched
 
 
+def compute_workbook_fingerprint(
+    xlsx_path: Path,
+    *,
+    season: str,
+    event_date: str,
+    location: str = "",
+    sheet: str = "",
+    first_data_row: int = 2,
+) -> str:
+    """SHA-256 of parsed sheet rows (same rules as import; ignores league Player ID lookup)."""
+    wb = load_workbook(xlsx_path, data_only=True)
+    sheet_name = (sheet or "").strip() or wb.sheetnames[0]
+    if sheet_name not in wb.sheetnames:
+        raise ValueError(f"Sheet '{sheet_name}' not in workbook. Available: {wb.sheetnames}")
+    ws = wb[sheet_name]
+
+    clean_rows, _ = _extract_rows_for_sheet(
+        ws,
+        season=season,
+        event_date=event_date,
+        location=location,
+        player_lookup={},
+        first_data_row=first_data_row,
+    )
+    if not clean_rows:
+        raise ValueError(f"No score rows extracted from {xlsx_path}")
+
+    tuples = [
+        tuple(str(row.get(field, "") or "") for field in FINGERPRINT_FIELDS) for row in clean_rows
+    ]
+    tuples.sort()
+
+    digest = hashlib.sha256()
+    digest.update(f"{FINGERPRINT_VERSION}\0".encode())
+    for row_tuple in tuples:
+        digest.update("\x1e".join(row_tuple).encode("utf-8"))
+        digest.update(b"\n")
+    return digest.hexdigest()
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Import Clubmeisterschaft Donaubowler XLSX.")
     p.add_argument(
@@ -421,6 +478,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--location", type=str, default="", help="Venue / location string.")
     p.add_argument("--sheet", type=str, default="", help="Worksheet name (default: first sheet).")
     p.add_argument("--first-data-row", type=int, default=2, help="First Excel row index containing player data.")
+    p.add_argument(
+        "--fingerprint",
+        action="store_true",
+        help="Print workbook import fingerprint (parsed sheet data) and exit.",
+    )
     return p
 
 
@@ -443,6 +505,19 @@ def main() -> None:
         raise FileNotFoundError(xlsx_path)
 
     season = (args.season or "").strip() or _season_label_from_calendar_year(int(args.year))
+
+    if args.fingerprint:
+        print(
+            compute_workbook_fingerprint(
+                xlsx_path,
+                season=season,
+                event_date=str(args.date).strip(),
+                location=str(args.location or "").strip(),
+                sheet=str(args.sheet or "").strip(),
+                first_data_row=int(args.first_data_row),
+            )
+        )
+        return
 
     bmi = _load_bayerische_import_module()
     player_lookup = _build_player_id_lookup(league_csv)

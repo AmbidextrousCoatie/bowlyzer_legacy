@@ -698,6 +698,141 @@ class PlayerService:
             games_df = games_df.dropna(subset=[Columns.score])
         return games_df
 
+    @staticmethod
+    def _game_row_competition(row: pd.Series) -> str:
+        from data_access.competition_schema import competition_event_column
+
+        if Columns.event in row.index and pd.notna(row.get(Columns.event)):
+            label = str(row.get(Columns.event)).strip()
+            if label:
+                return label
+        if Columns.event_name in row.index and pd.notna(row.get(Columns.event_name)):
+            label = str(row.get(Columns.event_name)).strip()
+            if label:
+                return label
+        if Columns.league_name in row.index and pd.notna(row.get(Columns.league_name)):
+            return str(row.get(Columns.league_name)).strip()
+        return ""
+
+    @staticmethod
+    def _game_row_is_tournament(row: pd.Series) -> bool:
+        if Columns.event_type not in row.index:
+            return False
+        return str(row.get(Columns.event_type) or "").strip().lower() == "tournament"
+
+    @staticmethod
+    def _game_row_date_label(row: pd.Series) -> str:
+        if Columns.date not in row.index or pd.isna(row.get(Columns.date)):
+            return ""
+        return str(row.get(Columns.date)).strip()
+
+    @staticmethod
+    def _game_row_date_sort_value(row: pd.Series) -> float:
+        if Columns.date not in row.index:
+            return float("-inf")
+        raw = row.get(Columns.date)
+        if raw is None or (isinstance(raw, float) and pd.isna(raw)):
+            return float("-inf")
+        text = str(raw).strip()
+        if not text:
+            return float("-inf")
+        if re.match(r"^\d{4}-\d{2}-\d{2}", text):
+            parsed = pd.to_datetime(text, errors="coerce")
+        else:
+            parsed = pd.to_datetime(text, dayfirst=True, errors="coerce")
+        if pd.isna(parsed):
+            return float("-inf")
+        return float(parsed.value)
+
+    def _individual_game_record(self, row: pd.Series) -> Dict[str, Any]:
+        from app.utils.json_safe import to_json_int
+
+        team_name = ""
+        if Columns.team_name in row.index and pd.notna(row.get(Columns.team_name)):
+            team_name = str(row.get(Columns.team_name)).strip()
+        team_number = None
+        if team_name:
+            match = re.search(r"\s+(\d+)\s*$", team_name)
+            if match:
+                team_number = int(match.group(1))
+        club = ""
+        if Columns.club in row.index and pd.notna(row.get(Columns.club)):
+            club = str(row.get(Columns.club)).strip()
+        elif team_name:
+            club = re.sub(r"\s+\d+$", "", team_name).strip()
+
+        week = None
+        if Columns.week in row.index and pd.notna(row.get(Columns.week)):
+            week = to_json_int(pd.to_numeric(row.get(Columns.week), errors="coerce"))
+        round_number = None
+        if Columns.round_number in row.index and pd.notna(row.get(Columns.round_number)):
+            round_number = to_json_int(pd.to_numeric(row.get(Columns.round_number), errors="coerce"))
+
+        player_name = ""
+        if Columns.player_name in row.index and pd.notna(row.get(Columns.player_name)):
+            player_name = str(row.get(Columns.player_name)).strip()
+        player_id = ""
+        if Columns.player_id in row.index and pd.notna(row.get(Columns.player_id)):
+            player_id = self._normalize_player_id(row.get(Columns.player_id))
+
+        score_val = pd.to_numeric(row.get(Columns.score), errors="coerce")
+        score = int(score_val) if pd.notna(score_val) else None
+        season = str(row.get(Columns.season)).strip() if Columns.season in row.index else ""
+
+        return {
+            "player_name": player_name,
+            "player_id": player_id,
+            "score": score,
+            "date": self._game_row_date_label(row) or None,
+            "season": season or None,
+            "competition": self._game_row_competition(row) or None,
+            "is_tournament": self._game_row_is_tournament(row),
+            "club": club or None,
+            "team_name": team_name or None,
+            "team_number": team_number,
+            "week": week,
+            "round_number": round_number,
+        }
+
+    def get_highest_individual_games(
+        self,
+        limit: int = 10,
+        player_name: str = "",
+        player_id: str = "",
+        season: str = "all",
+    ) -> List[Dict[str, Any]]:
+        """Top single-game scores (all players or one player, optional season)."""
+        if player_name or player_id:
+            games_df = self._subset_player_games(player_name, player_id, season=season)
+        else:
+            season_filter = season if str(season).strip().lower() != "all" else None
+            games_df = self._subset_all_player_games(season=season_filter)
+        if games_df.empty:
+            return []
+        work = games_df.copy()
+        work["_date_sort"] = work.apply(self._game_row_date_sort_value, axis=1)
+        work = work.sort_values(
+            by=[Columns.score, "_date_sort"],
+            ascending=[False, False],
+            kind="mergesort",
+        )
+        out: List[Dict[str, Any]] = []
+        for _, row in work.head(max(1, int(limit))).iterrows():
+            out.append(self._individual_game_record(row))
+        return out
+
+    def get_club_300_games(self) -> List[Dict[str, Any]]:
+        """All perfect 300 games, newest first."""
+        games_df = self._subset_all_player_games()
+        if games_df.empty:
+            return []
+        perfect = games_df[games_df[Columns.score] == 300].copy()
+        if perfect.empty:
+            return []
+        perfect["_date_sort"] = perfect.apply(self._game_row_date_sort_value, axis=1)
+        perfect = perfect.sort_values(by=["_date_sort"], ascending=[False], kind="mergesort")
+        return [self._individual_game_record(row) for _, row in perfect.iterrows()]
+
     def get_historical_data(self, player_id: str):
         """Get historical performance data"""
         pass
@@ -1268,7 +1403,6 @@ class PlayerService:
             return Columns.league_name
 
         comp_col = comp_group_col(games_df)
-        rank_cache = self._build_competition_rank_cache(games_df, comp_group_col=comp_col)
 
         registry_lookup: Dict[str, Dict[str, str]] = {}
         try:
@@ -1298,21 +1432,7 @@ class PlayerService:
             comp_best = cdf[cdf[Columns.score] == cdf[Columns.score].max()].iloc[0]
             comp_worst = cdf[cdf[Columns.score] == cdf[Columns.score].min()].iloc[0]
             is_tournament = self._is_tournament_chunk(cdf)
-            rank_key = (season_value, str(comp_name).strip(), is_tournament)
-            rank_table = rank_cache.get(rank_key)
-            if rank_table is None:
-                rank_table = (
-                    self._tournament_competition_rank_table(season_value, str(comp_name))
-                    if is_tournament
-                    else self._league_competition_rank_table(season_value, str(comp_name))
-                )
-                rank_cache[rank_key] = rank_table
-            rank_value, competitors = self._lookup_competition_rank(
-                rank_table,
-                player_value,
-                player_id_value,
-                normalize_player_id=self._normalize_player_id,
-            )
+            rank_value, competitors = None, None
             row = {
                 "is_tournament": is_tournament,
                 "season": season_value,
