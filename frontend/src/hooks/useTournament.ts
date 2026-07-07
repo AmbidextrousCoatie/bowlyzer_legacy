@@ -60,6 +60,14 @@ export type TournamentFormatInfo = {
     through_round: number;
   } | null;
   qualifying_cut_pair?: { round: number; rank: number } | null;
+  qualifying_stages?: Array<{
+    round_number: number;
+    name: string;
+    cut: string;
+    cut_basis?: string;
+    game_start?: number;
+    game_end?: number;
+  }>;
   config: Record<string, unknown>;
   config_note?: string | null;
 };
@@ -225,8 +233,38 @@ export type TournamentPlayerSection = {
   round_table: TableData;
   best_efforts?: TournamentPlayerBestEfforts;
   progress_series?: TournamentProgressSeries;
+  field_progress?: TournamentFieldProgress;
   summary?: TournamentPlayerSummary;
   ko_bracket?: KoBracketPayload;
+};
+
+export type TournamentFinisher = {
+  rank: number;
+  rank_label?: string;
+  player: string;
+  club?: string | null;
+  average?: number | null;
+};
+
+export type TournamentPodiumGroup = {
+  season: string;
+  tournament: string;
+  tournament_group?: string;
+  finishers: TournamentFinisher[];
+};
+
+export type TournamentPodiumsPayload = {
+  top_n: number;
+  podiums: TournamentPodiumGroup[];
+};
+
+export type TournamentPlayerResultRow = {
+  season: string;
+  tournament: string;
+  tournament_group?: string;
+  position?: number | null;
+  average?: number | null;
+  club?: string | null;
 };
 
 export function useTournamentSeasons(tournament?: string | null) {
@@ -244,10 +282,13 @@ export function useTournamentSeasons(tournament?: string | null) {
 
 export function useTournamentNames(season: string | null) {
   return useQuery({
-    queryKey: ["tournament", "tournaments", season],
+    queryKey: ["tournament", "tournaments", season ?? ""],
     queryFn: () =>
-      fetchJson<string[]>(buildTournamentUrl("/tournament/get_available_tournaments", { season })),
-    enabled: !!season,
+      fetchJson<string[]>(
+        buildTournamentUrl("/tournament/get_available_tournaments", {
+          season: season || undefined,
+        }),
+      ),
     staleTime: TOURNAMENT_LIST_STALE_MS,
   });
 }
@@ -282,17 +323,56 @@ export function useTournamentPlayers(
   tournament: string | null,
   round: string | null,
 ) {
+  const needsEventScope = !!round;
   return useQuery({
-    queryKey: ["tournament", "players", season, tournament, round ?? ""],
+    queryKey: ["tournament", "players", season ?? "", tournament ?? "", round ?? ""],
     queryFn: () =>
       fetchJson<string[]>(
         buildTournamentUrl("/tournament/get_available_players", {
-          season,
-          tournament,
+          season: season || undefined,
+          tournament: tournament || undefined,
           round: round || undefined,
         }),
       ),
-    enabled: !!season && !!tournament,
+    enabled: !needsEventScope || (!!season && !!tournament),
+    staleTime: TOURNAMENT_LIST_STALE_MS,
+  });
+}
+
+export function useTournamentPodiums(season: string | null, tournament: string | null) {
+  const showOverview = !(season && tournament);
+  return useQuery({
+    queryKey: ["tournament", "podiums", season ?? "", tournament ?? ""],
+    queryFn: () =>
+      fetchJson<TournamentPodiumsPayload>(
+        buildTournamentUrl("/tournament/get_tournament_podiums", {
+          season: season || undefined,
+          tournament: tournament || undefined,
+          n: 3,
+        }),
+      ),
+    enabled: showOverview,
+    staleTime: TOURNAMENT_LIST_STALE_MS,
+  });
+}
+
+export function usePlayerTournamentResults(
+  player: string | null,
+  season: string | null,
+  tournament: string | null,
+) {
+  const showOverview = !!player && !(season && tournament);
+  return useQuery({
+    queryKey: ["tournament", "player-results", player ?? "", season ?? "", tournament ?? ""],
+    queryFn: () =>
+      fetchJson<TournamentPlayerResultRow[]>(
+        buildTournamentUrl("/tournament/get_player_tournament_results", {
+          player: player!,
+          season: season || undefined,
+          tournament: tournament || undefined,
+        }),
+      ),
+    enabled: showOverview,
     staleTime: TOURNAMENT_LIST_STALE_MS,
   });
 }

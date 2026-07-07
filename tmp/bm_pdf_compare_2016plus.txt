@@ -1,0 +1,263 @@
+﻿2016+ PDF COMPARISON
+================================================================================
+
+## bm2016_einz_he_erg.pdf
+   pages=8  size=277,840  chars=17,473  players~=85
+   round labels: ['Finalrunde', 'Vorrunde', 'Zw-Runde']
+   has 5-digit IDs: True
+   HEADER:
+     | 21./22.05.2016
+     | Mainfranken Bamberg
+     | Auswertung: ABV Hallstadt
+     | Platz
+     | Sp 1
+     | Sp 2
+     | Sp 3
+     | Sp 4
+     | Sp 5
+     | Sp 6
+     | 1.
+     | B÷rding Tobias
+   FOOTER (last page):
+     | Vorrunde
+     | 85.
+     | Zw-Runde
+     | 85.
+     | Finalrunde
+     | /
+     | 0
+     | 0,00
+   FIRST PLAYER SNIPPET:
+     | 1.
+     | B÷rding Tobias 
+     | Vorrunde 223
+     | 223
+     | 245
+     | 223
+     | 202
+     | 268
+     | 1384
+     | 1.
+     | REG - Ratisbona
+     | Zw-Runde 207
+     | 225
+     | 211
+
+## bm2016_sb_he_erg.pdf
+   pages=8  size=76,878  chars=21,426  players~=119
+   round labels: ['Finalrunde', 'Vorrunde', 'Zw-Runde']
+   has 5-digit IDs: True
+   HEADER:
+     | 23./24.1.2016
+     | Isar Bowling M³nchen
+     | Auswertung: J÷rg Gebhardt-Crisante (MKV)
+     | Platz
+     | Sp 1
+     | Sp 2
+     | Sp 3
+     | Sp 4
+     | Sp 5
+     | Sp 6
+     | 1.
+     | Mrosek Manuel
+   FOOTER (last page):
+     | 119. M³nchner Kegler-Verein e.V.
+     | Zw-Runde
+     | 119. 38063
+     | Finalrunde
+     | 880
+     | /
+     | 6
+     | 146.67
+   FIRST PLAYER SNIPPET:
+     | 1.
+     | Mrosek Manuel 
+     | Vorrunde 217
+     | 247
+     | 224
+     | 278
+     | 225
+     | 278
+     | 1469
+     | 1.
+     | BV Unterf÷hring e.V.
+     | Zw-Runde 236
+     | 190
+     | 235
+
+## bm2017_sb_he_erg.pdf
+   pages=8  size=321,164  chars=21,105  players~=117
+   round labels: ['Finalrunde', 'Vorrunde', 'Zw-Runde']
+   has 5-digit IDs: True
+   HEADER:
+     | 11./12.3.2017
+     | Isar Bowling M³nchen
+     | Auswertung: Franziska Liepsch
+     | Platz
+     | Sp 1
+     | Sp 2
+     | Sp 3
+     | Sp 4
+     | Sp 5
+     | Sp 6
+     | 1.
+     | Ulsamer jun. Clemens
+   FOOTER (last page):
+     | 117. TV 1861 Ingolstadt
+     | Zw-Runde
+     | 117. 25606
+     | Finalrunde
+     | 962
+     | /
+     | 6
+     | 160,33
+   FIRST PLAYER SNIPPET:
+     | 1.
+     | Ulsamer jun. Clemens 
+     | Vorrunde 267
+     | 231
+     | 268
+     | 214
+     | 225
+     | 229
+     | 1434
+     | 1.
+     | BV Unterf÷hring e.V.
+     | Zw-Runde 205
+     | 232
+     | 259
+
+## bm2018_akt_einz_f_erg.pdf
+   pages=3  size=160,660  chars=8,104  players~=44
+   round labels: ['Finalrunde', 'Vorrunde', 'Zw-Runde']
+   has 5-digit IDs: True
+   HEADER:
+     | 12./13.05.2018
+     | Blu Bowl Bayreuth
+     | Auswertung: Bruno H÷dl (Bspw Nord)
+     | Platz
+     | Sp 1
+     | Sp 2
+     | Sp 3
+     | Sp 4
+     | Sp 5
+     | Sp 6
+     | 1.
+     | Laub Sabrina
+   FOOTER (last page):
+     | Zw-Runde
+     | 44.
+     | 07755
+     | Finalrunde
+     | 802
+     | /
+     | 6
+     | 133,67
+   FIRST PLAYER SNIPPET:
+     | 1.
+     | Laub Sabrina 
+     | Vorrunde 246
+     | 235
+     | 236
+     | 232
+     | 225
+     | 256
+     | 1430
+     | 1.
+     | BV 68 Regensburg
+     | Zw-Runde 213
+     | 213
+     | 247
+
+## bm2018_nb_he_erg.pdf
+   pages=8  size=370,999  chars=17,836  players~=97
+   round labels: ['Finalrunde', 'Vorrunde', 'Zw-Runde']
+   has 5-digit IDs: True
+   HEADER:
+     | 24./25.3.2018
+     | Mainfranken Bowling Bamberg
+     | Auswertung: Bruno H÷dl (Bspw Nord)
+     | Platz
+     | Sp 1
+     | Sp 2
+     | Sp 3
+     | Sp 4
+     | Sp 5
+     | Sp 6
+     | 1.
+     | W÷lki Robert
+   FOOTER (last page):
+     | /
+     | 97.
+     | Vorrunde
+     | 97.
+     | Zw-Runde
+     | 97.
+     | Finalrunde
+     | /
+   FIRST PLAYER SNIPPET:
+     | 1.
+     | W÷lki Robert 
+     | Vorrunde 257
+     | 278
+     | 226
+     | 237
+     | 197
+     | 225
+     | 1420
+     | 1.
+     | BV 68 Regensburg
+     | Zw-Runde 258
+     | 237
+     | 180
+
+## bm2019_akt_sb_he_erg.pdf
+   pages=8  size=316,608  chars=20,865  players~=116
+   round labels: ['Finalrunde', 'Vorrunde', 'Zw-Runde']
+   has 5-digit IDs: True
+   HEADER:
+     | 2./3.3.2019
+     | Isar Bowling M³nchen
+     | Auswertung: Michael Schõfer (MKV)
+     | Platz
+     | Sp 1
+     | Sp 2
+     | Sp 3
+     | Sp 4
+     | Sp 5
+     | Sp 6
+     | 1.
+     | B÷rding Tobias
+   FOOTER (last page):
+     | 116. BVU - BC Bavaria
+     | Zw-Runde
+     | 116. 16716
+     | Finalrunde
+     | 939
+     | /
+     | 6
+     | 156,50
+   FIRST PLAYER SNIPPET:
+     | 1.
+     | B÷rding Tobias 
+     | Vorrunde 245
+     | 258
+     | 224
+     | 218
+     | 227
+     | 266
+     | 1438
+     | 1.
+     | MKV - BK M³nchen
+     | Zw-Runde 247
+     | 224
+     | 224
+
+================================================================================
+STRUCTURAL INVARIANTS (2016+)
+  bm2016_einz_he_erg.pdf              V=True Z=True F=True  hdr_date=False
+  bm2016_sb_he_erg.pdf                V=True Z=True F=True  hdr_date=False
+  bm2017_sb_he_erg.pdf                V=True Z=True F=True  hdr_date=False
+  bm2018_akt_einz_f_erg.pdf           V=True Z=True F=True  hdr_date=False
+  bm2018_nb_he_erg.pdf                V=True Z=True F=True  hdr_date=False
+  bm2019_akt_sb_he_erg.pdf            V=True Z=True F=True  hdr_date=False

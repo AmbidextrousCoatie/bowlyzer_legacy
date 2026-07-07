@@ -176,15 +176,56 @@ def get_available_players():
     season = _season_param()
     tournament = request.args.get("tournament")
     round_number = request.args.get("round", type=int)
-    if not season or not tournament:
-        return jsonify({"error": "season and tournament are required"}), 400
-    cached = _tournament_json_cache_get("get_available_players")
+    if round_number is not None and (not season or not tournament):
+        return jsonify({"error": "season and tournament are required when round is set"}), 400
+    cache_key = "get_tournament_player_catalog" if not round_number else "get_available_players"
+    cached = league_cache_try_get(cache_key, _resolved_tournament_database_id(), dict(request.args))
     if cached is not None:
         return jsonify(cached)
-    payload = get_tournament_service().get_players(
-        season=season, tournament=tournament, round_number=round_number
+    service = get_tournament_service()
+    if round_number is not None:
+        payload = service.get_players(
+            season=season, tournament=tournament, round_number=round_number
+        )
+    else:
+        payload = service.get_tournament_player_catalog(season=season, tournament=tournament)
+    league_cache_put(cache_key, _resolved_tournament_database_id(), dict(request.args), payload)
+    return jsonify(payload)
+
+
+@bp.route("/tournament/get_tournament_podiums")
+def get_tournament_podiums():
+    season = _season_param()
+    tournament = request.args.get("tournament")
+    top_n = request.args.get("n", default=3, type=int)
+    cached = _tournament_json_cache_get("get_tournament_podiums")
+    if cached is not None:
+        return jsonify(cached)
+    payload = get_tournament_service().get_tournament_podiums(
+        season=season,
+        tournament=tournament,
+        top_n=top_n,
     )
-    _tournament_json_cache_put("get_available_players", payload)
+    _tournament_json_cache_put("get_tournament_podiums", payload)
+    return jsonify(payload)
+
+
+@bp.route("/tournament/get_player_tournament_results")
+def get_player_tournament_results():
+    player = request.args.get("player")
+    if not player:
+        return jsonify({"error": "player is required"}), 400
+    season = _season_param()
+    tournament = request.args.get("tournament")
+    cached = _tournament_json_cache_get("get_player_tournament_results")
+    if cached is not None:
+        return jsonify(cached)
+    payload = get_tournament_service().get_player_tournament_results(
+        player,
+        season=season,
+        tournament=tournament,
+    )
+    _tournament_json_cache_put("get_player_tournament_results", payload)
     return jsonify(payload)
 
 

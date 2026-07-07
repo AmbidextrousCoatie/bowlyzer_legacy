@@ -6,7 +6,7 @@ Phases (for ``warm_cache_shard.py`` or manual runs):
   search          — ``player_search`` (empty query)
   seasons-list    — ``player_get_available_seasons`` (all players)
   lifetime-season — ``get_lifetime_stats`` all-players for one ``--season``
-  lifetime-career — ``get_lifetime_stats`` ``season=all`` (merge per-season cache)
+  lifetime-career — ``get_lifetime_stats`` ``season=all`` (live aggregate)
   highest-games   — ``get_highest_individual_games`` (all-players top scores)
   player-highest-games — ``get_highest_individual_games`` for one ``--player-name`` / ``--player-id``
   player-highest-games-batch — same for ``--player-offset`` / ``--player-limit`` catalog slice
@@ -218,24 +218,14 @@ def warm_player_lifetime_career(
     *,
     log: Callable[[str], None],
 ) -> Dict[str, int]:
-    from app.cache.league_response_cache import league_cache_try_get
-    from app.services.player_service import PlayerService
     from app.utils.json_safe import json_safe
 
     stats = {"built": 0, "hit": 0, "skip_empty": 0, "errors": 0}
     query = {"database": database, "season": "all"}
-    dbq = {"database": database}
 
     def _build() -> Any:
-        parts = []
-        for season in seasons:
-            hit = league_cache_try_get("get_lifetime_stats", database, {**dbq, "season": season})
-            if hit is None:
-                payload = player_service.get_aggregate_lifetime_stats(season="all")
-                return json_safe(payload) if payload is not None else None
-            parts.append(hit)
-        merged = PlayerService.merge_aggregate_lifetime_payloads(parts)
-        return json_safe(merged) if merged is not None else None
+        payload = player_service.get_aggregate_lifetime_stats(season="all")
+        return json_safe(payload) if payload is not None else None
 
     try:
         status = _warm_one("get_lifetime_stats", database, query, _build)

@@ -47,6 +47,7 @@ def test_get_league_standings_validation_from_report(tmp_path: Path, monkeypatch
     payload = get_league_standings_validation()
     assert payload["source"] == "report"
     assert payload["row_count"] == 2
+    assert "tournament_quality" in payload
     assert payload["summary"]["green"] == 1
     assert payload["summary"]["yellow"] == 1
     assert payload["summary"]["week_incomplete"] == 1

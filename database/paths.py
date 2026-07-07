@@ -90,6 +90,11 @@ def legacy_scrape_dir() -> Path:
     return _prefer_existing(primary, REPO_DATA_DIR / "legacy_scrape")
 
 
+def tournaments_input_dir() -> Path:
+    """Flat intake folder for legacy tournament PDFs (import_tournaments.py)."""
+    return get_work_data_dir() / "tournaments" / "input"
+
+
 def legacy_scrape_league_csv() -> Path:
     """Postprocessed league rows from the legacy web-scrape pipeline (optional merge input)."""
     candidates = (
@@ -187,6 +192,11 @@ def player_stats_merged_hybrid_csv() -> Path:
 def players_registry_csv() -> Path:
     """Published player identity registry (logical CSV path; Parquet is primary)."""
     return get_data_dir() / "players_registry.csv"
+
+
+def clubs_registry_csv() -> Path:
+    """Published club identity registry from league merge (logical CSV path; Parquet primary)."""
+    return get_data_dir() / "clubs_registry.csv"
 
 
 def publish_runs_dir() -> Path:

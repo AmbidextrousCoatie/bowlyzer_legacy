@@ -273,6 +273,16 @@ export function LeagueStandingsValidation() {
   return (
     <div className="w-full min-w-0 px-4 pt-8 pb-24 lg:px-8 lg:pt-12">
       <header className="mb-6 lg:mb-8">
+        <p className="text-small text-muted mb-2">
+          <Link
+            to={`/diagnose/validierung${querySuffixForPath("/diagnose/validierung", searchParams)}`}
+            className="text-primary underline-offset-2 hover:underline"
+          >
+            {t("ui.diagnosis.validation_hub_title", "Validierung")}
+          </Link>
+          <span className="mx-1.5">/</span>
+          <span>{t("league", "Liga")}</span>
+        </p>
         <p className="text-label uppercase text-muted mb-2">
           {t("ui.diagnosis.eyebrow", "Diagnose")}
         </p>
@@ -341,7 +351,7 @@ export function LeagueStandingsValidation() {
             to={`/diagnose/liga-wochen${querySuffixForPath("/diagnose/liga-wochen", searchParams)}`}
             className="text-primary underline-offset-2 hover:underline"
           >
-            {t("ui.diagnosis.week_matrix_title", "Liga-Wochen-Matrix")}
+            {t("ui.diagnosis.week_matrix_title", "Liga-Übersicht")}
           </Link>
           {" · "}
           <Link

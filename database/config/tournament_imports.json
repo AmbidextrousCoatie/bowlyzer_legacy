@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "formats": {
+    "bm_xlsx_optionen": {
+      "adapter": "bm_xlsx_optionen",
+      "description": "Bayerische Meisterschaft XLSX (Optionen + Vorrunde + Zwischenlauf [+ KO-Finale])"
+    },
+    "club_donaubowler_xlsx": {
+      "adapter": "club_donaubowler_xlsx",
+      "description": "Clubmeisterschaft Donaubowler Clubpokal XLSX"
+    },
+    "legacy_pdf_erg_2016": {
+      "adapter": "legacy_pdf_erg_2016",
+      "description": "BSKV Excel-export PDF Ergebnisliste, vertical block layout (2016+)"
+    }
+  },
+  "imports": [
+    {
+      "id": "clubmeisterschaft-donaubowler-2026",
+      "enabled": false,
+      "format": "club_donaubowler_xlsx",
+      "source": "{repo_root}/database/input/clubmeisterschaft_donaubowler",
+      "merge_target": "manual",
+      "output": "{data_dir}/tournament_clubmeisterschaft_donaubowler_2026_postprocessed.csv",
+      "options": {
+        "year": 2026,
+        "date": "2026-05-15",
+        "location": ""
+      }
+    },
+    {
+      "id": "bm-xlsx-2026",
+      "enabled": false,
+      "format": "bm_xlsx_optionen",
+      "source": "{repo_root}/database/input/bayerische_meisterschaft_xlsx",
+      "merge_target": "gf_regional",
+      "output": "{data_dir}/tournament_bayerische_meisterschaft_2026_postprocessed.csv",
+      "options": {
+        "include_ko_finale": false
+      }
+    },
+    {
+      "id": "sbm-2019-herren",
+      "enabled": true,
+      "format": "legacy_pdf_erg_2016",
+      "source": "{work_dir}/tournaments/input/bm2019_akt_sb_he_erg.pdf",
+      "merge_target": "manual",
+      "output": "{data_dir}/tournament_legacy_pdf_sbm_2019_postprocessed.csv"
+    },
+    {
+      "id": "sbm-2018-herren",
+      "enabled": true,
+      "format": "legacy_pdf_erg_2016",
+      "source": "{work_dir}/tournaments/input/bm2018_nb_he_erg.pdf",
+      "merge_target": "manual",
+      "output": "{data_dir}/tournament_legacy_pdf_nbm_2018_postprocessed.csv"
+    },
+    {
+      "id": "sbm-2018-frauen",
+      "enabled": true,
+      "format": "legacy_pdf_erg_2016",
+      "source": "{work_dir}/tournaments/input/bm2018_akt_einz_f_erg.pdf",
+      "merge_target": "manual",
+      "output": "{data_dir}/tournament_legacy_pdf_bm_2018_frauen_postprocessed.csv"
+    },
+    {
+      "id": "sbm-2017-herren",
+      "enabled": true,
+      "format": "legacy_pdf_erg_2016",
+      "source": "{work_dir}/tournaments/input/bm2017_sb_he_erg.pdf",
+      "merge_target": "manual",
+      "output": "{data_dir}/tournament_legacy_pdf_sbm_2017_postprocessed.csv"
+    },
+    {
+      "id": "sbm-2016-herren",
+      "enabled": true,
+      "format": "legacy_pdf_erg_2016",
+      "source": "{work_dir}/tournaments/input/bm2016_sb_he_erg.pdf",
+      "merge_target": "manual",
+      "output": "{data_dir}/tournament_legacy_pdf_sbm_2016_postprocessed.csv",
+      "options": {
+        "skip_line_patterns": ["Keine Teilnahme BM!"]
+      }
+    },
+    {
+      "id": "bm-2016-herren",
+      "enabled": true,
+      "format": "legacy_pdf_erg_2016",
+      "source": "{work_dir}/tournaments/input/bm2016_einz_he_erg.pdf",
+      "merge_target": "manual",
+      "output": "{data_dir}/tournament_legacy_pdf_bm_2016_postprocessed.csv"
+    }
+  ]
+}

@@ -304,6 +304,8 @@ def get_pipeline_status() -> Dict[str, Any]:
     audits = {
         "player_id_name_conflicts": _audit_report(work_dir / "player_id_name_conflicts.csv"),
         "league_standings_validation": _audit_report(work_dir / "league_standings_validation.csv"),
+        "tournament_data_quality": _audit_report(work_dir / "tournament_data_quality.csv"),
+        "club_name_conflicts": _audit_report(work_dir / "club_name_conflicts.csv"),
     }
 
     latest_mtime = max(

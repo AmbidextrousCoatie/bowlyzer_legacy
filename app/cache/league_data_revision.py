@@ -313,6 +313,9 @@ def effective_data_revision(
     except Exception:
         return compute_data_revision(database_id)
 
+    if season_raw.lower() == "all":
+        return index.global_revision
+
     if season:
         return index.seasons.get(season) or index.global_revision
     if club:

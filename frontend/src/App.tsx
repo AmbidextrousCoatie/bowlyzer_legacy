@@ -7,8 +7,12 @@ import { Sidebar } from "./components/Sidebar";
 import { ClubMatrix } from "./pages/diagnosis/ClubMatrix";
 import { LeagueWeekMatrix } from "./pages/diagnosis/LeagueWeekMatrix";
 import { LeagueStandingsValidation } from "./pages/diagnosis/LeagueStandingsValidation";
+import { ValidationHub } from "./pages/diagnosis/validation/ValidationHub";
+import { TournamentValidation } from "./pages/diagnosis/validation/TournamentValidation";
+import { ClubNameValidation } from "./pages/diagnosis/validation/ClubNameValidation";
 import { DataOddities } from "./pages/diagnosis/DataOddities";
 import { DataPipeline } from "./pages/diagnosis/DataPipeline";
+import { TournamentCoverage } from "./pages/diagnosis/TournamentCoverage";
 import { DesignSystem } from "./pages/diagnosis/DesignSystem";
 import { LeagueStats } from "./pages/league/LeagueStats";
 import { PlayerStats } from "./pages/player/PlayerStats";
@@ -39,9 +43,17 @@ function App() {
                 <Route path="/spieler" element={<PlayerStats />} />
                 <Route path="/diagnose/club-matrix" element={<ClubMatrix />} />
                 <Route path="/diagnose/liga-wochen" element={<LeagueWeekMatrix />} />
-                <Route path="/diagnose/liga-validierung" element={<LeagueStandingsValidation />} />
+                <Route path="/diagnose/validierung" element={<ValidationHub />} />
+                <Route path="/diagnose/validierung/liga" element={<LeagueStandingsValidation />} />
+                <Route path="/diagnose/validierung/turniere" element={<TournamentValidation />} />
+                <Route path="/diagnose/validierung/vereine" element={<ClubNameValidation />} />
+                <Route
+                  path="/diagnose/liga-validierung"
+                  element={<LegacyLigaValidierungRedirect />}
+                />
                 <Route path="/diagnose/daten-anomalien" element={<DataOddities />} />
                 <Route path="/diagnose/datenpipeline" element={<DataPipeline />} />
+                <Route path="/diagnose/turnier-uebersicht" element={<TournamentCoverage />} />
                 <Route path="/diagnose/design-system" element={<DesignSystem />} />
                 <Route path="/impressum" element={<Impressum />} />
                 <Route path="*" element={<NotFound />} />
@@ -59,6 +71,11 @@ function App() {
 function LegacyMannschaftRedirect() {
   const { search } = useLocation();
   return <Navigate to={`/club${search}`} replace />;
+}
+
+function LegacyLigaValidierungRedirect() {
+  const { search } = useLocation();
+  return <Navigate to={`/diagnose/validierung/liga${search}`} replace />;
 }
 
 function NotFound() {

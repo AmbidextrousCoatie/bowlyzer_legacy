@@ -9,6 +9,7 @@ type ClubSearchProps = {
   placeholder?: string;
   ariaLabel?: string;
   clearAriaLabel?: string;
+  containerClassName?: string;
   onSelect: (club: string | null) => void;
 };
 
@@ -21,6 +22,7 @@ export function ClubSearch({
   placeholder,
   ariaLabel,
   clearAriaLabel = "Clear",
+  containerClassName,
   onSelect,
 }: ClubSearchProps) {
   const [draft, setDraft] = useState(value);
@@ -103,7 +105,12 @@ export function ClubSearch({
   const showClear = !isLoading && draft.trim().length > 0;
 
   return (
-    <div ref={containerRef} className="relative w-full min-w-[min(100%,320px)] max-w-md">
+    <div
+      ref={containerRef}
+      className={
+        containerClassName ?? "relative w-full min-w-[min(100%,320px)] max-w-md"
+      }
+    >
       <input
         ref={inputRef}
         type="text"

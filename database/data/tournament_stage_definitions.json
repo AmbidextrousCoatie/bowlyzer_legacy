@@ -1,0 +1,740 @@
+{
+  "15/16||Bayerische Meisterschaft Einzel 2016": {
+    "event_name": "Bayerische Meisterschaft Einzel 2016",
+    "season": "15/16",
+    "event_type": "tournament",
+    "default_location": "Mainfranken Bamberg",
+    "stages": [
+      {
+        "id": 1,
+        "name": "Vorlauf",
+        "cut": "64",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2016-05-21",
+        "location": "Mainfranken Bamberg",
+        "game_start": 1,
+        "game_end": 6
+      },
+      {
+        "id": 2,
+        "name": "Zwischenlauf",
+        "cut": "32",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2016-05-22",
+        "location": "Mainfranken Bamberg",
+        "game_start": 7,
+        "game_end": 12
+      },
+      {
+        "id": 3,
+        "name": "Finalrunde",
+        "cut": "n/a",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2016-05-22",
+        "location": "Mainfranken Bamberg",
+        "game_start": 13,
+        "game_end": 18
+      }
+    ]
+  },
+  "15/16||Südbayerische Meisterschaft Einzel 2016": {
+    "event_name": "Südbayerische Meisterschaft Einzel 2016",
+    "season": "15/16",
+    "event_type": "tournament",
+    "default_location": "Isar Bowling München",
+    "stages": [
+      {
+        "id": 1,
+        "name": "Vorlauf",
+        "cut": "77",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2016-01-23",
+        "location": "Isar Bowling München",
+        "game_start": 1,
+        "game_end": 6
+      },
+      {
+        "id": 2,
+        "name": "Zwischenlauf",
+        "cut": "40",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2016-01-24",
+        "location": "Isar Bowling München",
+        "game_start": 7,
+        "game_end": 12
+      },
+      {
+        "id": 3,
+        "name": "Finalrunde",
+        "cut": "n/a",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2016-01-24",
+        "location": "Isar Bowling München",
+        "game_start": 13,
+        "game_end": 18
+      }
+    ]
+  },
+  "16/17||Bayerische Meisterschaft Einzel 2017": {
+    "event_name": "Bayerische Meisterschaft Einzel 2017",
+    "season": "16/17",
+    "event_type": "tournament",
+    "default_location": "Max Munich Brunnthal",
+    "stages": [
+      {
+        "id": 1,
+        "name": "Vorlauf",
+        "cut": "76",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2017-05-06",
+        "location": "Max Munich Brunnthal",
+        "game_start": 1,
+        "game_end": 6
+      },
+      {
+        "id": 2,
+        "name": "Zwischenlauf",
+        "cut": "44",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2017-05-07",
+        "location": "Max Munich Brunnthal",
+        "game_start": 7,
+        "game_end": 12
+      },
+      {
+        "id": 3,
+        "name": "Finalrunde",
+        "cut": "n/a",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2017-05-07",
+        "location": "Max Munich Brunnthal",
+        "game_start": 13,
+        "game_end": 18
+      }
+    ]
+  },
+  "16/17||Bayerische Meisterschaft Einzel Damen 2017": {
+    "event_name": "Bayerische Meisterschaft Einzel Damen 2017",
+    "season": "16/17",
+    "event_type": "tournament",
+    "default_location": "Dreambowl Palace Unterföhring",
+    "stages": [
+      {
+        "id": 1,
+        "name": "Vorlauf",
+        "cut": "39",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2017-05-06",
+        "location": "Dreambowl Palace Unterföhring",
+        "game_start": 1,
+        "game_end": 6
+      },
+      {
+        "id": 2,
+        "name": "Zwischenlauf",
+        "cut": "37",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2017-05-07",
+        "location": "Dreambowl Palace Unterföhring",
+        "game_start": 7,
+        "game_end": 12
+      },
+      {
+        "id": 3,
+        "name": "Finalrunde",
+        "cut": "n/a",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2017-05-07",
+        "location": "Dreambowl Palace Unterföhring",
+        "game_start": 13,
+        "game_end": 18
+      }
+    ]
+  },
+  "16/17||Nordbayrische Meisterschaft Einzel 2017": {
+    "event_name": "Nordbayrische Meisterschaft Einzel 2017",
+    "season": "16/17",
+    "event_type": "tournament",
+    "default_location": "Blu Bowl Bayreuth",
+    "stages": [
+      {
+        "id": 1,
+        "name": "Vorlauf",
+        "cut": "55",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2017-03-11",
+        "location": "Blu Bowl Bayreuth",
+        "game_start": 1,
+        "game_end": 6
+      },
+      {
+        "id": 2,
+        "name": "Zwischenlauf",
+        "cut": "28",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2017-03-12",
+        "location": "Blu Bowl Bayreuth",
+        "game_start": 7,
+        "game_end": 12
+      },
+      {
+        "id": 3,
+        "name": "Finalrunde",
+        "cut": "n/a",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2017-03-12",
+        "location": "Blu Bowl Bayreuth",
+        "game_start": 13,
+        "game_end": 18
+      }
+    ]
+  },
+  "16/17||Südbayerische Meisterschaft Einzel 2017": {
+    "event_name": "Südbayerische Meisterschaft Einzel 2017",
+    "season": "16/17",
+    "event_type": "tournament",
+    "default_location": "Isar Bowling München",
+    "stages": [
+      {
+        "id": 1,
+        "name": "Vorlauf",
+        "cut": "79",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2017-03-11",
+        "location": "Isar Bowling München",
+        "game_start": 1,
+        "game_end": 6
+      },
+      {
+        "id": 2,
+        "name": "Zwischenlauf",
+        "cut": "40",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2017-03-12",
+        "location": "Isar Bowling München",
+        "game_start": 7,
+        "game_end": 12
+      },
+      {
+        "id": 3,
+        "name": "Finalrunde",
+        "cut": "n/a",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2017-03-12",
+        "location": "Isar Bowling München",
+        "game_start": 13,
+        "game_end": 18
+      }
+    ]
+  },
+  "17/18||Bayerische Meisterschaft Einzel 2018": {
+    "event_name": "Bayerische Meisterschaft Einzel 2018",
+    "season": "17/18",
+    "event_type": "tournament",
+    "default_location": "Blu Bowl Bayreuth",
+    "stages": [
+      {
+        "id": 1,
+        "name": "Vorlauf",
+        "cut": "40",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2018-05-12",
+        "location": "Blu Bowl Bayreuth",
+        "game_start": 1,
+        "game_end": 6
+      },
+      {
+        "id": 2,
+        "name": "Zwischenlauf",
+        "cut": "20",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2018-05-13",
+        "location": "Blu Bowl Bayreuth",
+        "game_start": 7,
+        "game_end": 12
+      },
+      {
+        "id": 3,
+        "name": "Finalrunde",
+        "cut": "n/a",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2018-05-13",
+        "location": "Blu Bowl Bayreuth",
+        "game_start": 13,
+        "game_end": 18
+      }
+    ]
+  },
+  "17/18||Bayerische Meisterschaft Einzel Damen 2018": {
+    "event_name": "Bayerische Meisterschaft Einzel Damen 2018",
+    "season": "17/18",
+    "event_type": "tournament",
+    "default_location": "Blu Bowl Bayreuth",
+    "stages": [
+      {
+        "id": 1,
+        "name": "Vorlauf",
+        "cut": "40",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2018-05-12",
+        "location": "Blu Bowl Bayreuth",
+        "game_start": 1,
+        "game_end": 6
+      },
+      {
+        "id": 2,
+        "name": "Zwischenlauf",
+        "cut": "20",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2018-05-13",
+        "location": "Blu Bowl Bayreuth",
+        "game_start": 7,
+        "game_end": 12
+      },
+      {
+        "id": 3,
+        "name": "Finalrunde",
+        "cut": "n/a",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2018-05-13",
+        "location": "Blu Bowl Bayreuth",
+        "game_start": 13,
+        "game_end": 18
+      }
+    ]
+  },
+  "17/18||Nordbayrische Meisterschaft 2018": {
+    "event_name": "Nordbayrische Meisterschaft 2018",
+    "season": "17/18",
+    "event_type": "tournament",
+    "default_location": "Mainfranken Bowling Bamberg",
+    "stages": [
+      {
+        "id": 1,
+        "name": "Vorlauf",
+        "cut": "64",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2018-03-24",
+        "location": "Mainfranken Bowling Bamberg",
+        "game_start": 1,
+        "game_end": 6
+      },
+      {
+        "id": 2,
+        "name": "Zwischenlauf",
+        "cut": "32",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2018-03-25",
+        "location": "Mainfranken Bowling Bamberg",
+        "game_start": 7,
+        "game_end": 12
+      },
+      {
+        "id": 3,
+        "name": "Finalrunde",
+        "cut": "n/a",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2018-03-25",
+        "location": "Mainfranken Bowling Bamberg",
+        "game_start": 13,
+        "game_end": 18
+      }
+    ]
+  },
+  "17/18||Südbayerische Meisterschaft Einzel 2018": {
+    "event_name": "Südbayerische Meisterschaft Einzel 2018",
+    "season": "17/18",
+    "event_type": "tournament",
+    "default_location": "Isar Bowling München",
+    "stages": [
+      {
+        "id": 1,
+        "name": "Vorlauf",
+        "cut": "79",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2018-03-24",
+        "location": "Isar Bowling München",
+        "game_start": 1,
+        "game_end": 6
+      },
+      {
+        "id": 2,
+        "name": "Zwischenlauf",
+        "cut": "40",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2018-03-25",
+        "location": "Isar Bowling München",
+        "game_start": 7,
+        "game_end": 12
+      },
+      {
+        "id": 3,
+        "name": "Finalrunde",
+        "cut": "n/a",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2018-03-25",
+        "location": "Isar Bowling München",
+        "game_start": 13,
+        "game_end": 18
+      }
+    ]
+  },
+  "18/19||Bayerische Meisterschaft Einzel 2019": {
+    "event_name": "Bayerische Meisterschaft Einzel 2019",
+    "season": "18/19",
+    "event_type": "tournament",
+    "default_location": "",
+    "stages": [
+      {
+        "id": 1,
+        "name": "Vorlauf",
+        "cut": "82",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2019-01-01",
+        "location": "",
+        "game_start": 1,
+        "game_end": 6
+      },
+      {
+        "id": 2,
+        "name": "Zwischenlauf",
+        "cut": "44",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2019-01-01",
+        "location": "",
+        "game_start": 7,
+        "game_end": 12
+      },
+      {
+        "id": 3,
+        "name": "Finalrunde",
+        "cut": "n/a",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2019-01-01",
+        "location": "",
+        "game_start": 13,
+        "game_end": 18
+      }
+    ]
+  },
+  "18/19||Bayerische Meisterschaft Einzel Damen 2019": {
+    "event_name": "Bayerische Meisterschaft Einzel Damen 2019",
+    "season": "18/19",
+    "event_type": "tournament",
+    "default_location": "",
+    "stages": [
+      {
+        "id": 1,
+        "name": "Vorlauf",
+        "cut": "37",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2019-01-01",
+        "location": "",
+        "game_start": 1,
+        "game_end": 6
+      },
+      {
+        "id": 2,
+        "name": "Zwischenlauf",
+        "cut": "20",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2019-01-01",
+        "location": "",
+        "game_start": 7,
+        "game_end": 12
+      },
+      {
+        "id": 3,
+        "name": "Finalrunde",
+        "cut": "n/a",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2019-01-01",
+        "location": "",
+        "game_start": 13,
+        "game_end": 18
+      }
+    ]
+  },
+  "18/19||Nordbayrische Meisterschaft 2019": {
+    "event_name": "Nordbayrische Meisterschaft 2019",
+    "season": "18/19",
+    "event_type": "tournament",
+    "default_location": "Bowling World Nürnberg",
+    "stages": [
+      {
+        "id": 1,
+        "name": "Vorlauf",
+        "cut": "98",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2019-03-02",
+        "location": "Bowling World Nürnberg",
+        "game_start": 1,
+        "game_end": 6
+      },
+      {
+        "id": 2,
+        "name": "Zwischenlauf",
+        "cut": "52",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2019-03-03",
+        "location": "Bowling World Nürnberg",
+        "game_start": 7,
+        "game_end": 12
+      },
+      {
+        "id": 3,
+        "name": "Finalrunde",
+        "cut": "n/a",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2019-03-03",
+        "location": "Bowling World Nürnberg",
+        "game_start": 13,
+        "game_end": 18
+      }
+    ]
+  },
+  "18/19||Südbayerische Meisterschaft Einzel 2019": {
+    "event_name": "Südbayerische Meisterschaft Einzel 2019",
+    "season": "18/19",
+    "event_type": "tournament",
+    "default_location": "Isar Bowling München",
+    "stages": [
+      {
+        "id": 1,
+        "name": "Vorlauf",
+        "cut": "80",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2019-03-02",
+        "location": "Isar Bowling München",
+        "game_start": 1,
+        "game_end": 6
+      },
+      {
+        "id": 2,
+        "name": "Zwischenlauf",
+        "cut": "40",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2019-03-03",
+        "location": "Isar Bowling München",
+        "game_start": 7,
+        "game_end": 12
+      },
+      {
+        "id": 3,
+        "name": "Finalrunde",
+        "cut": "n/a",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2019-03-03",
+        "location": "Isar Bowling München",
+        "game_start": 13,
+        "game_end": 18
+      }
+    ]
+  },
+  "25/26||Bayerische Meisterschaft - Frauen Einzel": {
+    "event_name": "Bayerische Meisterschaft - Frauen Einzel",
+    "season": "25/26",
+    "event_type": "tournament",
+    "default_location": "Rottendorf",
+    "stages": [
+      {
+        "id": 1,
+        "name": "Vorlauf",
+        "cut": "22",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2026-05-09",
+        "location": "Rottendorf",
+        "game_start": 1,
+        "game_end": 6
+      },
+      {
+        "id": 2,
+        "name": "Zwischenlauf",
+        "cut": "6",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2026-05-10",
+        "location": "Rottendorf",
+        "game_start": 7,
+        "game_end": 12
+      },
+      {
+        "id": 3,
+        "name": "KO-Finale",
+        "cut": "n/a",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2026-05-10",
+        "location": "Rottendorf",
+        "game_start": 13,
+        "game_end": 22
+      }
+    ]
+  },
+  "25/26||Bayerische Meisterschaft - Männer Einzel": {
+    "event_name": "Bayerische Meisterschaft - Männer Einzel",
+    "season": "25/26",
+    "event_type": "tournament",
+    "default_location": "Max Munich",
+    "stages": [
+      {
+        "id": 1,
+        "name": "Vorlauf",
+        "cut": "93",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2026-05-09",
+        "location": "Max Munich",
+        "game_start": 1,
+        "game_end": 6
+      },
+      {
+        "id": 2,
+        "name": "Zwischenlauf",
+        "cut": "6",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2026-05-10",
+        "location": "Max Munich",
+        "game_start": 7,
+        "game_end": 12
+      },
+      {
+        "id": 3,
+        "name": "KO-Finale",
+        "cut": "n/a",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2026-05-10",
+        "location": "Max Munich",
+        "game_start": 13,
+        "game_end": 21
+      }
+    ]
+  },
+  "25/26||Nordbayerische Meisterschaft": {
+    "event_name": "Nordbayerische Meisterschaft",
+    "season": "25/26",
+    "event_type": "tournament",
+    "default_location": "Bowlinghaus Bamberg",
+    "stages": [
+      {
+        "id": 1,
+        "name": "Vorlauf",
+        "cut": "72",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2026-04-25",
+        "location": "Bowlinghaus Bamberg",
+        "game_start": 1,
+        "game_end": 6
+      },
+      {
+        "id": 2,
+        "name": "Zwischenlauf",
+        "cut": "36",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2026-04-26",
+        "location": "Bowlinghaus Bamberg",
+        "game_start": 7,
+        "game_end": 12
+      },
+      {
+        "id": 3,
+        "name": "Finale",
+        "cut": "n/a",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2026-04-27",
+        "location": "Bowlinghaus Bamberg",
+        "game_start": 13,
+        "game_end": 18
+      }
+    ]
+  },
+  "25/26||Südbayerische Meisterschaft": {
+    "event_name": "Südbayerische Meisterschaft",
+    "season": "25/26",
+    "event_type": "tournament",
+    "default_location": "Dream Bowl Palace Unterföhring",
+    "stages": [
+      {
+        "id": 1,
+        "name": "Vorlauf",
+        "cut": "80",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2026-04-25",
+        "location": "Dream Bowl Palace Unterföhring",
+        "game_start": 1,
+        "game_end": 6
+      },
+      {
+        "id": 2,
+        "name": "Zwischenlauf",
+        "cut": "40",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2026-04-26",
+        "location": "Dream Bowl Palace Unterföhring",
+        "game_start": 7,
+        "game_end": 12
+      },
+      {
+        "id": 3,
+        "name": "Finale",
+        "cut": "n/a",
+        "cut_basis": "overall_total",
+        "evaluation": "Scratch Total",
+        "date": "2026-04-27",
+        "location": "Dream Bowl Palace Unterföhring",
+        "game_start": 13,
+        "game_end": 18
+      }
+    ]
+  }
+}

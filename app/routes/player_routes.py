@@ -17,24 +17,6 @@ def _player_cache_database(player_service: PlayerService) -> str:
     return str(player_service.database or request.args.get("database") or "")
 
 
-def _aggregate_lifetime_from_season_caches(
-    player_service: PlayerService,
-    cache_db: str,
-    seasons: list[str],
-):
-    """Assemble career-wide all-players stats from per-season disk cache entries."""
-    from app.cache.league_response_cache import league_cache_try_get
-
-    parts = []
-    for season in seasons:
-        cache_args = {"database": cache_db, "season": season}
-        hit = league_cache_try_get("get_lifetime_stats", cache_db, cache_args)
-        if hit is None:
-            return None
-        parts.append(hit)
-    return PlayerService.merge_aggregate_lifetime_payloads(parts)
-
-
 @bp.route('/search')
 def search_players():
     search_term = request.args.get('search', '')
@@ -89,16 +71,6 @@ def get_lifetime_stats():
         return jsonify(hit)
 
     if not player_name and not player_id:
-        if season == "all":
-            merged = _aggregate_lifetime_from_season_caches(
-                player_service,
-                cache_db,
-                player_service.get_all_seasons(),
-            )
-            if merged is not None:
-                payload = json_safe(merged)
-                league_cache_put("get_lifetime_stats", cache_db, cache_args, payload)
-                return jsonify(payload)
         stats = player_service.get_aggregate_lifetime_stats(season=season)
     else:
         stats = player_service.get_lifetime_stats(player_name or '', season=season, player_id=player_id)

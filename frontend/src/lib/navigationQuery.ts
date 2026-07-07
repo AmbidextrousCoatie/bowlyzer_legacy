@@ -39,6 +39,7 @@ const SEASON_QUERY_SCOPES = [
   "/club",
   "/turnier",
   "/spieler",
+  "/diagnose/validierung",
   "/diagnose/liga-validierung",
 ] as const;
 
@@ -58,6 +59,8 @@ function keepsSeasonQuery(targetPath: string): boolean {
 
 function keepsStandingsValidationQuery(targetPath: string): boolean {
   return (
+    targetPath === "/diagnose/validierung" ||
+    targetPath.startsWith("/diagnose/validierung/") ||
     targetPath === "/diagnose/liga-validierung" ||
     targetPath.startsWith("/diagnose/liga-validierung/")
   );

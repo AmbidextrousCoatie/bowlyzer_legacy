@@ -256,6 +256,10 @@ def get_league_standings_validation(
     rows = _filter_rows(rows, season=season, league=league)
     summary = _summary_from_rows(rows)
 
+    from app.services.tournament_data_quality_service import get_tournament_data_quality
+
+    tournament_quality = get_tournament_data_quality(season=season)
+
     return {
         "generated_at_utc": dt.datetime.now(tz=dt.timezone.utc).isoformat(),
         "source": source,
@@ -265,4 +269,5 @@ def get_league_standings_validation(
         "summary": summary,
         "rows": rows,
         "filters": {"season": season, "league": league},
+        "tournament_quality": tournament_quality,
     }

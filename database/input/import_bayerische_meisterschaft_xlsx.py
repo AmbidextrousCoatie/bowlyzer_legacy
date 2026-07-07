@@ -15,12 +15,10 @@ Output:
 from __future__ import annotations
 
 import argparse
-import csv
 import json
 import math
 import re
 import sys
-from collections import defaultdict
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -28,39 +26,20 @@ from typing import Dict, Iterable, List, Optional, Tuple
 
 from openpyxl import load_workbook
 
-
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+
+from database.tournament_import.io import read_csv_rows as _read_csv_rows
+from database.tournament_import.io import write_csv_rows as _write_csv_rows
+from database.tournament_import.postprocess import postprocess_rows as _postprocess
+from database.tournament_import.schema import POSTPROCESSED_HEADERS
 
 GF_COMBINED_POSTPROCESSED = (
     ROOT / "database" / "input" / "gf_tables_export" / "gf_tournaments_2026__combined_postprocessed.csv"
 )
 DEFAULT_OUTPUT = ROOT / "database" / "data" / "tournament_bayerische_meisterschaft_2026_postprocessed.csv"
 KO_CONFIG_PATH = ROOT / "database" / "data" / "tournament_ko_config.json"
-
-POSTPROCESSED_HEADERS = [
-    "Season",
-    "Date",
-    "Location",
-    "Event Type",
-    "Event Name",
-    "Round Number",
-    "Round Name",
-    "Player",
-    "Player ID",
-    "Club",
-    "Game Number",
-    "Score",
-    "Handicap",
-    "A Priori Average",
-    "Handicap Reference",
-    "Cumulative Score",
-    "Stage Rank",
-    "Cut Line",
-    "Cut Basis",
-    "Overall Cumulative Score",
-]
 
 
 @dataclass(frozen=True)
@@ -524,79 +503,6 @@ def _extract_ko_rows(
                 continue
             row += 1
     return ko_rows
-
-
-def _postprocess(rows: List[Dict[str, str]]) -> List[Dict[str, str]]:
-    by_event: Dict[str, List[Dict[str, str]]] = defaultdict(list)
-    for row in rows:
-        by_event[row["Event Name"]].append(row)
-
-    out: List[Dict[str, str]] = []
-    for _, event_rows in sorted(by_event.items()):
-        by_round: Dict[int, List[Dict[str, str]]] = defaultdict(list)
-        for row in event_rows:
-            by_round[int(row["Round Number"])].append(row)
-
-        overall_running: Dict[str, int] = defaultdict(int)
-        for round_number in sorted(by_round.keys()):
-            round_rows = by_round[round_number]
-            by_game: Dict[int, List[Dict[str, str]]] = defaultdict(list)
-            for row in round_rows:
-                by_game[int(row["Game Number"])].append(row)
-
-            stage_running: Dict[str, int] = defaultdict(int)
-            player_name_by_id: Dict[str, str] = {}
-            for row in round_rows:
-                player_name_by_id[row["Player ID"]] = row["Player"]
-            cut_players = 0
-            cut_basis = ""
-
-            for game_number in sorted(by_game.keys()):
-                game_rows = sorted(by_game[game_number], key=lambda r: (r["Player"], r["Player ID"]))
-                for row in game_rows:
-                    pid = row["Player ID"]
-                    score = int(row["Score"])
-                    stage_running[pid] += score
-                    overall_running[pid] += score
-
-                ranked_pids = sorted(
-                    stage_running.keys(),
-                    key=lambda pid: (-stage_running[pid], player_name_by_id.get(pid, "")),
-                )
-                rank_by_pid = {pid: idx + 1 for idx, pid in enumerate(ranked_pids)}
-
-                cut_line = ""
-                if cut_players > 0 and ranked_pids:
-                    cut_idx = min(cut_players, len(ranked_pids)) - 1
-                    cut_line = str(stage_running[ranked_pids[cut_idx]])
-
-                for row in game_rows:
-                    pid = row["Player ID"]
-                    out_row = dict(row)
-                    out_row["Cumulative Score"] = str(stage_running[pid])
-                    out_row["Stage Rank"] = str(rank_by_pid[pid])
-                    out_row["Cut Line"] = cut_line
-                    out_row["Cut Basis"] = cut_basis
-                    out_row["Overall Cumulative Score"] = str(overall_running[pid])
-                    out.append(out_row)
-    return out
-
-
-def _read_csv_rows(path: Path) -> List[Dict[str, str]]:
-    if not path.is_file():
-        return []
-    with path.open("r", encoding="utf-8-sig", newline="") as f:
-        reader = csv.DictReader(f, delimiter=";")
-        return [{k: str(v or "") for k, v in row.items()} for row in reader]
-
-
-def _write_csv_rows(path: Path, rows: List[Dict[str, str]]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=POSTPROCESSED_HEADERS, delimiter=";")
-        writer.writeheader()
-        for row in rows:
-            writer.writerow({h: str(row.get(h, "") or "") for h in POSTPROCESSED_HEADERS})
 
 
 def _merge_into_combined(new_rows: List[Dict[str, str]]) -> Tuple[int, int]:

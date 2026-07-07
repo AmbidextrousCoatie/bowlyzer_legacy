@@ -46,12 +46,16 @@ _ENDPOINT_PAYLOAD_VERSION: Dict[str, str] = {
     "get_club_legends": "club-legends-v2",
     "get_club_player_results": "club-player-results-v2",
     "get_tournament_section": "summary-avg-cutline-v16",
-    "get_player_section": "player-round-hcp-per-game-v1",
-    "get_tournament_field_progress": "field-progress-v4",
+    "get_player_section": "player-round-hcp-field-progress-v1",
+    "get_tournament_field_progress": "field-progress-v5",
     # Added handicap block + round names in payload — bump invalidates old disk cache without `handicap`.
-    "get_tournament_format": "format-handicap-v1",
-    "get_available_tournaments": "manual-merge-rev-v1",
+    "get_tournament_format": "format-handicap-v2",
+    "get_available_tournaments": "manual-merge-rev-v2",
     "get_available_seasons": "metadata-index-v1",
+    "get_tournament_podiums": "tournament-podiums-v2",
+    "get_player_tournament_results": "player-tournament-results-v2",
+    "get_tournament_player_catalog": "tournament-player-catalog-v1",
+    "get_available_players": "tournament-round-players-v1",
     "get_available_leagues": "metadata-index-v1",
     "team_get_teams": "metadata-index-v1",
     "player_search": "player-catalog-v2-runtime-merge",
@@ -401,4 +405,5 @@ def league_cache_invalidate_database(database_id: Optional[str] = None) -> int:
                 p.rmdir()
             except OSError:
                 pass
-    return n
+    runtime_removed = league_cache_clear_runtime(database_id)
+    return n + runtime_removed

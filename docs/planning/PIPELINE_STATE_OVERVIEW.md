@@ -7,6 +7,7 @@
 | Doc | Role |
 |-----|------|
 | [`DATA_PIPELINE_PLAN.md`](DATA_PIPELINE_PLAN.md) | Target architecture, roadmap, Diagnose UI plan |
+| [`BACKEND_REWRITE_RUST.md`](BACKEND_REWRITE_RUST.md) | Deferred follow-up: Postgres + Rust API (after legacy publish) |
 | [`database/data/ARTIFACTS.md`](../../database/data/ARTIFACTS.md) | Operator contract (jobs, audits, manifest fields) |
 | [`database/data/README.md`](../../database/data/README.md) | Build → warm cache → deploy |
 | [`database/data/runs/latest.json`](../../database/data/runs/latest.json) | Machine-readable last publish |

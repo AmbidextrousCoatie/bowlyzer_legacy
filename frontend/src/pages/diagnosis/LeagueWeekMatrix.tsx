@@ -51,7 +51,7 @@ export function LeagueWeekMatrix() {
           {t("ui.diagnosis.eyebrow", "Diagnose")}
         </p>
         <h1 className="text-h1">
-          {t("ui.diagnosis.week_matrix_title", "Liga-Wochen-Matrix")}
+          {t("ui.diagnosis.week_matrix_title", "Liga-Übersicht")}
         </h1>
         <p className="text-body text-muted mt-2 max-w-[72ch]">
           {t(

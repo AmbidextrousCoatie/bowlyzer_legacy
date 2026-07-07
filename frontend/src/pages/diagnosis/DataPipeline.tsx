@@ -63,8 +63,8 @@ export function DataPipeline() {
           {t(
             "ui.diagnosis.pipeline_desc",
             exposePaths
-              ? "Veröffentlichte Datensätze, App-Quellen und Build-Pfade. Ergänzt die Inhaltsdiagnose (Liga-Wochen, Anomalien) um den operativen Überblick."
-              : "Veröffentlichte Datensätze, Publish-Manifest und Audit-Status. Ergänzt die Inhaltsdiagnose (Liga-Wochen, Anomalien) um den operativen Überblick.",
+              ? "Veröffentlichte Datensätze, App-Quellen und Build-Pfade. Ergänzt die Inhaltsdiagnose (Liga-Übersicht, Anomalien) um den operativen Überblick."
+              : "Veröffentlichte Datensätze, Publish-Manifest und Audit-Status. Ergänzt die Inhaltsdiagnose (Liga-Übersicht, Anomalien) um den operativen Überblick.",
           )}
         </p>
       </header>
@@ -321,13 +321,13 @@ export function DataPipeline() {
                   ? `${data.audits.player_id_name_conflicts.detail_rows ?? "?"} Zeilen`
                   : "—"}
               </dd>
-              <dt className="text-muted">Liga-Validierung</dt>
+              <dt className="text-muted">Turnier-Validierung</dt>
               <dd>
-                {data.audits.league_standings_validation?.exists ? (
+                {data.audits.tournament_data_quality?.exists ? (
                   <>
-                    {data.audits.league_standings_validation.detail_rows ?? "?"} Zeilen ·{" "}
+                    {data.audits.tournament_data_quality.detail_rows ?? "?"} Zeilen ·{" "}
                     <Link
-                      to={`/diagnose/liga-validierung${querySuffixForPath("/diagnose/liga-validierung", searchParams)}`}
+                      to={`/diagnose/validierung${querySuffixForPath("/diagnose/validierung", searchParams)}`}
                       className="text-primary underline-offset-2 hover:underline"
                     >
                       {t("ui.diagnosis.standings_validation_open", "Details")}
@@ -337,7 +337,40 @@ export function DataPipeline() {
                   <>
                     — ·{" "}
                     <Link
-                      to={`/diagnose/liga-validierung${querySuffixForPath("/diagnose/liga-validierung", searchParams)}`}
+                      to={`/diagnose/validierung${querySuffixForPath("/diagnose/validierung", searchParams)}`}
+                      className="text-primary underline-offset-2 hover:underline"
+                    >
+                      {t("ui.diagnosis.standings_validation_open", "Details")}
+                    </Link>
+                  </>
+                )}
+              </dd>
+              <dt className="text-muted">Turnier-Übersicht</dt>
+              <dd>
+                <Link
+                  to={`/diagnose/turnier-uebersicht${querySuffixForPath("/diagnose/turnier-uebersicht", searchParams)}`}
+                  className="text-primary underline-offset-2 hover:underline"
+                >
+                  {t("ui.diagnosis.tournament_coverage_open", "Matrix")}
+                </Link>
+              </dd>
+              <dt className="text-muted">Liga-Validierung</dt>
+              <dd>
+                {data.audits.league_standings_validation?.exists ? (
+                  <>
+                    {data.audits.league_standings_validation.detail_rows ?? "?"} Zeilen ·{" "}
+                    <Link
+                      to={`/diagnose/validierung${querySuffixForPath("/diagnose/validierung", searchParams)}`}
+                      className="text-primary underline-offset-2 hover:underline"
+                    >
+                      {t("ui.diagnosis.standings_validation_open", "Details")}
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    — ·{" "}
+                    <Link
+                      to={`/diagnose/validierung${querySuffixForPath("/diagnose/validierung", searchParams)}`}
                       className="text-primary underline-offset-2 hover:underline"
                     >
                       {t("ui.diagnosis.standings_validation_open", "Details")}

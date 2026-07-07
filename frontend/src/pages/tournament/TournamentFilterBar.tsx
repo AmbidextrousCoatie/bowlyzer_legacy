@@ -25,6 +25,7 @@ export type TournamentFilterBarProps = {
   players: string[];
   playersLoading: boolean;
   playerMode: boolean;
+  showEventDetail: boolean;
   onSeasonChange: (v: string) => void;
   onTournamentChange: (v: string) => void;
   onRoundChange: (v: string) => void;
@@ -34,12 +35,15 @@ export type TournamentFilterBarProps = {
 };
 
 export function TournamentFilterBar(props: TournamentFilterBarProps) {
-  const formatQuery = useTournamentFormat(props.season || null, props.tournament || null);
+  const formatQuery = useTournamentFormat(
+    props.showEventDetail ? props.season || null : null,
+    props.showEventDetail ? props.tournament || null : null,
+  );
   const [formatOpen, setFormatOpen] = useState(false);
 
   const formatTrigger = (
     <FormatInfoIconButton
-      disabled={!props.tournament || formatQuery.isFetching}
+      disabled={!props.showEventDetail || props.tournament === "" || formatQuery.isFetching}
       ariaLabel={props.t("ui.tournament.format_info_aria", "Turnierformat anzeigen")}
       onClick={() => setFormatOpen(true)}
     />
@@ -66,8 +70,7 @@ type FormatTriggerProps = {
 function FilterRailDesktop(props: TournamentFilterBarProps & FormatTriggerProps) {
   const { t } = props;
   const playerEntries = usePlayerEntries(props.players);
-  const playerSearchDisabled =
-    props.playersLoading || !props.season || !props.tournament;
+  const playerSearchDisabled = props.playersLoading;
 
   return (
     <div className="sticky top-0 z-10 -mx-4 hidden border-b border-border bg-background/85 px-4 py-3 backdrop-blur lg:-mx-8 lg:block lg:px-8">
@@ -75,9 +78,9 @@ function FilterRailDesktop(props: TournamentFilterBarProps & FormatTriggerProps)
         <SeasonTournamentFields
           {...props}
           selectClassName="h-9 min-w-[160px] text-small"
-          tournamentInfoExtra={props.formatTrigger}
+          tournamentInfoExtra={props.showEventDetail ? props.formatTrigger : null}
         />
-        {!props.playerMode && (
+        {props.showEventDetail && !props.playerMode && (
           <FilterField label={t("ui.tournament.round", "Runde")}>
             <SelectControl
               value={props.round}
@@ -123,14 +126,15 @@ function FilterBarMobile(props: TournamentFilterBarProps & FormatTriggerProps) {
   const { t } = props;
   const { openMobileNav } = useMobileNav();
   const [sheetOpen, setSheetOpen] = useState(false);
-  const hasTournament = !!props.tournament;
+  const hasTournament = props.showEventDetail;
   const hasDrillDown = props.playerMode
     ? !!props.player
-    : !!(props.round || props.player);
+    : props.showEventDetail
+      ? !!(props.round || props.player)
+      : !!props.player;
 
   const playerEntries = usePlayerEntries(props.players);
-  const playerSearchDisabled =
-    props.playersLoading || !props.season || !props.tournament;
+  const playerSearchDisabled = props.playersLoading;
   const summary = buildDrillDownSummary(props, t);
 
   const moreFiltersButton = (
@@ -173,7 +177,7 @@ function FilterBarMobile(props: TournamentFilterBarProps & FormatTriggerProps) {
         </div>
         <div className="ml-auto flex shrink-0 items-center gap-1.5">
           <CompactSeasonTournamentFields {...props} formatTrigger={props.formatTrigger} />
-          {hasTournament && moreFiltersButton}
+          {moreFiltersButton}
         </div>
       </div>
 
@@ -182,13 +186,29 @@ function FilterBarMobile(props: TournamentFilterBarProps & FormatTriggerProps) {
           <SeasonTournamentFields
             {...props}
             selectClassName="h-11 w-full min-w-0 text-[15px]"
-            tournamentInfoExtra={props.formatTrigger}
+            tournamentInfoExtra={props.showEventDetail ? props.formatTrigger : null}
           />
+        </div>
+
+        <div className="mt-3">
+          <FilterField label={t("ui.tournament.player", "Spieler")}>
+            <div className="w-full min-w-0 [&_input]:h-11 [&_input]:text-[15px]">
+              <PlayerSearch
+                value={props.player}
+                players={playerEntries}
+                isLoading={playerSearchDisabled}
+                placeholder={t("ui.tournament.player_search_placeholder", "Spieler suchen…")}
+                ariaLabel={t("ui.tournament.player", "Spieler")}
+                clearAriaLabel={t("ui.tournament.clear_player", "Spieler-Auswahl löschen")}
+                onSelect={(entry) => props.onPlayerChange(entry?.name ?? "")}
+              />
+            </div>
+          </FilterField>
         </div>
 
         {hasTournament && (
           <div className="mt-3 space-y-2">
-            {hasDrillDown && (
+            {hasDrillDown && props.round && (
               <p className="text-small text-muted leading-snug">{summary}</p>
             )}
             <button
@@ -196,7 +216,7 @@ function FilterBarMobile(props: TournamentFilterBarProps & FormatTriggerProps) {
               onClick={() => setSheetOpen(true)}
               className="flex h-11 w-full items-center justify-between gap-2 rounded-sm border border-border bg-surface px-3 text-[15px] font-medium text-foreground hover:border-border-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
             >
-              <span>{t("more_filters", "Auswahl anpassen")}</span>
+              <span>{t("ui.tournament.round", "Runde")}</span>
               <span className="flex items-center gap-2 text-muted">
                 {hasDrillDown && (
                   <span className="rounded-xs bg-accent-tint px-1.5 py-0.5 text-label uppercase text-accent">
@@ -213,11 +233,15 @@ function FilterBarMobile(props: TournamentFilterBarProps & FormatTriggerProps) {
       <BottomSheet
         open={sheetOpen}
         onClose={() => setSheetOpen(false)}
-        title={t("more_filters", "Auswahl anpassen")}
+        title={
+          props.showEventDetail
+            ? t("ui.tournament.round", "Runde")
+            : t("more_filters", "Auswahl anpassen")
+        }
         closeLabel={t("done", "Fertig")}
       >
         <div className="space-y-4">
-          {!props.playerMode && (
+          {props.showEventDetail && !props.playerMode ? (
             <FilterField label={t("ui.tournament.round", "Runde")}>
               <SelectControl
                 value={props.round}
@@ -242,21 +266,21 @@ function FilterBarMobile(props: TournamentFilterBarProps & FormatTriggerProps) {
                 ))}
               </SelectControl>
             </FilterField>
+          ) : (
+            <FilterField label={t("ui.tournament.player", "Spieler")}>
+              <div className="w-full min-w-0 [&_input]:h-11 [&_input]:text-[15px]">
+                <PlayerSearch
+                  value={props.player}
+                  players={playerEntries}
+                  isLoading={playerSearchDisabled}
+                  placeholder={t("ui.tournament.player_search_placeholder", "Spieler suchen…")}
+                  ariaLabel={t("ui.tournament.player", "Spieler")}
+                  clearAriaLabel={t("ui.tournament.clear_player", "Spieler-Auswahl löschen")}
+                  onSelect={(entry) => props.onPlayerChange(entry?.name ?? "")}
+                />
+              </div>
+            </FilterField>
           )}
-
-          <FilterField label={t("ui.tournament.player", "Spieler")}>
-            <div className="w-full min-w-0 [&_input]:h-11 [&_input]:text-[15px]">
-              <PlayerSearch
-                value={props.player}
-                players={playerEntries}
-                isLoading={playerSearchDisabled}
-                placeholder={t("ui.tournament.player_search_placeholder", "Spieler suchen…")}
-                ariaLabel={t("ui.tournament.player", "Spieler")}
-                clearAriaLabel={t("ui.tournament.clear_player", "Spieler-Auswahl löschen")}
-                onSelect={(entry) => props.onPlayerChange(entry?.name ?? "")}
-              />
-            </div>
-          </FilterField>
         </div>
       </BottomSheet>
     </>
@@ -274,6 +298,7 @@ function CompactSeasonTournamentFields(
     | "tournamentsLoading"
     | "onSeasonChange"
     | "onTournamentChange"
+    | "showEventDetail"
     | "t"
   > & { formatTrigger?: React.ReactNode },
 ) {
@@ -310,7 +335,7 @@ function CompactSeasonTournamentFields(
           </option>
         ))}
       </SelectControl>
-      {props.formatTrigger ? (
+          {props.showEventDetail && props.formatTrigger ? (
         <span className="flex shrink-0 items-center">{props.formatTrigger}</span>
       ) : null}
     </>
@@ -704,6 +729,23 @@ function TournamentFormatModal({
                       {t("ui.tournament.format_cut_pair", "Cut-Platzierung: Top {rank} (Runde {r})")
                         .replace("{rank}", String(d.qualifying_cut_pair.rank))
                         .replace("{r}", String(d.qualifying_cut_pair.round))}
+                    </li>
+                  ) : null}
+                  {d.qualifying_stages?.length ? (
+                    <li className="mt-2">
+                      <span className="text-muted">
+                        {t("ui.tournament.format_stage_cuts", "Stufen-Cuts")}:
+                      </span>
+                      <ul className="mt-1 list-inside list-disc pl-1">
+                        {d.qualifying_stages.map((stage) => (
+                          <li key={stage.round_number}>
+                            {stage.name}
+                            {stage.cut && stage.cut !== "n/a"
+                              ? ` — Top ${stage.cut}`
+                              : ""}
+                          </li>
+                        ))}
+                      </ul>
                     </li>
                   ) : null}
                 </ul>

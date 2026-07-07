@@ -112,6 +112,46 @@ def pipeline_league_standings_validation():
         return jsonify({'error': str(e)}), 500
 
 
+@bp.route('/pipeline/club_name_validation')
+def pipeline_club_name_validation():
+    """Unresolved tournament club labels vs league registry (mapping UI)."""
+    try:
+        from app.services.club_name_validation_service import get_club_name_validation
+
+        return jsonify(get_club_name_validation())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@bp.route('/pipeline/club_name_validation/save', methods=['POST'])
+def pipeline_club_name_validation_save():
+    """Save operator-reviewed club label mappings to work-dir CSV."""
+    try:
+        from app.services.club_name_validation_service import save_club_name_validation_mappings
+
+        payload = request.get_json(silent=True) or {}
+        mappings = payload.get("mappings")
+        if not isinstance(mappings, list):
+            return jsonify({'error': 'Expected JSON body with "mappings" array'}), 400
+        result = save_club_name_validation_mappings(mappings)
+        return jsonify(result)
+    except ValueError as exc:
+        return jsonify({'error': str(exc)}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@bp.route('/pipeline/tournament_coverage')
+def pipeline_tournament_coverage():
+    """Season × tournament coverage matrix (scrape, GF, publish, validation)."""
+    try:
+        from app.services.tournament_coverage_service import get_tournament_coverage
+
+        return jsonify(get_tournament_coverage())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 @bp.route('/get-data-sources-info')
 def get_data_sources_info():
     try:

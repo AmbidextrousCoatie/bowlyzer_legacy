@@ -137,12 +137,42 @@ def merge_tournament_sources(
     out_path: Path,
     *,
     write_csv: bool = False,
+    normalize: bool = True,
 ) -> Dict[str, Any]:
     """Concatenate tournament postprocessed CSVs (union of columns)."""
     if not input_paths:
         raise FileNotFoundError("No tournament input files found.")
 
-    frames = [pd.read_csv(p, **CSV_READ_KW) for p in input_paths]
+    frames = []
+    norm_stats_total: Dict[str, Any] = {
+        "club_registry_rows_changed": 0,
+        "club_registry_unresolved": 0,
+        "player_id_rows_changed": 0,
+        "registry_rows_changed": 0,
+    }
+    for path in input_paths:
+        frame = pd.read_csv(path, **CSV_READ_KW)
+        if normalize and not frame.empty:
+            from data_access.tournament_data_normalization import (
+                format_tournament_normalization_summary,
+                normalize_tournament_dataframe,
+            )
+
+            frame, batch_stats = normalize_tournament_dataframe(frame)
+            norm_stats_total["club_registry_rows_changed"] += int(
+                batch_stats.get("club_registry_rows_changed") or 0
+            )
+            norm_stats_total["club_registry_unresolved"] += int(
+                batch_stats.get("club_registry_unresolved") or 0
+            )
+            norm_stats_total["player_id_rows_changed"] += int(
+                batch_stats.get("player_id_rows_changed") or 0
+            )
+            norm_stats_total["registry_rows_changed"] += int(
+                batch_stats.get("registry_rows_changed") or 0
+            )
+        frames.append(frame)
+
     combined = pd.concat(frames, ignore_index=True, sort=False)
     if combined.columns.duplicated().any():
         combined = combined.loc[:, ~combined.columns.duplicated()].copy()
@@ -153,13 +183,19 @@ def merge_tournament_sources(
     combined = apply_tournament_competition_schema_v2(combined)
     published = publish_dataframe(combined, out_path, write_csv=write_csv, sep=CSV_SEP)
 
-    return {
+    result = {
         "inputs": [str(p) for p in input_paths],
         "rows": int(len(combined)),
         "output": str(out_path.resolve()),
         "parquet_output": str(published["parquet"]),
         "csv_output": str(published["csv"]) if published.get("csv") else "",
     }
+    if normalize:
+        from data_access.tournament_data_normalization import format_tournament_normalization_summary
+
+        result["normalization"] = norm_stats_total
+        print(format_tournament_normalization_summary(norm_stats_total))
+    return result
 
 
 def build_player_hybrid(
@@ -341,6 +377,11 @@ def main() -> int:
         help="Skip league standings validation against Excel reference tables.",
     )
     parser.add_argument(
+        "--skip-tournament-data-quality-audit",
+        action="store_true",
+        help="Skip per-tournament player/club data quality report (tournament_data_quality.csv).",
+    )
+    parser.add_argument(
         "--league-standings-limit",
         type=int,
         default=None,
@@ -374,6 +415,11 @@ def main() -> int:
             "Do not build players_registry before league/tournament jobs "
             "(default: import Aktive Mitglieder + configs first)."
         ),
+    )
+    parser.add_argument(
+        "--skip-clubs-registry",
+        action="store_true",
+        help="Do not rebuild clubs_registry from league merge output.",
     )
     parser.add_argument(
         "--aktive-min-season",
@@ -514,6 +560,16 @@ def main() -> int:
         jobs_run.append("league")
         player_id_audit_paths.append(league_out)
 
+        if not getattr(args, "skip_clubs_registry", False):
+            from data_access.clubs_registry import build_and_publish_clubs_registry, format_registry_summary
+
+            print("==> building clubs registry from league merge …")
+            summary["clubs_registry"] = build_and_publish_clubs_registry(
+                None,
+                write_csv=args.write_csv,
+            )
+            print(format_registry_summary(summary["clubs_registry"]))
+
     if run_tournament:
         if not tournament_inputs:
             print("Error: no tournament input files found.", file=sys.stderr)
@@ -525,6 +581,34 @@ def main() -> int:
             write_csv=args.write_csv,
         )
         jobs_run.append("tournament")
+        player_id_audit_paths.append(tournaments_out)
+
+    if not args.skip_tournament_data_quality_audit and run_tournament:
+        from data_access.parquet_sidecar import data_file_exists, resolve_load_path
+        from data_access.tournament_data_quality import (
+            TOURNAMENT_DATA_QUALITY_CSV,
+            audit_tournament_data_quality,
+            comparison_summary_for_manifest,
+            format_quality_report,
+            write_quality_report,
+        )
+
+        if not data_file_exists(tournaments_out):
+            print("Tournament data quality audit: skipped (tournament output missing)")
+        else:
+            load_path = resolve_load_path(tournaments_out)
+            if load_path.suffix.lower() == ".parquet":
+                tournament_df = pd.read_parquet(load_path)
+            else:
+                tournament_df = pd.read_csv(load_path, **CSV_READ_KW)
+            report_path = get_work_data_dir() / TOURNAMENT_DATA_QUALITY_CSV
+            quality_rows = audit_tournament_data_quality(tournament_df)
+            write_quality_report(quality_rows, report_path)
+            summary["tournament_data_quality_audit"] = {
+                "report": str(report_path.resolve()),
+                **comparison_summary_for_manifest(quality_rows),
+            }
+            print(format_quality_report(quality_rows, data_path=load_path))
 
     if run_player_hybrid:
         from data_access.parquet_sidecar import data_file_exists

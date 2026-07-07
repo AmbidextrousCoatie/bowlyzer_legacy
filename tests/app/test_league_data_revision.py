@@ -85,6 +85,17 @@ def test_effective_data_revision_uses_season_slice(monkeypatch):
     assert effective_data_revision("db_x", {"season": "08-09"}) == rev_0809
 
 
+def test_effective_data_revision_season_all_uses_global_revision(monkeypatch):
+    index = build_revision_index_from_dataframe(_sample_df(), source_fp="test")
+
+    monkeypatch.setattr(
+        "app.cache.league_data_revision.ensure_revision_index",
+        lambda _database_id, *, force=False: index,
+    )
+
+    assert effective_data_revision("db_x", {"season": "all"}) == index.global_revision
+
+
 def test_revision_index_invalid_when_published_file_fingerprint_differs():
     index = build_revision_index_from_dataframe(_sample_df(), source_fp="")
     index.source_fingerprint = _index_content_fingerprint(index)

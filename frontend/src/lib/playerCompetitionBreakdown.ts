@@ -7,6 +7,7 @@ import {
   getLeagueGenderScope,
   getLeagueLevel,
 } from "./leagueLevel";
+import { normalizeTournamentGroupName, tournamentClusterKey } from "./tournamentGroupName";
 
 export type CompetitionBreakdownComponent = {
   name: string;
@@ -106,26 +107,52 @@ function clusterLeagueEntries(entries: RawEntry[]): CompetitionBreakdownEntry[] 
   }));
 }
 
-function tournamentEntry(entry: RawEntry): CompetitionBreakdownEntry {
-  const average = entry.games > 0 ? entry.pins / entry.games : 0;
-  return {
-    id: entry.id,
-    name: entry.name,
-    longName: entry.name,
+function clusterTournamentEntries(entries: RawEntry[]): CompetitionBreakdownEntry[] {
+  const clusters = new Map<
+    string,
+    {
+      groupName: string;
+      components: CompetitionBreakdownComponent[];
+      games: number;
+      pins: number;
+    }
+  >();
+
+  for (const entry of entries) {
+    const groupName = normalizeTournamentGroupName(entry.name);
+    const clusterKey = tournamentClusterKey(entry.name);
+    const average = entry.games > 0 ? entry.pins / entry.games : 0;
+
+    const prev = clusters.get(clusterKey) ?? {
+      groupName,
+      components: [],
+      games: 0,
+      pins: 0,
+    };
+    prev.components.push({
+      name: entry.name,
+      games: entry.games,
+      pins: entry.pins,
+      average,
+    });
+    prev.games += entry.games;
+    prev.pins += entry.pins;
+    clusters.set(clusterKey, prev);
+  }
+
+  return [...clusters.entries()].map(([id, cluster]) => ({
+    id,
+    name: cluster.groupName,
+    longName: cluster.groupName,
     isTournament: true,
-    games: entry.games,
-    pins: entry.pins,
-    average,
+    games: cluster.games,
+    pins: cluster.pins,
+    average: cluster.games > 0 ? cluster.pins / cluster.games : 0,
     sharePct: 0,
-    components: [
-      {
-        name: entry.name,
-        games: entry.games,
-        pins: entry.pins,
-        average,
-      },
-    ],
-  };
+    components: cluster.components.sort(
+      (a, b) => b.games - a.games || a.name.localeCompare(b.name, "de"),
+    ),
+  }));
 }
 
 export function buildCompetitionBreakdown(
@@ -157,7 +184,10 @@ export function buildCompetitionBreakdown(
   const leagueRaw = raw.filter((entry) => !entry.isTournament);
   const tournamentRaw = raw.filter((entry) => entry.isTournament);
 
-  const merged = [...clusterLeagueEntries(leagueRaw), ...tournamentRaw.map(tournamentEntry)];
+  const merged = [
+    ...clusterLeagueEntries(leagueRaw),
+    ...clusterTournamentEntries(tournamentRaw),
+  ];
 
   const totalGames = merged.reduce((sum, entry) => sum + entry.games, 0);
   if (totalGames <= 0) return [];
@@ -262,10 +292,24 @@ export function formatBreakdownTooltipHtml(
     `${t("ui.player.competition_share", "Anteil")}: <b>${entry.sharePct.toFixed(1)}%</b>`,
   ];
 
-  if (!entry.isTournament && entry.components.length > 0) {
+  if (entry.components.length > 0) {
     lines.push("—");
+    const tournamentBase =
+      entry.isTournament && entry.components.length > 1
+        ? formatCompetition(entry.name, { isTournament: true })
+        : null;
     for (const component of entry.components) {
-      const label = formatCompetition(component.name, { isTournament: false });
+      let label: string;
+      if (entry.isTournament) {
+        const yearMatch = component.name.match(/\s+(20\d{2})\s*$/);
+        const yearSuffix = yearMatch?.[1] ? ` ${yearMatch[1]}` : "";
+        label =
+          tournamentBase && yearSuffix
+            ? `${tournamentBase}${yearSuffix}`
+            : formatCompetition(component.name, { isTournament: true });
+      } else {
+        label = formatCompetition(component.name, { isTournament: false });
+      }
       lines.push(
         `${label}: <b>${component.average.toFixed(2)}</b> (${component.games} ${t("ui.player.games", "Spiele")})`,
       );

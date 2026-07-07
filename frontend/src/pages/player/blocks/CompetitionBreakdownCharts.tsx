@@ -180,7 +180,7 @@ export function CompetitionBreakdownCharts({
         <p className="text-small text-muted mt-1">
           {t(
             "ui.player.competition_breakdown_hint",
-            "Schnitt und Spielanteil je Wettbewerb — Ligen gleicher Stufe zusammengefasst.",
+            "Schnitt und Spielanteil je Wettbewerb — Ligen gleicher Stufe und Turnier-Jahrgänge zusammengefasst.",
           )}
         </p>
       </header>

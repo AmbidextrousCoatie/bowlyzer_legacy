@@ -60,6 +60,42 @@ export type StandingsValidationRow = {
   error_categories?: string[];
 };
 
+export type TournamentQualityRow = {
+  season: string;
+  event_name: string;
+  tournament_group?: string;
+  row_count?: number;
+  player_count?: number;
+  missing_player_id?: number;
+  missing_club?: number;
+  club_unknown?: number;
+  club_resolved?: number;
+  club_names_normalized?: number;
+  player_id_remap_rows?: number;
+  registry_rows_changed?: number;
+  same_name_different_ids?: number;
+  same_id_different_names?: number;
+  status: "green" | "yellow" | "red" | string;
+  findings?: string[];
+  notes?: string;
+};
+
+export type TournamentQualityResponse = {
+  generated_at_utc: string;
+  source: "report" | "live" | "absent";
+  report_present: boolean;
+  report_mtime_utc: string | null;
+  row_count: number;
+  summary: {
+    green: number;
+    yellow: number;
+    red: number;
+    detail_rows: number;
+  };
+  rows: TournamentQualityRow[];
+  filters: { season: string | null; event: string | null };
+};
+
 export type LeagueStandingsValidationResponse = {
   generated_at_utc: string;
   source: "report" | "live" | "absent";
@@ -77,6 +113,7 @@ export type LeagueStandingsValidationResponse = {
   };
   rows: StandingsValidationRow[];
   filters: { season: string | null; league: string | null };
+  tournament_quality?: TournamentQualityResponse;
 };
 
 const STALE_MS = 10 * 60 * 1000;

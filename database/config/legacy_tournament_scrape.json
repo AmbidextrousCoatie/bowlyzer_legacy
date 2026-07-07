@@ -1,0 +1,305 @@
+{
+
+  "schema_version": 1,
+
+  "description": "Legacy BSKV Meisterschaften PDF discovery (sektion-bowling.bowling-bayern.de)",
+
+  "global_exclude_href_patterns": [
+
+    "(?i)rlturnier/",
+
+    "(?i)dm_jugend",
+
+    "(?i)dm_junioren",
+
+    "(?i)dm_aktive/",
+
+    "(?i)dm_laender",
+
+    "(?i)dm_senioren/",
+
+    "(?i)/jug(_|end)",
+
+    "(?i)/jun(_|end)",
+
+    "(?i)_aus\\.pdf$",
+
+    "(?i)_start\\.pdf$",
+
+    "(?i)_bericht\\.pdf$",
+
+    "(?i)_oelbild",
+
+    "(?i)_durch",
+
+    "(?i)_zeit",
+
+    "(?i)_teiln",
+
+    "(?i)_zut",
+
+    "(?i)_zusch",
+
+    "(?i)_quali",
+
+    "(?i)qualinord",
+
+    "(?i)_vr\\.pdf$",
+
+    "(?i)jug[^/]*_fi\\.pdf$"
+
+  ],
+
+  "categories": [
+
+    {
+
+      "id": "suedbayerische-herren",
+
+      "label": "Südbayerische Meisterschaft Herren/Männer",
+
+      "multi_file": false,
+
+      "filename_patterns": [
+
+        "(?i)bm20\\d{2}_(?:akt_)?sb_(?:he|h)_erg\\.pdf$",
+
+        "(?i)bm20\\d{2}_sb_herren_erg\\.pdf$",
+
+        "(?i)bm20\\d{2}_sbm?_h(?:e)?_erg\\.pdf$",
+
+        "(?i)bm/bm_sb_he_erg\\.pdf$"
+
+      ]
+
+    },
+
+    {
+
+      "id": "nordbayerische-herren",
+
+      "label": "Nordbayerische Meisterschaft Herren/Männer",
+
+      "multi_file": false,
+
+      "filename_patterns": [
+
+        "(?i)bm20\\d{2}_(?:akt_)?nb_(?:he|h)_erg\\.pdf$",
+
+        "(?i)bm20\\d{2}_nb_herren_erg\\.pdf$",
+
+        "(?i)bm20\\d{2}_nbm?_h(?:e)?_erg\\.pdf$",
+
+        "(?i)bm/bm_nb_he_erg\\.pdf$"
+
+      ]
+
+    },
+
+    {
+
+      "id": "bayerische-einzel-herren",
+
+      "label": "Bayerische Meisterschaft Einzel Herren/Männer",
+
+      "multi_file": false,
+
+      "filename_patterns": [
+
+        "(?i)bm20\\d{2}_(?:akt_)?einz_he_erg\\.pdf$",
+
+        "(?i)bm20\\d{2}_akt_einz_he_erg\\.pdf$",
+
+        "(?i)aktive_einzel/bm20\\d{2}_akt_einz_he_erg\\.pdf$",
+
+        "(?i)bm20\\d{2}_einzel_erg_he\\.pdf$",
+
+        "(?i)bm20\\d{2}_einz_erg_he\\.pdf$",
+
+        "(?i)bm/bm_einz_h_erg(?:_fi)?\\.pdf$"
+
+      ]
+
+    },
+
+    {
+
+      "id": "bayerische-einzel-frauen",
+
+      "label": "Bayerische Meisterschaft Einzel Frauen/Damen",
+
+      "multi_file": false,
+
+      "filename_patterns": [
+
+        "(?i)bm20\\d{2}_(?:akt_)?einz_(?:da|f)_erg\\.pdf$",
+
+        "(?i)bm20\\d{2}_akt_einz_da_erg\\.pdf$",
+
+        "(?i)aktive_einzel/bm20\\d{2}_akt_einz_da_erg\\.pdf$",
+
+        "(?i)bm20\\d{2}_sb_da_erg\\.pdf$",
+
+        "(?i)bm20\\d{2}_einzel_erg_da\\.pdf$",
+
+        "(?i)bm20\\d{2}_einz_erg_da\\.pdf$",
+
+        "(?i)bm/bm_einz_d_erg(?:_fi)?\\.pdf$"
+
+      ]
+
+    },
+
+    {
+
+      "id": "bayerisches-doppel-herren",
+
+      "label": "Bayerische Meisterschaft Doppel Herren/Männer",
+
+      "multi_file": false,
+
+      "filename_patterns": [
+
+        "(?i)bm20\\d{2}_(?:akt_)?dopp_he_erg\\.pdf$",
+
+        "(?i)bm20\\d{2}_dopp_he_erg\\.pdf$",
+
+        "(?i)aktive_doppel/doppel_m_erg\\.pdf$"
+
+      ]
+
+    },
+
+    {
+
+      "id": "bayerisches-doppel-frauen",
+
+      "label": "Bayerische Meisterschaft Doppel Frauen/Damen",
+
+      "multi_file": false,
+
+      "filename_patterns": [
+
+        "(?i)bm20\\d{2}_(?:akt_)?dopp_da_erg\\.pdf$",
+
+        "(?i)bm20\\d{2}_dopp_da_erg\\.pdf$",
+
+        "(?i)aktive_doppel/doppel_f_erg\\.pdf$"
+
+      ]
+
+    },
+
+    {
+
+      "id": "bayerische-mixed",
+
+      "label": "Bayerische Meisterschaft Mixed",
+
+      "multi_file": false,
+
+      "filename_patterns": [
+
+        "(?i)bm20\\d{2}_(?:akt_)?mixed_erg\\.pdf$",
+
+        "(?i)bm20\\d{2}_(?:akt_)?mix_erg\\.pdf$",
+
+        "(?i)aktive_mixed/.*mixed.*\\.pdf$"
+
+      ]
+
+    },
+
+    {
+
+      "id": "bayerische-senioren",
+
+      "label": "Bayerische Meisterschaft Senioren",
+
+      "multi_file": true,
+
+      "filename_patterns": [
+
+        "(?i)bm20\\d{2}_sen_einz_erg_(?:sen|s|si)_[a-z0-9]+\\.pdf$",
+
+        "(?i)bm20\\d{2}_sen_einz_erg_sen[a-z]?_[a-z]\\.pdf$",
+
+        "(?i)bm20\\d{2}_sen_einz_a_h_erg\\.pdf$",
+
+        "(?i)bm20\\d{2}_sen_einz_bcv_h_erg\\.pdf$",
+
+        "(?i)bm20\\d{2}_sen_einz_erg_(?:he|da)_abc\\.pdf$",
+
+        "(?i)senioren_versehrte_einzel/erg-sen[a-z-]*\\.pdf$",
+
+        "(?i)bm_senioren/bm_sen_einz_erg_s[ab]\\.pdf$",
+
+        "(?i)bm_senioren/bm_sen_einz_erg_si[ab]\\.pdf$"
+
+      ],
+
+      "exclude_href_patterns": [
+
+        "(?i)erg-vers",
+
+        "(?i)erg_v[_\\d]",
+
+        "(?i)_erg_v[dhm]",
+
+        "(?i)_erg_vh",
+
+        "(?i)_erg_vers"
+
+      ]
+
+    },
+
+    {
+
+      "id": "bayerische-versehrte",
+
+      "label": "Bayerische Meisterschaft Versehrte",
+
+      "multi_file": true,
+
+      "filename_patterns": [
+
+        "(?i)bm20\\d{2}_sen_einz_erg_v[_a-z0-9]+\\.pdf$",
+
+        "(?i)bm20\\d{2}_sen_einz_bcv_[hd]_erg\\.pdf$",
+
+        "(?i)senioren_versehrte_einzel/erg-vers[a-z0-9-]*\\.pdf$",
+
+        "(?i)bm_senioren/bm_sen_einz_erg_v[^/]*\\.pdf$"
+
+      ]
+
+    },
+
+    {
+
+      "id": "bayerische-senioren-trio",
+
+      "label": "Bayerische Meisterschaft Senioren Trio",
+
+      "multi_file": true,
+
+      "filename_patterns": [
+
+        "(?i)bm20\\d{2}_sen_trio_erg(?:_[a-z0-9_]+)?\\.pdf$",
+
+        "(?i)senioren_trio/sentrio[a-z]+\\.pdf$",
+
+        "(?i)senioren_trio/erg-[a-z0-9_-]+\\.pdf$",
+
+        "(?i)bm_senioren/bm_sen_trio_erg_[a-z]+\\.pdf$"
+
+      ]
+
+    }
+
+  ]
+
+}
+
+

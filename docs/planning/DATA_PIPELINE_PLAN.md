@@ -783,3 +783,4 @@ uv run python scripts/export_gf_tables.py
 | App sources | `app/config/database_config.py` |
 | Diagnose UI | `frontend/src/pages/diagnosis/` |
 | Pipeline status (new) | `app/services/pipeline_status_service.py`, `GET /pipeline/status` |
+| Backend rewrite (deferred) | [`BACKEND_REWRITE_RUST.md`](BACKEND_REWRITE_RUST.md) |

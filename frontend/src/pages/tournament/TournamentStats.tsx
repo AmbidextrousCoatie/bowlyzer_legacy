@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useMobileNav } from "../../context/MobileNavContext";
-import { pickLatestSeason } from "../../hooks/useLeague";
 import {
   usePlayerSectionForTournament,
+  usePlayerTournamentResults,
   useTournamentNames,
   useTournamentPlayers,
+  useTournamentPodiums,
   useTournamentRounds,
   useTournamentSeasons,
   useTournamentSection,
@@ -20,6 +21,8 @@ import { PlayerSection } from "./blocks/PlayerSection";
 import { RoundResults } from "./blocks/RoundResults";
 import { SummaryCards } from "./blocks/SummaryCards";
 import { TournamentFilterBar } from "./TournamentFilterBar";
+import { TournamentPlayerOverview } from "./blocks/TournamentPlayerOverview";
+import { TournamentPodiumOverview } from "./blocks/TournamentPodiumOverview";
 
 export function TournamentStats() {
   const { t } = useTranslations();
@@ -37,10 +40,23 @@ export function TournamentStats() {
   const round = searchParams.get("round") ?? "";
   const player = searchParams.get("player") ?? "";
 
-  const seasonsQuery = useTournamentSeasons();
+  const hasSeason = !!season;
+  const hasTournament = !!tournament;
+  const showEventDetail = hasSeason && hasTournament;
+  const showPlayerDetail = showEventDetail && !!player;
+  const showPlayerOverview = !!player && !showEventDetail;
+  const showPodiumOverview = !player && !showEventDetail;
+
+  const seasonsQuery = useTournamentSeasons(tournament || undefined);
   const tournamentsQuery = useTournamentNames(season || null);
   const roundsQuery = useTournamentRounds(season || null, tournament || null);
   const playersQuery = useTournamentPlayers(season || null, tournament || null, round || null);
+  const podiumsQuery = useTournamentPodiums(season || null, tournament || null);
+  const playerResultsQuery = usePlayerTournamentResults(
+    player || null,
+    season || null,
+    tournament || null,
+  );
 
   const roster = playersQuery.data ?? [];
   const resolvedPlayer = useMemo(() => {
@@ -49,55 +65,19 @@ export function TournamentStats() {
     return resolveTournamentPlayerName(player, roster) ?? player;
   }, [player, playersQuery.isSuccess, roster]);
 
-  const sectionQuery = useTournamentSection(season || null, tournament || null, round || null);
+  const sectionQuery = useTournamentSection(
+    showEventDetail && !showPlayerDetail ? season : null,
+    showEventDetail && !showPlayerDetail ? tournament : null,
+    round || null,
+  );
   const playerSectionQuery = usePlayerSectionForTournament(
-    season || null,
-    tournament || null,
-    resolvedPlayer || null,
+    showPlayerDetail ? season : null,
+    showPlayerDetail ? tournament : null,
+    showPlayerDetail ? resolvedPlayer || null : null,
   );
 
-  // Backfill defaults: if season missing or invalid, pick latest available season.
   useEffect(() => {
-    if (!seasonsQuery.isSuccess) return;
-    const list = seasonsQuery.data ?? [];
-    if (list.length === 0) return;
-    const latest = pickLatestSeason(list);
-    if (!latest) return;
-    if (season && list.includes(season)) return;
-    const next = new URLSearchParams(searchParams);
-    next.set("season", seasonForUrlQuery(latest));
-    if (season !== latest) {
-      next.delete("tournament");
-      next.delete("round");
-      next.delete("player");
-    }
-    setSearchParams(next, { replace: true });
-  }, [seasonsQuery.isSuccess, seasonsQuery.data, season, tournament, searchParams, setSearchParams]);
-
-  useEffect(() => {
-    if (!tournamentsQuery.isSuccess) return;
-    const list = tournamentsQuery.data ?? [];
-    if (!tournament && list.length > 0) {
-      const next = new URLSearchParams(searchParams);
-      next.set("tournament", list[0]);
-      setSearchParams(next, { replace: true });
-    } else if (tournament && list.length > 0 && !list.includes(tournament)) {
-      const next = new URLSearchParams(searchParams);
-      next.set("tournament", list[0]);
-      next.delete("round");
-      setSearchParams(next, { replace: true });
-    }
-  }, [
-    tournamentsQuery.isSuccess,
-    tournamentsQuery.data,
-    tournament,
-    searchParams,
-    setSearchParams,
-  ]);
-
-  // If round is set but not in the available list, drop it.
-  useEffect(() => {
-    if (!roundsQuery.isSuccess) return;
+    if (!roundsQuery.isSuccess || !showEventDetail) return;
     if (!round) return;
     const list = roundsQuery.data ?? [];
     if (!list.some((r) => String(r.round_number) === round)) {
@@ -105,18 +85,17 @@ export function TournamentStats() {
       next.delete("round");
       setSearchParams(next, { replace: true });
     }
-  }, [roundsQuery.isSuccess, roundsQuery.data, round, searchParams, setSearchParams]);
+  }, [roundsQuery.isSuccess, roundsQuery.data, round, searchParams, setSearchParams, showEventDetail]);
 
-  // Normalize deep-link player names to the roster spelling (do not strip unknown players).
   useEffect(() => {
-    if (!playersQuery.isSuccess || !player) return;
+    if (!playersQuery.isSuccess || !player || !showEventDetail) return;
     const canonical = resolveTournamentPlayerName(player, playersQuery.data ?? []);
     if (canonical && canonical !== player) {
       const next = new URLSearchParams(searchParams);
       next.set("player", canonical);
       setSearchParams(next, { replace: true });
     }
-  }, [playersQuery.isSuccess, playersQuery.data, player, searchParams, setSearchParams]);
+  }, [playersQuery.isSuccess, playersQuery.data, player, searchParams, setSearchParams, showEventDetail]);
 
   function setParam(key: string, value: string, drop: string[] = []) {
     const next = new URLSearchParams(searchParams);
@@ -147,8 +126,6 @@ export function TournamentStats() {
     return stageLabel ?? `${t("ui.tournament.round", "Runde")} ${round}`;
   }, [round, stageLabel, t]);
 
-  const playerMode = !!resolvedPlayer;
-
   const showKoBracket = useMemo(() => {
     const data = sectionQuery.data;
     if (!data?.ko_bracket?.matches?.length) return false;
@@ -175,7 +152,7 @@ export function TournamentStats() {
       </header>
 
       <TournamentFilterBar
-        pageHeading={buildTournamentPageHeading(tournament, season)}
+        pageHeading={buildTournamentPageHeading(tournament, season, resolvedPlayer)}
         season={season}
         seasons={seasonsQuery.data ?? []}
         seasonsLoading={seasonsQuery.isPending}
@@ -188,8 +165,9 @@ export function TournamentStats() {
         player={resolvedPlayer}
         players={roster}
         playersLoading={playersQuery.isPending}
-        playerMode={playerMode}
-        onSeasonChange={(v) => setParam("season", v, ["tournament", "round", "player"])}
+        playerMode={showPlayerDetail}
+        showEventDetail={showEventDetail}
+        onSeasonChange={(v) => setParam("season", v, ["round", "player"])}
         onTournamentChange={(v) => setParam("tournament", v, ["round", "player"])}
         onRoundChange={(v) => setParam("round", v)}
         onPlayerChange={(v) => setParam("player", v)}
@@ -197,7 +175,29 @@ export function TournamentStats() {
       />
 
       <div className="mt-6 space-y-12 lg:mt-10">
-        {playerMode ? (
+        {showPlayerOverview ? (
+          <>
+            {playerResultsQuery.isPending && <LoadingSection t={t} />}
+            {playerResultsQuery.isError && (
+              <ErrorSection
+                message={
+                  playerResultsQuery.error instanceof Error
+                    ? playerResultsQuery.error.message
+                    : t("error_generic", "Fehler beim Laden")
+                }
+              />
+            )}
+            {playerResultsQuery.isSuccess && (
+              <TournamentPlayerOverview
+                rows={playerResultsQuery.data ?? []}
+                player={resolvedPlayer}
+                season={season}
+                tournament={tournament}
+                t={t}
+              />
+            )}
+          </>
+        ) : showPlayerDetail ? (
           <>
             {playerSectionQuery.isPending && <LoadingSection t={t} />}
             {playerSectionQuery.isError && (
@@ -212,7 +212,7 @@ export function TournamentStats() {
             {playerSectionQuery.isSuccess && playerSectionQuery.data && (
               <PlayerSection
                 data={playerSectionQuery.data}
-                fieldProgress={sectionQuery.data?.field_progress}
+                fieldProgress={playerSectionQuery.data.field_progress}
                 heatmapEnabled={heatmapEnabled}
                 onToggleHeatmap={() => setHeatmapEnabled((v) => !v)}
                 onBack={clearPlayer}
@@ -231,6 +231,27 @@ export function TournamentStats() {
                   )}
                 </p>
               )}
+          </>
+        ) : showPodiumOverview ? (
+          <>
+            {podiumsQuery.isPending && <LoadingSection t={t} />}
+            {podiumsQuery.isError && (
+              <ErrorSection
+                message={
+                  podiumsQuery.error instanceof Error
+                    ? podiumsQuery.error.message
+                    : t("error_generic", "Fehler beim Laden")
+                }
+              />
+            )}
+            {podiumsQuery.isSuccess && (
+              <TournamentPodiumOverview
+                podiums={podiumsQuery.data?.podiums ?? []}
+                season={season}
+                tournament={tournament}
+                t={t}
+              />
+            )}
           </>
         ) : (
           <>
@@ -285,11 +306,16 @@ export function TournamentStats() {
   );
 }
 
-function buildTournamentPageHeading(tournament: string, season: string): string {
-  if (tournament && season) return `${tournament} · ${season}`;
-  if (tournament) return tournament;
-  if (season) return season;
-  return "";
+function buildTournamentPageHeading(
+  tournament: string,
+  season: string,
+  player: string,
+): string {
+  const parts: string[] = [];
+  if (player) parts.push(player);
+  if (tournament) parts.push(tournament);
+  if (season) parts.push(season);
+  return parts.join(" · ");
 }
 
 function LoadingSection({ t }: { t: (key: string, fallback?: string) => string }) {

@@ -16,6 +16,11 @@ from data_access.schema import Columns
 
 from app.cache.league_response_cache import league_cache_put, league_cache_try_get
 from app.utils.tournament_benchmark import TournamentBenchmark, tournament_benchmark_enabled
+from app.utils.tournament_stage_config import (
+    public_stage_summary,
+    stage_cut_rank_for_round,
+)
+from app.utils.tournament_utils import normalize_tournament_group_name
 
 # KO-Finale last cluster: best-of-3 pin games vs two-game scratch total (see database/data/tournament_ko_config.json).
 KO_FINALE_SERIES_BO3 = "bo3_pins"
@@ -552,7 +557,15 @@ class TournamentService:
             event_col = competition_event_column(df)
             if event_col:
                 tournament_norm = str(tournament).strip()
-                df = df[df[event_col].astype(str).str.strip().eq(tournament_norm)]
+                event_series = df[event_col].astype(str).str.strip()
+                exact_mask = event_series.eq(tournament_norm)
+                if exact_mask.any():
+                    df = df[exact_mask]
+                else:
+                    group_norm = normalize_tournament_group_name(tournament_norm)
+                    df = df[
+                        event_series.map(normalize_tournament_group_name).eq(group_norm)
+                    ]
 
         # Normalize frequently used tournament keys so downstream groupby/pivot
         # logic is stable even when source CSV has empty cells (read as NaN).
@@ -567,6 +580,31 @@ class TournamentService:
         self._tournament_df_cache[cache_key] = df
         return df
 
+    def _config_event_name(
+        self,
+        season: str,
+        tournament: str,
+        df: Optional[pd.DataFrame] = None,
+    ) -> str:
+        """Canonical event label for tournament_ko_config / stage_definitions lookups."""
+        if df is not None and not df.empty:
+            from data_access.competition_schema import competition_event_column
+
+            event_col = competition_event_column(df)
+            if event_col:
+                names = sorted(
+                    {
+                        str(x).strip()
+                        for x in df[event_col].dropna().astype(str).tolist()
+                        if str(x).strip()
+                    }
+                )
+                if len(names) == 1:
+                    return names[0]
+        from app.utils.tournament_stage_config import resolve_stage_event_name
+
+        return resolve_stage_event_name(season, tournament)
+
     def get_tournaments(self, season: Optional[str] = None) -> List[str]:
         df = self._get_tournament_df(season=season, tournament=None)
         from data_access.competition_schema import competition_event_column
@@ -574,7 +612,9 @@ class TournamentService:
         event_col = competition_event_column(df)
         if df.empty or not event_col:
             return []
-        return sorted([x for x in df[event_col].dropna().astype(str).unique().tolist() if x.strip()])
+        raw = [x for x in df[event_col].dropna().astype(str).unique().tolist() if x.strip()]
+        groups = {normalize_tournament_group_name(name) for name in raw}
+        return sorted(name for name in groups if name)
 
     def get_seasons(self, tournament: Optional[str] = None) -> List[str]:
         df = self._get_tournament_df(season=None, tournament=tournament)
@@ -690,7 +730,8 @@ class TournamentService:
         """
         df = self._get_tournament_df(season=season, tournament=tournament)
         rounds = self.get_rounds(season, tournament, df=df)
-        block = self._ko_config_entry(season, tournament)
+        config_event = self._config_event_name(season, tournament, df)
+        block = self._ko_config_entry(season, tournament, df=df)
 
         public_config: Dict[str, Any] = {}
         config_note: Optional[str] = None
@@ -747,6 +788,7 @@ class TournamentService:
             "qualifying_cut_pair": (
                 {"round": int(pair[0]), "rank": int(pair[1])} if pair else None
             ),
+            "qualifying_stages": public_stage_summary(season, config_event),
             "config": public_config,
             "config_note": config_note,
         }
@@ -2554,6 +2596,7 @@ class TournamentService:
             }
 
         all_df = df.copy()
+        config_event = self._config_event_name(season, tournament, all_df)
         all_df[Columns.score] = pd.to_numeric(all_df[Columns.score], errors="coerce").fillna(0)
         all_df[Columns.round_number] = pd.to_numeric(all_df[Columns.round_number], errors="coerce").astype("Int64")
         all_df[Columns.game_number] = pd.to_numeric(all_df[Columns.game_number], errors="coerce").astype("Int64")
@@ -2582,8 +2625,12 @@ class TournamentService:
         labels = [f"G{i}" for i in range(1, total_games + 1)] if total_games else []
 
         cut_rank = self._gesamt_leaderboard_cut_line_rank(season, tournament) or 6
-        cfg_span = self._ko_qualifying_cut_span_config(season, tournament)
-        if cfg_span:
+        cfg_span = self._ko_qualifying_cut_span_config(season, tournament, df=all_df)
+        stage_items = public_stage_summary(season, config_event)
+        has_stage_cuts = bool(stage_items)
+        if stage_items:
+            cut_rounds_sorted = [int(st["round_number"]) for st in stage_items]
+        elif cfg_span:
             cut_rounds_sorted = list(
                 range(int(cfg_span["first_round"]), int(cfg_span["through_round"]) + 1)
             )
@@ -2630,15 +2677,24 @@ class TournamentService:
                 tournament_leader_avg_series.append(None)
                 tournament_lowest_avg_series.append(None)
 
-            in_cut_span = cfg_span is None or (
-                int(cfg_span["first_round"]) <= rn <= int(cfg_span["through_round"])
-            )
+            round_stage_cut = stage_cut_rank_for_round(season, config_event, int(rn))
+            if has_stage_cuts:
+                in_cut_span = round_stage_cut is not None
+            else:
+                in_cut_span = cfg_span is None or (
+                    int(cfg_span["first_round"]) <= rn <= int(cfg_span["through_round"])
+                )
+            round_cut_rank = round_stage_cut
+            if round_cut_rank is None and cfg_span and in_cut_span:
+                round_cut_rank = int(cfg_span["rank"])
+            if round_cut_rank is None and in_cut_span:
+                round_cut_rank = cut_rank
             cut_avg_game: Optional[float] = last_cut_avg
             if in_cut_span:
                 eligible = _field_progress_eligible_at_snapshot(
                     field_players, rn, g, round_lengths, player_round_games
                 )
-                pace = _pace_cut_from_cumulative(eligible, cum_pins, cum_games, cut_rank)
+                pace = _pace_cut_from_cumulative(eligible, cum_pins, cum_games, round_cut_rank)
                 if pace is not None:
                     last_cut_avg, last_cut_pos = pace
                     cut_avg_game = last_cut_avg
@@ -2649,14 +2705,20 @@ class TournamentService:
             length = round_length_map.get(rn, 0)
             if g == length - 1:
                 cut_pos_round = self._resolved_cut_position_for_round(
-                    all_df, int(rn), season, tournament
+                    all_df, int(rn), season, tournament, config_event=config_event
                 )
-                if in_cut_span and last_cut_avg is not None:
-                    cut_lines_avg.append(last_cut_avg)
-                if cut_pos_round is not None:
-                    cut_lines_position.append(cut_pos_round)
-                elif in_cut_span and last_cut_pos is not None:
-                    cut_lines_position.append(last_cut_pos)
+                show_cut_marker = (
+                    not has_stage_cuts
+                    or round_stage_cut is not None
+                    or self._cut_line_score_for_round(all_df, int(rn)) is not None
+                )
+                if show_cut_marker:
+                    if cut_pos_round is not None:
+                        if last_cut_avg is not None:
+                            cut_lines_avg.append(last_cut_avg)
+                        cut_lines_position.append(cut_pos_round)
+                    elif not has_stage_cuts and in_cut_span and last_cut_pos is not None:
+                        cut_lines_position.append(last_cut_pos)
 
             if in_cut_span and last_cut_pos is not None:
                 cut_position_at_game.append(int(last_cut_pos))
@@ -3204,11 +3266,20 @@ class TournamentService:
     def _ko_bracket_empty_payload(self, season: str, tournament: str) -> Dict[str, Any]:
         return {**self._ko_bracket_empty_meta(), "ko_finale_series": self._ko_finale_series_mode(season, tournament)}
 
-    def _ko_config_entry(self, season: str, tournament: str) -> Dict[str, Any]:
+    def _ko_config_entry(
+        self, season: str, tournament: str, *, df: Optional[pd.DataFrame] = None
+    ) -> Dict[str, Any]:
         raw = self._load_tournament_ko_config()
-        key = f"{str(season).strip()}||{str(tournament).strip()}"
+        event = self._config_event_name(season, tournament, df)
+        key = f"{str(season).strip()}||{event}"
         block = raw.get(key)
-        return block if isinstance(block, dict) else {}
+        if isinstance(block, dict):
+            return block
+        tournament_norm = str(tournament).strip()
+        if event != tournament_norm:
+            block = raw.get(f"{str(season).strip()}||{tournament_norm}")
+            return block if isinstance(block, dict) else {}
+        return {}
 
     @staticmethod
     def _event_name_suggests_nbm_sbm_lane_pairs(tournament: str) -> bool:
@@ -3524,11 +3595,13 @@ class TournamentService:
                 return cleaned
         return self._default_player_card_layout(season, tournament)
 
-    def _ko_qualifying_cut_pair(self, season: str, tournament: str) -> Optional[tuple[int, int]]:
+    def _ko_qualifying_cut_pair(
+        self, season: str, tournament: str, *, df: Optional[pd.DataFrame] = None
+    ) -> Optional[tuple[int, int]]:
         """
         Optional (round_number, cut_rank) from tournament_ko_config.json when the export has no Cut Line column.
         """
-        block = self._ko_config_entry(season, tournament)
+        block = self._ko_config_entry(season, tournament, df=df)
         rank = self._ko_optional_int(block.get("ko_qualifying_cut_rank"))
         if rank is None or rank < 1:
             return None
@@ -3537,12 +3610,14 @@ class TournamentService:
             rnd = 1
         return (rnd, rank)
 
-    def _ko_qualifying_cut_span_config(self, season: str, tournament: str) -> Optional[Dict[str, int]]:
+    def _ko_qualifying_cut_span_config(
+        self, season: str, tournament: str, *, df: Optional[pd.DataFrame] = None
+    ) -> Optional[Dict[str, int]]:
         """
         Qualifying cut rank applied from first_round through through_round (inclusive) for charts and shading
         when the CSV has no Cut Line. Optional ko_qualifying_cut_through_round (default: first round only).
         """
-        block = self._ko_config_entry(season, tournament)
+        block = self._ko_config_entry(season, tournament, df=df)
         rank = self._ko_optional_int(block.get("ko_qualifying_cut_rank"))
         if rank is None or rank < 1:
             return None
@@ -3721,9 +3796,16 @@ class TournamentService:
         }
 
     def _resolved_cut_position_for_round(
-        self, source_df: pd.DataFrame, target_round: int, season: str, tournament: str
+        self,
+        source_df: pd.DataFrame,
+        target_round: int,
+        season: str,
+        tournament: str,
+        *,
+        config_event: Optional[str] = None,
     ) -> Optional[int]:
-        """Prefer CSV-derived cut rank; fall back to ko_qualifying_cut_* config for the configured round."""
+        """Prefer CSV-derived cut rank; fall back to stage config or ko_qualifying_cut_*."""
+        event = config_event or self._config_event_name(season, tournament, source_df)
 
         def _from_csv() -> Optional[int]:
             cut_score = self._cut_line_score_for_round(source_df, int(target_round))
@@ -3739,10 +3821,26 @@ class TournamentService:
         base = _from_csv()
         if base is not None:
             return base
-        span = self._ko_qualifying_cut_span_config(season, tournament)
+        stage_cut = stage_cut_rank_for_round(season, event, int(target_round))
+        if stage_cut is not None:
+            return int(stage_cut)
+        span = self._ko_qualifying_cut_span_config(season, tournament, df=source_df)
         if span is not None and int(span["first_round"]) <= int(target_round) <= int(span["through_round"]):
             return int(span["rank"])
-        return None
+        participant_cut = self._participant_count_for_round(source_df, int(target_round))
+        return participant_cut if participant_cut > 0 else None
+
+    @staticmethod
+    def _participant_count_for_round(source_df: pd.DataFrame, target_round: int) -> int:
+        """Players active in ``target_round`` — default cut when no cut line is configured."""
+        if source_df.empty or Columns.round_number not in source_df.columns:
+            return 0
+        round_df = source_df[
+            pd.to_numeric(source_df[Columns.round_number], errors="coerce").eq(float(target_round))
+        ]
+        if round_df.empty or Columns.player_name not in round_df.columns:
+            return 0
+        return int(round_df[Columns.player_name].astype(str).str.strip().nunique())
 
     def _ko_cut_line_card_from_config_rank(
         self, df: pd.DataFrame, season: str, tournament: str
@@ -4553,6 +4651,7 @@ class TournamentService:
         else:
             ko_for_player = {**self._ko_bracket_with_highlights(ko_bracket, player), "focus_player": str(player).strip()}
         player_card_layout = self._resolve_player_card_layout(season, tournament)
+        field_progress = self.get_field_progress(season, tournament, df=df)
         return {
             "player": player,
             "player_club": player_club,
@@ -4560,6 +4659,7 @@ class TournamentService:
             "round_table": self.get_player_round_table(season, tournament, player, df=df).to_dict(),
             "best_efforts": self.get_player_best_efforts(season, tournament, player, df=df),
             "progress_series": progress_out,
+            "field_progress": self._field_progress_public(field_progress),
             "summary": {
                 "average": avg_value,
                 "best_position": best_position,
@@ -4568,3 +4668,233 @@ class TournamentService:
             },
             "ko_bracket": ko_for_player,
         }
+
+    def list_tournament_events(
+        self,
+        season: Optional[str] = None,
+        tournament: Optional[str] = None,
+    ) -> List[Dict[str, str]]:
+        df = self._get_tournament_df(season=season, tournament=tournament)
+        from data_access.competition_schema import competition_event_column
+
+        event_col = competition_event_column(df)
+        if df.empty or not event_col or Columns.season not in df.columns:
+            return []
+        pairs = df[[Columns.season, event_col]].dropna().drop_duplicates()
+        out: List[Dict[str, str]] = []
+        for _, row in pairs.iterrows():
+            season_label = str(row[Columns.season]).strip()
+            tournament_label = str(row[event_col]).strip()
+            if season_label and tournament_label:
+                out.append(
+                    {
+                        "season": season_label,
+                        "tournament": tournament_label,
+                        "tournament_group": normalize_tournament_group_name(tournament_label),
+                    }
+                )
+        out.sort(key=lambda item: (item["season"], item["tournament"]), reverse=True)
+        return out
+
+    @staticmethod
+    def _table_column_fields(table: TableData) -> List[str]:
+        fields: List[str] = []
+        for group in table.columns:
+            for col in group.columns:
+                fields.append(str(col.field))
+        return fields
+
+    def _leaderboard_top_finishers(
+        self,
+        season: str,
+        tournament: str,
+        *,
+        top_n: int = 3,
+        df: Optional[pd.DataFrame] = None,
+    ) -> List[Dict[str, Any]]:
+        if df is None:
+            df = self._get_tournament_df(season=season, tournament=tournament)
+        if df.empty:
+            return []
+
+        ko_bracket = self._build_ko_bracket_payload(season, tournament, df=df)
+        lb_table = self.get_leaderboard_table(
+            season, tournament, round_number=None, df=df, ko_bracket=ko_bracket
+        )
+        placements = list(ko_bracket.get("placements") or [])
+        ko_rn = self._ko_finale_round_number(df)
+        if (
+            ko_rn is not None
+            and ko_bracket.get("matches")
+            and placements
+            and bool(lb_table.data)
+        ):
+            lb_table = self._integrate_ko_into_total_leaderboard(
+                lb_table, ko_bracket, df, season, tournament
+            )
+
+        col_fields = self._table_column_fields(lb_table)
+
+        def _field_index(field: str) -> Optional[int]:
+            try:
+                return col_fields.index(field)
+            except ValueError:
+                return None
+
+        rank_i = _field_index("rank")
+        player_i = _field_index("player")
+        if rank_i is None or player_i is None:
+            return []
+
+        club_i = _field_index("club")
+        avg_i = _field_index("total_avg")
+        if avg_i is None:
+            avg_i = _field_index("avg_scratch")
+        if avg_i is None:
+            avg_i = _field_index("avg_net")
+
+        finishers: List[Dict[str, Any]] = []
+        for row in lb_table.data[: max(top_n, 0)]:
+            rank_label = str(row[rank_i]).strip()
+            player_name = str(row[player_i]).strip()
+            if not player_name:
+                continue
+            average: Optional[float] = None
+            if avg_i is not None:
+                try:
+                    average = round(float(row[avg_i]), 1)
+                except (TypeError, ValueError):
+                    average = None
+            club = str(row[club_i]).strip() if club_i is not None else ""
+            try:
+                rank_num = int(float(rank_label.split("/")[0]))
+            except (TypeError, ValueError):
+                rank_num = len(finishers) + 1
+            finishers.append(
+                {
+                    "rank": rank_num,
+                    "rank_label": rank_label,
+                    "player": player_name,
+                    "club": club or None,
+                    "average": average,
+                }
+            )
+        return finishers
+
+    def get_tournament_podiums(
+        self,
+        *,
+        season: Optional[str] = None,
+        tournament: Optional[str] = None,
+        top_n: int = 3,
+    ) -> Dict[str, Any]:
+        limit = max(1, min(int(top_n or 3), 10))
+        podiums: List[Dict[str, Any]] = []
+        for event in self.list_tournament_events(season=season, tournament=tournament):
+            season_label = event["season"]
+            tournament_label = event["tournament"]
+            event_df = self._get_tournament_df(season=season_label, tournament=tournament_label)
+            finishers = self._leaderboard_top_finishers(
+                season_label,
+                tournament_label,
+                top_n=limit,
+                df=event_df,
+            )
+            podiums.append(
+                {
+                    "season": season_label,
+                    "tournament": tournament_label,
+                    "tournament_group": normalize_tournament_group_name(tournament_label),
+                    "finishers": finishers,
+                }
+            )
+        return {"top_n": limit, "podiums": podiums}
+
+    def get_tournament_player_catalog(
+        self,
+        season: Optional[str] = None,
+        tournament: Optional[str] = None,
+    ) -> List[str]:
+        df = self._get_tournament_df(season=season, tournament=tournament)
+        if df.empty or Columns.player_name not in df.columns:
+            return []
+        return sorted(
+            {
+                str(name).strip()
+                for name in df[Columns.player_name].dropna().astype(str).tolist()
+                if str(name).strip()
+            }
+        )
+
+    def get_player_tournament_results(
+        self,
+        player: str,
+        *,
+        season: Optional[str] = None,
+        tournament: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        player_norm = str(player or "").strip()
+        if not player_norm:
+            return []
+
+        df = self._get_tournament_df(season=season, tournament=tournament)
+        if df.empty or Columns.player_name not in df.columns:
+            return []
+
+        from data_access.competition_schema import competition_event_column
+
+        event_col = competition_event_column(df)
+        if not event_col or Columns.season not in df.columns:
+            return []
+
+        player_df = df[df[Columns.player_name].astype(str).str.strip().eq(player_norm)]
+        if player_df.empty:
+            return []
+
+        events = player_df[[Columns.season, event_col]].dropna().drop_duplicates()
+        results: List[Dict[str, Any]] = []
+        for _, event_row in events.iterrows():
+            season_label = str(event_row[Columns.season]).strip()
+            tournament_label = str(event_row[event_col]).strip()
+            if not season_label or not tournament_label:
+                continue
+
+            progress = self.get_player_progress_series(
+                season_label,
+                tournament_label,
+                player_norm,
+                include_field=False,
+            )
+            ko_bracket = self._build_ko_bracket_payload(season_label, tournament_label)
+            ko_place = self._ko_placement_for_player(ko_bracket, player_norm)
+            pos_series = list(progress.get("position_series") or [])
+            if ko_place is not None and pos_series:
+                pos_series = pos_series[:]
+                pos_series[-1] = ko_place
+
+            avg_series = [v for v in (progress.get("avg_series") or []) if v is not None]
+            average = round(float(avg_series[-1]), 1) if avg_series else None
+            final_position = int(pos_series[-1]) if pos_series else None
+
+            event_player_df = player_df[
+                player_df[Columns.season].astype(str).str.strip().eq(season_label)
+                & player_df[event_col].astype(str).str.strip().eq(tournament_label)
+            ]
+            club = None
+            if Columns.club in event_player_df.columns:
+                club_vals = event_player_df[Columns.club].dropna().astype(str).tolist()
+                club = club_vals[0].strip() if club_vals else None
+
+            results.append(
+                {
+                    "season": season_label,
+                    "tournament": tournament_label,
+                    "tournament_group": normalize_tournament_group_name(tournament_label),
+                    "position": final_position,
+                    "average": average,
+                    "club": club,
+                }
+            )
+
+        results.sort(key=lambda item: (item["season"], item["tournament"]), reverse=True)
+        return results

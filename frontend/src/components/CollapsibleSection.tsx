@@ -11,6 +11,8 @@ type Props = {
   id?: string;
   expandLabel?: string;
   collapseLabel?: string;
+  /** When true, table/chart children mount only while open (avoids Tabulator zero-size init). */
+  lazyMount?: boolean;
 };
 
 /**
@@ -25,6 +27,7 @@ export function CollapsibleSection({
   id: idProp,
   expandLabel = "Show section",
   collapseLabel = "Hide section",
+  lazyMount = false,
 }: Props) {
   const autoId = useId();
   const panelId = idProp ?? `collapsible-${autoId}`;
@@ -54,8 +57,13 @@ export function CollapsibleSection({
         />
         <span className="sr-only">{open ? collapseLabel : expandLabel}</span>
       </button>
-      <div id={panelId} hidden={!open} className="border-t border-border px-4 pb-4 pt-4">
-        {children}
+      <div
+        id={panelId}
+        hidden={!open}
+        aria-hidden={!open}
+        className="border-t border-border px-4 pb-4 pt-4"
+      >
+        {!lazyMount || open ? children : null}
       </div>
     </section>
   );
