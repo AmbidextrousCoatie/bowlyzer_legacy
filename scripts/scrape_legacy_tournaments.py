@@ -48,7 +48,8 @@ from scripts.scrape_legacy_liga import (
     season_year_range,
 )
 
-MIN_PDF_BYTES = 4_096
+MIN_RESULT_BYTES = 4_096
+MIN_PDF_BYTES = MIN_RESULT_BYTES
 LOG_PATH = legacy_scrape_dir() / "tournament_scrape_log.jsonl"
 
 
@@ -185,7 +186,7 @@ def download_season_tournaments(
         filename = canonical_basename(item, folder_slug)
         dest = dest_dir / filename
         archive_path = archive_dir / filename
-        if dest.is_file() and dest.stat().st_size >= MIN_PDF_BYTES:
+        if dest.is_file() and dest.stat().st_size >= MIN_RESULT_BYTES:
             stats["skipped_existing"] += 1
             _append_tournament_log(
                 {
@@ -200,7 +201,7 @@ def download_season_tournaments(
             continue
         try:
             code, data = fetch_bytes(item.url)
-            if code != 200 or len(data) < MIN_PDF_BYTES:
+            if code != 200 or len(data) < MIN_RESULT_BYTES:
                 stats["failed"] += 1
                 continue
             dest.parent.mkdir(parents=True, exist_ok=True)

@@ -9,6 +9,7 @@ from pathlib import Path, PurePosixPath
 from typing import Iterable, List, Sequence
 from urllib.parse import unquote, urljoin
 
+from database.tournament_import.source_registry import season_label
 from database.tournament_scrape.categories import TournamentCategory, TournamentScrapeConfig
 
 BASE_HOST = "http://sektion-bowling.bowling-bayern.de/dateien"
@@ -90,11 +91,19 @@ def _score_candidate(label: str, href: str, *, multi_file: bool) -> int:
     score = 0
     if RESULT_LABEL_RE.search(label):
         score += 20
-    if basename.endswith("_erg.pdf"):
+    if basename.endswith("_erg.pdf") or basename.endswith("_erg_neu.pdf"):
         score += 15
+    if basename.endswith("_erg.xls") or basename.endswith("_erg.xlsx"):
+        score += 15
+    if basename.endswith("_erg_neu.pdf"):
+        score += 12
     if "_akt_" in basename:
         score += 5
-    if not multi_file and re.search(r"_erg_[a-z0-9]", basename):
+    if (
+        not multi_file
+        and re.search(r"_erg_[a-z0-9]", basename)
+        and not basename.endswith("_erg_neu.pdf")
+    ):
         score -= 8
     return score
 
@@ -112,6 +121,63 @@ def _category_for_href(
         if _matches_any(category.filename_patterns, href):
             return category
     return None
+
+
+def _discover_exception_workbooks(
+    html_text: str,
+    *,
+    page_url: str,
+    folder_slug: str,
+    config: TournamentScrapeConfig,
+    category_ids: Iterable[str] | None = None,
+) -> List[DiscoveredPdf]:
+    from database.tournament_import.source_exceptions import exception_for_scrape_href
+
+    wanted: set[str] | None = None
+    if category_ids:
+        wanted = {category_id.strip() for category_id in category_ids}
+
+    start_year = int(folder_slug.split("-", 1)[0])
+    expected_season = season_label(start_year)
+    by_category = {category.id: category for category in config.categories}
+
+    parser = _HtmlLinkParser()
+    parser.feed(html_text)
+
+    discovered: List[DiscoveredPdf] = []
+    seen_paths: set[str] = set()
+    for href, label in parser.links:
+        if not re.search(r"\.xls[x]?$", href, re.IGNORECASE):
+            continue
+        exc = exception_for_scrape_href(href)
+        if exc is None or exc.season != expected_season:
+            continue
+        rel_path, abs_url = _normalize_href(href, page_url=page_url, folder_slug=folder_slug)
+        path_key = rel_path.lower()
+        if path_key in seen_paths:
+            continue
+        seen_paths.add(path_key)
+        basename = PurePosixPath(rel_path).name
+        for target in exc.targets:
+            if wanted is not None and target.category_id not in wanted:
+                continue
+            category = by_category.get(target.category_id)
+            if category is None:
+                continue
+            discovered.append(
+                DiscoveredPdf(
+                    category_id=target.category_id,
+                    category_label=category.label,
+                    label=label or target.sheet,
+                    href=href,
+                    rel_path=rel_path,
+                    url=abs_url,
+                    basename=basename,
+                    calendar_year=exc.calendar_year,
+                    score=_score_candidate(label, rel_path, multi_file=True),
+                )
+            )
+    return discovered
 
 
 def discover_tournament_pdfs(
@@ -133,7 +199,7 @@ def discover_tournament_pdfs(
 
     discovered: List[DiscoveredPdf] = []
     for href, label in parser.links:
-        if ".pdf" not in href.lower():
+        if ".pdf" not in href.lower() and not re.search(r"\.xls[x]?$", href, re.IGNORECASE):
             continue
         rel_path, abs_url = _normalize_href(href, page_url=page_url, folder_slug=folder_slug)
         category = _category_for_href(rel_path, config, categories)
@@ -155,6 +221,15 @@ def discover_tournament_pdfs(
                 score=_score_candidate(label, rel_path, multi_file=category.multi_file),
             )
         )
+    discovered.extend(
+        _discover_exception_workbooks(
+            html_text,
+            page_url=page_url,
+            folder_slug=folder_slug,
+            config=config,
+            category_ids=category_ids,
+        )
+    )
     return discovered
 
 

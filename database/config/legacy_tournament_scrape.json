@@ -88,7 +88,7 @@
 
         "(?i)bm20\\d{2}_nb_herren_erg\\.pdf$",
 
-        "(?i)bm20\\d{2}_nbm?_h(?:e)?_erg\\.pdf$",
+        "(?i)bm20\\d{2}_nbm?_h(?:e)?_erg(?:_neu)?\\.pdf$",
 
         "(?i)bm/bm_nb_he_erg\\.pdf$"
 
@@ -108,6 +108,8 @@
 
         "(?i)bm20\\d{2}_(?:akt_)?einz_he_erg\\.pdf$",
 
+        "(?i)bm20\\d{2}_akt_einz_m_erg\\.pdf$",
+
         "(?i)bm20\\d{2}_akt_einz_he_erg\\.pdf$",
 
         "(?i)aktive_einzel/bm20\\d{2}_akt_einz_he_erg\\.pdf$",
@@ -116,7 +118,11 @@
 
         "(?i)bm20\\d{2}_einz_erg_he\\.pdf$",
 
-        "(?i)bm/bm_einz_h_erg(?:_fi)?\\.pdf$"
+        "(?i)bm20\\d{2}_einz_erg_h\\.pdf$",
+
+        "(?i)bm/bm_einz_h_erg(?:_fi)?\\.pdf$",
+
+        "(?i)bm20\\d{2}_einz_h_erg_fi\\.pdf$"
 
       ]
 
@@ -144,7 +150,11 @@
 
         "(?i)bm20\\d{2}_einz_erg_da\\.pdf$",
 
-        "(?i)bm/bm_einz_d_erg(?:_fi)?\\.pdf$"
+        "(?i)bm20\\d{2}_einz_erg_d\\.pdf$",
+
+        "(?i)bm/bm_einz_d_erg(?:_fi)?\\.pdf$",
+
+        "(?i)bm20\\d{2}_einz_d_erg_fi\\.pdf$"
 
       ]
 
@@ -164,7 +174,11 @@
 
         "(?i)bm20\\d{2}_dopp_he_erg\\.pdf$",
 
-        "(?i)aktive_doppel/doppel_m_erg\\.pdf$"
+        "(?i)bm20\\d{2}_akt_dopp_m_erg\\.pdf$",
+
+        "(?i)aktive_doppel/doppel_m_erg\\.pdf$",
+
+        "(?i)bm/bm_dop_he_erg\\.pdf$"
 
       ]
 
@@ -184,7 +198,11 @@
 
         "(?i)bm20\\d{2}_dopp_da_erg\\.pdf$",
 
-        "(?i)aktive_doppel/doppel_f_erg\\.pdf$"
+        "(?i)bm20\\d{2}_akt_dopp_f_erg\\.pdf$",
+
+        "(?i)aktive_doppel/doppel_f_erg\\.pdf$",
+
+        "(?i)bm/bm_dop_da_erg\\.pdf$"
 
       ]
 

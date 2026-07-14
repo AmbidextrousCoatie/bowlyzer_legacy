@@ -7,6 +7,12 @@ import datetime
 
 bp = Blueprint('main', __name__)
 
+_HOME_STATS_REQUIRED_KEYS = frozenset({"years", "league_seasons", "tournaments"})
+
+
+def _home_stats_cache_valid(payload: object) -> bool:
+    return isinstance(payload, dict) and _HOME_STATS_REQUIRED_KEYS.issubset(payload.keys())
+
 
 @bp.route('/home/stats')
 def home_stats():
@@ -15,6 +21,8 @@ def home_stats():
         database = request.args.get('database') or database_config.get_default_source()
         cache_args = dict(request.args)
         hit = league_cache_try_get("home_stats", database, cache_args)
+        if hit is not None and not _home_stats_cache_valid(hit):
+            hit = None
         if hit is not None:
             resp = jsonify(hit)
             resp.headers["X-League-Cache"] = "HIT"
@@ -108,6 +116,32 @@ def pipeline_league_standings_validation():
         season = (request.args.get("season") or "").strip() or None
         league = (request.args.get("league") or "").strip() or None
         return jsonify(get_league_standings_validation(season=season, league=league))
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@bp.route('/pipeline/tournament_source_pdf')
+def pipeline_tournament_source_pdf():
+    """Serve a legacy tournament source PDF from the configured input directory."""
+    try:
+        from flask import send_file
+
+        from app.services.tournament_data_quality_service import (
+            _source_file_mimetype,
+            resolve_tournament_source_pdf_path,
+        )
+
+        basename = (request.args.get("basename") or request.args.get("file") or "").strip()
+        if not basename:
+            return jsonify({'error': 'basename is required'}), 400
+        source_path = resolve_tournament_source_pdf_path(basename)
+        if source_path is None:
+            return jsonify({'error': f'Source file not found: {basename}'}), 404
+        return send_file(
+            source_path,
+            mimetype=_source_file_mimetype(source_path),
+            download_name=source_path.name,
+        )
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

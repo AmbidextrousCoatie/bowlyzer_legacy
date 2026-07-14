@@ -8,11 +8,13 @@ from datetime import date
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple
 
+from database.tournament_import.adapters.legacy_pdf_validation import report_player_extraction
 from database.tournament_import.config import ImportEntry
+from database.tournament_import.adapters.legacy_pdf_shared import normalize_player_id
 from database.tournament_import.schema import ROUND_LABELS_PDF_2016, season_label_from_calendar_year
 
 ROUND_LINE = re.compile(
-    r"^(Vorrunde|Zw-?Runde|Finalrunde)\b",
+    r"^(Vorrunde|Zw-?Runde|Zwi\.-Runde|Finalrunde)\b",
     re.IGNORECASE,
 )
 RANK_ONLY = re.compile(r"^(\d+)\.\s*$")
@@ -20,6 +22,10 @@ RANK_NAME = re.compile(r"^(\d+)\.\s+(.+)$")
 PLAYER_ID = re.compile(r"^(\d{5})$")
 INT_TOKEN = re.compile(r"^-?\d+$")
 DATE_HEADER = re.compile(r"^(\d{1,2}\./)?\d{1,2}\.\d{1,2}\.\d{4}$")
+DATE_RANGE_DASH = re.compile(r"^\d{1,2}\.\s*-\s*\d{1,2}\.\d{1,2}\.\d{4}$")
+AVERAGE_DIVISOR = re.compile(r"^/\s*\d+$")
+DECIMAL_AVERAGE = re.compile(r"^\d+,\d{2}$")
+GAME_COLUMN_HEADER = re.compile(r"^[1-6]$")
 EVENT_TITLE = re.compile(
     r"((?:Nord|Süd|Sud|Sued)?bayrische|Bayerische)\s+Meisterschaft.*\d{4}",
     re.IGNORECASE,
@@ -53,6 +59,7 @@ class PdfMeta:
 class PlayerBlock:
     rank: int = 0
     name: str = ""
+    verein: str = ""
     club: str = ""
     player_id: str = ""
     rounds: Dict[int, List[int]] = field(default_factory=dict)
@@ -105,11 +112,19 @@ def _parse_date_range(header_line: str, year: int) -> Dict[int, str]:
 _BAYERISCHE_MEISTERSCHAFT = re.compile(r"^Bayerische\s+Meisterschaft\b", re.IGNORECASE)
 _TOKEN_BOUNDARY = r"(?:_|\.|$)"
 _WOMEN_PDF_RE = re.compile(
-    rf"einz_(?:da|f){_TOKEN_BOUNDARY}|einzel_(?:da|f){_TOKEN_BOUNDARY}|_da_",
+    rf"einz_(?:da|f){_TOKEN_BOUNDARY}|einzel_(?:da|f){_TOKEN_BOUNDARY}|einz_erg_d{_TOKEN_BOUNDARY}|einz_d_erg{_TOKEN_BOUNDARY}|_da_|_dopp_f_",
     re.IGNORECASE,
 )
 _MEN_PDF_RE = re.compile(
-    rf"einz_he{_TOKEN_BOUNDARY}|einzel_he{_TOKEN_BOUNDARY}|_he_erg",
+    rf"einz_(?:he|m){_TOKEN_BOUNDARY}|einzel_(?:he|m){_TOKEN_BOUNDARY}|einz_erg_h{_TOKEN_BOUNDARY}|einz_h_erg{_TOKEN_BOUNDARY}|_he_erg|_dopp_m_|dopp_he",
+    re.IGNORECASE,
+)
+_DOPPEL_WOMEN_PDF_RE = re.compile(
+    rf"dopp_(?:da|f){_TOKEN_BOUNDARY}|_dopp_f_",
+    re.IGNORECASE,
+)
+_DOPPEL_MEN_PDF_RE = re.compile(
+    rf"dopp_(?:he|m){_TOKEN_BOUNDARY}|_dopp_m_|_dopp_he",
     re.IGNORECASE,
 )
 
@@ -130,6 +145,17 @@ def disambiguate_bayerische_event_name(
     filename = source.name.lower()
     is_women = bool(_WOMEN_PDF_RE.search(filename))
     is_men = bool(_MEN_PDF_RE.search(filename)) and not is_women
+
+    if re.search(r"doppel", title, re.IGNORECASE) or "dopp" in filename:
+        if _DOPPEL_WOMEN_PDF_RE.search(filename) or (is_women and not _DOPPEL_MEN_PDF_RE.search(filename)):
+            if re.search(r"damen|frauen", title, re.IGNORECASE):
+                return title
+            return f"Bayerische Meisterschaft Damen Doppel {calendar_year}"
+        if _DOPPEL_MEN_PDF_RE.search(filename) or is_men:
+            if re.search(r"männer|maenner|herren", title, re.IGNORECASE):
+                return title
+            return f"Bayerische Meisterschaft Männer Doppel {calendar_year}"
+
     if not is_women and not is_men:
         return title
 
@@ -194,7 +220,11 @@ def _extract_meta(text: str, entry: ImportEntry, source: Path) -> PdfMeta:
 
 
 def _round_label_and_first_score(raw: str) -> Tuple[str, Optional[int]]:
-    match = re.match(r"^(Vorrunde|Zw-?Runde|Finalrunde)\b\s*(\d{1,3})?", raw, flags=re.IGNORECASE)
+    match = re.match(
+        r"^(Vorrunde|Zw-?Runde|Zwi\.-Runde|Finalrunde)\b\s*(\d{1,3})?",
+        raw,
+        flags=re.IGNORECASE,
+    )
     if not match:
         return "", None
     label = match.group(1).lower()
@@ -224,13 +254,33 @@ def _line_contains_game_scores(raw: str) -> bool:
     return len(tokens) == 1 and _is_score_token(tokens[0])
 
 
+def _looks_like_person_name(text: str) -> bool:
+    candidate = text.strip()
+    if not candidate or PLAYER_ID.match(candidate) or ROUND_LINE.match(candidate):
+        return False
+    if DATE_HEADER.match(candidate) or DATE_RANGE.match(candidate) or DATE_RANGE_DASH.match(candidate):
+        return False
+    if candidate.startswith("-") or candidate.startswith("/"):
+        return False
+    if re.search(r"\b\d+\b", candidate):
+        return False
+    if "," in candidate:
+        return True
+    if re.search(r"(e\.V\.|verein|bowling|\bclub\b)", candidate, re.IGNORECASE):
+        return False
+    if re.match(r"^(BC|BV|BBV|BSC|ABV|MKV|GFC)\b", candidate, re.IGNORECASE):
+        return False
+    return bool(re.match(r"^[\wÀ-ÿ.'-]+\s+[\wÀ-ÿ.'-]+", candidate))
+
+
 def _club_from_line(raw: str, tournament_rank: int) -> str:
-    """Club lines may embed a Verein list prefix: ``1. BBV Lindau``."""
+    """Strip optional list prefix from Verein/Club lines (``1. BBV Lindau``, ``10. Comet``)."""
     rank_name = RANK_NAME.match(raw)
     if rank_name:
         prefix_rank = int(rank_name.group(1))
-        if prefix_rank < tournament_rank:
-            return rank_name.group(2).strip()
+        rest = rank_name.group(2).strip()
+        if prefix_rank <= tournament_rank:
+            return rest
     return raw.strip()
 
 
@@ -258,6 +308,11 @@ def _consume_scores(
         if token in {"/"}:
             idx += 1
             break
+        if re.search(r"\b(abg|verl)\.?", token, re.IGNORECASE):
+            if scores:
+                break
+            idx += 1
+            continue
         if not _is_score_token(token):
             if scores:
                 break
@@ -279,6 +334,7 @@ def _parse_player_blocks(
     players: List[PlayerBlock] = []
     current: Optional[PlayerBlock] = None
     pending_new_rank: Optional[int] = None
+    expect_verein = False
     expect_club = False
     expect_id = False
     idx = 0
@@ -298,22 +354,35 @@ def _parse_player_blocks(
         pending_new_rank = None
 
     skip_page_reheader = False
+    skip_game_column_headers = False
 
     while idx < len(lines):
         raw = lines[idx].strip()
         idx += 1
         if not raw or HEADER_NOISE.match(raw) or skip_line.search(raw):
             continue
-        if DATE_HEADER.match(raw) or DATE_RANGE.match(raw):
-            if players:
-                skip_page_reheader = True
+        if DATE_HEADER.match(raw) or DATE_RANGE.match(raw) or DATE_RANGE_DASH.match(raw):
             continue
+        if AVERAGE_DIVISOR.match(raw) or DECIMAL_AVERAGE.match(raw):
+            continue
+        if raw == "Platz":
+            skip_game_column_headers = True
+            continue
+        if skip_game_column_headers:
+            if GAME_COLUMN_HEADER.match(raw):
+                continue
+            skip_game_column_headers = False
         if skip_page_reheader:
-            if RANK_NAME.match(raw):
+            if RANK_NAME.match(raw) or (RANK_ONLY.match(raw) and current is None):
                 skip_page_reheader = False
             else:
                 continue
         if raw in {"/"} or re.match(r"^\d+,\d{2}$", raw):
+            continue
+
+        if expect_verein and current is not None:
+            expect_verein = False
+            current.verein = _club_from_line(raw, current.rank)
             continue
 
         if expect_club and current is not None:
@@ -341,18 +410,55 @@ def _parse_player_blocks(
         if rank_name:
             rank = int(rank_name.group(1))
             rest = rank_name.group(2).strip()
+            player_id_from_rank = normalize_player_id(rest)
+            if player_id_from_rank:
+                if current is not None and current.rank == rank:
+                    current.player_id = player_id_from_rank
+                continue
             if DATE_HEADER.match(rest) or DATE_RANGE.match(rest) or rest.startswith("/"):
                 continue
-            if not ROUND_LINE.match(rest) and not PLAYER_ID.match(rest):
+            if current is not None and rank == current.rank and 1 in current.rounds and 2 not in current.rounds:
+                current.club = _club_from_line(raw, current.rank)
+                continue
+            if (
+                current is not None
+                and rank == current.rank
+                and 1 not in current.rounds
+                and not _looks_like_person_name(rest)
+            ):
+                current.verein = _club_from_line(raw, current.rank)
+                continue
+            if _looks_like_person_name(rest):
                 if current is None or _player_complete(current) or rank > (current.rank if current else 0):
                     _start_player(rank, rest)
-                    continue
+                continue
+            if current is not None and rank < current.rank and not _is_score_token(rest):
+                if 1 not in current.rounds:
+                    current.verein = _club_from_line(raw, current.rank)
+                elif 1 in current.rounds and 2 not in current.rounds:
+                    current.club = _club_from_line(raw, current.rank)
+                continue
+            if current is not None and current.rank == rank and not _is_score_token(rest):
+                if 1 not in current.rounds:
+                    current.verein = _club_from_line(raw, current.rank)
+                elif 1 in current.rounds and 2 not in current.rounds:
+                    current.club = _club_from_line(raw, current.rank)
+                continue
+            continue
 
         rank_match = RANK_ONLY.match(raw)
         if rank_match:
             rank = int(rank_match.group(1))
+            if (
+                current is not None
+                and rank == current.rank
+                and current.name
+                and 1 not in current.rounds
+            ):
+                expect_verein = True
+                continue
             if current is not None and rank == current.rank:
-                if 1 in current.rounds and not current.club:
+                if 1 in current.rounds and 2 not in current.rounds:
                     expect_club = True
                 elif 2 in current.rounds and not current.player_id:
                     expect_id = True
@@ -373,15 +479,14 @@ def _parse_player_blocks(
             label, first_score = _round_label_and_first_score(raw)
             if label.startswith("vor"):
                 pending_round = 1
-            elif label.startswith("zw"):
+            elif label.startswith("zw") or "zwi" in label:
                 pending_round = 2
             else:
                 if 3 in current.rounds:
                     continue
                 pending_round = 3
             scores, idx = _consume_scores(lines, idx, first_score, skip_line)
-            if scores:
-                current.rounds[pending_round] = scores
+            current.rounds[pending_round] = scores
             continue
 
         if current is None:
@@ -393,14 +498,7 @@ def _parse_player_blocks(
             current.name = raw
             continue
 
-        if 1 in current.rounds and not current.club and not expect_club:
-            if ROUND_LINE.match(raw) or PLAYER_ID.match(raw) or RANK_ONLY.match(raw):
-                continue
-            if not _line_contains_game_scores(raw):
-                current.club = _club_from_line(raw, current.rank)
-            continue
-
-    return [p for p in players if p.name and p.player_id and p.rounds]
+    return [p for p in players if p.name and p.player_id and p.rounds and any(p.rounds.values())]
 
 
 def _extra_skip_patterns(entry: ImportEntry) -> List[str]:
@@ -414,6 +512,8 @@ def _rows_from_players(meta: PdfMeta, players: Iterable[PlayerBlock]) -> List[Di
     rows: List[Dict[str, str]] = []
     for player in players:
         for round_number, scores in sorted(player.rounds.items()):
+            if not scores:
+                continue
             _sheet_name, round_name = ROUND_LABELS_PDF_2016[round_number]
             round_date = meta.dates.get(round_number, meta.dates.get(1, ""))
             for game_idx, score in enumerate(scores):
@@ -446,6 +546,7 @@ def parse_legacy_pdf_erg_2016(source: Path, entry: ImportEntry) -> List[Dict[str
     players = _parse_player_blocks(lines, extra_skip_patterns=_extra_skip_patterns(entry))
     if not players:
         raise ValueError(f"No player blocks parsed from {source.name}")
+    report_player_extraction(lines, players, source_name=source.name)
     return _rows_from_players(meta, players)
 
 

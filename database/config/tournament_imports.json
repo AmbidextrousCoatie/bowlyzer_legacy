@@ -11,7 +11,27 @@
     },
     "legacy_pdf_erg_2016": {
       "adapter": "legacy_pdf_erg_2016",
-      "description": "BSKV Excel-export PDF Ergebnisliste, vertical block layout (2016+)"
+      "description": "BSKV vertical block layout (Vorrunde → Verein → Zwischenlauf → Pass-Nr → Finalrunde). Assign per PDF in tournament_source_registry.csv."
+    },
+    "legacy_pdf_erg_2009": {
+      "adapter": "legacy_pdf_erg_2009",
+      "description": "BSKV comma-name layout (name → Vorrunde → total → Verein → Zwi.-Runde → totals → Pass-Nr → Finale). Assign per PDF in tournament_source_registry.csv."
+    },
+    "legacy_pdf_erg_2012": {
+      "adapter": "legacy_pdf_erg_2012",
+      "description": "BSKV Rd.1/Rd.2/Rd.3 grid layout (~2012). Assign per PDF in tournament_source_registry.csv."
+    },
+    "legacy_pdf_erg_2015": {
+      "adapter": "legacy_pdf_erg_2015",
+      "description": "BSKV 2015 inline sheet (comma name → 3×6 scores/totals/pass/club, no round labels). Assign per PDF in tournament_source_registry.csv."
+    },
+    "legacy_pdf_erg_edv_grid": {
+      "adapter": "legacy_pdf_erg_edv_grid",
+      "description": "BSKV EDV-Nr wide grid (18-game rows, 2007/2009 NBM-style). Supports partial rounds."
+    },
+    "legacy_bm_einz_xls_dual": {
+      "adapter": "legacy_bm_einz_xls_dual",
+      "description": "Legacy BM Einzel XLS with separate Herren/Damen sheets (e.g. 06/07)."
     }
   },
   "imports": [
@@ -49,7 +69,7 @@
     },
     {
       "id": "sbm-2018-herren",
-      "enabled": true,
+      "enabled": false,
       "format": "legacy_pdf_erg_2016",
       "source": "{work_dir}/tournaments/input/bm2018_nb_he_erg.pdf",
       "merge_target": "manual",
@@ -57,7 +77,7 @@
     },
     {
       "id": "sbm-2018-frauen",
-      "enabled": true,
+      "enabled": false,
       "format": "legacy_pdf_erg_2016",
       "source": "{work_dir}/tournaments/input/bm2018_akt_einz_f_erg.pdf",
       "merge_target": "manual",
@@ -89,6 +109,34 @@
       "source": "{work_dir}/tournaments/input/bm2016_einz_he_erg.pdf",
       "merge_target": "manual",
       "output": "{data_dir}/tournament_legacy_pdf_bm_2016_postprocessed.csv"
+    },
+    {
+      "id": "legacy-bm-2007-xls-herren",
+      "enabled": true,
+      "format": "legacy_bm_einz_xls_dual",
+      "source": "{work_dir}/tournaments/input/bm2007_einz_erg.xls",
+      "merge_target": "manual",
+      "output": "{data_dir}/tournament_legacy_bm_2007_herren_postprocessed.csv",
+      "options": {
+        "sheet": "Herren",
+        "season": "06/07",
+        "calendar_year": 2007,
+        "event_name": "Bayerische Meisterschaft Einzel 2007"
+      }
+    },
+    {
+      "id": "legacy-bm-2007-xls-damen",
+      "enabled": true,
+      "format": "legacy_bm_einz_xls_dual",
+      "source": "{work_dir}/tournaments/input/bm2007_einz_erg.xls",
+      "merge_target": "manual",
+      "output": "{data_dir}/tournament_legacy_bm_2007_damen_postprocessed.csv",
+      "options": {
+        "sheet": "Damen",
+        "season": "06/07",
+        "calendar_year": 2007,
+        "event_name": "Bayerische Meisterschaft Einzel Damen 2007"
+      }
     }
   ]
 }

@@ -1,6 +1,8 @@
+from collections.abc import Callable
+from typing import Any
+
 from flask import Blueprint, jsonify, request
 from app.services.player_service import PlayerService
-from app.config.database_config import database_config
 from app.cache.league_response_cache import league_cache_put, league_cache_try_get
 from app.utils.json_safe import json_safe
 from app.utils.league_player_sources import resolve_player_database_id
@@ -17,19 +19,37 @@ def _player_cache_database(player_service: PlayerService) -> str:
     return str(player_service.database or request.args.get("database") or "")
 
 
+def _jsonify_player_cached(
+    endpoint: str,
+    cache_db: str,
+    cache_args: dict[str, Any],
+    compute: Callable[[], Any],
+):
+    """Return JSON; set X-League-Cache: HIT|MISS for debugging."""
+    hit = league_cache_try_get(endpoint, cache_db, cache_args)
+    if hit is not None:
+        resp = jsonify(hit)
+        resp.headers["X-League-Cache"] = "HIT"
+        return resp
+    payload = json_safe(compute())
+    league_cache_put(endpoint, cache_db, cache_args, payload)
+    resp = jsonify(payload)
+    resp.headers["X-League-Cache"] = "MISS"
+    return resp
+
+
 @bp.route('/search')
 def search_players():
     search_term = request.args.get('search', '')
     player_service = get_player_service()
     cache_db = _player_cache_database(player_service)
     cache_args = {"database": cache_db, "search": search_term or ""}
-    hit = league_cache_try_get("player_search", cache_db, cache_args)
-    if hit is not None:
-        return jsonify(hit)
-    players = player_service.search_players(search_term)
-    payload = json_safe(players)
-    league_cache_put("player_search", cache_db, cache_args, payload)
-    return jsonify(payload)
+    return _jsonify_player_cached(
+        "player_search",
+        cache_db,
+        cache_args,
+        lambda: player_service.search_players(search_term),
+    )
 
 @bp.route('/get_available_seasons')
 def get_available_seasons():
@@ -39,13 +59,12 @@ def get_available_seasons():
     cache_db = _player_cache_database(player_service)
     cache_args = dict(request.args)
     cache_args["database"] = cache_db
-    hit = league_cache_try_get("player_get_available_seasons", cache_db, cache_args)
-    if hit is not None:
-        return jsonify(hit)
-    seasons = player_service.get_player_seasons(player_name or '', player_id=player_id)
-    payload = json_safe(seasons)
-    league_cache_put("player_get_available_seasons", cache_db, cache_args, payload)
-    return jsonify(payload)
+    return _jsonify_player_cached(
+        "player_get_available_seasons",
+        cache_db,
+        cache_args,
+        lambda: player_service.get_player_seasons(player_name or '', player_id=player_id),
+    )
 
 @bp.route('/get-stats')
 def get_stats():
@@ -66,17 +85,13 @@ def get_lifetime_stats():
     cache_db = _player_cache_database(player_service)
     cache_args = dict(request.args)
     cache_args["database"] = cache_db
-    hit = league_cache_try_get("get_lifetime_stats", cache_db, cache_args)
-    if hit is not None:
-        return jsonify(hit)
 
-    if not player_name and not player_id:
-        stats = player_service.get_aggregate_lifetime_stats(season=season)
-    else:
-        stats = player_service.get_lifetime_stats(player_name or '', season=season, player_id=player_id)
-    payload = json_safe(stats)
-    league_cache_put("get_lifetime_stats", cache_db, cache_args, payload)
-    return jsonify(payload)
+    def _compute():
+        if not player_name and not player_id:
+            return player_service.get_aggregate_lifetime_stats(season=season)
+        return player_service.get_lifetime_stats(player_name or '', season=season, player_id=player_id)
+
+    return _jsonify_player_cached("get_lifetime_stats", cache_db, cache_args, _compute)
 
 
 @bp.route('/get_highest_individual_games')
@@ -101,19 +116,18 @@ def get_highest_individual_games():
     cache_args = dict(request.args)
     cache_args["database"] = cache_db
     cache_args["limit"] = str(limit)
-    hit = league_cache_try_get("get_highest_individual_games", cache_db, cache_args)
-    if hit is not None:
-        return jsonify(hit)
 
-    games = player_service.get_highest_individual_games(
-        limit=limit,
-        player_name=player_name,
-        player_id=player_id,
-        season=season,
+    return _jsonify_player_cached(
+        "get_highest_individual_games",
+        cache_db,
+        cache_args,
+        lambda: player_service.get_highest_individual_games(
+            limit=limit,
+            player_name=player_name,
+            player_id=player_id,
+            season=season,
+        ),
     )
-    payload = json_safe(games)
-    league_cache_put("get_highest_individual_games", cache_db, cache_args, payload)
-    return jsonify(payload)
 
 
 @bp.route('/get_club_300')
@@ -121,11 +135,9 @@ def get_club_300():
     player_service = get_player_service()
     cache_db = _player_cache_database(player_service)
     cache_args = {"database": cache_db}
-    hit = league_cache_try_get("get_club_300", cache_db, cache_args)
-    if hit is not None:
-        return jsonify(hit)
-
-    games = player_service.get_club_300_games()
-    payload = json_safe(games)
-    league_cache_put("get_club_300", cache_db, cache_args, payload)
-    return jsonify(payload)
+    return _jsonify_player_cached(
+        "get_club_300",
+        cache_db,
+        cache_args,
+        player_service.get_club_300_games,
+    )

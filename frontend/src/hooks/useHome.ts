@@ -7,10 +7,14 @@ export type HomeStats = {
   games: number;
   league_games: number;
   tournament_games: number;
-  leagues: number;
-  seasons: number;
+  years: number;
+  league_seasons: number;
   tournaments: number;
   players: number;
+  /** @deprecated landing-v1 payload */
+  seasons?: number;
+  /** @deprecated landing-v1 payload */
+  leagues?: number;
 };
 
 export type LatestEvent = {
@@ -20,9 +24,19 @@ export type LatestEvent = {
   Date: string;
 };
 
+export function resolveHomeStats(stats: HomeStats | undefined) {
+  if (!stats) return undefined;
+  return {
+    ...stats,
+    years: stats.years ?? stats.seasons,
+    league_seasons: stats.league_seasons,
+    tournaments: stats.tournaments,
+  };
+}
+
 export function useHomeStats() {
   return useQuery({
-    queryKey: ["home", "stats"],
+    queryKey: ["home", "stats", "v2"],
     queryFn: () => fetchJson<HomeStats>(buildUrl("/home/stats")),
     staleTime: 5 * 60_000,
   });

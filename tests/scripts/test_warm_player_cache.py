@@ -32,6 +32,8 @@ def test_build_player_warm_shards_includes_finalize():
         "player:lifetime:25/26",
         "player:lifetime:all",
         "player:highest-games",
+        "player:highest-games:24/25",
+        "player:highest-games:25/26",
         "player:club-300",
     ]
 

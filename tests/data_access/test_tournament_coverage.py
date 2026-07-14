@@ -21,10 +21,26 @@ def test_app_season_to_calendar_year() -> None:
     assert app_season_to_calendar_year("25/26") == 2026
 
 
+def test_build_tournament_coverage_matrix_includes_scrape_sources() -> None:
+    matrix = build_tournament_coverage_matrix(first_season="04/05", last_season="04/05")
+    sbm = next(
+        cell
+        for cell in matrix["cells"]
+        if cell["season"] == "04/05" and cell["tournament_id"] == "SBM M"
+    )
+    if sbm["status"] == "available":
+        assert "scrape_pdf" in sbm["sources"] or "registry_pdf" in sbm["sources"]
+
+
 def test_build_tournament_coverage_matrix_shape() -> None:
     matrix = build_tournament_coverage_matrix(first_season="15/16", last_season="18/19")
     assert matrix["seasons"] == ["15/16", "16/17", "17/18", "18/19"]
-    assert len(matrix["tournaments"]) >= 5
+    tournament_ids = {row["id"] for row in matrix["tournaments"]}
+    assert "NBM D" not in tournament_ids
+    assert "SBM D" not in tournament_ids
+    assert "NBM M D" not in tournament_ids
+    assert "SBM M D" not in tournament_ids
+    assert "BM M" in tournament_ids
     assert len(matrix["cells"]) == len(matrix["tournaments"]) * len(matrix["seasons"])
     published_ok = [
         cell

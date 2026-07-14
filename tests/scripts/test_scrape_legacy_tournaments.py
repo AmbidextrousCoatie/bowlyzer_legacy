@@ -47,9 +47,27 @@ SAMPLE_2004_FRAGMENT = """
 <a href="bm/bm_nb_he_erg.pdf">Ergebnisse</a>
 <a href="bm/bm_einz_h_erg_fi.pdf">Ergebnisse Herren</a>
 <a href="bm/bm_einz_d_erg_fi.pdf">Ergebnisse Damen</a>
+<a href="bm/bm_dop_he_erg.pdf">Ergebnisse Doppel Herren</a>
+<a href="bm/bm_dop_da_erg.pdf">Ergebnisse Doppel Damen</a>
 <a href="bm_senioren/bm_sen_einz_erg_sa.pdf">Sen A</a>
 <a href="bm_senioren/bm_sen_einz_erg_vh1.pdf">Vers He 1</a>
 <a href="bm_senioren/bm_sen_trio_erg_a.pdf">Senioren A</a>
+</body></html>
+"""
+
+SAMPLE_2010_FRAGMENT = """
+<html><body>
+<a href="bm2011_nbm_h_erg.pdf">Ergebnisse alt</a>
+<a href="bm2011_nbm_h_erg_neu.pdf">Ergebnisse</a>
+<a href="bm2010_einz_erg_h.pdf">Herren</a>
+<a href="bm2010_einz_erg_d.pdf">Damen</a>
+</body></html>
+"""
+
+SAMPLE_2018_DOPPEL_FRAGMENT = """
+<html><body>
+<a href="bm2018_akt_dopp_m_erg.pdf">Herren Doppel</a>
+<a href="bm2018_akt_dopp_f_erg.pdf">Damen Doppel</a>
 </body></html>
 """
 
@@ -62,6 +80,12 @@ SAMPLE_2008_FRAGMENT = """
 <a href="bm2009_mix_erg.pdf">Ergebnisse</a>
 <a href="bm2009_sen_einz_erg_vh_1.pdf">V Männer 1</a>
 <a href="bm2009_sen_trio_erg_si.pdf">Si A</a>
+</body></html>
+"""
+
+SAMPLE_2007_XLS_FRAGMENT = """
+<html><body>
+<a href="bm2007_einz_erg.xls">Ergebnisse Einzel</a>
 </body></html>
 """
 
@@ -85,6 +109,35 @@ def test_tournament_index_candidates_standard_and_plain() -> None:
     ]
     assert tournament_index_candidates("2005-06", "05-06")[1].endswith("/indexm.htm")
     assert tournament_index_candidates("2004-05", "04-05")[1].endswith("/indexm.htm")
+
+
+def test_discover_legacy_2010_filename_variants() -> None:
+    config = load_scrape_config()
+    discovered = discover_tournament_pdfs(
+        SAMPLE_2010_FRAGMENT,
+        page_url="http://example/saison2010-11/meisterschaften/indexm10-11.htm",
+        folder_slug="2010-11",
+        config=config,
+    )
+    selected = select_downloads(discovered, config)
+    by_category = {item.category_id: item.basename for item in selected}
+    assert by_category["nordbayerische-herren"] == "bm2011_nbm_h_erg_neu.pdf"
+    assert by_category["bayerische-einzel-herren"] == "bm2010_einz_erg_h.pdf"
+    assert by_category["bayerische-einzel-frauen"] == "bm2010_einz_erg_d.pdf"
+
+
+def test_discover_legacy_2018_doppel_filename_variants() -> None:
+    config = load_scrape_config()
+    discovered = discover_tournament_pdfs(
+        SAMPLE_2018_DOPPEL_FRAGMENT,
+        page_url="http://example/saison2017-18/meisterschaften/indexm17-18.htm",
+        folder_slug="2017-18",
+        config=config,
+    )
+    selected = select_downloads(discovered, config)
+    by_category = {item.category_id: item.basename for item in selected}
+    assert by_category["bayerisches-doppel-herren"] == "bm2018_akt_dopp_m_erg.pdf"
+    assert by_category["bayerisches-doppel-frauen"] == "bm2018_akt_dopp_f_erg.pdf"
 
 
 def test_discover_legacy_2008_filename_variants() -> None:
@@ -114,8 +167,12 @@ def test_discover_legacy_2004_subdirectory_paths() -> None:
     by_category = {item.category_id: item.basename for item in selected}
     assert by_category["suedbayerische-herren"] == "bm_sb_he_erg.pdf"
     assert by_category["bayerische-einzel-herren"] == "bm_einz_h_erg_fi.pdf"
+    assert by_category["bayerisches-doppel-herren"] == "bm_dop_he_erg.pdf"
+    assert by_category["bayerisches-doppel-frauen"] == "bm_dop_da_erg.pdf"
     sb_item = next(item for item in selected if item.category_id == "suedbayerische-herren")
     assert canonical_basename(sb_item, "2004-05") == "bm2005_sb_he_erg.pdf"
+    dopp_item = next(item for item in selected if item.category_id == "bayerisches-doppel-herren")
+    assert canonical_basename(dopp_item, "2004-05") == "bm2005_dop_he_erg.pdf"
 
 
 def test_discover_primary_categories_from_2019_fragment() -> None:
@@ -168,6 +225,22 @@ def test_discover_legacy_2013_filename_variants() -> None:
     assert by_category["bayerische-mixed"] == "ergebnisse_bm_mixed_2013.pdf"
 
 
+def test_discover_bm_2007_dual_xls_workbook() -> None:
+    config = load_scrape_config()
+    discovered = discover_tournament_pdfs(
+        SAMPLE_2007_XLS_FRAGMENT,
+        page_url="http://example/saison2006-07/meisterschaften/indexm.htm",
+        folder_slug="2006-07",
+        config=config,
+    )
+    selected = select_downloads(discovered, config)
+    by_category = {item.category_id: item for item in selected}
+    assert "bayerische-einzel-herren" in by_category
+    assert "bayerische-einzel-frauen" in by_category
+    assert by_category["bayerische-einzel-herren"].basename == "bm2007_einz_erg.xls"
+    assert by_category["bayerische-einzel-frauen"].basename == "bm2007_einz_erg.xls"
+
+
 def test_category_filter_limits_discovery() -> None:
     discovered = _discover(SAMPLE_2019_FRAGMENT, category_ids=["suedbayerische-herren"])
     assert {item.category_id for item in discovered} == {"suedbayerische-herren"}
@@ -193,13 +266,30 @@ def test_resolve_category_ids_from_tournament_codes() -> None:
         "suedbayerische-herren",
         "nordbayerische-herren",
     ]
-    assert resolve_category_ids(tournaments=["sbm,nbm,bm,bm_f"]) == [
+    assert resolve_category_ids(tournaments=["sbm,nbm,bm,bm_f,bm_md,bm_dd"]) == [
         "suedbayerische-herren",
         "nordbayerische-herren",
         "bayerische-einzel-herren",
         "bayerische-einzel-frauen",
+        "bayerisches-doppel-herren",
+        "bayerisches-doppel-frauen",
     ]
     assert resolve_category_ids() is None
+
+
+def test_filter_importable_tournament_codes_excludes_doubles() -> None:
+    from database.tournament_scrape.categories import (
+        filter_importable_category_ids,
+        filter_importable_tournament_codes,
+        resolve_category_ids,
+    )
+
+    assert filter_importable_tournament_codes(["sbm", "bm_md", "bm_dd"]) == ["sbm"]
+    category_ids = filter_importable_category_ids(
+        resolve_category_ids(tournaments=["sbm,nbm,bm,bm_f,bm_md,bm_dd"]) or []
+    )
+    assert "bayerisches-doppel-herren" not in category_ids
+    assert "bayerisches-doppel-frauen" not in category_ids
 
 
 def test_download_tournaments_range_invokes_each_season(monkeypatch) -> None:

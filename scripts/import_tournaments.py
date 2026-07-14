@@ -123,6 +123,17 @@ def main() -> None:
         print(
             f"Published tournaments parquet: {pub.get('rows')} rows -> {pub.get('parquet_output')}"
         )
+    if summary.tournament_cache_invalidation:
+        inv = summary.tournament_cache_invalidation
+        print(
+            "Invalidated tournament caches (db_tournament_regions_2026_gf / parquet): "
+            f"{inv.get('disk_entries_removed', 0)} disk entries, "
+            f"{inv.get('runtime_entries_removed', 0)} runtime overlay entries"
+        )
+        print(
+            "Re-warm optional: uv run python scripts/warm_tournament_cache.py "
+            "--database db_tournament_regions_2026_gf"
+        )
     if summary.player_cache_invalidation:
         inv = summary.player_cache_invalidation
         print(

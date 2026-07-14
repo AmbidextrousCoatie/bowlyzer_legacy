@@ -64,6 +64,10 @@ export type TournamentQualityRow = {
   season: string;
   event_name: string;
   tournament_group?: string;
+  source_pdf?: string | null;
+  source_pdf_basename?: string | null;
+  source_sheet?: string | null;
+  source_format?: string | null;
   row_count?: number;
   player_count?: number;
   missing_player_id?: number;
@@ -80,6 +84,24 @@ export type TournamentQualityRow = {
   notes?: string;
 };
 
+export type TournamentSourceExceptionTarget = {
+  category_id: string;
+  tournament_id: string;
+  event_name: string;
+  gender: string;
+  sheet: string;
+};
+
+export type TournamentSourceException = {
+  id: string;
+  file_basename: string;
+  season: string;
+  calendar_year: number;
+  format: string;
+  notes: string;
+  targets: TournamentSourceExceptionTarget[];
+};
+
 export type TournamentQualityResponse = {
   generated_at_utc: string;
   source: "report" | "live" | "absent";
@@ -94,6 +116,8 @@ export type TournamentQualityResponse = {
   };
   rows: TournamentQualityRow[];
   filters: { season: string | null; event: string | null };
+  source_pdf_dir?: string;
+  source_exceptions?: TournamentSourceException[];
 };
 
 export type LeagueStandingsValidationResponse = {

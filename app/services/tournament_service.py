@@ -4711,11 +4711,11 @@ class TournamentService:
         *,
         top_n: int = 3,
         df: Optional[pd.DataFrame] = None,
-    ) -> List[Dict[str, Any]]:
+    ) -> Tuple[List[Dict[str, Any]], Optional[float]]:
         if df is None:
             df = self._get_tournament_df(season=season, tournament=tournament)
         if df.empty:
-            return []
+            return [], None
 
         ko_bracket = self._build_ko_bracket_payload(season, tournament, df=df)
         lb_table = self.get_leaderboard_table(
@@ -4744,7 +4744,7 @@ class TournamentService:
         rank_i = _field_index("rank")
         player_i = _field_index("player")
         if rank_i is None or player_i is None:
-            return []
+            return [], None
 
         club_i = _field_index("club")
         avg_i = _field_index("total_avg")
@@ -4779,7 +4779,20 @@ class TournamentService:
                     "average": average,
                 }
             )
-        return finishers
+
+        tournament_average: Optional[float] = None
+        if avg_i is not None:
+            averages: List[float] = []
+            for row in lb_table.data:
+                try:
+                    value = float(row[avg_i])
+                except (TypeError, ValueError):
+                    continue
+                averages.append(value)
+            if averages:
+                tournament_average = round(sum(averages) / len(averages), 1)
+
+        return finishers, tournament_average
 
     def get_tournament_podiums(
         self,
@@ -4794,7 +4807,7 @@ class TournamentService:
             season_label = event["season"]
             tournament_label = event["tournament"]
             event_df = self._get_tournament_df(season=season_label, tournament=tournament_label)
-            finishers = self._leaderboard_top_finishers(
+            finishers, tournament_average = self._leaderboard_top_finishers(
                 season_label,
                 tournament_label,
                 top_n=limit,
@@ -4806,6 +4819,7 @@ class TournamentService:
                     "tournament": tournament_label,
                     "tournament_group": normalize_tournament_group_name(tournament_label),
                     "finishers": finishers,
+                    "tournament_average": tournament_average,
                 }
             )
         return {"top_n": limit, "podiums": podiums}

@@ -66,5 +66,22 @@ def test_get_lifetime_stats_all_players_without_selection(client):
                 res = client.get("/player/get_lifetime_stats?database=db_real_merged&season=all")
 
     assert res.status_code == 200
+    assert res.headers.get("X-League-Cache") == "MISS"
     service.get_aggregate_lifetime_stats.assert_called_once_with(season="all")
     service.get_lifetime_stats.assert_not_called()
+
+
+def test_get_lifetime_stats_cache_hit_sets_header(client):
+    sample = {"scope": "all", "lifetime": {"total_games": 1}, "seasons": []}
+
+    with patch("app.routes.player_routes.get_player_service") as mock_svc:
+        service = MagicMock()
+        service.database = "db_real_merged"
+        mock_svc.return_value = service
+
+        with patch("app.routes.player_routes.league_cache_try_get", return_value=sample):
+            res = client.get("/player/get_lifetime_stats?database=db_real_merged&season=16-17")
+
+    assert res.status_code == 200
+    assert res.headers.get("X-League-Cache") == "HIT"
+    service.get_aggregate_lifetime_stats.assert_not_called()

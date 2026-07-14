@@ -14,7 +14,7 @@ from data_access.tournament_data_quality import (
     comparison_summary_from_dicts,
     parse_findings_cell,
 )
-from database.paths import get_work_data_dir, tournaments_postprocessed_csv
+from database.paths import get_work_data_dir, tournaments_input_dir, tournaments_postprocessed_csv
 
 
 def _row_from_csv_record(record: Dict[str, str]) -> Dict[str, Any]:
@@ -84,6 +84,49 @@ def _run_live_audit(*, season: Optional[str], event: Optional[str]) -> List[Dict
     return [asdict(item) for item in rows]
 
 
+def _attach_source_pdf(row: Dict[str, Any]) -> Dict[str, Any]:
+    from database.tournament_import.source_registry import lookup_source_by_season_event
+
+    season = str(row.get("season") or "").strip()
+    event_name = str(row.get("event_name") or "").strip()
+    source = lookup_source_by_season_event(season, event_name)
+    if source is None:
+        row["source_pdf"] = None
+        row["source_pdf_basename"] = None
+        row["source_sheet"] = None
+        row["source_format"] = None
+        return row
+    basename = source.file_basename or Path(source.file_path).name
+    row["source_pdf_basename"] = basename or None
+    row["source_pdf"] = basename or None
+    row["source_sheet"] = source.source_sheet or None
+    row["source_format"] = source.format or None
+    return row
+
+
+def resolve_tournament_source_pdf_path(basename: str) -> Path | None:
+    """Resolve a tournament source file (PDF or legacy XLS) under the input directory."""
+    name = Path(str(basename or "").strip()).name
+    suffix = name.lower()
+    if not (suffix.endswith(".pdf") or suffix.endswith(".xls") or suffix.endswith(".xlsx")):
+        return None
+    candidate = tournaments_input_dir() / name
+    if candidate.is_file():
+        return candidate
+    return None
+
+
+def _source_file_mimetype(path: Path) -> str:
+    suffix = path.suffix.lower()
+    if suffix == ".pdf":
+        return "application/pdf"
+    if suffix == ".xls":
+        return "application/vnd.ms-excel"
+    if suffix == ".xlsx":
+        return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    return "application/octet-stream"
+
+
 def _filter_rows(
     rows: Sequence[Dict[str, Any]],
     *,
@@ -124,7 +167,11 @@ def get_tournament_data_quality(
             source = "live"
 
     rows = _filter_rows(rows, season=season, event=event)
+    rows = [_attach_source_pdf(dict(row)) for row in rows]
     summary = comparison_summary_from_dicts(rows)
+
+    pdf_dir = tournaments_input_dir()
+    from database.tournament_import.source_exceptions import exceptions_for_api
 
     return {
         "generated_at_utc": dt.datetime.now(tz=dt.timezone.utc).isoformat(),
@@ -135,4 +182,6 @@ def get_tournament_data_quality(
         "summary": summary,
         "rows": rows,
         "filters": {"season": season, "event": event},
+        "source_pdf_dir": str(pdf_dir.resolve()) if pdf_dir.is_dir() else "",
+        "source_exceptions": exceptions_for_api(),
     }

@@ -1,10 +1,14 @@
-"""Player merged-hybrid cache invalidation after data publishes."""
+"""Player and tournament cache invalidation after data publishes."""
 
 from __future__ import annotations
 
 from unittest.mock import patch
 
-from app.cache.player_data_cache import invalidate_player_merged_caches
+from app.cache.player_data_cache import (
+    TOURNAMENT_PUBLISHED_DATABASE,
+    invalidate_player_merged_caches,
+    invalidate_tournament_published_caches,
+)
 
 
 def test_invalidate_player_merged_caches_clears_adapter_revision_and_disk() -> None:
@@ -31,7 +35,31 @@ def test_invalidate_player_merged_caches_clears_adapter_revision_and_disk() -> N
     assert result == {"disk_entries_removed": 3, "runtime_entries_removed": 1}
 
 
-def test_tournament_import_invalidates_player_caches_after_publish() -> None:
+def test_invalidate_tournament_published_caches_targets_parquet_db() -> None:
+    with (
+        patch("data_access.shared_pandas_store.invalidate_adapter_cache") as mock_adapter,
+        patch("app.cache.league_data_revision.invalidate_revision_index") as mock_revision,
+        patch("data_access.shared_pandas_store.invalidate_dataframe_cache") as mock_df,
+        patch(
+            "app.cache.league_response_cache.league_cache_invalidate_database",
+            return_value=5,
+        ) as mock_disk,
+        patch(
+            "app.cache.league_response_cache.league_cache_clear_runtime",
+            return_value=2,
+        ) as mock_runtime,
+    ):
+        result = invalidate_tournament_published_caches()
+
+    mock_adapter.assert_called_once_with(TOURNAMENT_PUBLISHED_DATABASE)
+    mock_revision.assert_called_once_with(TOURNAMENT_PUBLISHED_DATABASE)
+    assert mock_df.call_count == 2
+    mock_disk.assert_called_once_with(TOURNAMENT_PUBLISHED_DATABASE)
+    mock_runtime.assert_called_once_with(TOURNAMENT_PUBLISHED_DATABASE)
+    assert result == {"disk_entries_removed": 5, "runtime_entries_removed": 2}
+
+
+def test_tournament_import_invalidates_caches_after_publish() -> None:
     from pathlib import Path
 
     from database.tournament_import.adapters.base import ImportResult
@@ -57,13 +85,23 @@ def test_tournament_import_invalidates_player_caches_after_publish() -> None:
         ),
         patch.object(
             service,
+            "_invalidate_tournament_caches",
+            return_value={"disk_entries_removed": 4, "runtime_entries_removed": 0},
+        ) as mock_tournament_invalidate,
+        patch.object(
+            service,
             "_invalidate_player_caches",
             return_value={"disk_entries_removed": 2, "runtime_entries_removed": 0},
-        ) as mock_invalidate,
+        ) as mock_player_invalidate,
     ):
         summary = service.run(entry_ids=["x"], dry_run=False, publish_parquet=True)
 
-    mock_invalidate.assert_called_once()
+    mock_tournament_invalidate.assert_called_once()
+    mock_player_invalidate.assert_called_once()
+    assert summary.tournament_cache_invalidation == {
+        "disk_entries_removed": 4,
+        "runtime_entries_removed": 0,
+    }
     assert summary.player_cache_invalidation == {
         "disk_entries_removed": 2,
         "runtime_entries_removed": 0,

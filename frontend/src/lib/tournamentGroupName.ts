@@ -132,3 +132,34 @@ export function tournamentGroupAbbreviation(groupName: string): string | undefin
   const group = normalizeTournamentGroupName(groupName);
   return TOURNAMENT_GROUP_ABBREVIATIONS[group];
 }
+
+export type TournamentGroupColorTier = "bm" | "nbm_sbm" | "other";
+
+/** BM → palette index 0; NBM/SBM → index 1; others assigned sequentially from index 2. */
+export function tournamentGroupColorTier(groupName: string): TournamentGroupColorTier {
+  const canonical = normalizeTournamentGroupName(groupName);
+  const lower = canonical.toLowerCase();
+  const abbrev = (tournamentGroupAbbreviation(canonical) ?? "").toUpperCase();
+
+  if (
+    (lower.includes("bayerische meisterschaft") || abbrev.startsWith("BM ")) &&
+    !lower.includes("nord") &&
+    !lower.includes("süd") &&
+    !lower.includes("sud")
+  ) {
+    return "bm";
+  }
+
+  if (
+    lower.includes("nordbayrische") ||
+    lower.includes("nordbayerische") ||
+    lower.includes("südbayerische") ||
+    lower.includes("sudbayerische") ||
+    abbrev.startsWith("NBM") ||
+    abbrev.startsWith("SBM")
+  ) {
+    return "nbm_sbm";
+  }
+
+  return "other";
+}

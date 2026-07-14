@@ -30,6 +30,9 @@ _GROUP_CANONICAL_ALIASES: Dict[str, str] = {
     "Nordbayerische Meisterschaft Damen Einzel": "Nordbayrische Meisterschaft Einzel Damen",
     "Nordbayerische Meisterschaft - Damen Einzel": "Nordbayrische Meisterschaft Einzel Damen",
     "Nordbayerische Meisterschaft - Frauen Einzel": "Nordbayrische Meisterschaft Einzel Damen",
+    "Nordbayerische Meisterschaft Einzel Herren": "Nordbayrische Meisterschaft Einzel",
+    "Bayerische Meisterschaft Einzel Herren": "Bayerische Meisterschaft Einzel",
+    "Bayerische Meisterschaft Doppel": "Bayerische Meisterschaft Männer Doppel",
 }
 
 _MAPPING_PATH = (
@@ -111,7 +114,8 @@ def normalize_tournament_group_name(event_name: str) -> str:
     Stable display/group key for a tournament event.
 
     Strips trailing calendar years (``… 2018``) and maps GF/legacy label variants
-    to one canonical name. The raw ``event_name`` in the database is unchanged.
+    to one canonical name. Import-time labels come from
+    ``database/config/tournament_source_registry.csv``.
     """
     text = str(event_name or "").strip()
     if not text:

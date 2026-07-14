@@ -221,7 +221,7 @@ def warm_player_catalog_cache(
     for endpoint, query, build in (
         (
             "get_highest_individual_games",
-            {"database": player_database, "limit": "10"},
+            {"database": player_database, "limit": "10", "season": "all"},
             lambda: json_safe(player_service.get_highest_individual_games(limit=10)),
         ),
         (
@@ -242,6 +242,26 @@ def warm_player_catalog_cache(
         except Exception as exc:
             stats["errors"] += 1
             log(f"  {endpoint} ERROR: {exc}")
+
+    for season in lifetime_seasons:
+        query = {"database": player_database, "limit": "10", "season": season}
+
+        def _build_highest_games(s: str = season) -> Any:
+            payload = player_service.get_highest_individual_games(limit=10, season=s)
+            return json_safe(payload) if payload is not None else None
+
+        try:
+            status = _warm_one("get_highest_individual_games", player_database, query, _build_highest_games)
+            if status == "built":
+                stats["built"] += 1
+            elif status == "hit":
+                stats["hit"] += 1
+            elif status == "skip-empty":
+                stats["skip_empty"] += 1
+            log(f"  get_highest_individual_games all-players season={season!r} -> {status}")
+        except Exception as exc:
+            stats["errors"] += 1
+            log(f"  get_highest_individual_games all-players season={season!r} ERROR: {exc}")
 
     return stats
 
@@ -352,7 +372,7 @@ def warm_essential_caches(
     for endpoint, query, build in (
         (
             "get_highest_individual_games",
-            {"database": player_database, "limit": "10"},
+            {"database": player_database, "limit": "10", "season": "all"},
             lambda: json_safe(player_service.get_highest_individual_games(limit=10)),
         ),
         (
@@ -368,6 +388,21 @@ def warm_essential_caches(
         except Exception as exc:
             stats["errors"] += 1
             log(f"  {endpoint} ERROR: {exc}")
+
+    for season in lifetime_seasons:
+        query = {"database": player_database, "limit": "10", "season": season}
+
+        def _build_highest_games(s: str = season) -> Any:
+            payload = player_service.get_highest_individual_games(limit=10, season=s)
+            return json_safe(payload) if payload is not None else None
+
+        try:
+            status = _warm_one("get_highest_individual_games", player_database, query, _build_highest_games)
+            _tally(status)
+            log(f"  get_highest_individual_games all-players season={season!r} -> {status}")
+        except Exception as exc:
+            stats["errors"] += 1
+            log(f"  get_highest_individual_games all-players season={season!r} ERROR: {exc}")
 
     log(
         "Cache warmup done: "

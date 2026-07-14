@@ -7,7 +7,8 @@ Phases (for ``warm_cache_shard.py`` or manual runs):
   seasons-list    — ``player_get_available_seasons`` (all players)
   lifetime-season — ``get_lifetime_stats`` all-players for one ``--season``
   lifetime-career — ``get_lifetime_stats`` ``season=all`` (live aggregate)
-  highest-games   — ``get_highest_individual_games`` (all-players top scores)
+  highest-games   — ``get_highest_individual_games`` all-players ``season=all``
+  highest-games-season — ``get_highest_individual_games`` all-players for one ``--season``
   player-highest-games — ``get_highest_individual_games`` for one ``--player-name`` / ``--player-id``
   player-highest-games-batch — same for ``--player-offset`` / ``--player-limit`` catalog slice
   club-300        — ``get_club_300`` (all perfect games)
@@ -70,7 +71,7 @@ def _player_warm_slug(player: Dict[str, str]) -> str:
     return slug[:48]
 
 
-# Default player page uses season=all; per-season highest-games build on first request.
+# Per-player highest-games warm only career (``season=all``); season filters build on demand.
 HIGHEST_GAMES_WARM_INCLUDE_PLAYER_SEASONS = False
 PLAYERS_PER_HIGHEST_GAMES_WARM_SHARD = 50
 
@@ -99,6 +100,13 @@ def build_player_warm_shards(
         if include_career_merge:
             shards.append(PlayerWarmShard("player:lifetime:all", ("--phase", "lifetime-career")))
         shards.append(PlayerWarmShard("player:highest-games", ("--phase", "highest-games")))
+        for season in seasons:
+            shards.append(
+                PlayerWarmShard(
+                    f"player:highest-games:{season}",
+                    ("--phase", "highest-games-season", "--season", season),
+                )
+            )
         shards.append(PlayerWarmShard("player:club-300", ("--phase", "club-300")))
         player_list = [
             p
@@ -252,7 +260,7 @@ def warm_player_highest_games(
     from app.utils.json_safe import json_safe
 
     stats = {"built": 0, "hit": 0, "skip_empty": 0, "errors": 0}
-    query = {"database": database, "limit": str(limit)}
+    query = {"database": database, "limit": str(limit), "season": "all"}
     try:
         status = _warm_one(
             "get_highest_individual_games",
@@ -266,10 +274,49 @@ def warm_player_highest_games(
             stats["hit"] += 1
         else:
             stats["skip_empty"] += 1
-        log(f"  get_highest_individual_games limit={limit} -> {status}")
+        log(f"  get_highest_individual_games all-players season=all limit={limit} -> {status}")
     except Exception as exc:
         stats["errors"] += 1
-        log(f"  get_highest_individual_games ERROR: {exc}")
+        log(f"  get_highest_individual_games all-players season=all ERROR: {exc}")
+    return stats
+
+
+def warm_player_highest_games_season(
+    player_service: Any,
+    database: str,
+    season: str,
+    *,
+    limit: int = 10,
+    log: Callable[[str], None],
+) -> Dict[str, int]:
+    from app.utils.json_safe import json_safe
+
+    stats = {"built": 0, "hit": 0, "skip_empty": 0, "errors": 0}
+    query = {"database": database, "limit": str(limit), "season": season}
+    try:
+        status = _warm_one(
+            "get_highest_individual_games",
+            database,
+            query,
+            lambda s=season: json_safe(
+                player_service.get_highest_individual_games(limit=limit, season=s)
+            ),
+        )
+        if status == "built":
+            stats["built"] += 1
+        elif status == "hit":
+            stats["hit"] += 1
+        else:
+            stats["skip_empty"] += 1
+        log(
+            f"  get_highest_individual_games all-players season={season!r} "
+            f"limit={limit} -> {status}"
+        )
+    except Exception as exc:
+        stats["errors"] += 1
+        log(
+            f"  get_highest_individual_games all-players season={season!r} ERROR: {exc}"
+        )
     return stats
 
 
@@ -440,6 +487,10 @@ def run_player_warm_phase(
         return warm_player_lifetime_career(player_service, database, season_list, log=log)
     if phase == "highest-games":
         return warm_player_highest_games(player_service, database, log=log)
+    if phase == "highest-games-season":
+        if not season:
+            raise ValueError("--season is required for highest-games-season")
+        return warm_player_highest_games_season(player_service, database, season, log=log)
     if phase == "player-highest-games":
         if not player_name:
             raise ValueError("--player-name is required for player-highest-games")
@@ -471,6 +522,10 @@ def run_player_warm_phase(
             ],
             warm_player_lifetime_career(player_service, database, season_list, log=log),
             warm_player_highest_games(player_service, database, log=log),
+            *[
+                warm_player_highest_games_season(player_service, database, s, log=log)
+                for s in season_list
+            ],
             warm_all_player_highest_games(player_service, database, log=log),
             warm_player_club_300(player_service, database, log=log),
         ):
@@ -491,6 +546,7 @@ def main() -> int:
             "lifetime-season",
             "lifetime-career",
             "highest-games",
+            "highest-games-season",
             "player-highest-games",
             "player-highest-games-batch",
             "club-300",
@@ -499,7 +555,10 @@ def main() -> int:
         default="essential",
         help="Warm scope (default: essential = full all-players stack)",
     )
-    parser.add_argument("--season", help="Required for --phase lifetime-season")
+    parser.add_argument(
+        "--season",
+        help="Required for --phase lifetime-season or highest-games-season",
+    )
     parser.add_argument("--player-name", help="Required for --phase player-highest-games")
     parser.add_argument("--player-id", default="", help="Optional for --phase player-highest-games")
     parser.add_argument(

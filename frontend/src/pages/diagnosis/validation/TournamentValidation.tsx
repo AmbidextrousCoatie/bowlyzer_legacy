@@ -4,9 +4,29 @@ import { DiagnosisToolbar } from "../../../components/DiagnosisToolbar";
 import { useAvailableSeasons } from "../../../hooks/useLeague";
 import { useLeagueStandingsValidation } from "../../../hooks/useLeagueStandingsValidation";
 import { useTranslations } from "../../../hooks/useTranslations";
-import { seasonForUrlQuery } from "../../../lib/api";
-import { querySuffixForPath } from "../../../lib/navigationQuery";
+import { buildUrl, seasonForUrlQuery } from "../../../lib/api";
+import { querySuffixForPath, searchParamsForPath } from "../../../lib/navigationQuery";
 import { STATUS_CLASS, TOURNAMENT_STATUS_KEYS } from "./validationUi";
+
+function tournamentValidationPath(season: string, tournament: string, searchParams: URLSearchParams): string {
+  const params = new URLSearchParams();
+  params.set("season", seasonForUrlQuery(season));
+  params.set("tournament", tournament);
+  for (const [key, value] of searchParamsForPath("/turnier", searchParams).entries()) {
+    if (!params.has(key)) params.set(key, value);
+  }
+  return `/turnier?${params.toString()}`;
+}
+
+function tournamentSourceFileUrl(basename: string): string {
+  return buildUrl("/pipeline/tournament_source_pdf", { basename });
+}
+
+function sourceFileLinkLabel(basename: string): string {
+  const lower = basename.toLowerCase();
+  if (lower.endsWith(".xls") || lower.endsWith(".xlsx")) return "XLS";
+  return "PDF";
+}
 
 const TOURNAMENT_STATUS_FILTER_KEYS = ["green", "yellow", "red"] as const;
 type TournamentStatusKey = (typeof TOURNAMENT_STATUS_FILTER_KEYS)[number];
@@ -80,6 +100,14 @@ export function TournamentValidation() {
   }
 
   const hubSuffix = querySuffixForPath("/diagnose/validierung", searchParams);
+  const headerPdfBasenames = useMemo(() => {
+    const names = new Set<string>();
+    for (const row of visibleRows) {
+      const basename = row.source_pdf_basename ?? row.source_pdf;
+      if (basename) names.add(basename);
+    }
+    return [...names].sort((a, b) => a.localeCompare(b, "de"));
+  }, [visibleRows]);
 
   return (
     <div className="w-full min-w-0 px-4 pt-8 pb-24 lg:px-8 lg:pt-12">
@@ -106,6 +134,55 @@ export function TournamentValidation() {
             "Datenqualität je Turnier nach Normalisierung von Spieler-ID, Name und Verein. Grün = keine Auffälligkeiten; Gelb = fehlende IDs/Vereine; Rot = ID-/Namenskonflikte.",
           )}
         </p>
+        {headerPdfBasenames.length > 0 && (
+          <p className="text-body text-muted mt-3">
+            {t("ui.diagnosis.tournament_validation_source_files", "Quelldateien")}:{" "}
+            {headerPdfBasenames.map((basename, index) => (
+              <span key={basename}>
+                {index > 0 ? " · " : null}
+                <a
+                  href={tournamentSourceFileUrl(basename)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary underline-offset-2 hover:underline font-mono text-caption"
+                >
+                  {basename}
+                </a>
+              </span>
+            ))}
+          </p>
+        )}
+        {(data?.source_exceptions?.length ?? 0) > 0 && (
+          <section className="mt-4 rounded-sm border border-border bg-surface px-4 py-3 text-body max-w-[72ch]">
+            <h2 className="text-h3 mb-2">
+              {t("ui.diagnosis.tournament_source_exceptions_title", "Quell-Ausnahmen")}
+            </h2>
+            <p className="text-caption text-muted mb-3">
+              {t(
+                "ui.diagnosis.tournament_source_exceptions_desc",
+                "Gemeinsame Workbooks mit mehreren Blättern statt getrennter PDFs pro Geschlecht.",
+              )}
+            </p>
+            <ul className="space-y-3">
+              {data!.source_exceptions!.map((item) => (
+                <li key={item.id} className="text-caption">
+                  <p className="font-mono text-body">{item.file_basename}</p>
+                  <p className="text-muted">
+                    {item.season} · {item.format}
+                    {item.notes ? ` — ${item.notes}` : null}
+                  </p>
+                  <ul className="mt-1 ml-4 list-disc">
+                    {item.targets.map((target) => (
+                      <li key={`${item.id}-${target.sheet}`}>
+                        {target.tournament_id}: Blatt {target.sheet} → {target.event_name}
+                      </li>
+                    ))}
+                  </ul>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
       </header>
 
       <DiagnosisToolbar>
@@ -214,6 +291,7 @@ export function TournamentValidation() {
                 <tr className="border-t border-border text-label uppercase text-muted">
                   <th className="px-4 py-2 font-medium">Saison</th>
                   <th className="px-4 py-2 font-medium">Turnier</th>
+                  <th className="px-4 py-2 font-medium">Quelle</th>
                   <th className="px-4 py-2 font-medium">Status</th>
                   <th className="px-4 py-2 font-medium">Zeilen</th>
                   <th className="px-4 py-2 font-medium">Spieler</th>
@@ -226,14 +304,55 @@ export function TournamentValidation() {
                 </tr>
               </thead>
               <tbody>
-                {visibleRows.map((row) => (
+                {visibleRows.map((row) => {
+                  const tournamentLabel = row.tournament_group || row.event_name;
+                  const pdfBasename = row.source_pdf_basename ?? row.source_pdf ?? null;
+                  const sourceSheet = row.source_sheet ?? null;
+                  const tournamentPath = tournamentValidationPath(
+                    row.season,
+                    row.event_name,
+                    searchParams,
+                  );
+                  return (
                   <tr
                     key={`${row.season}-${row.event_name}`}
                     className="border-t border-border align-top"
                   >
-                    <td className="px-4 py-2 whitespace-nowrap">{row.season}</td>
+                    <td className="px-4 py-2 whitespace-nowrap">
+                      <Link
+                        to={tournamentPath}
+                        className="text-primary underline-offset-2 hover:underline"
+                      >
+                        {row.season}
+                      </Link>
+                    </td>
                     <td className="px-4 py-2 font-medium min-w-[12rem]">
-                      <span title={row.event_name}>{row.tournament_group || row.event_name}</span>
+                      <Link
+                        to={tournamentPath}
+                        className="text-primary underline-offset-2 hover:underline"
+                        title={row.event_name}
+                      >
+                        {tournamentLabel}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-2 whitespace-nowrap">
+                      {pdfBasename ? (
+                        <span className="inline-flex flex-col gap-0.5">
+                          <a
+                            href={tournamentSourceFileUrl(pdfBasename)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary underline-offset-2 hover:underline font-mono text-caption"
+                          >
+                            {sourceFileLinkLabel(pdfBasename)}
+                          </a>
+                          {sourceSheet ? (
+                            <span className="text-caption text-muted">Blatt {sourceSheet}</span>
+                          ) : null}
+                        </span>
+                      ) : (
+                        <span className="text-muted">—</span>
+                      )}
                     </td>
                     <td className={`px-4 py-2 capitalize ${STATUS_CLASS[row.status] ?? ""}`}>
                       {row.status}
@@ -259,7 +378,8 @@ export function TournamentValidation() {
                       )}
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
             {visibleRows.length === 0 && (

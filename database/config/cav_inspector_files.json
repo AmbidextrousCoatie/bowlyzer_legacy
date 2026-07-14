@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "files": [
+    {
+      "label": "League results (parquet)",
+      "path": "database/data/league_results_merged.parquet"
+    },
+    {
+      "label": "Tournaments (parquet)",
+      "path": "database/data/tournaments_postprocessed.parquet"
+    },
+    {
+      "label": "Players registry (parquet)",
+      "path": "database/data/players_registry.parquet"
+    },
+    {
+      "label": "Player stats hybrid (parquet)",
+      "path": "database/data/player_stats_merged_plus_tournaments.parquet"
+    },
+    {
+      "label": "League results (csv)",
+      "path": "database/data/league_results_merged.csv"
+    },
+    {
+      "label": "Tournaments (csv)",
+      "path": "database/data/tournaments_postprocessed.csv"
+    },
+    {
+      "label": "Clubs registry (parquet)",
+      "path": "database/data/clubs_registry.parquet"
+    },
+    {
+      "label": "Players registry (csv)",
+      "path": "database/data/players_registry.csv"
+    },
+    {
+      "label": "Tournament source registry (csv)",
+      "path": "database/config/tournament_source_registry.csv"
+    }
+  ]
+}

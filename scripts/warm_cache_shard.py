@@ -8,7 +8,8 @@ optionally tournament (``warm_tournament_cache.py``).
 Shards:
   - league: seasons, meta/league-wide, clubs, club-legends (see ``warm_league_cache.py``)
   - player: search, seasons list, one process per all-players lifetime season, career merge,
-    one process per player for highest-games (career + each player season), club-300
+    all-players highest-games (``season=all`` + one process per season), batched per-player
+    highest-games (career only), club-300
   - tournament: single process (internal per-season hit/miss)
 
 Usage:

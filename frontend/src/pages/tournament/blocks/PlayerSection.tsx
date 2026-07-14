@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import type { EChartsOption } from "echarts";
+import { buildUrl } from "../../../lib/api";
 import { EChart } from "../../../lib/charts/EChart";
 import { DataTable } from "../../../lib/datatable/DataTable";
 import { getHeatMapColor, getSemanticColor } from "../../../lib/color-utils";
@@ -193,6 +195,15 @@ export function PlayerSection({
     [series, data.player, t],
   );
 
+  const playerProfilePath = useMemo(
+    () =>
+      buildUrl("/spieler", {
+        player_name: data.player,
+        ...(data.player_club ? { club: data.player_club } : {}),
+      }),
+    [data.player, data.player_club],
+  );
+
   const range = (
     data.round_table?.metadata as { heatmap_ranges?: { game_score?: HeatmapRange } } | undefined
   )?.heatmap_ranges?.game_score;
@@ -227,19 +238,32 @@ export function PlayerSection({
             {t("ui.tournament.player", "Spieler")}
           </p>
           <h2 className="text-h2">
-            {data.player}
+            <Link
+              to={playerProfilePath}
+              className="text-foreground hover:text-accent hover:underline"
+            >
+              {data.player}
+            </Link>
             {data.player_club ? (
               <span className="text-muted font-normal"> · {data.player_club}</span>
             ) : null}
           </h2>
         </div>
-        <button
-          type="button"
-          onClick={onBack}
-          className="h-9 rounded-sm border border-border bg-surface px-3 text-small font-medium hover:border-border-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-        >
-          {t("ui.tournament.back_to_overview", "Zurück zur Übersicht")}
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            to={playerProfilePath}
+            className="h-9 rounded-sm border border-border bg-surface px-3 text-small font-medium text-foreground hover:border-border-strong hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          >
+            {t("ui.player.profile", "Spielerprofil")}
+          </Link>
+          <button
+            type="button"
+            onClick={onBack}
+            className="h-9 rounded-sm border border-border bg-surface px-3 text-small font-medium hover:border-border-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          >
+            {t("ui.tournament.back_to_overview", "Zurück zur Übersicht")}
+          </button>
+        </div>
       </div>
 
       {chunkBy(cardLayout, 3).map((row, ri) => (

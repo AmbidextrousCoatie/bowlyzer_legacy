@@ -250,6 +250,7 @@ export type TournamentPodiumGroup = {
   season: string;
   tournament: string;
   tournament_group?: string;
+  tournament_average?: number | null;
   finishers: TournamentFinisher[];
 };
 

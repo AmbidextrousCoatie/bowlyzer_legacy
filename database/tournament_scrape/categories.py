@@ -18,7 +18,18 @@ TOURNAMENT_CODES: dict[str, str] = {
     "nbm": "nordbayerische-herren",
     "bm": "bayerische-einzel-herren",
     "bm_f": "bayerische-einzel-frauen",
+    "bm_md": "bayerisches-doppel-herren",
+    "bm_dd": "bayerisches-doppel-frauen",
 }
+
+# Doppel PDFs may be scraped but need a dedicated team parser before import.
+IMPORT_EXCLUDED_TOURNAMENT_CODES = frozenset({"bm_md", "bm_dd"})
+
+IMPORT_EXCLUDED_CATEGORY_IDS = frozenset(
+    category_id
+    for code, category_id in TOURNAMENT_CODES.items()
+    if code in IMPORT_EXCLUDED_TOURNAMENT_CODES
+)
 
 
 @dataclass(frozen=True)
@@ -106,3 +117,18 @@ def resolve_category_ids(
             add(mapped)
 
     return resolved or None
+
+
+def filter_importable_category_ids(category_ids: Sequence[str]) -> list[str]:
+    """Drop categories that are not yet supported by the import pipeline."""
+    return [category_id for category_id in category_ids if category_id not in IMPORT_EXCLUDED_CATEGORY_IDS]
+
+
+def filter_importable_tournament_codes(tournaments: Sequence[str]) -> list[str]:
+    tokens: list[str] = []
+    for raw in tournaments:
+        for token in raw.split(","):
+            code = token.strip().lower()
+            if code and code not in IMPORT_EXCLUDED_TOURNAMENT_CODES:
+                tokens.append(code)
+    return tokens

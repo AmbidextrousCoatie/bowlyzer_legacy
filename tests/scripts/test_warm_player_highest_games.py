@@ -26,6 +26,62 @@ def _load():
 player_warm = _load()
 
 
+def test_warm_player_highest_games_uses_season_all_in_cache_key(monkeypatch):
+    calls: list[dict] = []
+
+    def fake_warm_one(endpoint, database, query, build):
+        calls.append({"endpoint": endpoint, "query": dict(query)})
+        build()
+        return "built"
+
+    monkeypatch.setattr(player_warm, "_warm_one", fake_warm_one)
+
+    service = MagicMock()
+    service.get_highest_individual_games.return_value = [{"score": 300}]
+
+    stats = player_warm.warm_player_highest_games(
+        service,
+        "db_player_merged_hybrid",
+        log=lambda _msg: None,
+    )
+
+    assert stats["built"] == 1
+    assert calls[0]["query"] == {
+        "database": "db_player_merged_hybrid",
+        "limit": "10",
+        "season": "all",
+    }
+
+
+def test_warm_player_highest_games_season_uses_season_in_cache_key(monkeypatch):
+    calls: list[dict] = []
+
+    def fake_warm_one(endpoint, database, query, build):
+        calls.append({"endpoint": endpoint, "query": dict(query)})
+        build()
+        return "built"
+
+    monkeypatch.setattr(player_warm, "_warm_one", fake_warm_one)
+
+    service = MagicMock()
+    service.get_highest_individual_games.return_value = [{"score": 290}]
+
+    stats = player_warm.warm_player_highest_games_season(
+        service,
+        "db_player_merged_hybrid",
+        "16/17",
+        log=lambda _msg: None,
+    )
+
+    assert stats["built"] == 1
+    assert calls[0]["query"] == {
+        "database": "db_player_merged_hybrid",
+        "limit": "10",
+        "season": "16/17",
+    }
+    service.get_highest_individual_games.assert_called_once_with(limit=10, season="16/17")
+
+
 def test_warm_player_highest_games_for_player_warms_career_only_by_default(monkeypatch):
     calls: list[dict] = []
 

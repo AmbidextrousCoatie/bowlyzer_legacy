@@ -19,6 +19,7 @@ import {
 } from "../../../lib/tournamentEventLinks";
 import type { TournamentPodiumGroup } from "../../../hooks/useTournament";
 import { useTranslations } from "../../../hooks/useTranslations";
+import { TournamentPodiumAverageChart } from "./TournamentPodiumAverageChart";
 
 type Props = {
   podiums: TournamentPodiumGroup[];
@@ -58,7 +59,9 @@ export function TournamentPodiumOverview({ podiums, season, tournament, t }: Pro
       tournamentAbbreviations,
     );
     return (
-      <section className="space-y-4">
+      <div className="space-y-8">
+        <PodiumAverageChartSection podiums={podiums} t={t} />
+        <section className="space-y-4">
         <header>
           <h2 className="text-h2">{t("ui.tournament.podium_heading", "Podium")}</h2>
           <p className="mt-1 text-small text-muted">
@@ -75,7 +78,8 @@ export function TournamentPodiumOverview({ podiums, season, tournament, t }: Pro
           onNavigate={navigate}
           t={t}
         />
-      </section>
+        </section>
+      </div>
     );
   }
 
@@ -85,7 +89,9 @@ export function TournamentPodiumOverview({ podiums, season, tournament, t }: Pro
   const tournamentNames = tournamentOnly ? [tournament] : sortedTournamentNames(grouped);
 
   return (
-    <section className="space-y-4">
+    <div className="space-y-8">
+      <PodiumAverageChartSection podiums={podiums} t={t} />
+      <section className="space-y-4">
       <header>
         <h2 className="text-h2">{t("ui.tournament.podium_heading", "Podium")}</h2>
         <p className="mt-1 text-small text-muted">
@@ -115,6 +121,32 @@ export function TournamentPodiumOverview({ podiums, season, tournament, t }: Pro
           );
         })}
       </div>
+      </section>
+    </div>
+  );
+}
+
+function PodiumAverageChartSection({
+  podiums,
+  t,
+}: {
+  podiums: TournamentPodiumGroup[];
+  t: (key: string, fallback?: string) => string;
+}) {
+  return (
+    <section className="rounded-sm border border-border bg-surface">
+      <header className="border-b border-border px-4 py-3 lg:px-5">
+        <h2 className="text-h3">
+          {t("ui.tournament.overview_average_history", "Schnittverlauf")}
+        </h2>
+        <p className="text-small text-muted mt-1">
+          {t(
+            "ui.tournament.overview_average_history_hint",
+            "Schnitt je Saison — zwischen Sieger und Turnier-Schnitt umschaltbar.",
+          )}
+        </p>
+      </header>
+      <TournamentPodiumAverageChart podiums={podiums} t={t} />
     </section>
   );
 }
@@ -146,6 +178,11 @@ function PodiumWideTable({
         if (idx == null || typeof idx !== "number") return;
         const link = rowLinks[idx];
         if (!link) return;
+
+        if (field === "season") {
+          onNavigate(buildTournamentEventPath(link.season, link.tournament));
+          return;
+        }
 
         if (field === "tournament" && showTournamentColumn) {
           onNavigate(buildTournamentEventPath(link.season, link.tournament));

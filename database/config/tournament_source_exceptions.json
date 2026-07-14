@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "description": "Shared workbook / multi-sheet tournament sources that do not map 1:1 to scrape categories.",
+  "exceptions": [
+    {
+      "id": "bm-2007-einz-dual-xls",
+      "file_basename": "bm2007_einz_erg.xls",
+      "season": "06/07",
+      "calendar_year": 2007,
+      "format": "legacy_bm_einz_xls_dual",
+      "notes": "Single legacy XLS with separate Herren/Damen sheets instead of per-gender PDFs.",
+      "scrape_filename_pattern": "(?i)bm20\\d{2}_einz_erg\\.xls$",
+      "targets": [
+        {
+          "category_id": "bayerische-einzel-herren",
+          "tournament_id": "BM M",
+          "event_name": "Bayerische Meisterschaft Einzel 2007",
+          "gender": "male",
+          "sheet": "Herren"
+        },
+        {
+          "category_id": "bayerische-einzel-frauen",
+          "tournament_id": "BM D",
+          "event_name": "Bayerische Meisterschaft Einzel Damen 2007",
+          "gender": "female",
+          "sheet": "Damen"
+        }
+      ]
+    }
+  ]
+}

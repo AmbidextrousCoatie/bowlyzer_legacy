@@ -34,6 +34,16 @@ COVERAGE_STATUSES = (
     "published_ok",
 )
 
+# Regional SBM/NBM exist for Herren Einzel only — no Damen or Doppel variants.
+COVERAGE_EXCLUDED_TOURNAMENT_IDS = frozenset(
+    {
+        "NBM D",
+        "SBM D",
+        "NBM M D",
+        "SBM M D",
+    }
+)
+
 SCRAPE_CATEGORY_TO_TOURNAMENT_ID: Dict[str, str] = {
     "suedbayerische-herren": "SBM M",
     "nordbayerische-herren": "NBM M",
@@ -52,6 +62,8 @@ _LEGACY_CODE_TO_ID = {
     "nbm": "NBM M",
     "bm": "BM M",
     "bm_f": "BM D",
+    "bm_md": "BM M D",
+    "bm_dd": "BM D D",
 }
 
 _FOLDER_SEASON_RE = re.compile(r"^(\d{4})-(\d{2})$")
@@ -72,7 +84,7 @@ def app_season_to_calendar_year(season: str) -> int:
     return 2000 + int(parts[1])
 
 
-def iter_app_seasons(*, first_season: str = "08/09", last_season: str | None = None) -> List[str]:
+def iter_app_seasons(*, first_season: str = "04/05", last_season: str | None = None) -> List[str]:
     start_yy = int(first_season.split("/")[0])
     if not last_season:
         published_counts, _ = _load_published_events(tournaments_postprocessed_csv())
@@ -141,6 +153,28 @@ class CoverageCell:
             "notes": self.notes,
             "event_slug": self.event_slug,
         }
+
+
+def _load_registry_pdf_availability(pdf_dir: Path) -> Set[Tuple[str, str]]:
+    """``(app_season, tournament_id)`` for PDFs present on disk per source registry."""
+    if not pdf_dir.is_dir():
+        return set()
+    from database.tournament_import.source_registry import load_source_registry
+
+    on_disk = {path.name.lower() for path in pdf_dir.glob("*.pdf")}
+    on_disk.update(path.name.lower() for path in pdf_dir.glob("*.xls"))
+    on_disk.update(path.name.lower() for path in pdf_dir.glob("*.xlsx"))
+    out: Set[Tuple[str, str]] = set()
+    for row in load_source_registry():
+        if not row.enabled or not row.file_basename:
+            continue
+        if row.file_basename.lower() not in on_disk:
+            continue
+        season = str(row.season or "").strip()
+        tournament_id = str(row.tournament_id or "").strip()
+        if season and tournament_id:
+            out.add((season, tournament_id))
+    return out
 
 
 def _load_scrape_downloads(log_path: Path) -> Set[Tuple[str, str]]:
@@ -285,6 +319,8 @@ def tournament_rows() -> List[Dict[str, str]]:
     for item in _load_tournament_mapping_rows():
         tournament_id = str(item.get("id") or "").strip()
         long_name = str(item.get("long_name") or "").strip()
+        if tournament_id in COVERAGE_EXCLUDED_TOURNAMENT_IDS:
+            continue
         if tournament_id and long_name:
             rows.append(
                 {
@@ -299,7 +335,7 @@ def tournament_rows() -> List[Dict[str, str]]:
 
 def build_tournament_coverage_matrix(
     *,
-    first_season: str = "08/09",
+    first_season: str = "04/05",
     last_season: str | None = None,
 ) -> Dict[str, Any]:
     seasons = iter_app_seasons(first_season=first_season, last_season=last_season)
@@ -311,7 +347,8 @@ def build_tournament_coverage_matrix(
     scrape_log = legacy_scrape_dir() / "tournament_scrape_log.jsonl"
     pdf_dir = tournaments_input_dir()
 
-    downloaded = _load_scrape_downloads(scrape_log)
+    downloaded_log = _load_scrape_downloads(scrape_log)
+    downloaded_registry = _load_registry_pdf_availability(pdf_dir)
     csv_available = _load_postprocessed_csv_availability(data_dir)
     gf_available, gf_slugs = _load_gf_input_availability(gf_tournaments_combined_postprocessed_csv())
     published_counts, published_slugs = _load_published_events(tournaments_postprocessed_csv())
@@ -328,8 +365,10 @@ def build_tournament_coverage_matrix(
             sources: List[str] = []
             cell = CoverageCell(status="not_available", event_slug=default_slug)
 
-            if key in downloaded:
+            if key in downloaded_log:
                 sources.append("scrape_pdf")
+            if key in downloaded_registry:
+                sources.append("registry_pdf")
             if key in csv_available:
                 sources.append("postprocessed_csv")
             if key in gf_available:
@@ -362,6 +401,7 @@ def build_tournament_coverage_matrix(
             else:
                 cell.status = "not_available"
 
+            cell.sources = list(sources)
             summary[cell.status] += 1
             cells.append(
                 {
@@ -387,7 +427,7 @@ def build_tournament_coverage_matrix(
             "published_present": data_file_exists(tournaments_postprocessed_csv()),
             "quality_report": str((work_dir / TOURNAMENT_DATA_QUALITY_CSV).resolve()),
             "quality_report_present": (work_dir / TOURNAMENT_DATA_QUALITY_CSV).is_file(),
-            "download_pairs": len(downloaded),
+            "download_pairs": len(downloaded_log | downloaded_registry),
             "published_pairs": len(published_counts),
         },
     }

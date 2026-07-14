@@ -9,21 +9,19 @@ from typing import List, Sequence
 
 from database.paths import get_data_dir, tournaments_input_dir
 from database.tournament_import.config import ImportEntry
+from database.tournament_import.legacy_pdf_format import resolve_legacy_pdf_import_format
+from database.tournament_import.source_registry import lookup_source_row
 from database.tournament_scrape.categories import (
     TOURNAMENT_CODES,
     category_by_id,
+    filter_importable_category_ids,
+    filter_importable_tournament_codes,
     load_scrape_config,
     resolve_category_ids,
 )
 from database.tournament_scrape.discover import CALENDAR_YEAR_RE
 
 _INVERSE_CODES = {category_id: code for code, category_id in TOURNAMENT_CODES.items()}
-
-# Bayerische Einzel Herren/Damen PDFs share the same title line; keep merge keys distinct.
-_EVENT_NAME_TEMPLATE: dict[str, str] = {
-    "bm": "Bayerische Meisterschaft Einzel {year}",
-    "bm_f": "Bayerische Meisterschaft Einzel Damen {year}",
-}
 
 
 @dataclass(frozen=True)
@@ -70,11 +68,13 @@ def _matches_category(filename: str, category_id: str) -> bool:
 def _score_candidate(filename: str) -> int:
     lower = filename.lower()
     score = 0
-    if lower.endswith("_erg.pdf"):
+    if lower.endswith("_erg.pdf") or lower.endswith("_erg_neu.pdf"):
         score += 15
+    if lower.endswith("_erg_neu.pdf"):
+        score += 12
     if "_akt_" in lower:
         score += 5
-    if re.search(r"_erg_[a-z0-9]", lower):
+    if re.search(r"_erg_[a-z0-9]", lower) and not lower.endswith("_erg_neu.pdf"):
         score -= 8
     return score
 
@@ -86,7 +86,10 @@ def resolve_legacy_pdf_targets(
     last_year: int,
     input_dir: Path | None = None,
 ) -> LegacyPdfResolveSummary:
-    category_ids = resolve_category_ids(tournaments=list(tournaments)) or []
+    import_codes = filter_importable_tournament_codes(tournaments)
+    category_ids = filter_importable_category_ids(
+        resolve_category_ids(tournaments=import_codes) or []
+    )
     codes = [_INVERSE_CODES[category_id] for category_id in category_ids]
     pdf_dir = (input_dir or tournaments_input_dir()).resolve()
     pdfs = sorted(pdf_dir.glob("*.pdf")) if pdf_dir.is_dir() else []
@@ -125,22 +128,34 @@ def resolve_legacy_pdf_targets(
 
 
 def import_entry_for_target(target: LegacyPdfTarget) -> ImportEntry:
+    registry = lookup_source_row(target.pdf_path)
     options: dict = {}
-    if target.tournament_code == "sbm":
+    if registry is not None:
+        if registry.event_name:
+            options["event_name"] = registry.event_name
+        tournament_code = registry.tournament_code or target.tournament_code
+    else:
+        if target.tournament_code == "sbm":
+            options["skip_line_patterns"] = ["Keine Teilnahme BM!"]
+        tournament_code = target.tournament_code
+
+    pdf_format = resolve_legacy_pdf_import_format(
+        target.pdf_path,
+        registry,
+        allow_detect_fallback=registry is None,
+    )
+
+    if target.tournament_code == "sbm" and "skip_line_patterns" not in options:
         options["skip_line_patterns"] = ["Keine Teilnahme BM!"]
 
-    template = _EVENT_NAME_TEMPLATE.get(target.tournament_code)
-    if template:
-        options["event_name"] = template.format(year=target.calendar_year)
-
     return ImportEntry(
-        id=f"legacy-{target.tournament_code}-{target.calendar_year}",
-        format="legacy_pdf_erg_2016",
+        id=f"legacy-{tournament_code}-{target.calendar_year}",
+        format=pdf_format,
         source=str(target.pdf_path),
         enabled=True,
         merge_target="manual",
         output=str(
-            get_data_dir() / f"tournament_legacy_pdf_{target.tournament_code}_{target.calendar_year}_postprocessed.csv"
+            get_data_dir() / f"tournament_legacy_pdf_{tournament_code}_{target.calendar_year}_postprocessed.csv"
         ),
         options=options,
     )

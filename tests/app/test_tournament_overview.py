@@ -38,9 +38,12 @@ def test_get_tournament_podiums_top_three(svc: TournamentService) -> None:
     assert len(payload["podiums"]) == 1
     podium = payload["podiums"][0]
     assert podium["tournament_group"]
+    assert "tournament_average" in podium
     finishers = podium["finishers"]
     assert 1 <= len(finishers) <= 3
     assert finishers[0]["player"]
+    if finishers[0].get("average") is not None:
+        assert podium["tournament_average"] is not None
 
 
 def test_get_tournament_podiums_groups_by_normalized_name(svc: TournamentService) -> None:
@@ -57,7 +60,7 @@ def test_get_player_tournament_results(svc: TournamentService) -> None:
     if not events:
         pytest.skip("no tournament events")
     sample = events[0]
-    finishers = svc._leaderboard_top_finishers(sample["season"], sample["tournament"], top_n=1)
+    finishers, tournament_average = svc._leaderboard_top_finishers(sample["season"], sample["tournament"], top_n=1)
     if not finishers:
         pytest.skip("no finishers")
     player = finishers[0]["player"]

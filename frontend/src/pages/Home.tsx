@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useLatestEvents, useHomeStats } from "../hooks/useHome";
+import { useLatestEvents, useHomeStats, resolveHomeStats } from "../hooks/useHome";
 import { HOME_EXAMPLE_LINKS } from "../lib/homeExamples";
 import { buildUrl } from "../lib/api";
 import { SITE_CONTACT } from "../lib/siteContact";
@@ -12,7 +12,7 @@ function formatCount(value: number | undefined): string {
 export function Home() {
   const statsQuery = useHomeStats();
   const eventsQuery = useLatestEvents(8);
-  const stats = statsQuery.data;
+  const stats = resolveHomeStats(statsQuery.data);
 
   return (
     <div className="mx-auto max-w-[1080px] px-4 pt-8 pb-24 lg:px-8 lg:pt-12">
@@ -46,10 +46,14 @@ export function Home() {
         )}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           <StatCard label="Spiele" value={formatCount(stats?.games)} loading={statsQuery.isPending} />
-          <StatCard label="Ligen" value={formatCount(stats?.leagues)} loading={statsQuery.isPending} />
           <StatCard
-            label="Saisons"
-            value={formatCount(stats?.seasons)}
+            label="Liga-Saisons"
+            value={formatCount(stats?.league_seasons)}
+            loading={statsQuery.isPending}
+          />
+          <StatCard
+            label="Jahre"
+            value={formatCount(stats?.years)}
             loading={statsQuery.isPending}
           />
           <StatCard
