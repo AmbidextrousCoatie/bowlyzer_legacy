@@ -26,10 +26,56 @@
     ]
   },
   "25/26||Clubmeisterschaft Donaubowler 2026": {
-    "ko_finale_series": "bo3_pins",
+    "_comment": "Luu, Vinh Duc startete als Ersatz im Finale: zwei besser gesetzte Spieler konnten verletzungsbedingt nicht teilnehmen.",
+    "standings_note": "Hinweis: Luu, Vinh Duc (Duc) startete als Ersatz im Finale, weil zwei besser gesetzte Spieler verletzungsbedingt nicht teilnehmen konnten.",
+    "ko_bracket_format": "seeded_elim_stepladder",
+    "ko_decision_basis": "handicap",
     "ko_qualifying_cut_rank": 6,
     "ko_qualifying_cut_round": 1,
     "ko_qualifying_cut_through_round": 6,
+    "progress_chart_through_games": 24,
+    "ko_finale_phases": {
+      "elim": {
+        "key": "ELIM",
+        "label_de": "Eliminierung",
+        "label_en": "Elimination",
+        "seeds": [4, 5, 6],
+        "games": 2,
+        "outcome": "lowest_each_game",
+        "series_mode": "single_game",
+        "advancers": 1,
+        "place_last": 6,
+        "place_second_last": 5
+      },
+      "stepladder": {
+        "label_de": "Stepladder",
+        "label_en": "Stepladder",
+        "series_mode": "single_game",
+        "matches": [
+          {
+            "key": "SL1",
+            "label_de": "Stepladder 1",
+            "challenger_seed": 3,
+            "loser_place": 4
+          },
+          {
+            "key": "SL2",
+            "label_de": "Stepladder 2",
+            "challenger_seed": 2,
+            "loser_place": 3
+          }
+        ]
+      },
+      "final": {
+        "key": "F",
+        "label_de": "Finale",
+        "label_en": "Final",
+        "seed_bye": 1,
+        "series_mode": "bo3_pins",
+        "winner_place": 1,
+        "loser_place": 2
+      }
+    },
     "player_cards": [
       "summary_final_position",
       "summary_best_position",

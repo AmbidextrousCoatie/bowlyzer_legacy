@@ -51,6 +51,8 @@ export type TournamentFormatInfo = {
   }>;
   handicap?: TournamentHandicapFormatInfo;
   ko_finale_round_number_in_data?: number | null;
+  ko_bracket_format?: string;
+  ko_decision_basis?: string;
   ko_finale_series?: string;
   ko_finale_series_label_de?: string;
   ko_finale_series_label_en?: string;
@@ -121,17 +123,40 @@ export type KoBracketSide = {
   id?: string | null;
   games_won?: number;
   highlight?: boolean;
+  /** Final place when this side is eliminated (or wins the final). */
+  place?: number;
+};
+
+export type KoBracketFieldPlayer = {
+  name?: string | null;
+  id?: string | null;
+  games?: number[];
+  total?: number;
+  rank?: number;
+  advances?: boolean;
+  eliminated?: boolean;
+  place?: number;
+  highlight?: boolean;
 };
 
 export type KoBracketMatch = {
   key: string;
   label?: string;
   phase?: string;
+  kind?: "pair" | "field";
+  series_mode?: string;
+  decision_basis?: string;
   side_a: KoBracketSide;
   side_b: KoBracketSide;
+  field?: KoBracketFieldPlayer[];
+  /** Nested elim games under a single ELIM match. */
+  rounds?: KoBracketMatch[];
+  advancer?: string | null;
   pin_games?: number[][];
   walkover?: boolean;
   winner?: "a" | "b" | null;
+  loser_place?: number;
+  winner_place?: number;
   scratch_total_a?: number;
   scratch_total_b?: number;
   scratch_series?: boolean;
@@ -157,6 +182,8 @@ export type KoBracketPayload = {
   focus_palette_index?: number;
   focus_player?: string;
   ko_finale_series?: string;
+  ko_bracket_format?: string;
+  ko_decision_basis?: string;
 };
 
 export type TournamentSection = {

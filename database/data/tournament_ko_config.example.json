@@ -1,5 +1,6 @@
 {
   "_comment_player_cards": "Optional player_cards: ordered list of metric tile ids for /tournament/get_player_section. Valid ids: summary_final_position, summary_average, summary_best_position, best_highest_game, best_highest_pair (Nord/Süd BM lane events), handicap_profile (hcp data in CSV), best_highest_block. Unknown ids are ignored. Omit player_cards to use server defaults (heuristic pair + handicap from event name / data).",
+  "_comment_ko_bracket_format": "Omit ko_bracket_format (or use single_elim_tree) for classic QF→SF→Final. Use seeded_elim_stepladder for Clubmeisterschaft-style finals. ko_decision_basis=handicap → all elim/stepladder/final comparisons use Score+Handicap (inkl. HDC). Elim outcome=lowest_each_game: each elim game drops the lowest remaining player (not a 2-game combined total). CSV rounds: Eliminierung / Stepladder / KO-Finale.",
   "25/26||Bayerische Meisterschaft - Frauen Einzel": {
     "ko_finale_series": "scratch_total_2g",
     "ko_qualifying_cut_rank": 6,
@@ -13,10 +14,55 @@
     "ko_qualifying_cut_through_round": 2
   },
   "25/26||Clubmeisterschaft Donaubowler 2026": {
-    "_comment": "Unsanctioned club championship. Stage 1: 6 sets of 4 games, all count; top 6 advance. Handicap per player comes from import data, not this file. ko_qualifying_cut_through_round=6 assumes round_number 1..6 map to the six sets; use 1 if stage 1 is a single round in CSV.",
-    "ko_finale_series": "bo3_pins",
+    "_comment": "Unsanctioned club championship. Stage 1: 6 sets of 4 games, all count; top 6 advance. Luu, Vinh Duc started finals as injury replacement for two higher seeds. Handicap per player comes from import data, not this file.",
+    "standings_note": "Hinweis: Luu, Vinh Duc (Duc) startete als Ersatz im Finale, weil zwei besser gesetzte Spieler verletzungsbedingt nicht teilnehmen konnten.",
+    "ko_bracket_format": "seeded_elim_stepladder",
+    "ko_decision_basis": "handicap",
     "ko_qualifying_cut_rank": 6,
     "ko_qualifying_cut_round": 1,
-    "ko_qualifying_cut_through_round": 6
+    "ko_qualifying_cut_through_round": 6,
+    "progress_chart_through_games": 24,
+    "ko_finale_phases": {
+      "elim": {
+        "key": "ELIM",
+        "label_de": "Eliminierung",
+        "label_en": "Elimination",
+        "seeds": [4, 5, 6],
+        "games": 2,
+        "outcome": "lowest_each_game",
+        "series_mode": "single_game",
+        "advancers": 1,
+        "place_last": 6,
+        "place_second_last": 5
+      },
+      "stepladder": {
+        "label_de": "Stepladder",
+        "label_en": "Stepladder",
+        "series_mode": "single_game",
+        "matches": [
+          {
+            "key": "SL1",
+            "label_de": "Stepladder 1",
+            "challenger_seed": 3,
+            "loser_place": 4
+          },
+          {
+            "key": "SL2",
+            "label_de": "Stepladder 2",
+            "challenger_seed": 2,
+            "loser_place": 3
+          }
+        ]
+      },
+      "final": {
+        "key": "F",
+        "label_de": "Finale",
+        "label_en": "Final",
+        "seed_bye": 1,
+        "series_mode": "bo3_pins",
+        "winner_place": 1,
+        "loser_place": 2
+      }
+    }
   }
 }

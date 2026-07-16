@@ -705,6 +705,14 @@ function TournamentFormatModal({
                       {d.ko_finale_series_label_de}
                     </li>
                   ) : null}
+                  {d.ko_bracket_format === "seeded_elim_stepladder" ? (
+                    <li className="text-small text-muted">
+                      {t(
+                        "ui.tournament.format_stepladder_detail",
+                        "Alle Entscheidungen inkl. Handicap. Seeds 4–6: Eliminierung Spiel-für-Spiel (niedrigster raus) · Seeds 2/3 + Elim-Sieger: Stepladder 1 Spiel · #1 vs Stepladder-Sieger: Best-of-3",
+                      )}
+                    </li>
+                  ) : null}
                   {d.ko_finale_round_number_in_data != null ? (
                     <li>
                       <span className="text-muted">

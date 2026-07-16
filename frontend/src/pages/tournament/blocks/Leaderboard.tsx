@@ -79,6 +79,9 @@ export function Leaderboard({ data, stageLabel, onPlayerClick, t }: Props) {
           ) : (
             <h2 className="text-h2">{t("ui.tournament.leaderboard", "Gesamtwertung")}</h2>
           )}
+          {typeof data.metadata?.standings_note === "string" && data.metadata.standings_note ? (
+            <p className="mt-2 max-w-3xl text-small text-muted">{data.metadata.standings_note}</p>
+          ) : null}
         </div>
         {showNetSortToggle ? (
           <div

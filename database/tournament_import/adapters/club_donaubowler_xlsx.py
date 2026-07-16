@@ -18,7 +18,10 @@ def _load_club_module():
     name = "import_clubmeisterschaft_donaubowler_xlsx"
     mod = sys.modules.get(name)
     if mod is not None:
-        return mod
+        # Reload so adapter picks up importer edits in long-lived processes.
+        import importlib
+
+        return importlib.reload(mod)
     spec = importlib.util.spec_from_file_location(name, path)
     mod = importlib.util.module_from_spec(spec)
     sys.modules[name] = mod
@@ -35,14 +38,13 @@ class ClubDonaubowlerXlsxAdapter:
         opts = entry.options
 
         if source.is_dir():
-            candidates = sorted(
-                p for p in source.glob("*.xlsx") if not p.name.startswith("~") and not p.name.startswith(".~")
-            )
-            if not candidates:
-                raise FileNotFoundError(f"No .xlsx files in {source}")
-            xlsx_path = candidates[0]
+            xlsx_path = club._pick_qualifying_xlsx(source)
+            finale_path = None if opts.get("no_finale") else club._pick_finale_xlsx(source)
         else:
             xlsx_path = source
+            finale_path = None
+            if not opts.get("no_finale"):
+                finale_path = club._pick_finale_xlsx(source.parent)
 
         if not xlsx_path.is_file():
             raise FileNotFoundError(xlsx_path)
@@ -70,6 +72,26 @@ class ClubDonaubowlerXlsxAdapter:
             player_lookup=player_lookup,
             first_data_row=first_data_row,
         )
+        preferred_names_by_id: Dict[str, str] = {}
+        for row in clean_rows:
+            pid = str(row.get("Player ID") or "").strip()
+            pname = str(row.get("Player") or "").strip()
+            if pid and pname and pid not in preferred_names_by_id:
+                preferred_names_by_id[pid] = pname
+
+        if finale_path and finale_path.is_file():
+            fwb = load_workbook(finale_path, data_only=True)
+            fws = fwb[fwb.sheetnames[0]]
+            finale_rows, _ = club._extract_finale_rows_for_sheet(
+                fws,
+                season=season,
+                event_date=event_date,
+                location=location,
+                player_lookup=player_lookup,
+                preferred_names_by_id=preferred_names_by_id,
+            )
+            clean_rows = clean_rows + finale_rows
+
         if not clean_rows:
             raise ValueError(f"No score rows extracted from {xlsx_path}")
         return clean_rows

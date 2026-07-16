@@ -25,6 +25,12 @@ from app.utils.tournament_utils import normalize_tournament_group_name
 # KO-Finale last cluster: best-of-3 pin games vs two-game scratch total (see database/data/tournament_ko_config.json).
 KO_FINALE_SERIES_BO3 = "bo3_pins"
 KO_FINALE_SERIES_SCRATCH_2G = "scratch_total_2g"
+KO_FINALE_SERIES_SINGLE = "single_game"
+KO_FINALE_SERIES_SCRATCH_N = "scratch_total"
+
+# Bracket tree shapes (tournament_ko_config.json → ko_bracket_format).
+KO_BRACKET_FORMAT_TREE = "single_elim_tree"
+KO_BRACKET_FORMAT_ELIM_STEPLADDER = "seeded_elim_stepladder"
 
 # Gesamtwertung column widths (rank/hcp −30%, player −15%; Set round cols −15%).
 _LB_COL_RANK_W = "44px"
@@ -747,9 +753,24 @@ class TournamentService:
                 public_config[sk] = v
             elif isinstance(v, list) and all(isinstance(x, str) for x in v):
                 public_config[sk] = list(v)
+            elif sk == "ko_finale_phases" and isinstance(v, dict):
+                public_config[sk] = v
 
+        bracket_format = self._ko_bracket_format(season, tournament, df=df)
         mode = self._ko_finale_series_mode(season, tournament)
-        if mode == KO_FINALE_SERIES_SCRATCH_2G:
+        decision_basis = self._ko_decision_basis(season, tournament, df=df)
+        if bracket_format == KO_BRACKET_FORMAT_ELIM_STEPLADDER:
+            hdc_note = " inkl. Handicap" if decision_basis == "handicap" else ""
+            finale_de = (
+                f"Finale{hdc_note}: Eliminierung Spiel-für-Spiel (niedrigster raus, Plätze 4–6) → "
+                "Stepladder 1 Spiel → Finale Best-of-3 (#1 vs Stepladder-Sieger)"
+            )
+            finale_en = (
+                f"Finals{(' incl. handicap' if decision_basis == 'handicap' else '')}: "
+                "per-game elimination (lowest out, places 4–6) → "
+                "1-game stepladder → best-of-3 final (#1 vs stepladder winner)"
+            )
+        elif mode == KO_FINALE_SERIES_SCRATCH_2G:
             finale_de = "KO-Finale: zwei Spiele Scratch-Gesamt"
             finale_en = "KO finals: two-game scratch series total"
         else:
@@ -781,6 +802,8 @@ class TournamentService:
             "rounds": enriched_rounds,
             "handicap": self._handicap_format_info(df),
             "ko_finale_round_number_in_data": ko_fin_rn,
+            "ko_bracket_format": bracket_format,
+            "ko_decision_basis": decision_basis,
             "ko_finale_series": mode,
             "ko_finale_series_label_de": finale_de,
             "ko_finale_series_label_en": finale_en,
@@ -2621,6 +2644,11 @@ class TournamentService:
         schedule_games = sum(length for _, _, length in round_lengths)
         field_max_games = _field_max_games_played(all_df)
         total_games = min(field_max_games, schedule_games) if field_max_games > 0 else 0
+        chart_cap = self._progress_chart_game_cap(season, tournament, round_lengths, df=all_df)
+        progress_chart_capped = False
+        if chart_cap is not None and chart_cap > 0:
+            progress_chart_capped = True
+            total_games = min(total_games, int(chart_cap)) if total_games else 0
         game_slots = _progress_game_slots(round_lengths, total_games)
         labels = [f"G{i}" for i in range(1, total_games + 1)] if total_games else []
 
@@ -2759,6 +2787,8 @@ class TournamentService:
             "player_rank_series": player_rank_series,
             "game_slots": [[int(rn), int(g)] for rn, g in game_slots],
             "round_length_map": {str(rn): int(length) for rn, length in round_length_map.items()},
+            "progress_chart_capped": progress_chart_capped,
+            "progress_chart_through_games": int(total_games) if progress_chart_capped else None,
         }
 
     def get_field_progress(
@@ -3174,31 +3204,46 @@ class TournamentService:
         fa = str(f["side_a"]["name"] or "")
         fb = str(f["side_b"]["name"] or "")
 
+        def player_in_match(m: Dict[str, Any], nc: str) -> bool:
+            if m.get("kind") == "field":
+                for p in m.get("field") or []:
+                    if not isinstance(p, dict):
+                        continue
+                    nm = self._ko_norm_name(self._ko_strip_no_show_suffix(str(p.get("name") or "")))
+                    if nm == nc:
+                        return True
+                return False
+            sides = {
+                self._ko_norm_name(self._ko_strip_no_show_suffix(str(m["side_a"].get("name", "") or ""))),
+                self._ko_norm_name(self._ko_strip_no_show_suffix(str(m["side_b"].get("name", "") or ""))),
+            }
+            return nc in sides
+
+        def match_by_key(sk: str) -> Optional[Dict[str, Any]]:
+            sm = by_key.get(sk)
+            if sm:
+                return sm
+            # Nested elim rounds live under parent ELIM.rounds[].
+            parent = by_key.get("ELIM")
+            if not parent:
+                return None
+            for r in parent.get("rounds") or []:
+                if isinstance(r, dict) and str(r.get("key") or "") == sk:
+                    return r
+            return None
+
         def path_for(name: str) -> List[str]:
             nc = self._ko_norm_name(self._ko_strip_no_show_suffix(name))
             if not nc or self._is_ko_bye_player(name):
                 return ["F"]
             p: List[str] = ["F"]
-            for sk in ("SF2", "SF1"):
-                sm = by_key.get(sk)
+            # Stepladder / tree order: later matches first when inserting at front.
+            for sk in ("SL2", "SL1", "SF2", "SF1", "QF2", "QF1", "ELIM2", "ELIM1", "ELIM"):
+                sm = match_by_key(sk)
                 if not sm:
                     continue
-                sides = {
-                    self._ko_norm_name(self._ko_strip_no_show_suffix(str(sm["side_a"].get("name", "") or ""))),
-                    self._ko_norm_name(self._ko_strip_no_show_suffix(str(sm["side_b"].get("name", "") or ""))),
-                }
-                if nc in sides:
+                if player_in_match(sm, nc):
                     p.insert(0, sk)
-            for qk in ("QF2", "QF1"):
-                qm = by_key.get(qk)
-                if not qm:
-                    continue
-                sides = {
-                    self._ko_norm_name(self._ko_strip_no_show_suffix(str(qm["side_a"].get("name", "") or ""))),
-                    self._ko_norm_name(self._ko_strip_no_show_suffix(str(qm["side_b"].get("name", "") or ""))),
-                }
-                if nc in sides:
-                    p.insert(0, qk)
             return p
 
         return {
@@ -3238,6 +3283,8 @@ class TournamentService:
             "palette_index_a": 2,
             "palette_index_b": 8,
             "ko_finale_series": KO_FINALE_SERIES_BO3,
+            "ko_bracket_format": KO_BRACKET_FORMAT_TREE,
+            "ko_decision_basis": "scratch",
         }
 
     def _load_tournament_ko_config(self) -> Dict[str, Any]:
@@ -3255,6 +3302,20 @@ class TournamentService:
         key = f"{str(season).strip()}||{str(tournament).strip()}"
         block = raw.get(key)
         if not isinstance(block, dict):
+            # Fall back via event-name alias used elsewhere.
+            block = self._ko_config_entry(season, tournament)
+        if not isinstance(block, dict):
+            return KO_FINALE_SERIES_BO3
+        # Mixed formats: expose the final-match mode for legacy consumers.
+        if str(block.get("ko_bracket_format") or "").strip().lower() == KO_BRACKET_FORMAT_ELIM_STEPLADDER:
+            phases = block.get("ko_finale_phases") or {}
+            final = phases.get("final") if isinstance(phases, dict) else None
+            if isinstance(final, dict):
+                fm = str(final.get("series_mode") or "").strip().lower()
+                if fm in ("bo3_pins", "bo3", "pins"):
+                    return KO_FINALE_SERIES_BO3
+                if fm in ("scratch_total_2g", "scratch_total", "scratch_2g", "2g_scratch"):
+                    return KO_FINALE_SERIES_SCRATCH_2G
             return KO_FINALE_SERIES_BO3
         v = str(block.get("ko_finale_series", "") or "").strip().lower()
         if v in ("scratch_total_2g", "scratch_total", "scratch_2g", "2g_scratch"):
@@ -3263,8 +3324,39 @@ class TournamentService:
             return KO_FINALE_SERIES_BO3
         return KO_FINALE_SERIES_BO3
 
+    def _ko_bracket_format(
+        self, season: str, tournament: str, *, df: Optional[pd.DataFrame] = None
+    ) -> str:
+        block = self._ko_config_entry(season, tournament, df=df)
+        v = str(block.get("ko_bracket_format") or "").strip().lower()
+        if v in (KO_BRACKET_FORMAT_ELIM_STEPLADDER, "elim_stepladder", "stepladder"):
+            return KO_BRACKET_FORMAT_ELIM_STEPLADDER
+        return KO_BRACKET_FORMAT_TREE
+
+    def _ko_decision_basis(
+        self, season: str, tournament: str, *, df: Optional[pd.DataFrame] = None
+    ) -> str:
+        """'handicap' → compare Score+Handicap; 'scratch' → Score only."""
+        block = self._ko_config_entry(season, tournament, df=df)
+        v = str(block.get("ko_decision_basis") or "").strip().lower()
+        if v in ("handicap", "hdc", "net", "inkl_hdc", "inkl. hdc", "with_handicap"):
+            return "handicap"
+        return "scratch"
+
+    def _ko_finale_phases_config(
+        self, season: str, tournament: str, *, df: Optional[pd.DataFrame] = None
+    ) -> Dict[str, Any]:
+        block = self._ko_config_entry(season, tournament, df=df)
+        phases = block.get("ko_finale_phases")
+        return phases if isinstance(phases, dict) else {}
+
     def _ko_bracket_empty_payload(self, season: str, tournament: str) -> Dict[str, Any]:
-        return {**self._ko_bracket_empty_meta(), "ko_finale_series": self._ko_finale_series_mode(season, tournament)}
+        return {
+            **self._ko_bracket_empty_meta(),
+            "ko_finale_series": self._ko_finale_series_mode(season, tournament),
+            "ko_bracket_format": self._ko_bracket_format(season, tournament),
+            "ko_decision_basis": self._ko_decision_basis(season, tournament),
+        }
 
     def _ko_config_entry(
         self, season: str, tournament: str, *, df: Optional[pd.DataFrame] = None
@@ -3280,6 +3372,34 @@ class TournamentService:
             block = raw.get(f"{str(season).strip()}||{tournament_norm}")
             return block if isinstance(block, dict) else {}
         return {}
+
+    def _progress_chart_game_cap(
+        self,
+        season: str,
+        tournament: str,
+        round_lengths: List[RoundLengthRow],
+        *,
+        df: Optional[pd.DataFrame] = None,
+    ) -> Optional[int]:
+        """
+        Optional chart window from tournament_ko_config.json.
+
+        ``progress_chart_through_games`` — hard stop after N cumulative games (e.g. 24).
+        ``progress_chart_through_round`` — stop after the last game of that round number.
+        """
+        block = self._ko_config_entry(season, tournament, df=df)
+        through_games = self._ko_optional_int(block.get("progress_chart_through_games"))
+        if through_games is not None and through_games > 0:
+            return int(through_games)
+        through_round = self._ko_optional_int(block.get("progress_chart_through_round"))
+        if through_round is None or through_round <= 0:
+            return None
+        total = 0
+        for rn, _, length in round_lengths:
+            if int(rn) > int(through_round):
+                break
+            total += int(length)
+        return total if total > 0 else None
 
     @staticmethod
     def _event_name_suggests_nbm_sbm_lane_pairs(tournament: str) -> bool:
@@ -3661,10 +3781,21 @@ class TournamentService:
     def _ko_finale_round_number(self, df: pd.DataFrame) -> Optional[int]:
         if df.empty or Columns.round_number not in df.columns or Columns.round_name not in df.columns:
             return None
-        ko_rows = df[df[Columns.round_name].astype(str).str.contains("KO", case=False, na=False)]
+        mask = self._ko_finale_rows_mask(df[Columns.round_name])
+        ko_rows = df.loc[mask]
         if ko_rows.empty:
             return None
         return int(pd.to_numeric(ko_rows[Columns.round_number], errors="coerce").max())
+
+    @staticmethod
+    def _ko_finale_rows_mask(round_names: pd.Series) -> pd.Series:
+        """Rows belonging to any KO / elim / stepladder finals cluster."""
+        rn = round_names.astype(str)
+        return (
+            rn.str.contains("KO", case=False, na=False)
+            | rn.str.contains("Eliminierung", case=False, na=False)
+            | rn.str.contains(r"Step[\s\-]?ladder", case=False, na=False, regex=True)
+        )
 
     @staticmethod
     def _tournament_gender_key(tournament: str) -> Optional[str]:
@@ -3942,6 +4073,115 @@ class TournamentService:
 
         return out
 
+    def _ko_placements_from_elim_stepladder(
+        self, matches: List[Dict[str, Any]], phases: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
+        """
+        Seeded elim + stepladder + final:
+        F winner/loser → 1/2; SL2 loser → 3; SL1 loser → 4;
+        elim second-last / last → 5 / 6 (config overrides).
+        """
+
+        def loser_of(m: Dict[str, Any]) -> tuple[str, str]:
+            w = m.get("winner")
+            if w == "a":
+                return (
+                    str(m.get("side_b", {}).get("name", "") or ""),
+                    str(m.get("side_b", {}).get("id", "") or ""),
+                )
+            if w == "b":
+                return (
+                    str(m.get("side_a", {}).get("name", "") or ""),
+                    str(m.get("side_a", {}).get("id", "") or ""),
+                )
+            return "", ""
+
+        def winner_of(m: Dict[str, Any]) -> tuple[str, str]:
+            w = m.get("winner")
+            if w == "a":
+                return (
+                    str(m.get("side_a", {}).get("name", "") or ""),
+                    str(m.get("side_a", {}).get("id", "") or ""),
+                )
+            if w == "b":
+                return (
+                    str(m.get("side_b", {}).get("name", "") or ""),
+                    str(m.get("side_b", {}).get("id", "") or ""),
+                )
+            return "", ""
+
+        by_key = {str(m.get("key", "")): m for m in matches}
+        out: List[Dict[str, Any]] = []
+
+        elim_cfg = phases.get("elim") if isinstance(phases.get("elim"), dict) else {}
+        sl_cfg = phases.get("stepladder") if isinstance(phases.get("stepladder"), dict) else {}
+        final_cfg = phases.get("final") if isinstance(phases.get("final"), dict) else {}
+        final_key = str(final_cfg.get("key") or "F")
+        winner_place = int(final_cfg.get("winner_place") or 1)
+        loser_place = int(final_cfg.get("loser_place") or 2)
+
+        fin = by_key.get(final_key) or by_key.get("F")
+        if fin:
+            wn, wid = winner_of(fin)
+            ln, lid = loser_of(fin)
+            if wn and not self._is_ko_bye_player(wn):
+                out.append({"place": winner_place, "player": wn, "player_id": wid})
+            if ln and not self._is_ko_bye_player(ln):
+                out.append({"place": loser_place, "player": ln, "player_id": lid})
+
+        sl_matches = sl_cfg.get("matches") if isinstance(sl_cfg.get("matches"), list) else []
+        for spec in reversed(sl_matches):
+            if not isinstance(spec, dict):
+                continue
+            key = str(spec.get("key") or "")
+            sm = by_key.get(key)
+            if not sm:
+                continue
+            lost, lid = loser_of(sm)
+            if lost and not self._is_ko_bye_player(lost):
+                out.append({"place": int(spec.get("loser_place") or 0), "player": lost, "player_id": lid})
+
+        elim_key = str(elim_cfg.get("key") or "ELIM")
+        elim_matches = [
+            m
+            for m in matches
+            if m.get("phase") == "elim" or m.get("kind") == "field" or str(m.get("key", "")).upper().startswith("ELIM")
+        ]
+        if not elim_matches:
+            elim = by_key.get(elim_key)
+            if elim:
+                elim_matches = [elim]
+        for elim in elim_matches:
+            if elim.get("kind") != "field":
+                continue
+            nested = [r for r in (elim.get("rounds") or []) if isinstance(r, dict)]
+            field_blocks = [r.get("field") or [] for r in nested] if nested else [elim.get("field") or []]
+            for field in field_blocks:
+                for p in field:
+                    if not isinstance(p, dict) or not p.get("place"):
+                        continue
+                    nm = str(p.get("name") or "")
+                    if nm and not self._is_ko_bye_player(nm):
+                        out.append(
+                            {
+                                "place": int(p["place"]),
+                                "player": nm,
+                                "player_id": str(p.get("id") or ""),
+                            }
+                        )
+
+        out.sort(key=lambda r: int(r.get("place") or 99))
+        # Dedupe by place (keep first)
+        seen_places: set = set()
+        deduped: List[Dict[str, Any]] = []
+        for row in out:
+            pl = int(row.get("place") or 0)
+            if pl in seen_places:
+                continue
+            seen_places.add(pl)
+            deduped.append(row)
+        return deduped
+
     def _ko_final_winner_card_subtitle(self, fin_match: Dict[str, Any]) -> str:
         if not fin_match:
             return ""
@@ -4089,6 +4329,59 @@ class TournamentService:
             },
         )
 
+    @staticmethod
+    def _leaderboard_leaf_fields(table: TableData) -> List[str]:
+        fields: List[str] = []
+        for group in table.columns or []:
+            cols = getattr(group, "columns", None)
+            if cols is None and isinstance(group, dict):
+                cols = group.get("columns") or []
+                for col in cols:
+                    if isinstance(col, dict) and col.get("field"):
+                        fields.append(str(col["field"]))
+                continue
+            for col in cols or []:
+                field = getattr(col, "field", None)
+                if field:
+                    fields.append(str(field))
+        return fields
+
+    @classmethod
+    def _leaderboard_row_sort_keys(cls, table: TableData, row: List[Any]) -> Tuple[float, float]:
+        """
+        Prefer net (inkl. HDC) metrics when the scratch/net leaderboard layout is used.
+        Returns (avg_desc_key, total_desc_key) — callers negate for descending sorts.
+        """
+        fields = cls._leaderboard_leaf_fields(table)
+        mode = str((table.metadata or {}).get("leaderboard_mode") or "")
+        prefer_net = mode == "scratch_net_handicap" or "avg_net" in fields
+
+        def _at(field: str) -> Optional[float]:
+            if field not in fields:
+                return None
+            idx = fields.index(field)
+            if idx >= len(row):
+                return None
+            try:
+                return float(row[idx])
+            except (TypeError, ValueError):
+                return None
+
+        if prefer_net:
+            avg = _at("avg_net")
+            tot = _at("total_net")
+            if avg is not None:
+                return avg, tot if tot is not None else avg
+
+        avg = _at("total_avg")
+        tot = _at("total_score")
+        if avg is not None:
+            return avg, tot if tot is not None else avg
+        try:
+            return float(row[-1]), float(row[-1])
+        except (TypeError, ValueError, IndexError):
+            return 0.0, 0.0
+
     def _integrate_ko_into_total_leaderboard(
         self,
         table: TableData,
@@ -4098,9 +4391,13 @@ class TournamentService:
         tournament: str,
     ) -> TableData:
         """
-        Gesamt leaderboard: show KO bracket places (1, 2, 3/3, 5/5) in the # column for finalists;
-        everyone else keeps the pre-KO # column (scratch rank in scratch-only mode, net rank when
-        scratch+net layout is active). Sort: last column average desc (scratch avg or net avg), then # asc.
+        Gesamt leaderboard after KO:
+
+        - ``seeded_elim_stepladder``: list finals places 1..N first (bracket order), then the
+          rest of the field ordered by net average inkl. HDC when available (renumbered N+1…).
+        - Tree KO (default): show KO places in the # column for finalists; sort everyone by
+          average desc (net avg when handicap layout is active), then # asc.
+
         Cut-line # column shading matches the latest qualifying stage (same as Gesamtwertung
         before KO reordering): green inside cut, yellow on cut, red outside.
         """
@@ -4123,6 +4420,11 @@ class TournamentService:
             )
 
         has_rm = bool(table.row_metadata) and len(table.row_metadata) == len(table.data)
+        ko_first = (
+            str(bracket.get("ko_bracket_format") or "").strip().lower()
+            == KO_BRACKET_FORMAT_ELIM_STEPLADDER
+        )
+        use_net_sort = (table.metadata or {}).get("leaderboard_mode") == "scratch_net_handicap"
 
         augmented: List[Dict[str, Any]] = []
         for row_idx, row in enumerate(table.data):
@@ -4131,8 +4433,9 @@ class TournamentService:
             pre_ko_rank = int(row[0])
             pname = str(row[1]).strip()
             pk = self._ko_norm_name(self._ko_strip_no_show_suffix(pname))
-            display_pos = int(ko_by_key.get(pk, pre_ko_rank))
-            total_avg = float(row[-1])
+            ko_place = ko_by_key.get(pk)
+            display_pos = int(ko_place) if ko_place is not None else pre_ko_rank
+            sort_avg, sort_total = self._leaderboard_row_sort_keys(table, list(row))
             shade_r = pre_ko_rank
             if has_rm:
                 shade_r = int(table.row_metadata[row_idx].get("cut_shade_rank") or pre_ko_rank)
@@ -4140,8 +4443,10 @@ class TournamentService:
                 {
                     "row": list(row),
                     "display_pos": display_pos,
+                    "ko_place": int(ko_place) if ko_place is not None else None,
                     "shade_r": shade_r,
-                    "total_avg": total_avg,
+                    "sort_avg": sort_avg,
+                    "sort_total": sort_total,
                     "old_idx": row_idx,
                 }
             )
@@ -4149,7 +4454,27 @@ class TournamentService:
         if len(augmented) != len(table.data):
             return table
 
-        augmented.sort(key=lambda x: (-x["total_avg"], x["display_pos"]))
+        if ko_first:
+            finals = [x for x in augmented if x["ko_place"] is not None]
+            rest = [x for x in augmented if x["ko_place"] is None]
+            finals.sort(key=lambda x: (int(x["ko_place"]), -x["sort_avg"], -x["sort_total"]))
+            rest.sort(key=lambda x: (-x["sort_avg"], -x["sort_total"], int(x["display_pos"])))
+            next_place = (max((int(x["ko_place"]) for x in finals), default=0) + 1) if finals else 1
+            for x in rest:
+                x["display_pos"] = next_place
+                next_place += 1
+            augmented = finals + rest
+            sort_field = "rank"
+            default_sort: Dict[str, Any] = {"field": "rank", "dir": "asc"}
+            initial_sort: List[Dict[str, Any]] = [{"field": "rank", "dir": "asc"}]
+        else:
+            augmented.sort(key=lambda x: (-x["sort_avg"], -x["sort_total"], x["display_pos"]))
+            sort_field = "avg_net" if use_net_sort else "total_avg"
+            default_sort = {"field": sort_field, "dir": "desc"}
+            initial_sort = [
+                {"field": sort_field, "dir": "desc"},
+                {"field": "rank", "dir": "asc"},
+            ]
 
         new_data: List[List[Any]] = []
         new_rm: List[Dict[str, Any]] = []
@@ -4175,15 +4500,15 @@ class TournamentService:
                 new_cm[f"{new_i}:0"] = style
 
         meta = dict(table.metadata or {})
-        sort_field = (
-            "avg_net"
-            if (table.metadata or {}).get("leaderboard_mode") == "scratch_net_handicap"
-            else "total_avg"
-        )
-        meta["initial_sort"] = [
-            {"field": sort_field, "dir": "desc"},
-            {"field": "rank", "dir": "asc"},
-        ]
+        meta["initial_sort"] = initial_sort
+        if ko_first:
+            meta["standings_order"] = "ko_then_average"
+        block = self._ko_config_entry(season, tournament, df=df)
+        note = str(block.get("standings_note") or "").strip()
+        if not note:
+            note = str(block.get("_comment") or "").strip()
+        if note:
+            meta["standings_note"] = note
         return TableData(
             columns=table.columns,
             data=new_data,
@@ -4192,7 +4517,7 @@ class TournamentService:
             cell_metadata=new_cm,
             config=dict(table.config or {}),
             metadata=meta,
-            default_sort={"field": sort_field, "dir": "desc"},
+            default_sort=default_sort,
         )
 
     @staticmethod
@@ -4246,6 +4571,8 @@ class TournamentService:
         Best-effort KO tree from rows whose round name mentions KO (e.g. KO-Finale).
         Groups consecutive game numbers that share the same opponent pair (BO3 series).
         Walkovers use Club KO_WO and/or placeholder opponent 'Nicht angetreten'.
+
+        When ko_bracket_format is seeded_elim_stepladder, builds elim field + stepladder + BO3 final.
         """
         cache_key = self._tournament_cache_key(season, tournament)
         cached_ko = self._ko_bracket_cache.get(cache_key)
@@ -4257,8 +4584,15 @@ class TournamentService:
             return self._store_ko_bracket_cache(
                 season, tournament, self._ko_bracket_empty_payload(season, tournament)
             )
+        bracket_format = self._ko_bracket_format(season, tournament, df=df)
+        if bracket_format == KO_BRACKET_FORMAT_ELIM_STEPLADDER:
+            return self._store_ko_bracket_cache(
+                season,
+                tournament,
+                self._build_elim_stepladder_bracket_payload(season, tournament, df),
+            )
         rn = df[Columns.round_name].astype(str).str.strip()
-        mask = rn.str.contains("KO", case=False, na=False)
+        mask = self._ko_finale_rows_mask(rn)
         ko_df = df.loc[mask].copy()
         if ko_df.empty:
             return self._store_ko_bracket_cache(
@@ -4427,6 +4761,8 @@ class TournamentService:
                     "key": mk,
                     "label": mk.replace("F", "Finale") if mk == "F" else mk,
                     "phase": self._ko_bracket_tree_phase(idx, n_matches),
+                    "kind": "pair",
+                    "series_mode": finale_mode,
                     "side_a": {"name": self._ko_bracket_side_display_name(side_a), "id": id_a, "games_won": wins_a},
                     "side_b": {"name": self._ko_bracket_side_display_name(side_b), "id": id_b, "games_won": wins_b},
                     "pin_games": pin_games,
@@ -4449,8 +4785,462 @@ class TournamentService:
         return self._store_ko_bracket_cache(
             season,
             tournament,
-            {"matches": matches_out, "placements": placements, **meta, "ko_finale_series": finale_mode},
+            {
+                "matches": matches_out,
+                "placements": placements,
+                **meta,
+                "ko_finale_series": finale_mode,
+                "ko_bracket_format": KO_BRACKET_FORMAT_TREE,
+            },
         )
+
+    def _build_elim_stepladder_bracket_payload(
+        self, season: str, tournament: str, df: pd.DataFrame
+    ) -> Dict[str, Any]:
+        """
+        Clubmeisterschaft-style finals (handicap-aware when ko_decision_basis=handicap):
+        1) Sequential field elim: each game drops the lowest remaining player
+        2) Pair stepladder matches (typically 1 game each)
+        3) BO3 final (#1 seed vs stepladder winner)
+
+        Decision pins = Score + Handicap when basis is handicap; otherwise Score.
+        Round names containing Eliminierung / Stepladder / Finale bucket the phases.
+        """
+        empty = self._ko_bracket_empty_payload(season, tournament)
+        phases = self._ko_finale_phases_config(season, tournament, df=df)
+        decision_basis = self._ko_decision_basis(season, tournament, df=df)
+        use_hdc = decision_basis == "handicap"
+        mask = self._ko_finale_rows_mask(df[Columns.round_name])
+        ko_df = df.loc[mask].copy()
+        if ko_df.empty:
+            return empty
+
+        ko_df["_gn"] = pd.to_numeric(ko_df[Columns.game_number], errors="coerce")
+        ko_df = ko_df.dropna(subset=["_gn"])
+        if ko_df.empty:
+            return empty
+        ko_df["_gn"] = ko_df["_gn"].astype(int)
+        if Columns.handicap in ko_df.columns:
+            ko_df["_hc"] = pd.to_numeric(ko_df[Columns.handicap], errors="coerce").fillna(0).astype(int)
+        else:
+            ko_df["_hc"] = 0
+        ko_df["_scratch"] = pd.to_numeric(ko_df[Columns.score], errors="coerce").fillna(0).astype(int)
+        ko_df["_pins"] = ko_df["_scratch"] + (ko_df["_hc"] if use_hdc else 0)
+        ko_df = ko_df.reset_index(drop=False).rename(columns={"index": "_row_order"})
+        ko_df = ko_df.sort_values(by=["_gn", "_row_order"], kind="mergesort")
+        ko_df["_phase"] = ko_df[Columns.round_name].map(self._ko_elim_stepladder_round_phase)
+
+        def players_for_game(gdf: pd.DataFrame) -> List[Dict[str, Any]]:
+            by_name: Dict[str, Dict[str, Any]] = {}
+            for _, r in gdf.iterrows():
+                name = str(r.get(Columns.player_name, "") or "").strip()
+                if not name:
+                    continue
+                key = name.casefold()
+                scratch = int(r["_scratch"])
+                hc = int(r["_hc"])
+                pins = int(r["_pins"])
+                pid = str(r.get(Columns.player_id, "") or "").strip()
+                club_v = str(r.get(Columns.club, "") or "").strip()
+                prev = by_name.get(key)
+                if prev is None:
+                    by_name[key] = {
+                        "name": name,
+                        "id": pid,
+                        "score": pins,  # decision pins for comparisons
+                        "scratch": scratch,
+                        "handicap": hc,
+                        "club": club_v,
+                    }
+                else:
+                    prev["score"] += pins
+                    prev["scratch"] += scratch
+                    prev["handicap"] += hc
+                    if pid and not prev.get("id"):
+                        prev["id"] = pid
+            return list(by_name.values())
+
+        elim_cfg = phases.get("elim") if isinstance(phases.get("elim"), dict) else {}
+        sl_cfg = phases.get("stepladder") if isinstance(phases.get("stepladder"), dict) else {}
+        final_cfg = phases.get("final") if isinstance(phases.get("final"), dict) else {}
+        elim_key = str(elim_cfg.get("key") or "ELIM")
+        elim_label = str(elim_cfg.get("label_de") or "Eliminierung")
+        elim_outcome = str(elim_cfg.get("outcome") or "lowest_each_game").strip().lower()
+        place_last = int(elim_cfg.get("place_last") or 6)
+        place_second_last = int(elim_cfg.get("place_second_last") or 5)
+        sl_specs = [s for s in (sl_cfg.get("matches") or []) if isinstance(s, dict)]
+        sl_mode = str(sl_cfg.get("series_mode") or KO_FINALE_SERIES_SINGLE).strip().lower()
+        final_mode = str(final_cfg.get("series_mode") or KO_FINALE_SERIES_BO3).strip().lower()
+        if final_mode in ("bo3", "pins"):
+            final_mode = KO_FINALE_SERIES_BO3
+        final_key = str(final_cfg.get("key") or "F")
+        final_label = str(final_cfg.get("label_de") or "Finale")
+
+        matches_out: List[Dict[str, Any]] = []
+
+        # --- Elimination (prefer Eliminierung-named rows; else leading 3+ player games) ---
+        elim_df = ko_df[ko_df["_phase"] == "elim"]
+        if elim_df.empty:
+            # Heuristic: games with 3+ players, then shrinking subsets, before pair-only rounds.
+            elim_gns: List[int] = []
+            field_names: Optional[set] = None
+            for gn, gdf in ko_df.groupby("_gn", sort=True):
+                players = players_for_game(gdf)
+                names = {p["name"].casefold() for p in players}
+                if field_names is None:
+                    if len(players) < 3:
+                        continue
+                    field_names = names
+                    elim_gns.append(int(gn))
+                elif names.issubset(field_names) and len(players) >= 2:
+                    elim_gns.append(int(gn))
+                    field_names = names
+                else:
+                    break
+            if elim_gns:
+                elim_df = ko_df[ko_df["_gn"].isin(elim_gns)]
+
+        if not elim_df.empty:
+            elim_games: List[tuple] = []
+            for gn, gdf in elim_df.groupby("_gn", sort=True):
+                players = players_for_game(gdf)
+                if len(players) >= 2:
+                    elim_games.append((int(gn), players))
+
+            if elim_games:
+                place_by_key: Dict[str, int] = {}
+                remaining = {p["name"].casefold() for p in elim_games[0][1]}
+                place_cursor = place_last
+                elim_rounds: List[Dict[str, Any]] = []
+                # One nested round per elim game (lowest out each game).
+                for game_i, (gn, players) in enumerate(elim_games, start=1):
+                    active = [p for p in players if p["name"].casefold() in remaining]
+                    if len(active) < 2 and elim_outcome in ("lowest_each_game", "sequential", "per_game"):
+                        continue
+                    if elim_outcome in ("lowest_each_game", "sequential", "per_game"):
+                        out_p = min(active, key=lambda p: (int(p["score"]), str(p["name"]).casefold()))
+                        out_key = out_p["name"].casefold()
+                        place_by_key[out_key] = place_cursor
+                        remaining.discard(out_key)
+                        eliminated_place = place_cursor
+                        place_cursor = (
+                            place_second_last if place_cursor == place_last else place_cursor - 1
+                        )
+                    else:
+                        eliminated_place = None
+                        out_key = ""
+
+                    field_rows: List[Dict[str, Any]] = []
+                    for rank_i, p in enumerate(
+                        sorted(active, key=lambda x: (-int(x["score"]), str(x["name"]).casefold())),
+                        start=1,
+                    ):
+                        nk = p["name"].casefold()
+                        eliminated = nk == out_key if out_key else False
+                        if elim_outcome in ("lowest_each_game", "sequential", "per_game"):
+                            advances = nk != out_key
+                        else:
+                            advances = not eliminated
+                        row: Dict[str, Any] = {
+                            "name": self._ko_bracket_side_display_name(str(p["name"])),
+                            "id": str(p.get("id") or ""),
+                            "games": [int(p["score"])],
+                            "total": int(p["score"]),
+                            "rank": rank_i,
+                            "advances": advances,
+                            "eliminated": eliminated,
+                        }
+                        if eliminated and eliminated_place is not None:
+                            row["place"] = eliminated_place
+                        field_rows.append(row)
+
+                    advancer_names = [r["name"] for r in field_rows if r.get("advances")]
+                    elim_rounds.append(
+                        {
+                            "key": f"ELIM{game_i}",
+                            "label": f"Spiel {game_i}",
+                            "phase": "elim",
+                            "kind": "field",
+                            "decision_basis": decision_basis,
+                            "field": field_rows,
+                            "advancer": advancer_names[0] if len(advancer_names) == 1 else None,
+                            "first_game_number": gn,
+                            "side_a": {
+                                "name": advancer_names[0] if advancer_names else "—",
+                                "id": "",
+                                "games_won": 0,
+                            },
+                            "side_b": {"name": "—", "id": "", "games_won": 0},
+                        }
+                    )
+
+                if elim_rounds:
+                    last_adv = elim_rounds[-1].get("advancer") or ""
+                    # Flat field: all players with places from every round (UI prefers rounds).
+                    flat_field: List[Dict[str, Any]] = []
+                    seen_names: set = set()
+                    for rnd in elim_rounds:
+                        for p in rnd.get("field") or []:
+                            if not isinstance(p, dict):
+                                continue
+                            nk = str(p.get("name") or "").casefold()
+                            if nk in seen_names:
+                                continue
+                            if p.get("place") or p.get("eliminated"):
+                                flat_field.append(p)
+                                seen_names.add(nk)
+                    matches_out.append(
+                        {
+                            "key": str(elim_cfg.get("key") or "ELIM"),
+                            "label": elim_label,
+                            "phase": "elim",
+                            "kind": "field",
+                            "series_mode": str(
+                                elim_cfg.get("series_mode") or KO_FINALE_SERIES_SINGLE
+                            ),
+                            "decision_basis": decision_basis,
+                            "rounds": elim_rounds,
+                            "field": flat_field,
+                            "advancer": last_adv,
+                            "side_a": {"name": last_adv or "—", "id": "", "games_won": 0},
+                            "side_b": {"name": "—", "id": "", "games_won": 0},
+                            "pin_games": [],
+                            "walkover": False,
+                            "winner": "a" if last_adv else None,
+                            "first_game_number": elim_rounds[0].get("first_game_number"),
+                            "scratch_total_a": 0,
+                            "scratch_total_b": 0,
+                            "scratch_series": False,
+                            "scratch_final": False,
+                        }
+                    )
+
+        # --- Stepladder + final pair clusters ---
+        pair_df = ko_df[ko_df["_phase"].isin(("stepladder", "final"))]
+        if pair_df.empty:
+            # Everything after elim games.
+            elim_gn_set = set(elim_df["_gn"].unique()) if not elim_df.empty else set()
+            pair_df = ko_df[~ko_df["_gn"].isin(elim_gn_set)]
+
+        pair_blocks: List[tuple] = []
+        for gn, gdf in pair_df.groupby("_gn", sort=True):
+            players = players_for_game(gdf)
+            if len(players) < 2:
+                continue
+            if len(players) == 2:
+                p0, p1 = players[0], players[1]
+            else:
+                ordered = sorted(players, key=lambda p: str(p["name"]).casefold())
+                p0, p1 = ordered[0], ordered[1]
+            pair_key = tuple(sorted([p0["name"], p1["name"]], key=str.casefold))
+            pair_blocks.append((int(gn), pair_key, p0, p1))
+
+        clusters: List[List[tuple]] = []
+        cur: List[tuple] = []
+        cur_key: Optional[tuple] = None
+        for gn, key, p0, p1 in pair_blocks:
+            if not cur:
+                cur_key = key
+                cur.append((gn, p0, p1))
+                continue
+            if key == cur_key:
+                cur.append((gn, p0, p1))
+            else:
+                clusters.append(cur)
+                cur_key = key
+                cur = [(gn, p0, p1)]
+        if cur:
+            clusters.append(cur)
+
+        # Prefer round-phase labeling when available.
+        pair_keys: List[str] = []
+        sl_i = 0
+        for c_i, cluster in enumerate(clusters):
+            first_gn = cluster[0][0]
+            phase_rows = pair_df[pair_df["_gn"] == first_gn]["_phase"]
+            phase_hint = str(phase_rows.iloc[0]) if len(phase_rows) else ""
+            is_last = c_i == len(clusters) - 1
+            if phase_hint == "final" or (sl_i >= len(sl_specs) and is_last):
+                pair_keys.append(final_key)
+            elif sl_i < len(sl_specs):
+                pair_keys.append(str(sl_specs[sl_i].get("key") or f"SL{sl_i + 1}"))
+                sl_i += 1
+            else:
+                pair_keys.append(f"SL{sl_i + 1}")
+                sl_i += 1
+        if len(clusters) > len(sl_specs) and pair_keys and pair_keys[-1] != final_key:
+            pair_keys[-1] = final_key
+
+        for c_idx, cluster in enumerate(clusters):
+            mk = pair_keys[c_idx] if c_idx < len(pair_keys) else f"M{c_idx + 1}"
+            is_final = mk == final_key or mk == "F"
+            mode = final_mode if is_final else sl_mode
+            label = final_label if is_final else next(
+                (str(s.get("label_de") or mk) for s in sl_specs if str(s.get("key")) == mk),
+                mk,
+            )
+            phase = "final" if is_final else "stepladder"
+            match = self._ko_pair_cluster_to_match(
+                cluster,
+                key=mk,
+                label=label,
+                phase=phase,
+                series_mode=mode,
+            )
+            match["decision_basis"] = decision_basis
+            # Annotate final place on the side that drops out of this match.
+            loser_place: Optional[int] = None
+            if is_final:
+                loser_place = int(final_cfg.get("loser_place") or 2)
+                winner_place = int(final_cfg.get("winner_place") or 1)
+                match["loser_place"] = loser_place
+                match["winner_place"] = winner_place
+                if match.get("winner") == "a":
+                    match["side_a"]["place"] = winner_place
+                    match["side_b"]["place"] = loser_place
+                elif match.get("winner") == "b":
+                    match["side_b"]["place"] = winner_place
+                    match["side_a"]["place"] = loser_place
+            else:
+                for spec in sl_specs:
+                    if str(spec.get("key") or "") == mk:
+                        loser_place = int(spec.get("loser_place") or 0) or None
+                        break
+                if loser_place:
+                    match["loser_place"] = loser_place
+                    if match.get("winner") == "a":
+                        match["side_b"]["place"] = loser_place
+                    elif match.get("winner") == "b":
+                        match["side_a"]["place"] = loser_place
+            matches_out.append(match)
+
+        placements = self._ko_placements_from_elim_stepladder(matches_out, phases)
+        meta = self._ko_finalist_path_meta(matches_out)
+        return {
+            "matches": matches_out,
+            "placements": placements,
+            **meta,
+            "ko_finale_series": final_mode if final_mode else KO_FINALE_SERIES_BO3,
+            "ko_bracket_format": KO_BRACKET_FORMAT_ELIM_STEPLADDER,
+            "ko_decision_basis": decision_basis,
+        }
+
+    @staticmethod
+    def _ko_elim_stepladder_round_phase(round_name: object) -> str:
+        low = str(round_name or "").casefold()
+        if "eliminierung" in low or re.search(r"\belim\b", low):
+            return "elim"
+        if "stepladder" in low or "step-ladder" in low or "step ladder" in low:
+            return "stepladder"
+        if "finale" in low or re.search(r"\bfinal\b", low):
+            return "final"
+        return "other"
+
+    def _ko_pair_cluster_to_match(
+        self,
+        cluster: List[tuple],
+        *,
+        key: str,
+        label: str,
+        phase: str,
+        series_mode: str,
+    ) -> Dict[str, Any]:
+        first_gn, fp0, fp1 = cluster[0]
+        side_a = fp0["name"]
+        side_b = fp1["name"]
+        id_a = str(fp0.get("id") or "")
+        id_b = str(fp1.get("id") or "")
+
+        walkover = False
+        pin_games: List[List[int]] = []
+        wins_a = wins_b = 0
+        scratch_total_a = scratch_total_b = 0
+        for _gn, p0, p1 in cluster:
+            c0 = str(p0.get("club") or "")
+            c1 = str(p1.get("club") or "")
+            if c0 == "KO_WO" or c1 == "KO_WO":
+                walkover = True
+            if self._is_ko_bye_player(p0["name"]) or self._is_ko_bye_player(p1["name"]):
+                walkover = True
+
+            if p0["name"] == side_a:
+                sa, sb = int(p0["score"]), int(p1["score"])
+            elif p0["name"] == side_b:
+                sa, sb = int(p1["score"]), int(p0["score"])
+            else:
+                sa, sb = int(p0["score"]), int(p1["score"])
+
+            if not walkover and (sa > 0 or sb > 0):
+                pin_games.append([sa, sb])
+                scratch_total_a += sa
+                scratch_total_b += sb
+                if sa > sb:
+                    wins_a += 1
+                elif sb > sa:
+                    wins_b += 1
+
+        mode = str(series_mode or "").strip().lower()
+        scratch_series_match = False
+        scratch_final = False
+        winner: Optional[str] = None
+
+        if walkover:
+            if not self._is_ko_bye_player(side_a) and self._is_ko_bye_player(side_b):
+                wins_a, wins_b, winner = 1, 0, "a"
+            elif self._is_ko_bye_player(side_a) and not self._is_ko_bye_player(side_b):
+                wins_a, wins_b, winner = 0, 1, "b"
+            else:
+                wins_a, wins_b, winner = 1, 0, "a"
+        elif mode in (
+            KO_FINALE_SERIES_SCRATCH_2G,
+            KO_FINALE_SERIES_SCRATCH_N,
+            "scratch_total",
+            "scratch_2g",
+            "2g_scratch",
+        ):
+            scratch_series_match = True
+            scratch_final = key in ("F",)
+            if scratch_total_a > scratch_total_b:
+                winner = "a"
+            elif scratch_total_b > scratch_total_a:
+                winner = "b"
+        else:
+            if wins_a > wins_b:
+                winner = "a"
+            elif wins_b > wins_a:
+                winner = "b"
+            elif pin_games and wins_a == wins_b and wins_a >= 1 and key not in ("F",):
+                tb_side = self._ko_series_tiebreak_side(cluster, side_a, side_b)
+                if tb_side == "a":
+                    wins_a, wins_b, winner = wins_a + 1, wins_b, "a"
+                elif tb_side == "b":
+                    wins_a, wins_b, winner = wins_a, wins_b + 1, "b"
+
+        return {
+            "key": key,
+            "label": label,
+            "phase": phase,
+            "kind": "pair",
+            "series_mode": mode or KO_FINALE_SERIES_BO3,
+            "side_a": {
+                "name": self._ko_bracket_side_display_name(side_a),
+                "id": id_a,
+                "games_won": wins_a,
+            },
+            "side_b": {
+                "name": self._ko_bracket_side_display_name(side_b),
+                "id": id_b,
+                "games_won": wins_b,
+            },
+            "pin_games": pin_games,
+            "walkover": walkover,
+            "winner": winner,
+            "first_game_number": first_gn,
+            "scratch_total_a": scratch_total_a,
+            "scratch_total_b": scratch_total_b,
+            "scratch_series": scratch_series_match,
+            "scratch_final": scratch_final,
+        }
 
     @staticmethod
     def _ko_player_in_ko_matches(bracket: Optional[Dict[str, Any]], player: str) -> bool:
@@ -4460,6 +5250,14 @@ class TournamentService:
         if not target:
             return False
         for m in bracket["matches"]:
+            if m.get("kind") == "field":
+                for p in m.get("field") or []:
+                    if not isinstance(p, dict):
+                        continue
+                    nm = TournamentService._ko_strip_no_show_suffix(str(p.get("name", "") or ""))
+                    if TournamentService._ko_norm_name(nm) == target:
+                        return True
+                continue
             for side in ("side_a", "side_b"):
                 s = m.get(side, {})
                 nm = TournamentService._ko_strip_no_show_suffix(str(s.get("name", "") or ""))
@@ -4490,12 +5288,35 @@ class TournamentService:
         out_matches: List[Dict[str, Any]] = []
         for m in bracket["matches"]:
             mm = dict(m)
-            sa = dict(m["side_a"])
-            sb = dict(m["side_b"])
-            sa["highlight"] = self._ko_norm_name(self._ko_strip_no_show_suffix(str(sa.get("name", "") or ""))) == pnorm
-            sb["highlight"] = self._ko_norm_name(self._ko_strip_no_show_suffix(str(sb.get("name", "") or ""))) == pnorm
-            mm["side_a"] = sa
-            mm["side_b"] = sb
+            if m.get("kind") == "field":
+                field_out = []
+                for p in m.get("field") or []:
+                    if not isinstance(p, dict):
+                        continue
+                    pp = dict(p)
+                    nm = self._ko_norm_name(self._ko_strip_no_show_suffix(str(pp.get("name", "") or "")))
+                    pp["highlight"] = nm == pnorm
+                    field_out.append(pp)
+                mm["field"] = field_out
+                sa = dict(m.get("side_a") or {})
+                sb = dict(m.get("side_b") or {})
+                sa["highlight"] = (
+                    self._ko_norm_name(self._ko_strip_no_show_suffix(str(sa.get("name", "") or ""))) == pnorm
+                )
+                sb["highlight"] = False
+                mm["side_a"] = sa
+                mm["side_b"] = sb
+            else:
+                sa = dict(m["side_a"])
+                sb = dict(m["side_b"])
+                sa["highlight"] = (
+                    self._ko_norm_name(self._ko_strip_no_show_suffix(str(sa.get("name", "") or ""))) == pnorm
+                )
+                sb["highlight"] = (
+                    self._ko_norm_name(self._ko_strip_no_show_suffix(str(sb.get("name", "") or ""))) == pnorm
+                )
+                mm["side_a"] = sa
+                mm["side_b"] = sb
             out_matches.append(mm)
         return {**bracket, "matches": out_matches}
 
@@ -4616,14 +5437,19 @@ class TournamentService:
         ko_bracket = self._build_ko_bracket_payload(season, tournament, df=df)
         ko_place = self._ko_placement_for_player(ko_bracket, player)
 
-        progress = self.get_player_progress_series(
-            season, tournament, player, df=df, include_field=False
-        )
+        field_progress = self.get_field_progress(season, tournament, df=df)
+        progress = self._compute_player_only_progress(player, df, field_progress)
         pos_series = list(progress.get("position_series") or [])
-        if ko_place is not None and pos_series:
+        chart_capped = bool(field_progress.get("progress_chart_capped"))
+        # When charts stop at qualifying, do not stamp the KO place onto the last chart point.
+        if ko_place is not None and pos_series and not chart_capped:
             pos_series = pos_series[:]
             pos_series[-1] = ko_place
-        progress_out = {**progress, "position_series": pos_series}
+        progress_out = {
+            **progress,
+            "position_series": pos_series,
+            "labels": field_progress.get("labels") or [],
+        }
 
         player_df = df[df[Columns.player_name].astype(str).str.strip().eq(str(player).strip())]
         player_club = None
@@ -4635,7 +5461,11 @@ class TournamentService:
 
         played_avgs = [v for v in avg_series if v is not None]
         avg_value = round(float(played_avgs[-1]), 2) if played_avgs else None
-        final_position = int(pos_series[-1]) if pos_series else None
+        final_position = (
+            int(ko_place)
+            if ko_place is not None
+            else (int(pos_series[-1]) if pos_series else None)
+        )
         best_position = None
         best_position_game = None
         if pos_series:
@@ -4651,7 +5481,6 @@ class TournamentService:
         else:
             ko_for_player = {**self._ko_bracket_with_highlights(ko_bracket, player), "focus_player": str(player).strip()}
         player_card_layout = self._resolve_player_card_layout(season, tournament)
-        field_progress = self.get_field_progress(season, tournament, df=df)
         return {
             "player": player,
             "player_club": player_club,
@@ -4882,13 +5711,18 @@ class TournamentService:
             ko_bracket = self._build_ko_bracket_payload(season_label, tournament_label)
             ko_place = self._ko_placement_for_player(ko_bracket, player_norm)
             pos_series = list(progress.get("position_series") or [])
-            if ko_place is not None and pos_series:
+            field = self.get_field_progress(season_label, tournament_label)
+            if ko_place is not None and pos_series and not field.get("progress_chart_capped"):
                 pos_series = pos_series[:]
                 pos_series[-1] = ko_place
 
             avg_series = [v for v in (progress.get("avg_series") or []) if v is not None]
             average = round(float(avg_series[-1]), 1) if avg_series else None
-            final_position = int(pos_series[-1]) if pos_series else None
+            final_position = (
+                int(ko_place)
+                if ko_place is not None
+                else (int(pos_series[-1]) if pos_series else None)
+            )
 
             event_player_df = player_df[
                 player_df[Columns.season].astype(str).str.strip().eq(season_label)

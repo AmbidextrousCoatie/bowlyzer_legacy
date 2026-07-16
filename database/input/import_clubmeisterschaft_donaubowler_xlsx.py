@@ -58,8 +58,37 @@ NUM_SET_BLOCKS = 6  # six sets in stage 1
 
 EVENT_NAME = "Clubmeisterschaft Donaubowler 2026"
 
+# Finals workbook: "Last, First" / typos → preferred display (qualifying uses "First Last").
+FINALE_NAME_ALIASES = {
+    "harteil, volkmar": "Volkmar Hartfeil",
+    "hartfeil, volkmar": "Volkmar Hartfeil",
+    "feller, christian": "Christian Feller",
+    "obermeier, kurt": "Kurt Obermeier",
+    "schneider, tobias": "Tobias Schneider",
+    "rettinger, fabian": "Fabian Rettinger",
+    "luu, vinh duc": "Luu Vinh Duc",
+}
+
+# Finals sheet columns (1-based): seed, name, hdc/game, then scratch games, then inkl-hdc mirrors.
+FINALE_COL_SEED = 1
+FINALE_COL_NAME = 2
+FINALE_COL_HDC = 3
+FINALE_SCRATCH_COLS = {
+    "elim_1": 4,
+    "elim_2": 5,
+    "sl1": 6,
+    "sl2": 7,
+    "f1": 8,
+    "f2": 9,
+    # Optional 3rd final game if present later
+    "f3": None,
+}
+FINALE_ROUND_ELIM = 7
+FINALE_ROUND_STEPLADDER = 8
+FINALE_ROUND_FINAL = 9
+
 # Workbook-only fields for change detection (no Player ID — league lookup must not affect fingerprint).
-FINGERPRINT_VERSION = "clubmeisterschaft-sheet-v1"
+FINGERPRINT_VERSION = "clubmeisterschaft-sheet-v2"
 FINGERPRINT_FIELDS = (
     "Season",
     "Date",
@@ -406,6 +435,146 @@ def _extract_rows_for_sheet(
     return clean_rows, unmatched
 
 
+def _canonicalize_finale_name(raw: str) -> str:
+    name = (raw or "").strip()
+    if not name:
+        return name
+    alias = FINALE_NAME_ALIASES.get(_norm_ws(name))
+    if alias:
+        return alias
+    # "Last, First" → "First Last"
+    if "," in name:
+        parts = [p.strip() for p in name.split(",", 1)]
+        if len(parts) == 2 and parts[0] and parts[1]:
+            return f"{parts[1]} {parts[0]}"
+    return name
+
+
+def _extract_finale_rows_for_sheet(
+    ws,
+    *,
+    season: str,
+    event_date: str,
+    location: str,
+    player_lookup: Dict[str, str],
+    preferred_names_by_id: Optional[Dict[str, str]] = None,
+) -> Tuple[List[Dict[str, str]], List[str]]:
+    """
+    Parse Clubpokal DB 2026 Finale.xlsx layout:
+    row1 banners (HDC / scratch / inkl hdc), row2 headers, data from row3.
+    Stores scratch in Score and per-game HDC in Handicap (decisions = Score+Handicap).
+    """
+    preferred_names_by_id = preferred_names_by_id or {}
+    clean_rows: List[Dict[str, str]] = []
+    unmatched: List[str] = []
+
+    # Optional Finals 3 column if header present in row 2.
+    f3_col: Optional[int] = None
+    for c in range(1, (ws.max_column or 1) + 1):
+        hdr = str(ws.cell(2, c).value or "").strip().casefold()
+        if hdr in ("finals 3", "finale 3", "final 3"):
+            f3_col = c
+            break
+
+    game_specs: List[Tuple[str, str, int, int]] = [
+        # key, round_name, round_number, game_number
+        ("elim_1", "KO Eliminierung", FINALE_ROUND_ELIM, 0),
+        ("elim_2", "KO Eliminierung", FINALE_ROUND_ELIM, 1),
+        ("sl1", "KO Stepladder", FINALE_ROUND_STEPLADDER, 2),
+        ("sl2", "KO Stepladder", FINALE_ROUND_STEPLADDER, 3),
+        ("f1", "KO-Finale", FINALE_ROUND_FINAL, 4),
+        ("f2", "KO-Finale", FINALE_ROUND_FINAL, 5),
+    ]
+    if f3_col is not None:
+        game_specs.append(("f3", "KO-Finale", FINALE_ROUND_FINAL, 6))
+
+    for row_idx in range(3, (ws.max_row or 2) + 1):
+        raw_name = ws.cell(row=row_idx, column=FINALE_COL_NAME).value
+        if raw_name is None or not str(raw_name).strip():
+            continue
+        display_raw = str(raw_name).strip()
+        display_name = _canonicalize_finale_name(display_raw)
+        hdc = _as_int_score(ws.cell(row=row_idx, column=FINALE_COL_HDC).value)
+        h_per_game = int(hdc) if hdc is not None else 0
+
+        pid, _ = _resolve_player_id(display_name, player_lookup)
+        if not pid:
+            pid, _ = _resolve_player_id(display_raw, player_lookup)
+        if not pid:
+            unmatched.append(display_name)
+            pid = f"UNK{hashlib.md5(display_name.encode('utf-8')).hexdigest()[:10]}"
+        if pid in preferred_names_by_id:
+            display_name = preferred_names_by_id[pid]
+
+        for key, round_name, round_number, game_number in game_specs:
+            if key == "f3":
+                assert f3_col is not None
+                col = f3_col
+            else:
+                col = FINALE_SCRATCH_COLS[key]
+                if col is None:
+                    continue
+            score = _as_int_score(ws.cell(row=row_idx, column=col).value)
+            if score is None:
+                continue
+            clean_rows.append(
+                {
+                    "Season": season,
+                    "Date": event_date,
+                    "Location": location,
+                    "Event Type": "tournament",
+                    "Event Name": EVENT_NAME,
+                    "Round Number": str(round_number),
+                    "Round Name": round_name,
+                    "Player": display_name,
+                    "Player ID": pid,
+                    "Club": "",
+                    "Game Number": str(game_number),
+                    "Score": str(score),
+                    "Handicap": str(h_per_game),
+                }
+            )
+
+    return clean_rows, unmatched
+
+
+def _is_lock_xlsx(path: Path) -> bool:
+    name = path.name
+    return name.startswith("~") or name.startswith(".~")
+
+
+def _pick_qualifying_xlsx(input_dir: Path, explicit: str = "") -> Path:
+    if explicit:
+        return Path(explicit).resolve()
+    preferred = input_dir / "Clubpokal DB 2026.xlsx"
+    if preferred.is_file():
+        return preferred.resolve()
+    candidates = [
+        p
+        for p in input_dir.glob("*.xlsx")
+        if not _is_lock_xlsx(p) and "finale" not in p.name.casefold()
+    ]
+    if not candidates:
+        raise FileNotFoundError(f"No qualifying .xlsx files in {input_dir}")
+    candidates.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+    return candidates[0].resolve()
+
+
+def _pick_finale_xlsx(input_dir: Path, explicit: str = "") -> Optional[Path]:
+    if explicit:
+        p = Path(explicit).resolve()
+        return p if p.is_file() else None
+    candidates = [
+        p
+        for p in input_dir.glob("*.xlsx")
+        if not _is_lock_xlsx(p) and "finale" in p.name.casefold()
+    ]
+    if not candidates:
+        return None
+    candidates.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+    return candidates[0].resolve()
+
+
 def compute_workbook_fingerprint(
     xlsx_path: Path,
     *,
@@ -452,7 +621,18 @@ def build_parser() -> argparse.ArgumentParser:
         "--xlsx",
         type=str,
         default="",
-        help="Path to a single .xlsx file (default: first *.xlsx in --input-dir).",
+        help="Qualifying .xlsx path (default: Clubpokal DB 2026.xlsx or newest non-Finale in --input-dir).",
+    )
+    p.add_argument(
+        "--finale-xlsx",
+        type=str,
+        default="",
+        help="Finals .xlsx path (default: newest *Finale*.xlsx in --input-dir, if present).",
+    )
+    p.add_argument(
+        "--no-finale",
+        action="store_true",
+        help="Skip finals workbook even if present.",
     )
     p.add_argument(
         "--input-dir",
@@ -491,30 +671,27 @@ def main() -> None:
     input_dir = Path(args.input_dir).resolve()
     league_csv = Path(args.league_csv).resolve()
 
-    if args.xlsx:
-        xlsx_path = Path(args.xlsx).resolve()
-    else:
-        candidates = sorted(
-            p for p in input_dir.glob("*.xlsx") if not p.name.startswith("~") and not p.name.startswith(".~")
-        )
-        if not candidates:
-            raise FileNotFoundError(f"No .xlsx files in {input_dir}")
-        xlsx_path = candidates[0]
+    xlsx_path = _pick_qualifying_xlsx(input_dir, str(args.xlsx or "").strip())
+    finale_path = None if args.no_finale else _pick_finale_xlsx(input_dir, str(args.finale_xlsx or "").strip())
 
     if not xlsx_path.is_file():
         raise FileNotFoundError(xlsx_path)
 
     season = (args.season or "").strip() or _season_label_from_calendar_year(int(args.year))
+    event_date = str(args.date).strip()
+    location = str(args.location or "").strip()
+    sheet_arg = str(args.sheet or "").strip()
+    first_data_row = int(args.first_data_row)
 
     if args.fingerprint:
         print(
             compute_workbook_fingerprint(
                 xlsx_path,
                 season=season,
-                event_date=str(args.date).strip(),
-                location=str(args.location or "").strip(),
-                sheet=str(args.sheet or "").strip(),
-                first_data_row=int(args.first_data_row),
+                event_date=event_date,
+                location=location,
+                sheet=sheet_arg,
+                first_data_row=first_data_row,
             )
         )
         return
@@ -523,7 +700,7 @@ def main() -> None:
     player_lookup = _build_player_id_lookup(league_csv)
 
     wb = load_workbook(xlsx_path, data_only=True)
-    sheet_name = (args.sheet or "").strip() or wb.sheetnames[0]
+    sheet_name = sheet_arg or wb.sheetnames[0]
     if sheet_name not in wb.sheetnames:
         raise ValueError(f"Sheet '{sheet_name}' not in workbook. Available: {wb.sheetnames}")
     ws = wb[sheet_name]
@@ -531,16 +708,39 @@ def main() -> None:
     clean_rows, unmatched = _extract_rows_for_sheet(
         ws,
         season=season,
-        event_date=str(args.date).strip(),
-        location=str(args.location or "").strip(),
+        event_date=event_date,
+        location=location,
         player_lookup=player_lookup,
-        first_data_row=int(args.first_data_row),
+        first_data_row=first_data_row,
     )
 
-    if not clean_rows:
+    preferred_names_by_id: Dict[str, str] = {}
+    for row in clean_rows:
+        pid = str(row.get("Player ID") or "").strip()
+        pname = str(row.get("Player") or "").strip()
+        if pid and pname and pid not in preferred_names_by_id:
+            preferred_names_by_id[pid] = pname
+
+    finale_rows: List[Dict[str, str]] = []
+    finale_unmatched: List[str] = []
+    if finale_path and finale_path.is_file():
+        fwb = load_workbook(finale_path, data_only=True)
+        fws = fwb[fwb.sheetnames[0]]
+        finale_rows, finale_unmatched = _extract_finale_rows_for_sheet(
+            fws,
+            season=season,
+            event_date=event_date,
+            location=location,
+            player_lookup=player_lookup,
+            preferred_names_by_id=preferred_names_by_id,
+        )
+        unmatched.extend(finale_unmatched)
+
+    all_clean = clean_rows + finale_rows
+    if not all_clean:
         raise ValueError(f"No score rows extracted from {xlsx_path}")
 
-    postprocessed = bmi._postprocess(clean_rows)
+    postprocessed = bmi._postprocess(all_clean)
     output_path = Path(args.output).resolve()
     bmi._write_csv_rows(output_path, postprocessed)
 
@@ -551,6 +751,8 @@ def main() -> None:
     _rebuild_player_hybrid_local()
 
     print(f"Source: {xlsx_path} (sheet {sheet_name!r})")
+    if finale_path and finale_rows:
+        print(f"Finale: {finale_path} ({len(finale_rows)} raw score rows)")
     print(f"Season: {season}  Event: {EVENT_NAME}")
     print(f"Wrote: {output_path} ({len(postprocessed)} postprocessed rows)")
     if removed_from_gf:

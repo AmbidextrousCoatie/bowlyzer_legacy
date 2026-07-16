@@ -22,24 +22,51 @@ export function sideKey(side: { name?: string | null }): string {
   return normalizeKoName(side?.name ?? "");
 }
 
+export type BracketTierId = "elim" | "stepladder" | "qf" | "sf" | "final";
+
 export type BracketTiers = {
+  elim: KoBracketMatch[];
+  stepladder: KoBracketMatch[];
   qf: KoBracketMatch[];
   sf: KoBracketMatch[];
   final: KoBracketMatch[];
 };
 
-const KEY_ORDER = ["QF1", "QF2", "SF1", "SF2", "F"] as const;
+const TREE_KEY_ORDER = ["QF1", "QF2", "SF1", "SF2", "F"] as const;
+const STEPLADDER_KEY_ORDER = ["ELIM1", "ELIM2", "ELIM", "SL1", "SL2", "F"] as const;
 
 export function organizeBracketTiers(matches: KoBracketMatch[]): BracketTiers {
   const byKey = new Map(matches.map((m) => [m.key, m]));
-  const ordered = KEY_ORDER.map((k) => byKey.get(k)).filter(Boolean) as KoBracketMatch[];
-  const rest = matches.filter((m) => !KEY_ORDER.includes(m.key as (typeof KEY_ORDER)[number]));
-  const all = [...ordered, ...rest];
+  const treeOrdered = TREE_KEY_ORDER.map((k) => byKey.get(k)).filter(Boolean) as KoBracketMatch[];
+  const stepOrdered = STEPLADDER_KEY_ORDER.map((k) => byKey.get(k)).filter(Boolean) as KoBracketMatch[];
+  const known = new Set([...TREE_KEY_ORDER, ...STEPLADDER_KEY_ORDER]);
+  const rest = matches.filter((m) => !known.has(m.key as (typeof TREE_KEY_ORDER)[number]));
+  const all = [...stepOrdered, ...treeOrdered, ...rest];
+  // Dedupe by key while preserving order
+  const seen = new Set<string>();
+  const unique: KoBracketMatch[] = [];
+  for (const m of all) {
+    if (seen.has(m.key)) continue;
+    seen.add(m.key);
+    unique.push(m);
+  }
 
-  const qf = all.filter((m) => m.phase === "qf" || /^QF/i.test(m.key));
-  const sf = all.filter((m) => m.phase === "sf" || /^SF/i.test(m.key));
-  const final = all.filter((m) => m.phase === "final" || m.key === "F");
-  return { qf, sf, final };
+  const elim = unique.filter((m) => m.phase === "elim" || m.kind === "field" || /^ELIM/i.test(m.key));
+  const stepladder = unique.filter(
+    (m) => m.phase === "stepladder" || /^SL\d+/i.test(m.key),
+  );
+  const qf = unique.filter((m) => m.phase === "qf" || /^QF/i.test(m.key));
+  const sf = unique.filter((m) => m.phase === "sf" || /^SF/i.test(m.key));
+  const final = unique.filter((m) => m.phase === "final" || m.key === "F");
+  return { elim, stepladder, qf, sf, final };
+}
+
+export function isStepladderFormat(bracket: KoBracketPayload): boolean {
+  if (bracket.ko_bracket_format === "seeded_elim_stepladder") return true;
+  const matches = bracket.matches ?? [];
+  return matches.some(
+    (m) => m.phase === "elim" || m.phase === "stepladder" || m.kind === "field" || /^SL\d+/i.test(m.key),
+  );
 }
 
 export function bracketLaneColors(bracket: KoBracketPayload) {
@@ -67,13 +94,24 @@ export function matchOnFinalistPath(
 }
 
 export function focusPlayerWonMatch(match: KoBracketMatch, focusKey: string): boolean {
-  if (!focusKey || !match.winner) return false;
+  if (!focusKey) return false;
+  if (match.kind === "field") {
+    const adv = normalizeKoName(match.advancer ?? "");
+    if (adv && adv === focusKey) return true;
+    return (match.field ?? []).some(
+      (p) => p.advances && normalizeKoName(p.name ?? "") === focusKey,
+    );
+  }
+  if (!match.winner) return false;
   const wSide = match.winner === "a" ? match.side_a : match.side_b;
   return sideKey(wSide) === focusKey;
 }
 
 export function matchIncludesFocus(match: KoBracketMatch, focusKey: string): boolean {
   if (!focusKey) return false;
+  if (match.kind === "field") {
+    return (match.field ?? []).some((p) => normalizeKoName(p.name ?? "") === focusKey);
+  }
   return sideKey(match.side_a) === focusKey || sideKey(match.side_b) === focusKey;
 }
 
@@ -83,6 +121,11 @@ export function formatPinGamesLine(pinGames: number[][] | undefined): string | n
   return parts.join(" · ");
 }
 
+export function formatFieldGamesLine(games: number[] | undefined): string | null {
+  if (!games?.length) return null;
+  return games.join(" · ");
+}
+
 export function formatSeriesScore(
   match: KoBracketMatch,
   scratchMode: boolean,
@@ -90,7 +133,12 @@ export function formatSeriesScore(
   if (match.walkover) return null;
   const a = match.side_a?.games_won ?? 0;
   const b = match.side_b?.games_won ?? 0;
-  if (scratchMode || match.scratch_series) {
+  const useScratch =
+    scratchMode ||
+    match.scratch_series ||
+    match.series_mode === "scratch_total_2g" ||
+    match.series_mode === "scratch_total";
+  if (useScratch) {
     const ta = match.scratch_total_a ?? 0;
     const tb = match.scratch_total_b ?? 0;
     if (ta === 0 && tb === 0) return null;
@@ -120,9 +168,11 @@ export function renderSeriesParts(text: string): Array<{ bold: boolean; text: st
 }
 
 export function tierLabel(
-  tier: "qf" | "sf" | "final",
+  tier: BracketTierId,
   t: (key: string, fallback?: string) => string,
 ): string {
+  if (tier === "elim") return t("ui.tournament.bracket_elim", "Eliminierung");
+  if (tier === "stepladder") return t("ui.tournament.bracket_stepladder", "Stepladder");
   if (tier === "qf") return t("ui.tournament.bracket_qf", "Viertelfinale");
   if (tier === "sf") return t("ui.tournament.bracket_sf", "Halbfinale");
   return t("ui.tournament.bracket_final", "Finale");
