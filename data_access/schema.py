@@ -27,7 +27,10 @@ class Columns:
     event_type: str = 'Event Type'  # 'league' or 'tournament'
     event_name: str = 'Event Name'  # Legacy tournament column; published v2 uses event ('Event')
     round_name: str = 'Round Name'  # Tournament stage name (Vorlauf, Zwischenlauf, Finale)
-    club: str = 'Club'  # Player club/team label
+    club: str = 'Club'  # Player club/team label (reporting identity after publish)
+    verein: str = 'Verein'  # Parent Verein from Rangliste / tournament resolution
+    history_club: str = 'History Club'  # Club-history stint label (Verein when Einzelmitglied)
+    affiliation_source: str = 'Affiliation Source'  # Resolution rule audit tag
     game_number: str = 'Game Number'  # Game within series (reuses round_number concept)
     handicap: str = 'Handicap'  # Per-game handicap for tournaments
     apriori_average: str = 'A Priori Average'  # Sheet a priori average (club handicap basis)

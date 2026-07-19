@@ -113,6 +113,24 @@ def _display_name(group_names: pd.Series) -> str:
     return max(set(cleaned), key=lambda n: (cleaned.count(n), len(n), n.lower()))
 
 
+def _canonical_display_name(
+    player_id: str,
+    group_names: pd.Series,
+    registry_lookup: Optional[Dict[str, Dict[str, str]]] = None,
+) -> str:
+    """Prefer ``players_registry`` canonical_name; fall back to majority spelling."""
+    from data_access.player_id_name_normalization import normalize_player_id
+
+    pid = normalize_player_id(player_id)
+    if pid and registry_lookup:
+        entry = registry_lookup.get(pid)
+        if entry:
+            canon = str(entry.get("canonical_name") or "").strip()
+            if canon:
+                return canon
+    return _display_name(group_names)
+
+
 def _legend_row(
     *,
     player_id: str,
@@ -195,12 +213,25 @@ class ClubLegendsService:
         if work.empty:
             return _empty_payload(resolved)
 
+        registry_lookup: Dict[str, Dict[str, str]] = {}
+        try:
+            from data_access.players_registry import load_players_registry_df, registry_lookup_by_id
+
+            registry_df = load_players_registry_df()
+            if registry_df is not None and not registry_df.empty:
+                registry_lookup = registry_lookup_by_id(registry_df)
+        except Exception:
+            registry_lookup = {}
+
         def pid_for_group(g: pd.DataFrame) -> str:
             if Columns.player_id not in g.columns:
                 return ""
             vals = g[Columns.player_id].fillna("").astype(str).str.strip()
             vals = vals[~vals.str.lower().isin({"", "nan", "none"})]
             return str(vals.iloc[0]) if len(vals) else ""
+
+        def display_for_group(g: pd.DataFrame) -> str:
+            return _canonical_display_name(pid_for_group(g), g["_pname"], registry_lookup)
 
         # --- most seasons ---
         season_counts = (
@@ -218,7 +249,7 @@ class ClubLegendsService:
         most_seasons = [
             _legend_row(
                 player_id=pid_for_group(work.loc[work["_pk"].eq(row["_pk"])]),
-                player_name=str(row["_pname"]),
+                player_name=display_for_group(work.loc[work["_pk"].eq(row["_pk"])]),
                 value=int(row["seasons"]),
             )
             for _, row in season_counts.iterrows()
@@ -241,7 +272,7 @@ class ClubLegendsService:
             most_games.append(
                 _legend_row(
                     player_id=pid_for_group(sub),
-                    player_name=str(row["_pname"]),
+                    player_name=display_for_group(sub),
                     value=int(row["games"]),
                     games=int(row["games"]),
                     average=to_json_float(mean_scores(sub[Columns.score])),
@@ -266,7 +297,7 @@ class ClubLegendsService:
         highest_average = [
             _legend_row(
                 player_id=pid_for_group(work.loc[work["_pk"].eq(row["_pk"])]),
-                player_name=str(row["_pname"]),
+                player_name=display_for_group(work.loc[work["_pk"].eq(row["_pk"])]),
                 value=to_json_float(row["average"]),
                 games=int(row["games"]),
                 average=to_json_float(row["average"]),
@@ -292,7 +323,7 @@ class ClubLegendsService:
         best_seasons = [
             _legend_row(
                 player_id=pid_for_group(work.loc[work["_pk"].eq(row["_pk"])]),
-                player_name=str(row["_pname"]),
+                player_name=display_for_group(work.loc[work["_pk"].eq(row["_pk"])]),
                 value=to_json_float(row["average"]),
                 games=int(row["games"]),
                 average=to_json_float(row["average"]),
@@ -327,7 +358,7 @@ class ClubLegendsService:
                 most_teams_represented = [
                     _legend_row(
                         player_id=pid_for_group(work.loc[work["_pk"].eq(row["_pk"])]),
-                        player_name=str(row["_pname"]),
+                        player_name=display_for_group(work.loc[work["_pk"].eq(row["_pk"])]),
                         value=int(row["team_count"]),
                         teams=list(row["teams"]),
                     )
@@ -363,7 +394,7 @@ class ClubLegendsService:
                 most_leagues_seen = [
                     _legend_row(
                         player_id=pid_for_group(work.loc[work["_pk"].eq(row["_pk"])]),
-                        player_name=str(row["_pname"]),
+                        player_name=display_for_group(work.loc[work["_pk"].eq(row["_pk"])]),
                         value=int(row["league_count"]),
                         leagues=list(row["leagues"]),
                     )

@@ -105,6 +105,10 @@ app/static/js/
 ## Historical Information
 Detailed implementation history and troubleshooting information can be found in the `archive/` directory.
 
-## Data Pipeline Planning
-- `GF_DATA_PIPELINE_IMPLEMENTATION_PLAN.md` - Gravity Forms ingestion/staging/sync plan for legacy data generation.
-- `GF_PIPELINE_SPRINT1_RUNBOOK.md` - Operator runbook: Sprint 1–2 behaviour (GF → legacy for form 92), CLI, backfill script, Sprint 3 (final) scope.
+## Data Pipeline
+
+- **[`DATA_PIPELINE.md`](DATA_PIPELINE.md)** — operator guide (fetch → publish → cache) + scenario commands
+- [`pipeline/`](pipeline/) — fetch / validate / import / publish details
+- `GF_DATA_PIPELINE_IMPLEMENTATION_PLAN.md` — Gravity Forms implementation roadmap
+- `GF_PIPELINE_SPRINT1_RUNBOOK.md` — GF extract → stage → canonical operator notes
+- `planning/DATA_PIPELINE_PLAN.md` — superseded architecture snapshot (see DATA_PIPELINE.md first)

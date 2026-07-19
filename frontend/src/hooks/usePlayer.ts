@@ -41,6 +41,8 @@ export type PlayerSeasonRow = {
   is_tournament?: boolean | null;
   row_type?: string | null;
   club?: string | null;
+  /** Club-history stint label; falls back to ``club`` when absent. */
+  history_club?: string | null;
   team_name?: string | null;
   team_number?: number | string | null;
   player_name?: string | null;

@@ -24,7 +24,8 @@ def test_default_paths_under_data_and_work():
 def test_build_league_input_paths_order(tmp_path, monkeypatch):
     monkeypatch.setenv("BOWLYZER_WORK_DATA_DIR", str(tmp_path))
     hist = tmp_path / "historical.csv"
-    scrape = tmp_path / "legacy_scrape_extracted.csv"
+    scrape = tmp_path / "legacy_scrape" / "legacy_scrape_extracted.csv"
+    scrape.parent.mkdir(parents=True)
     extra = tmp_path / "custom.csv"
     gf = tmp_path / "latest.csv"
     for p in (hist, scrape, extra, gf):
@@ -33,6 +34,22 @@ def test_build_league_input_paths_order(tmp_path, monkeypatch):
         historical=hist,
         gf_league=gf,
         extra_league=[extra],
-        with_legacy_scrape=True,
     )
     assert paths == [hist.resolve(), scrape.resolve(), extra.resolve(), gf.resolve()]
+
+
+def test_build_league_input_paths_can_skip_legacy_scrape(tmp_path, monkeypatch):
+    monkeypatch.setenv("BOWLYZER_WORK_DATA_DIR", str(tmp_path))
+    hist = tmp_path / "historical.csv"
+    scrape = tmp_path / "legacy_scrape" / "legacy_scrape_extracted.csv"
+    scrape.parent.mkdir(parents=True)
+    gf = tmp_path / "latest.csv"
+    for p in (hist, scrape, gf):
+        p.write_text("Season;League\n", encoding="utf-8")
+    paths = build_league_input_paths(
+        historical=hist,
+        gf_league=gf,
+        extra_league=[],
+        with_legacy_scrape=False,
+    )
+    assert paths == [hist.resolve(), gf.resolve()]

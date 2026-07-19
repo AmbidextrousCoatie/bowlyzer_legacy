@@ -149,7 +149,7 @@ Or use the all-in-one publisher (includes GF pipeline paths by default):
 
 ```powershell
 $env:BOWLYZER_WORK_DATA_DIR = "C:\tmp\bowlyzer\data"
-uv run python scripts/build_published_dataset.py --with-player-hybrid
+uv run python scripts/build_published_dataset.py --write-csv
 ```
 
 ### Analyze output (per-workbook oddities)
@@ -246,7 +246,7 @@ Detects **male/female league collapse** (e.g. `BayL` with 21 teams and no `BayL 
 
 ```powershell
 uv run python scripts/audit_female_league_split.py "C:\tmp\bowlyzer\data\legacy_scrape\legacy_scrape_extracted.csv"
-uv run python scripts/build_published_dataset.py --with-legacy-scrape   # fails if legacy scrape collapses Damen
+uv run python scripts/build_published_dataset.py --write-csv   # fails if legacy scrape collapses Damen
 ```
 
 Use **`legacy_scrape_extracted.csv`** (correct split), not **`legacy_scrap_extracxted.csv`** (typo copy — Damen rows folded into male ids).
@@ -368,7 +368,7 @@ uv run python scripts/scrape_legacy_liga.py --season 2018-19 --dry-run
 uv run python scripts/scrape_legacy_liga.py --season 2018-19
 ```
 
-Typical follow-up: `convert_legacy_xls` + `process` on the scrape folder, then merge with `--with-legacy-scrape` in `build_published_dataset.py`.
+Typical follow-up: `convert_legacy_xls` + `process` on the scrape folder, then `build_published_dataset.py` (scrape included by default).
 
 ---
 
@@ -515,14 +515,16 @@ Merges multiple league CSVs (applies same team normalization as `extract_excel_d
 
 ### `scripts/build_published_dataset.py`
 
-Builds published **Parquet** (and optional CSV): merges historical + GF league + tournaments; optional `--with-legacy-scrape`, `--extra-league`, `--with-player-hybrid`.
+Builds published **Parquet** (and optional CSV): historical + **legacy scrape (default)** + GF league + tournaments; registries + affiliation.
 
 ```powershell
 $env:BOWLYZER_WORK_DATA_DIR = "C:\tmp\bowlyzer\data"
 uv run python scripts/build_published_dataset.py --dry-run
-uv run python scripts/build_published_dataset.py --with-player-hybrid --with-legacy-scrape
-uv run python scripts/build_published_dataset.py --extra-league "C:\tmp\bowlyzer\data\historical_league_results.csv"
+uv run python scripts/build_published_dataset.py --job league,tournament --write-csv
+# opt-out: --skip-legacy-scrape
 ```
+
+Operator guide: [`DATA_PIPELINE.md`](DATA_PIPELINE.md).
 
 ---
 

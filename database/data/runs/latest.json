@@ -1,8 +1,8 @@
 {
   "manifest_format_version": 1,
   "data_schema_version": 2,
-  "run_id": "20260713T111154Z",
-  "published_at": "2026-07-13T11:11:54.099017+00:00",
+  "run_id": "20260718T113703Z",
+  "published_at": "2026-07-18T11:37:03.406147+00:00",
   "forced": false,
   "blocking_audit_ids": [],
   "deferred_audit_ids": [
@@ -10,7 +10,8 @@
   ],
   "jobs_run": [
     "players_registry",
-    "league"
+    "league",
+    "tournament"
   ],
   "paths": {
     "data_dir": "C:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\data",
@@ -70,7 +71,61 @@
           "unique_rows_after_dedupe": 7512
         }
       ],
-      "size_bytes": 3568451
+      "size_bytes": 3568229
+    },
+    {
+      "job": "tournament_merge",
+      "stream": "tournament",
+      "source_id": "db_tournament_regions_2026_gf",
+      "deprecated": false,
+      "logical_path": "C:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\data\\tournaments_postprocessed.csv",
+      "parquet_path": "C:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\data\\tournaments_postprocessed.parquet",
+      "row_count": 64208,
+      "columns": [
+        "Season",
+        "Date",
+        "Location",
+        "Event Type",
+        "Round Number",
+        "Round Name",
+        "Player",
+        "Player ID",
+        "Club",
+        "Game Number",
+        "Score",
+        "Handicap",
+        "A Priori Average",
+        "Handicap Reference",
+        "Cumulative Score",
+        "Stage Rank",
+        "Cut Line",
+        "Cut Basis",
+        "Overall Cumulative Score",
+        "Verein",
+        "History Club",
+        "Affiliation Source",
+        "Event",
+        "Input Data",
+        "Computed Data"
+      ],
+      "columns_hash": "7ab05f8c216d6d3c",
+      "schema_version": 2,
+      "format_era_breakdown": null,
+      "input_sources": [
+        {
+          "path": "C:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\input\\gf_tables_export\\gf_tournaments_2026__combined_postprocessed.csv",
+          "priority": 0,
+          "input_rows": null,
+          "unique_rows_after_dedupe": null
+        },
+        {
+          "path": "C:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\data\\tournament_manual_postprocessed.csv",
+          "priority": 1,
+          "input_rows": null,
+          "unique_rows_after_dedupe": null
+        }
+      ],
+      "size_bytes": 550335
     },
     {
       "job": "players_registry",
@@ -79,15 +134,17 @@
       "deprecated": false,
       "logical_path": "C:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\data\\players_registry.csv",
       "parquet_path": "C:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\data\\players_registry.parquet",
-      "row_count": 3044,
+      "row_count": 3041,
       "columns": [
         "player_id",
+        "player_id_legacy",
+        "player_id_pass",
         "canonical_name",
         "source",
         "updated_at",
         "aliases"
       ],
-      "columns_hash": "95b18b9964436471",
+      "columns_hash": "2c8761caf07643a7",
       "schema_version": 2,
       "format_era_breakdown": null,
       "input_sources": [
@@ -104,7 +161,7 @@
           "unique_rows_after_dedupe": null
         }
       ],
-      "size_bytes": 63432
+      "size_bytes": 92114
     }
   ],
   "audits": {
@@ -114,7 +171,7 @@
     "player_id_name": {
       "status": "deferred",
       "report": "C:\\tmp\\bowlyzer\\data\\player_id_name_conflicts.csv",
-      "detail_rows": 10,
+      "detail_rows": 54,
       "deferred_until": "players_registry"
     },
     "league_standings": {

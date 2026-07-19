@@ -9,7 +9,7 @@ import { LeagueWeekMatrix } from "./pages/diagnosis/LeagueWeekMatrix";
 import { LeagueStandingsValidation } from "./pages/diagnosis/LeagueStandingsValidation";
 import { ValidationHub } from "./pages/diagnosis/validation/ValidationHub";
 import { TournamentValidation } from "./pages/diagnosis/validation/TournamentValidation";
-import { ClubNameValidation } from "./pages/diagnosis/validation/ClubNameValidation";
+import { ClubNameValidation, LegacyVereineRedirect } from "./pages/diagnosis/validation/ClubNameValidation";
 import { DataOddities } from "./pages/diagnosis/DataOddities";
 import { DataPipeline } from "./pages/diagnosis/DataPipeline";
 import { TournamentCoverage } from "./pages/diagnosis/TournamentCoverage";
@@ -46,7 +46,11 @@ function App() {
                 <Route path="/diagnose/validierung" element={<ValidationHub />} />
                 <Route path="/diagnose/validierung/liga" element={<LeagueStandingsValidation />} />
                 <Route path="/diagnose/validierung/turniere" element={<TournamentValidation />} />
-                <Route path="/diagnose/validierung/vereine" element={<ClubNameValidation />} />
+                <Route path="/diagnose/validierung/clubs" element={<ClubNameValidation />} />
+                <Route
+                  path="/diagnose/validierung/vereine"
+                  element={<LegacyVereineRedirect />}
+                />
                 <Route
                   path="/diagnose/liga-validierung"
                   element={<LegacyLigaValidierungRedirect />}

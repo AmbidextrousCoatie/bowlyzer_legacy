@@ -21,6 +21,7 @@ from data_access.player_id_name_normalization import (
     load_player_id_only_remapping_rules,
 )
 from data_access.players_registry import (
+    apply_legacy_player_id_remapping,
     apply_players_registry,
     compute_players_registry_fingerprint,
     format_registry_apply_summary,
@@ -197,6 +198,7 @@ def merge_sources(
     registry_df = load_players_registry_df() if normalize_player_ids else None
     player_id_stats: Dict[str, int] = {}
     registry_stats: Dict[str, int] = {}
+    legacy_id_remapped = 0
     for idx, path in enumerate(input_paths):
         df = pd.read_csv(path, sep=sep, dtype=str, keep_default_na=False)
         if normalize_team_names and not df.empty:
@@ -213,6 +215,8 @@ def merge_sources(
                 progress_desc=f"team numbers [{idx + 1}/{len(input_paths)}] {source_label}",
             )
         if normalize_player_ids and not df.empty:
+            df, legacy_stats = apply_legacy_player_id_remapping(df)
+            legacy_id_remapped += int(legacy_stats.get("legacy_id_remapped") or 0)
             if player_id_rules:
                 df, batch_stats = apply_player_id_name_normalization(df, player_id_rules, id_only=True)
                 for label, count in batch_stats.items():
@@ -280,6 +284,8 @@ def merge_sources(
 
     if normalize_team_names:
         print_team_normalization_summary()
+    if normalize_player_ids and legacy_id_remapped:
+        print(f"Legacy EDV remapping: {legacy_id_remapped} row(s)")
     if normalize_player_ids and player_id_rules:
         print(format_player_id_normalization_summary(player_id_stats))
     if normalize_player_ids and registry_stats:
@@ -322,6 +328,7 @@ def merge_sources(
                 + registry_stats.get("registry_close", 0)
             ),
             "player_id_remap_applied": bool(normalize_player_ids and player_id_rules),
+            "legacy_edv_rows_remapped": int(legacy_id_remapped),
             "player_id_name_normalization_fingerprint": compute_player_id_name_normalization_fingerprint(),
             "player_id_rows_changed": int(sum(player_id_stats.values())),
         },

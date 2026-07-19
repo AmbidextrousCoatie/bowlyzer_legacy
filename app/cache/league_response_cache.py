@@ -43,11 +43,12 @@ _ENDPOINT_PAYLOAD_VERSION: Dict[str, str] = {
     "get_latest_events": "latest-events-v1",
     "get_team_vs_team_comparison": "unplayed-empty-v3",
     "get_club_matrix": "matrix-pos-v2",
-    "get_club_legends": "club-legends-v2",
+    "get_club_legends": "club-legends-v3",
     "get_club_player_results": "club-player-results-v2",
-    "get_tournament_section": "summary-avg-cutline-v16",
-    "get_player_section": "player-round-hcp-field-progress-v1",
-    "get_tournament_field_progress": "field-progress-v5",
+    # Nested ELIM.rounds + KO-then-net-average standings for elim/stepladder.
+    "get_tournament_section": "elim-stepladder-standings-net-avg-v19",
+    "get_player_section": "player-progress-chart-cap-v19",
+    "get_tournament_field_progress": "field-progress-chart-cap-v6",
     # Added handicap block + round names in payload — bump invalidates old disk cache without `handicap`.
     "get_tournament_format": "format-handicap-v2",
     "get_available_tournaments": "manual-merge-rev-v2",
@@ -61,8 +62,8 @@ _ENDPOINT_PAYLOAD_VERSION: Dict[str, str] = {
     "player_search": "player-catalog-v2-runtime-merge",
     "player_get_available_seasons": "player-subset-v2-runtime-merge",
     "get_lifetime_stats": "player-lifetime-v3-no-aggregate-ranks",
-    "get_highest_individual_games": "player-highest-games-v1",
-    "get_club_300": "player-club-300-v1",
+    "get_highest_individual_games": "player-highest-games-v2",
+    "get_club_300": "player-club-300-v2",
 }
 
 

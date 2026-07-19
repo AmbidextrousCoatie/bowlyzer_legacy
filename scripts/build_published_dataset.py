@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 """
-Build published Bowl-A-Lyzer datasets (Parquet by default) from historical Excel extract,
-GF pipeline, and tournaments.
+Build published Bowl-A-Lyzer datasets (Parquet by default) from league + tournament sources.
 
-By default **does not** include legacy web-scrape data. Add ``--with-legacy-scrape`` or
-``--extra-league PATH`` (repeatable) to merge more sources (later inputs win on duplicates;
-GF pipeline is always last among the built-in sources).
+League merge always includes every available source file (later inputs win on duplicates;
+GF pipeline is last among the built-in sources):
+
+  historical extract → legacy scrape extract (08/09–18/19) → ``--extra-league`` → GF pipeline
+
+``legacy_scrape`` is an acquisition path for the same league game content, not a separate
+product line — omit it only with ``--skip-legacy-scrape`` (e.g. smoke tests).
 
 Outputs (under ``BOWLYZER_DATA_DIR`` / ``database/data`` by default):
   - ``players_registry.parquet`` — EDV ids + canonical names (Aktive Mitglieder + configs)
-  - ``league_results_merged.csv``  — historical + GF pipeline league (deduped)
+  - ``league_results_merged.csv``  — merged league (deduped)
   - ``tournaments_postprocessed.csv`` — GF regional tournaments + manual imports
 
 League/tournament jobs automatically run ``players_registry`` first unless
@@ -117,12 +120,12 @@ def build_league_input_paths(
     historical: Path,
     gf_league: Path,
     extra_league: List[Path],
-    with_legacy_scrape: bool,
+    with_legacy_scrape: bool = True,
 ) -> List[Path]:
     """
     Ordered league merge inputs (low -> high priority on duplicate keys).
 
-    Built-in order: historical, optional extras / legacy scrape, GF pipeline (wins).
+    Built-in order: historical, legacy scrape extract, extras, GF pipeline (wins).
     """
     ordered: List[Path] = [historical]
     if with_legacy_scrape:
@@ -138,6 +141,7 @@ def merge_tournament_sources(
     *,
     write_csv: bool = False,
     normalize: bool = True,
+    affiliation_reporting_mode: str | None = None,
 ) -> Dict[str, Any]:
     """Concatenate tournament postprocessed CSVs (union of columns)."""
     if not input_paths:
@@ -158,7 +162,10 @@ def merge_tournament_sources(
                 normalize_tournament_dataframe,
             )
 
-            frame, batch_stats = normalize_tournament_dataframe(frame)
+            frame, batch_stats = normalize_tournament_dataframe(
+                frame,
+                reporting_mode=affiliation_reporting_mode,
+            )
             norm_stats_total["club_registry_rows_changed"] += int(
                 batch_stats.get("club_registry_rows_changed") or 0
             )
@@ -356,8 +363,13 @@ def main() -> int:
     parser.add_argument(
         "--with-legacy-scrape",
         action="store_true",
+        help="Deprecated no-op: legacy scrape is included by default when the file exists.",
+    )
+    parser.add_argument(
+        "--skip-legacy-scrape",
+        action="store_true",
         help=(
-            "Include legacy_scrape_extracted.csv from the work dir "
+            "Omit legacy_scrape_extracted.csv from the league merge "
             f"(default path: {legacy_scrape_league_csv()})."
         ),
     )
@@ -440,6 +452,15 @@ def main() -> int:
         action="store_true",
         help="Merge players_registry into existing parquet instead of from-scratch rebuild",
     )
+    parser.add_argument(
+        "--tournament-affiliation-reporting",
+        choices=("club", "verein"),
+        default=None,
+        help=(
+            "Tournament reporting identity: club (default) or verein. "
+            "History Club column always preserves club-history stints."
+        ),
+    )
     args = parser.parse_args()
 
     if args.all_aktive_seasons and args.aktive_min_season:
@@ -482,7 +503,7 @@ def main() -> int:
         historical=historical,
         gf_league=gf_league,
         extra_league=list(args.extra_league),
-        with_legacy_scrape=args.with_legacy_scrape,
+        with_legacy_scrape=not args.skip_legacy_scrape,
     )
     print("League merge (low -> high priority on duplicate keys; GF pipeline last):")
     for idx, path in enumerate(league_input_candidates):
@@ -541,11 +562,25 @@ def main() -> int:
         summary["players_registry"] = registry_summary
         jobs_run.append("players_registry")
 
+        from data_access.affiliation_registry import (
+            build_and_publish_affiliation_registry,
+            format_affiliation_build_summary,
+        )
+
+        print("==> building affiliation registry (Rangliste club/Verein, all seasons) …")
+        # Always include pre-08/09 Aktive seasons; legacy EDVs remap onto canonical player_id.
+        affiliation_summary = build_and_publish_affiliation_registry(
+            write_csv=args.write_csv,
+            min_season="",
+        )
+        print(format_affiliation_build_summary(affiliation_summary))
+        summary["affiliation_registry"] = affiliation_summary
+
     if run_league:
         if len(league_inputs) < 2:
             print(
                 "Error: need at least two league input files after resolving paths. "
-                "Provide historical + GF and/or --extra-league / --with-legacy-scrape.",
+                "Provide historical + GF (legacy scrape is included by default when present).",
                 file=sys.stderr,
             )
             return 2
@@ -570,6 +605,25 @@ def main() -> int:
             )
             print(format_registry_summary(summary["clubs_registry"]))
 
+        from data_access.affiliation_registry import (
+            extend_and_publish_affiliation_from_league,
+            format_affiliation_league_extend_summary,
+        )
+        from data_access.parquet_sidecar import resolve_load_path
+
+        league_load = resolve_load_path(league_out)
+        if league_load.suffix.lower() == ".parquet":
+            league_frame = pd.read_parquet(league_load)
+        else:
+            league_frame = pd.read_csv(league_load, **CSV_READ_KW)
+        print("==> extending affiliation index from league (pass 2) …")
+        league_aff_summary = extend_and_publish_affiliation_from_league(
+            league_frame,
+            write_csv=args.write_csv,
+        )
+        print(format_affiliation_league_extend_summary(league_aff_summary))
+        summary["affiliation_registry_league_extend"] = league_aff_summary
+
     if run_tournament:
         if not tournament_inputs:
             print("Error: no tournament input files found.", file=sys.stderr)
@@ -579,6 +633,7 @@ def main() -> int:
             tournament_inputs,
             tournaments_out,
             write_csv=args.write_csv,
+            affiliation_reporting_mode=args.tournament_affiliation_reporting,
         )
         jobs_run.append("tournament")
         player_id_audit_paths.append(tournaments_out)

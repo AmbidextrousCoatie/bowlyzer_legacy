@@ -72,6 +72,34 @@ def club_from_team_label(team_label: object) -> str:
     return club_name_from_team(normalized)
 
 
+def club_mapping_alias_lookup() -> Dict[str, str]:
+    """Normalized label key → canonical club from ``club_mapping.csv``."""
+    out: Dict[str, str] = {}
+    for row in load_club_mapping_rows():
+        canonical = str(row.get("canonical_name") or "").strip()
+        if not canonical:
+            continue
+        out[club_identity_key(canonical)] = canonical
+        for alias in row.get("aliases") or []:
+            text = str(alias or "").strip()
+            if not text:
+                continue
+            out[club_identity_key(text)] = canonical
+            base = club_name_from_team(text)
+            if base:
+                out[club_identity_key(base)] = canonical
+    return out
+
+
+def canonicalize_club_via_mapping(club_label: object, mapping_lookup: Mapping[str, str] | None = None) -> str:
+    """Map a club base onto its ``club_mapping.csv`` canonical when listed as an alias."""
+    text = normalize_unicode_label(club_label)
+    if not text:
+        return ""
+    lookup = mapping_lookup if mapping_lookup is not None else club_mapping_alias_lookup()
+    return lookup.get(club_identity_key(text), text)
+
+
 @lru_cache(maxsize=1)
 def load_club_mapping_rows() -> List[dict]:
     path = _club_mapping_path()
@@ -111,15 +139,17 @@ def build_registry_dataframe_from_league(
 
     work = league_df.loc[_league_input_mask(league_df)].copy()
     buckets: Dict[str, Dict[str, Any]] = {}
+    mapping_lookup = club_mapping_alias_lookup()
 
     def ingest_team_label(raw_team: object) -> None:
         raw = str(raw_team or "").strip()
         if not raw:
             return
         normalized_team = normalize_team_name(raw) or raw
-        club = club_name_from_team(normalized_team)
-        if not club:
+        club_raw = club_name_from_team(normalized_team)
+        if not club_raw:
             return
+        club = canonicalize_club_via_mapping(club_raw, mapping_lookup)
         bucket = buckets.setdefault(
             club,
             {
@@ -129,9 +159,11 @@ def build_registry_dataframe_from_league(
             },
         )
         bucket["team_labels"].add(normalized_team)
+        if club_raw != club:
+            bucket["aliases"].add(club_raw)
         if normalized_team != club:
             bucket["aliases"].add(normalized_team)
-        if raw != normalized_team:
+        if raw != normalized_team and raw != club:
             bucket["aliases"].add(raw)
 
     for col in (Columns.team_name, Columns.team_name_opponent):
@@ -149,7 +181,17 @@ def build_registry_dataframe_from_league(
             {"canonical_name": canonical, "aliases": set(), "team_labels": set()},
         )
         for alias in row.get("aliases") or []:
-            bucket["aliases"].add(str(alias).strip())
+            text = str(alias).strip()
+            if text:
+                bucket["aliases"].add(text)
+                # Drop a spurious self-canonical row created before mapping existed.
+                alias_key = club_identity_key(text)
+                for key in list(buckets):
+                    if club_identity_key(key) == alias_key and key != canonical:
+                        orphan = buckets.pop(key)
+                        bucket["aliases"].update(orphan.get("aliases") or set())
+                        bucket["team_labels"].update(orphan.get("team_labels") or set())
+                        bucket["aliases"].add(key)
 
     moment = updated_at or datetime.now(timezone.utc).isoformat()
     out_rows: List[dict] = []
@@ -240,6 +282,58 @@ def write_clubs_registry(df: pd.DataFrame, *, write_csv: bool = False) -> Dict[s
     load_clubs_registry_df.cache_clear()
     return published
 
+
+def append_aliases_to_clubs_registry(
+    mappings: Mapping[str, str],
+    *,
+    write_csv: bool = True,
+) -> Dict[str, Any]:
+    """
+    Fold operator aliases into the published ``clubs_registry`` without a full league rebuild.
+
+    ``mappings`` is ``unresolved_label`` → ``canonical_name``. Existing registry rows are
+    required for each canonical; unknown canonicals are skipped.
+    """
+    registry = load_clubs_registry_df()
+    if registry is None or registry.empty:
+        raise FileNotFoundError(f"clubs_registry missing: {_registry_path()}")
+
+    work = registry.copy()
+    by_key = {
+        club_identity_key(name): idx
+        for idx, name in enumerate(work["canonical_name"].astype(str).tolist())
+        if club_identity_key(name)
+    }
+    aliases_added = 0
+    skipped_unknown_canonical = 0
+    moment = datetime.now(timezone.utc).isoformat()
+
+    for raw_label, raw_canonical in mappings.items():
+        label = normalize_unicode_label(raw_label)
+        canonical = normalize_unicode_label(raw_canonical)
+        if not label or not canonical or club_identity_key(label) == club_identity_key(canonical):
+            continue
+        idx = by_key.get(club_identity_key(canonical))
+        if idx is None:
+            skipped_unknown_canonical += 1
+            continue
+        existing = set(_split_pipe_list(work.at[idx, "aliases"]))
+        if label not in existing:
+            existing.add(label)
+            aliases_added += 1
+        work.at[idx, "aliases"] = _join_pipe(sorted(existing))
+        work.at[idx, "updated_at"] = moment
+
+    published = write_clubs_registry(work, write_csv=write_csv)
+    return {
+        "aliases_added": aliases_added,
+        "skipped_unknown_canonical": skipped_unknown_canonical,
+        "row_count": int(len(work)),
+        "paths": {
+            "parquet": str(published.get("parquet") or ""),
+            "csv": str(published.get("csv") or ""),
+        },
+    }
 
 def build_and_publish_clubs_registry(
     league_df: Optional[pd.DataFrame] = None,

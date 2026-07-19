@@ -26,6 +26,7 @@ def _service_with_df(df: pd.DataFrame) -> PlayerService:
     service = PlayerService.__new__(PlayerService)
     service.database = "test_db"
     service.data_manager = SimpleNamespace(df=df, current_source="test_db")
+    service._players_registry_lookup = {}
     return service
 
 
@@ -68,6 +69,28 @@ def test_get_club_300_games_newest_first():
     assert len(games) == 2
     assert games[0]["player_name"] == "Bob"
     assert games[1]["player_name"] == "Alice"
+
+
+def test_get_club_300_games_uses_registry_canonical_name():
+    df = pd.DataFrame(
+        {
+            Columns.season: ["12/13", "13/14"],
+            Columns.league_name: ["BayL", "BayL"],
+            Columns.player_name: ["Glasl, Hans-Jürgen Jun", "Glasl, Hans Jürgen Jun."],
+            Columns.player_id: ["7408", "7408"],
+            Columns.score: [300, 300],
+            Columns.date: ["2013-01-10", "2014-03-15"],
+            Columns.input_data: ["true", "true"],
+            Columns.computed_data: ["false", "false"],
+        }
+    )
+    service = _service_with_df(df)
+    service._players_registry_lookup = {
+        "7408": {"canonical_name": "Glasl jun., Hans-Jürgen", "aliases": ""},
+    }
+    games = service.get_club_300_games()
+    assert len(games) == 2
+    assert {g["player_name"] for g in games} == {"Glasl jun., Hans-Jürgen"}
 
 
 def test_get_highest_individual_games_route(client):

@@ -30,8 +30,16 @@ from data_access.player_name_normalization_config import (
 )
 from data_access.schema import Columns
 
-REGISTRY_COLUMNS = ("player_id", "canonical_name", "source", "updated_at", "aliases")
-REGISTRY_FORMAT_VERSION = 1
+REGISTRY_COLUMNS = (
+    "player_id",
+    "player_id_legacy",
+    "player_id_pass",
+    "canonical_name",
+    "source",
+    "updated_at",
+    "aliases",
+)
+REGISTRY_FORMAT_VERSION = 2
 
 # Same-given-name typo threshold (SequenceMatcher ratio on normalized full labels).
 CLOSE_MATCH_RATIO = 0.85
@@ -333,10 +341,10 @@ def load_players_registry_df() -> Optional[pd.DataFrame]:
         df = pd.read_csv(load_path, sep=";", dtype=str, keep_default_na=False)
     if df is None or df.empty:
         return None
-    missing = [c for c in REGISTRY_COLUMNS if c not in df.columns]
-    if missing:
-        raise ValueError(f"players registry missing columns: {missing}")
-    return df
+    for col in REGISTRY_COLUMNS:
+        if col not in df.columns:
+            df[col] = ""
+    return df[list(REGISTRY_COLUMNS)]
 
 
 def registry_lookup_by_id(registry: pd.DataFrame) -> Dict[str, Dict[str, str]]:
@@ -350,8 +358,56 @@ def registry_lookup_by_id(registry: pd.DataFrame) -> Dict[str, Dict[str, str]]:
             "canonical_name": normalize_player_name(getattr(row, "canonical_name", "")),
             "aliases": str(getattr(row, "aliases", "") or "").strip(),
             "source": str(getattr(row, "source", "") or "").strip(),
+            "player_id_legacy": str(getattr(row, "player_id_legacy", "") or "").strip(),
+            "player_id_pass": str(getattr(row, "player_id_pass", "") or "").strip(),
         }
     return out
+
+
+def build_legacy_player_id_remap(
+    registry: Optional[pd.DataFrame] = None,
+) -> Dict[str, str]:
+    """
+    Map ``player_id_legacy`` values → canonical ``player_id``.
+
+    Used for id-only remapping of historical league/tournament rows.
+    """
+    df = registry if registry is not None else load_players_registry_df()
+    out: Dict[str, str] = {}
+    if df is None or df.empty or "player_id_legacy" not in df.columns:
+        return out
+    for row in df.itertuples(index=False):
+        canonical = normalize_player_id(getattr(row, "player_id", ""))
+        if not canonical:
+            continue
+        for legacy in str(getattr(row, "player_id_legacy", "") or "").split("|"):
+            lid = normalize_player_id(legacy)
+            if lid and lid != canonical and lid not in out:
+                out[lid] = canonical
+    return out
+
+
+def apply_legacy_player_id_remapping(
+    df: pd.DataFrame,
+    remap: Optional[Mapping[str, str]] = None,
+) -> Tuple[pd.DataFrame, Dict[str, int]]:
+    """Rewrite ``Player ID`` from legacy EDVs to canonical registry ``player_id``."""
+    if df is None or df.empty or Columns.player_id not in df.columns:
+        return df, {}
+    mapping = remap if remap is not None else build_legacy_player_id_remap()
+    if not mapping:
+        return df, {"legacy_id_remapped": 0}
+
+    out = df.copy()
+    changed = 0
+    for idx, raw in out[Columns.player_id].items():
+        pid = normalize_player_id(raw)
+        target = mapping.get(pid)
+        if not target or target == pid:
+            continue
+        out.at[idx, Columns.player_id] = target
+        changed += 1
+    return out, {"legacy_id_remapped": changed}
 
 
 def registry_name_index(registry: pd.DataFrame) -> Dict[str, str]:
@@ -693,6 +749,8 @@ def _entries_to_dataframe(entries: Mapping[str, Dict[str, Any]], *, updated_at: 
         rows.append(
             {
                 "player_id": pid,
+                "player_id_legacy": str(slot.get("player_id_legacy") or ""),
+                "player_id_pass": str(slot.get("player_id_pass") or ""),
                 "canonical_name": str(slot["canonical_name"]),
                 "source": str(slot["source"]),
                 "updated_at": updated_at,
@@ -740,6 +798,8 @@ def merge_registry_dataframes(
             continue
         merged[pid] = {
             "player_id": pid,
+            "player_id_legacy": str(getattr(row, "player_id_legacy", "") or ""),
+            "player_id_pass": str(getattr(row, "player_id_pass", "") or ""),
             "canonical_name": normalize_player_name(getattr(row, "canonical_name", "")),
             "source": str(getattr(row, "source", "") or "registry"),
             "updated_at": str(getattr(row, "updated_at", "") or moment),
@@ -753,10 +813,14 @@ def merge_registry_dataframes(
         new_aliases = _parse_aliases_field(str(getattr(row, "aliases", "") or ""))
         new_canonical = normalize_player_name(getattr(row, "canonical_name", ""))
         new_source = str(getattr(row, "source", "") or "config")
+        new_legacy = str(getattr(row, "player_id_legacy", "") or "")
+        new_pass = str(getattr(row, "player_id_pass", "") or "")
 
         if pid not in merged:
             merged[pid] = {
                 "player_id": pid,
+                "player_id_legacy": new_legacy,
+                "player_id_pass": new_pass,
                 "canonical_name": new_canonical,
                 "source": new_source,
                 "updated_at": moment,
@@ -783,6 +847,14 @@ def merge_registry_dataframes(
             slot["source"] = new_source
             slot["updated_at"] = moment
             all_aliases.discard(normalize_player_label(new_canonical))
+
+        if new_pass and not slot.get("player_id_pass"):
+            slot["player_id_pass"] = new_pass
+        if new_legacy:
+            legacy = _parse_aliases_field(slot.get("player_id_legacy") or "") | _parse_aliases_field(
+                new_legacy
+            )
+            slot["player_id_legacy"] = _join_aliases(legacy)
 
         slot["aliases"] = _join_aliases(all_aliases)
 

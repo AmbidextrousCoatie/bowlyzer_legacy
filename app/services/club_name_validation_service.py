@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import datetime as dt
-from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Sequence
 
+from data_access.club_mapping_import import merge_resolved_mappings_into_club_mapping
 from data_access.club_name_validation import (
     CLUB_NAME_CONFLICTS_CSV,
     CLUB_NAME_MAPPING_RESOLVED_CSV,
@@ -16,6 +16,10 @@ from data_access.club_name_validation import (
     load_saved_club_mappings,
     validation_summary,
     write_club_name_mapping_resolved,
+)
+from data_access.clubs_registry import (
+    _club_mapping_path,
+    append_aliases_to_clubs_registry,
 )
 from database.paths import get_work_data_dir
 
@@ -29,18 +33,24 @@ def get_club_name_validation() -> Dict[str, Any]:
     report_mtime: Optional[str] = None
     unresolved_rows: List[Dict[str, Any]] = []
 
-    if report_path.is_file():
+    # Prefer live tournament audit (always current) over a stale offline report.
+    live_rows = audit_unresolved_tournament_clubs()
+    if live_rows:
+        unresolved_rows = live_rows
+        source = "live"
+    elif report_path.is_file():
         unresolved_rows = load_club_name_conflicts_report(report_path)
         source = "report"
         report_mtime = dt.datetime.fromtimestamp(
             report_path.stat().st_mtime,
             tz=dt.timezone.utc,
         ).isoformat()
-    else:
-        live_rows = audit_unresolved_tournament_clubs()
-        if live_rows:
-            unresolved_rows = live_rows
-            source = "live"
+
+    if report_path.is_file() and report_mtime is None:
+        report_mtime = dt.datetime.fromtimestamp(
+            report_path.stat().st_mtime,
+            tz=dt.timezone.utc,
+        ).isoformat()
 
     canonical_names = load_registry_canonical_names()
     saved_mappings = load_saved_club_mappings(resolved_path)
@@ -58,6 +68,7 @@ def get_club_name_validation() -> Dict[str, Any]:
             tz=dt.timezone.utc,
         ).isoformat()
 
+    mapping_path = _club_mapping_path()
     return {
         "generated_at_utc": dt.datetime.now(tz=dt.timezone.utc).isoformat(),
         "source": source,
@@ -73,17 +84,28 @@ def get_club_name_validation() -> Dict[str, Any]:
             "mtime_utc": resolved_mtime,
             "row_count": len(saved_mappings),
         },
+        "club_mapping": {
+            "path": str(mapping_path.resolve()),
+            "present": mapping_path.is_file(),
+        },
     }
 
 
 def save_club_name_validation_mappings(
     mappings: Sequence[Mapping[str, str]],
 ) -> Dict[str, Any]:
-    """Persist UI selections to ``club_name_mapping_resolved.csv`` in the work dir."""
+    """
+    Persist UI selections to the work-dir staging CSV, merge into committed
+    ``club_mapping.csv``, and fold aliases into published ``clubs_registry``.
+    """
     if not mappings:
         raise ValueError("No mappings to save")
+
     out_path = write_club_name_mapping_resolved(mappings, merge_existing=True)
     saved = load_saved_club_mappings(out_path)
+    club_mapping_summary = merge_resolved_mappings_into_club_mapping(saved)
+    registry_summary = append_aliases_to_clubs_registry(saved, write_csv=True)
+
     mtime = dt.datetime.fromtimestamp(
         out_path.stat().st_mtime,
         tz=dt.timezone.utc,
@@ -93,4 +115,6 @@ def save_club_name_validation_mappings(
         "path": str(out_path.resolve()),
         "row_count": len(saved),
         "mtime_utc": mtime,
+        "club_mapping": club_mapping_summary,
+        "clubs_registry": registry_summary,
     }

@@ -6,13 +6,15 @@ For routine updates (new weeks in the current season only), prefer incremental w
 without --rebuild so unchanged seasons stay on disk cache:
   uv run python scripts/warm_league_cache.py --database db_real_merged --workers 8
 
-Published stack (league + scrape merge + tournaments + player hybrid):
+Published stack (league + scrape merge + tournaments):
 
-  # 1) Build data (scrape + tournaments + player hybrid)
-  uv run python scripts/build_published_dataset.py --with-legacy-scrape --with-player-hybrid
+  # 1) Build data (scrape included by default)
+  uv run python scripts/build_published_dataset.py --write-csv
 
   # 2) Rebuild all API disk caches
   uv run python scripts/rebuild_league_caches.py --all-published --workers 8
+
+See docs/DATA_PIPELINE.md for full scenarios.
 
 - All seasons in the source
 - For each season: get_season_league_standings without division= (all divisions)

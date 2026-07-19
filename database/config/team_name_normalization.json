@@ -187,7 +187,7 @@
     "^Mainauenbowler\\s+Bayreuth\\s+Land(?:\\s+(\\d+))?$": "Mainauenbowler Bayreuth Land \\1",
     "^Schanzer\\-Strikers\\s+Ingolstadt(?:\\s+(\\d+))?$": "Schanzer-Strikers Ingolstadt \\1",
     "^Albrecht\\s+Dürer\\s+71\\s+Stein(?:\\s+(\\d+))?$": "Albrecht Dürer 71 Stein \\1",
-    "^Schwarz\\-Weiß\\s+77\\s+Würzburg(?:\\s+(\\d+))?$": "Schwarz-Weiß 77 Würzburg \\1",
+    "^Schwarz\\-Weiß\\s+77\\s+Würzburg(?:\\s+(\\d+))?$": "SW 77 Würzburg \\1",
     "^BC\\s+Bavaria\\s+München\\-Land(?:\\s+(\\d+))?$": "Bavaria München – Land \\1",
     "^BSC\\s+HighRoller\\s+Rosenheim(?:\\s+(\\d+))?$": "HighRoller Rosenheim \\1",
     "^Bavaria\\s+München\\s+–\\s+Land(?:\\s+(\\d+))?$": "Bavaria München – Land \\1",

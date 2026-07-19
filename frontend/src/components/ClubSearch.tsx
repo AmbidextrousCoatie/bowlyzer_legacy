@@ -45,10 +45,14 @@ export function ClubSearch({
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, [open]);
 
-  const matches = useMemo(
-    () => rankFuzzyStrings(draft, clubs, MAX_RESULTS),
-    [draft, clubs],
-  );
+  const matches = useMemo(() => {
+    const needle = draft.trim();
+    // Committed selection still in the field: browse the list until the user edits.
+    if (value.trim() && needle === value.trim()) {
+      return clubs.slice(0, MAX_RESULTS);
+    }
+    return rankFuzzyStrings(draft, clubs, MAX_RESULTS);
+  }, [draft, clubs, value]);
 
   useEffect(() => {
     setActiveIndex(0);
@@ -82,6 +86,7 @@ export function ClubSearch({
       } else {
         const exact = clubs.find((c) => c.toLowerCase() === draft.trim().toLowerCase());
         if (exact) commit(exact);
+        else if (open && matches[0]) commit(matches[0]);
       }
     } else if (e.key === "Escape" && open) {
       e.stopPropagation();
@@ -95,6 +100,12 @@ export function ClubSearch({
     if (e.target.value === "") onSelect(null);
   }
 
+  function onFocus() {
+    setOpen(true);
+    // Select all so the next keystroke starts a fresh fuzzy query.
+    requestAnimationFrame(() => inputRef.current?.select());
+  }
+
   function clear() {
     setDraft("");
     onSelect(null);
@@ -103,6 +114,8 @@ export function ClubSearch({
   }
 
   const showClear = !isLoading && draft.trim().length > 0;
+  const searching =
+    draft.trim().length > 0 && !(value.trim() && draft.trim() === value.trim());
 
   return (
     <div
@@ -116,7 +129,7 @@ export function ClubSearch({
         type="text"
         value={draft}
         onChange={onChange}
-        onFocus={() => setOpen(true)}
+        onFocus={onFocus}
         onKeyDown={onKeyDown}
         placeholder={placeholder}
         aria-label={ariaLabel}
@@ -167,7 +180,7 @@ export function ClubSearch({
           ))}
         </ul>
       )}
-      {open && !isLoading && draft.trim() && matches.length === 0 && (
+      {open && !isLoading && searching && matches.length === 0 && (
         <p className="absolute left-0 right-0 z-20 mt-1 rounded-sm border border-border bg-surface px-2.5 py-2 text-small text-muted shadow-2">
           —
         </p>

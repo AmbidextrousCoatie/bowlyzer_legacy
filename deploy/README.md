@@ -79,7 +79,10 @@ Build the cache on your PC (after published data is built), then ship it:
 
 ```powershell
 # 1) Published data: historical + legacy scrape + GF + tournaments (Spieler merges at runtime)
-uv run python scripts/build_published_dataset.py --with-legacy-scrape
+uv run python scripts/build_published_dataset.py --write-csv
+# scrape included by default; use --skip-legacy-scrape only for smoke tests
+uv run python scripts/rebuild_league_caches.py --all-published --workers 8
+# see docs/DATA_PIPELINE.md
 
 # 2) Full API cache rebuild (league + clubs + Spieler + Turnier)
 uv run python scripts/rebuild_league_caches.py --all-published --workers 8

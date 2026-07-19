@@ -23,3 +23,27 @@ def test_normalize_tournament_club_names() -> None:
     out, stats = normalize_tournament_dataframe(df, normalize_player_ids=False)
     assert Columns.club in out.columns
     assert int(stats.get("club_cells_normalized") or 0) >= 0
+
+
+def test_normalize_collapses_affiliation_sourced_club_aliases() -> None:
+    """Index hits must still fold club_mapping aliases (Spiele nach Club vs Clubzugehörigkeit)."""
+    df = pd.DataFrame(
+        [
+            {
+                Columns.season: "15/16",
+                Columns.player_id: "7830",
+                Columns.club: "BC Donau - Bowler",
+                Columns.history_club: "BC Donau - Bowler",
+                Columns.affiliation_source: "index_same_season",
+                Columns.event_type: "tournament",
+            }
+        ]
+    )
+    out, stats = normalize_tournament_dataframe(
+        df,
+        normalize_player_ids=False,
+        resolve_affiliations=False,
+    )
+    assert out.iloc[0][Columns.club] == "Donaubowler Regensburg"
+    assert out.iloc[0][Columns.history_club] == "Donaubowler Regensburg"
+    assert int(stats.get("club_registry_rows_changed") or 0) >= 1

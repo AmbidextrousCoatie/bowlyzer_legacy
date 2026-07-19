@@ -2,28 +2,32 @@
 
 Operator contract for `database/data/` (synced to VPS). Machine-readable twin: `runs/latest.json` after each `build_published_dataset.py` run.
 
+**Day-to-day commands:** [`../../docs/DATA_PIPELINE.md`](../../docs/DATA_PIPELINE.md).
+
 ## Jobs
 
 | Job | Parquet | App source | Stream |
 |-----|---------|------------|--------|
-| `league_merge` | `league_results_merged.parquet` | `db_real_merged` | league |
+| `players_registry` (auto) | `players_registry.parquet` | — | player identity |
+| `league_merge` | `league_results_merged.parquet` | `db_real_merged` | league (+ rebuild `clubs_registry`, extend `affiliation_index`) |
 | `tournament_merge` | `tournaments_postprocessed.parquet` | `db_tournament_regions_2026_gf` | tournament |
-| `players_registry` | `players_registry.parquet` | — | player identity |
 
-**Spieler** does not use a third Parquet: `db_player_merged_hybrid` loads league + tournament at runtime (`merge_file_paths`).
+Also published: `affiliation_index`, `clubs_registry`, `vereine_registry`.
+
+**Spieler** does not use a third Parquet: `db_player_merged_hybrid` loads league + tournament at runtime.
 
 ## Players registry (`players_registry.parquet`)
 
 | Column | Meaning |
 |--------|---------|
-| `player_id` | EDV id |
+| `player_id` | Canonical EDV id |
+| `player_id_legacy` | Pre-06/07 EDVs (pipe-separated) |
+| `player_id_pass` | Pass-Nr bridge |
 | `canonical_name` | Preferred display label |
-| `aliases` | Pipe-separated valid alternates (marriage names, spelling variants) |
-| `source` | `dbu_id`, `same_person_alias`, … |
+| `aliases` | Pipe-separated alternates |
+| `source` | `dbu_id`, … |
 
-**Name resolution at publish:** exact match → format reassembly → close typo (same given name). No majority/autoresolve name rules. Unresolved → `player_id_name_conflicts.csv`. ID remaps still use JSON until registry handles ids.
-
-**Registry updates:** `uv run python scripts/build_players_registry.py` merges JSON into the published Parquet (aliases accumulate; canonical only from trusted sources). League publish does **not** rebuild the registry. `--from-scratch` is for deliberate full rebuilds only.
+**Registry updates:** run via `build_published_dataset` (default) or `scripts/build_players_registry.py`. Club aliases: `database/relational_csv/club_mapping.csv`.
 
 ## Schema v2 core (both Parquets)
 
@@ -36,7 +40,7 @@ Operator contract for `database/data/` (synced to VPS). Machine-readable twin: `
 | Player / Player ID | yes | yes |
 | Score | yes | yes |
 | Location | yes | yes |
-| Club | from Team at publish | from sheet |
+| Club | from Team at publish | resolved via `clubs_registry` / `club_mapping` |
 | Input Data | yes | `True` on publish |
 | Computed Data | yes | `False` on publish |
 
@@ -64,12 +68,12 @@ Strict publish blocks only on audits that are not deferred. Player conflicts are
 ## Build commands
 
 ```powershell
-uv run python scripts/build_published_dataset.py
-uv run python scripts/build_published_dataset.py --job league
-uv run python scripts/build_published_dataset.py --job tournament
-uv run python scripts/build_published_dataset.py --with-legacy-scrape
+uv run python scripts/build_published_dataset.py --write-csv
+uv run python scripts/build_published_dataset.py --job league,tournament --write-csv
+# scrape included by default; opt out: --skip-legacy-scrape
+uv run python scripts/rebuild_league_caches.py --all-published --workers 8
 ```
 
 Override emergencies: `--force-publish`. Legacy single-file hybrid: `--with-player-hybrid` (deprecated).
 
-Registry: `database/config/data_sources.json`. Full plan: `docs/planning/DATA_PIPELINE_PLAN.md`.
+Registry: `database/config/data_sources.json`. Operator guide: [`docs/DATA_PIPELINE.md`](../../docs/DATA_PIPELINE.md).

@@ -74,4 +74,4 @@ If `bowling_ergebnisse_real.csv` is missing, the app logs one warning and disabl
 
 See `database/data/README.md` for Parquet build and deploy sync commands.
 
-**Pipeline architecture & roadmap:** [`docs/planning/DATA_PIPELINE_PLAN.md`](../docs/planning/DATA_PIPELINE_PLAN.md) — unified stages, future PDF/Sheets intake, Diagnose UI.
+**Operator pipeline guide:** [`docs/DATA_PIPELINE.md`](../docs/DATA_PIPELINE.md). Architecture roadmap (historical): [`docs/planning/DATA_PIPELINE_PLAN.md`](../docs/planning/DATA_PIPELINE_PLAN.md).

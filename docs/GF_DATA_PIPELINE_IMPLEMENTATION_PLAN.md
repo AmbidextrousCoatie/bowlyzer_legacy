@@ -1,5 +1,7 @@
 # Gravity Forms Data Pipeline Implementation Plan
 
+> **Operators:** day-to-day publish flow is [`DATA_PIPELINE.md`](DATA_PIPELINE.md). This file is the GF implementation roadmap / status.
+
 ## Implementation status (rolling)
 
 | Phase (see below) | Status | Notes |

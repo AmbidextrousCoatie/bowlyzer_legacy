@@ -48,15 +48,26 @@ def test_locate_combined_name_header() -> None:
 
 
 def test_row_to_aktive_player_split_and_combined() -> None:
-    split_cols = {"edvnr": 0, "nachname": 1, "vorname": 2, "zusatz": 3}
+    split_cols = {
+        "edvnr": 0,
+        "nachname": 1,
+        "vorname": 2,
+        "zusatz": 3,
+        "club": 4,
+        "verein": 5,
+        "pass-nr": 6,
+    }
     split_row = row_to_aktive_player(
-        ["7299", "König", "Erich", ""],
+        ["7299", "König", "Erich", "", "BC Friedrichshafen", "1. BBV Lindau", "D 131530"],
         layout="split",
         columns=split_cols,
     )
     assert split_row is not None
     assert split_row.player_id == "7299"
     assert split_row.canonical_name == "König, Erich"
+    assert split_row.club == "BC Friedrichshafen"
+    assert split_row.verein == "1. BBV Lindau"
+    assert split_row.pass_nr == "D 131530"
 
     combined_cols = {"edvnr": 0, "name": 2}
     combined_row = row_to_aktive_player(
@@ -124,8 +135,8 @@ def test_build_registry_accumulates_aliases_across_seasons(tmp_path: Path, monke
 
     def fake_parse(path: Path, *, season: str = ""):
         if season == "2010-11":
-            return [mod.AktivePlayerRow("1234", "Voigt, Thomas", season)]
-        return [mod.AktivePlayerRow("1234", "Vogt, Thomas", season)]
+            return [mod.AktivePlayerRow("1234", "Voigt, Thomas", "10/11")]
+        return [mod.AktivePlayerRow("1234", "Vogt, Thomas", "11/12")]
 
     monkeypatch.setattr(mod, "parse_aktive_workbook", fake_parse)
 
@@ -151,8 +162,22 @@ def test_build_registry_from_aktive_min_season(tmp_path: Path, monkeypatch) -> N
 
     def fake_parse(path: Path, *, season: str = ""):
         if season == "2004-05":
-            return [mod.AktivePlayerRow("111708", "Windsheimer, Friedrich", season)]
-        return [mod.AktivePlayerRow("7762", "Windsheimer, Friedrich", season)]
+            return [
+                mod.AktivePlayerRow(
+                    "111708",
+                    "Windsheimer, Friedrich",
+                    "04/05",
+                    pass_nr="999001",
+                )
+            ]
+        return [
+            mod.AktivePlayerRow(
+                "7762",
+                "Windsheimer, Friedrich",
+                "07/08",
+                pass_nr="999001",
+            )
+        ]
 
     monkeypatch.setattr(mod, "parse_aktive_workbook", fake_parse)
 
@@ -161,6 +186,12 @@ def test_build_registry_from_aktive_min_season(tmp_path: Path, monkeypatch) -> N
         updated_at="2026-06-03T00:00:00+00:00",
         min_season="2007-08",
     )
-    assert stats.workbooks_parsed == 1
+    # Bridge scans all seasons; primary import still floors at min_season.
+    assert stats.seasons_selected == 1
+    assert stats.workbooks_parsed == 2
     assert len(registry_df) == 1
     assert registry_df.iloc[0]["player_id"] == "7762"
+    assert registry_df.iloc[0]["player_id_pass"] == "999001"
+    assert "111708" in str(registry_df.iloc[0]["player_id_legacy"])
+    # Legacy EDV must not appear as its own registry row.
+    assert "111708" not in set(registry_df["player_id"].astype(str))

@@ -96,7 +96,7 @@ def tournaments_input_dir() -> Path:
 
 
 def legacy_scrape_league_csv() -> Path:
-    """Postprocessed league rows from the legacy web-scrape pipeline (optional merge input)."""
+    """Postprocessed league rows from the bowling-bayern.de scrape pipeline (08/09–18/19)."""
     candidates = (
         legacy_scrape_dir() / "legacy_scrape_extracted.csv",
         get_work_data_dir() / "legacy_scrape" / "legacy_scrape_extracted.csv",
@@ -192,6 +192,16 @@ def player_stats_merged_hybrid_csv() -> Path:
 def players_registry_csv() -> Path:
     """Published player identity registry (logical CSV path; Parquet is primary)."""
     return get_data_dir() / "players_registry.csv"
+
+
+def affiliation_index_csv() -> Path:
+    """Rangliste player-season club/Verein affiliations."""
+    return get_data_dir() / "affiliation_index.csv"
+
+
+def vereine_registry_csv() -> Path:
+    """Canonical Verein names derived from Rangliste."""
+    return get_data_dir() / "vereine_registry.csv"
 
 
 def clubs_registry_csv() -> Path:

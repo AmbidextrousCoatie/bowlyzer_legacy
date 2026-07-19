@@ -1,5 +1,7 @@
 # GF Pipeline Runbook
 
+> **Publish / club / cache operators:** prefer [`DATA_PIPELINE.md`](DATA_PIPELINE.md). This file is GF extract → stage → canonical specifics.
+
 Operator notes for the Gravity Forms → Bowling Bayern pipeline. Product intent and full roadmap live in `GF_DATA_PIPELINE_IMPLEMENTATION_PLAN.md`.
 
 **Status:** Sprint 1 and Sprint 2 are **done** (GF results forms → shared **v1** canonical map → legacy CSV + app source). **Sprint 3 (final)** covers operations (manual trigger, scheduling) and downstream processing (points, validation); optional event ingestion is out of band.

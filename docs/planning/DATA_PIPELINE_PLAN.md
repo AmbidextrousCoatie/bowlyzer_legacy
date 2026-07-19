@@ -1,7 +1,10 @@
 # Unified data pipeline plan
 
+> **Superseded for day-to-day operators:** [`../DATA_PIPELINE.md`](../DATA_PIPELINE.md).  
+> This document is the 2026-06 architecture / roadmap record. Publish **includes** legacy scrape by default (`--skip-legacy-scrape` to opt out).
+
 **Status date:** 2026-06-03 (revised with product decisions)  
-**Companion docs:** [`PIPELINE_STATE_OVERVIEW.md`](PIPELINE_STATE_OVERVIEW.md) (current snapshot + traceability), [`database/README.md`](../../database/README.md), [`database/data/README.md`](../../database/data/README.md), [`docs/Excel_Extraction.md`](../Excel_Extraction.md), [`docs/GF_DATA_PIPELINE_IMPLEMENTATION_PLAN.md`](../GF_DATA_PIPELINE_IMPLEMENTATION_PLAN.md)  
+**Companion docs:** [`../DATA_PIPELINE.md`](../DATA_PIPELINE.md), [`PIPELINE_STATE_OVERVIEW.md`](PIPELINE_STATE_OVERVIEW.md), [`database/README.md`](../../database/README.md), [`docs/Excel_Extraction.md`](../Excel_Extraction.md)  
 **Scope:** Coherent ingest → publish workflow for all league/tournament/player data; operator UI starting in the React **Diagnose** tab.
 
 ### Locked decisions (2026-06-03)

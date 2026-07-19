@@ -38,6 +38,22 @@ class PlayerService:
         self.data_manager = DataManager(source=database) if database else DataManager()
         self.server = Server(database=database)
         self.stats_service = StatisticsService(database=database)
+        self._players_registry_lookup: Optional[Dict[str, Dict[str, str]]] = None
+
+    def _get_players_registry_lookup(self) -> Dict[str, Dict[str, str]]:
+        if self._players_registry_lookup is not None:
+            return self._players_registry_lookup
+        try:
+            from data_access.players_registry import load_players_registry_df, registry_lookup_by_id
+
+            registry_df = load_players_registry_df()
+            if registry_df is not None and not registry_df.empty:
+                self._players_registry_lookup = registry_lookup_by_id(registry_df)
+            else:
+                self._players_registry_lookup = {}
+        except Exception:
+            self._players_registry_lookup = {}
+        return self._players_registry_lookup
 
     @staticmethod
     def _player_name_from_chunk(chunk: pd.DataFrame) -> str:
@@ -774,6 +790,14 @@ class PlayerService:
         player_id = ""
         if Columns.player_id in row.index and pd.notna(row.get(Columns.player_id)):
             player_id = self._normalize_player_id(row.get(Columns.player_id))
+        if player_id:
+            canonical = self._canonical_name_for_player_id(
+                player_id,
+                [player_name] if player_name else [],
+                registry_lookup=self._get_players_registry_lookup(),
+            )
+            if canonical:
+                player_name = canonical
 
         score_val = pd.to_numeric(row.get(Columns.score), errors="coerce")
         score = int(score_val) if pd.notna(score_val) else None
@@ -884,6 +908,17 @@ class PlayerService:
                 if vals:
                     return normalize_club(vals[0])
             return "-"
+
+        def row_history_club(df: pd.DataFrame) -> str:
+            if Columns.history_club in df.columns:
+                vals = [
+                    str(x).strip()
+                    for x in df[Columns.history_club].dropna().tolist()
+                    if str(x).strip()
+                ]
+                if vals:
+                    return normalize_club(vals[0])
+            return row_club(df)
 
         def event_label(row: pd.Series) -> str:
             event = ""
@@ -1113,6 +1148,7 @@ class PlayerService:
                         'season': season,
                         'competition': str(comp_name).strip() or competition_name(cdf),
                         'club': row_club(cdf),
+                        'history_club': row_history_club(cdf),
                         'team_name': row_team_name(cdf),
                         'team_number': (
                             int(m.group(1))
@@ -1375,6 +1411,17 @@ class PlayerService:
                     return normalize_club(vals[0])
             return "-"
 
+        def row_history_club(df: pd.DataFrame) -> str:
+            if Columns.history_club in df.columns:
+                vals = [
+                    str(x).strip()
+                    for x in df[Columns.history_club].dropna().tolist()
+                    if str(x).strip()
+                ]
+                if vals:
+                    return normalize_club(vals[0])
+            return row_club(df)
+
         def event_label(row: pd.Series) -> str:
             event = ""
             if Columns.event in row.index and pd.notna(row.get(Columns.event)):
@@ -1438,6 +1485,7 @@ class PlayerService:
                 "season": season_value,
                 "competition": str(comp_name).strip() or competition_name(cdf),
                 "club": row_club(cdf),
+                "history_club": row_history_club(cdf),
                 "team_name": row_team_name(cdf),
                 "team_number": (
                     int(m.group(1))

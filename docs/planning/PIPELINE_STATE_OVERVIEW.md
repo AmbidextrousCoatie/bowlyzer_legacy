@@ -1,5 +1,8 @@
 # Pipeline state overview (wrap-up)
 
+> **Superseded for operators:** use [`../DATA_PIPELINE.md`](../DATA_PIPELINE.md) and [`../pipeline/`](../pipeline/).  
+> This file remains as an architecture snapshot (status date 2026-06-14). Scrape is **included by default** on publish (`--skip-legacy-scrape` to opt out); `--with-legacy-scrape` is a no-op.
+
 **Purpose:** Single inspection doc — what each data stream is, where it sits in processing, what the last publish recorded, and how downstream artifacts depend on upstream changes.
 
 **Companion docs:**
@@ -272,7 +275,8 @@ uv run python scripts/build_published_dataset.py --dry-run
 
 # Standard publish (registry + league + tournament)
 uv run python scripts/build_players_registry.py --aktive-min-season 2008-09
-uv run python scripts/build_published_dataset.py --with-legacy-scrape
+uv run python scripts/build_published_dataset.py --write-csv
+# see docs/DATA_PIPELINE.md (scrape included by default)
 
 # GF league only (separate cadence)
 uv run python scripts/run_gf_pipeline.py --mode incremental
@@ -473,7 +477,7 @@ Weekly pool lines (`pts-week`) use **schema** for expected weekly budget; primar
 - Typical run: `uv run python extract_excel_data.py --mode normalize_data --input "{work}/legacy_scrape/legacy_scrape_extracted.csv"`.
 - Last normalize pass example: ~250k Team/Opponent cells, 162 distinct strings (legacy scrape).
 
-**Note:** `normalize_data` on legacy scrape **does not** rebuild `league_results_merged`; run `build_published_dataset.py --with-legacy-scrape` (or league merge) to publish.
+**Note:** `normalize_data` on legacy scrape **does not** rebuild `league_results_merged`; run `build_published_dataset.py` (or `--job league`) to publish.
 
 ### Extraction fixes (pre-2022 placement bonuses)
 

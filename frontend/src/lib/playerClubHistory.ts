@@ -30,6 +30,10 @@ function normalizeClubLabel(raw: string | null | undefined): string | null {
   return s;
 }
 
+function historyClubLabel(row: PlayerSeasonRow): string | null {
+  return normalizeClubLabel(row.history_club ?? row.club);
+}
+
 /** Prefer league (non-tournament) competition row when multiple exist per season. */
 function resolveClubForSeason(
   rows: PlayerSeasonRow[] | null | undefined,
@@ -40,20 +44,19 @@ function resolveClubForSeason(
   const forSeason = rows.filter((r) => {
     if (String(r.season ?? "").trim() !== needle) return false;
     if (String(r.row_type ?? "").trim() !== "competition") return false;
-    const c = normalizeClubLabel(r.club);
-    return Boolean(c);
+    return Boolean(historyClubLabel(r));
   });
   if (forSeason.length === 0) return null;
   const leagueFirst = forSeason.find((r) => !r.is_tournament);
   const pick = leagueFirst ?? forSeason[0];
-  return normalizeClubLabel(pick.club);
+  return historyClubLabel(pick);
 }
 
 function collectSortedSeasons(rows: PlayerSeasonRow[]): string[] {
   const seasons = new Set<string>();
   for (const r of rows) {
     if (String(r.row_type ?? "").trim() !== "competition") continue;
-    if (!normalizeClubLabel(r.club)) continue;
+    if (!historyClubLabel(r)) continue;
     const s = r.season;
     if (s === undefined || s === null || String(s).trim() === "") continue;
     seasons.add(String(s).trim());

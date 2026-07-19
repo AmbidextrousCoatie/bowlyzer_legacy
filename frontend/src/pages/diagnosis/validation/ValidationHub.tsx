@@ -131,16 +131,16 @@ export function ValidationHub() {
           <section className="rounded-sm border border-border bg-surface">
             <div className="border-b border-border px-5 py-4 flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-h3">{t("ui.diagnosis.club_mapping_title", "Vereinszuordnung")}</h2>
+                <h2 className="text-h3">{t("ui.diagnosis.club_mapping_title", "Club-Zuordnung")}</h2>
                 <p className="text-small text-muted mt-1">
                   {t(
                     "ui.diagnosis.validation_club_blurb",
-                    "Turnier-Vereinsnamen → Liga-Registry",
+                    "Unzugeordnete Turnier-Clubs → kanonischer Club",
                   )}
                 </p>
               </div>
               <Link
-                to={`/diagnose/validierung/vereine${querySuffix}`}
+                to={`/diagnose/validierung/clubs${querySuffix}`}
                 className="text-body text-primary underline-offset-2 hover:underline whitespace-nowrap"
               >
                 {t("ui.diagnosis.validation_open_detail", "Details →")}
@@ -149,7 +149,7 @@ export function ValidationHub() {
             <div className="grid grid-cols-3 gap-3 p-5">
               <div className="rounded-sm border border-border px-4 py-3">
                 <p className="text-label uppercase text-muted">
-                  {t("ui.diagnosis.club_mapping_kpi_unresolved", "Unaufgelöst")}
+                  {t("ui.diagnosis.club_mapping_kpi_unresolved", "Unzugeordnet")}
                 </p>
                 <p className="text-h3 mt-1 tabular-nums text-amber-700 dark:text-amber-400">
                   {clubSummary?.unresolved ?? (clubQuery.isLoading ? "…" : 0)}

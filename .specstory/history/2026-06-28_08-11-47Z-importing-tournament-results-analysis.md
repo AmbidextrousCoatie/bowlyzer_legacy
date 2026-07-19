@@ -135225,3 +135225,4317 @@ ssh bowlyzer@31.70.94.196 'set -a && source ~/.config/bowlyzer/clubmeisterschaft
 ```
 
 **Note:** The systemd timer (`clubmeisterschaft-import.service`) does **not** pass `--force`. For a forced run, use the manual command above. The import can take a few minutes (stable-file wait + Docker).
+
+---
+
+_**User**_
+
+ok. lelts tackle the Verein/CLub logic, that cause a lot of noise in the data. the Verein nomenclature is not standardized, leading to people being associated with a lot of differnt clunbs / vereine altough they are the same entity: 
+https://www.bowlyzer.online/spieler?player_name=Koller%2C+Alexander&player_id=7879&database=db_real_merged 
+Ratisbona is wrongly used instead of BV 68 Regensburg during tournament. but is not even mapped to "Ratisbona Regensburg" and cuases an extra entry. 
+"BV 68 Regensburg" is the verein Alex was a member of while being in Club "Ratisbona Regensburg", but in tournaments, most of the time only the verein is given. we discussed this earlier. how should we tackle this?
+oly for tournaments!
+1. do a mapping of different nomenclatures to the canonical Vereins name
+2. have a mapping of canonical clubs to canocical vereine
+3. map the games to the club the player was playing for int the same reason, if it is associated with the detected club during the tournament
+4. sometimes player did not compete in a registered league in the same year. then look at the closest neighbors, e.g. the season before, or after. if there is a club associated with the verein, map it. if not, map the games to the canonical verein
+
+challenge the apporach, then lets plan out the necessary steps.
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Standardizing club and club names to canonical vereine is the core challenge. The user proposes four steps: map clubs to canonical vereine, assign games to the club the player was playing for during the tournament, use neighboring seasons when a club is missing, and fall back to the canonical verein. This needs to be challenged and then broken down into concrete implementation steps.
+
+Before critiquing the proposal and drafting a plan, I need to inspect the codebase. I will check how clubs and vereine are modeled, review existing mappings like clubs_registry.csv, and examine how tournament data stores club versus verein identifiers. Understanding the current architecture is essential to challenge the approach and define concrete implementation steps.</details></think>
+
+_**Agent (default)**_
+
+Reviewing how clubs, Vereine, and tournament club fields are modeled so we can critique your approach and outline concrete steps.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:/Users/cfell/repositories/bowlyzer_deploy/database/data/clubs_registry.csv</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.{py,csv,md,ts}",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy",
+  "pattern": "verein|Verein|canonical.*club|club.*mapping|Ratisbona|BV 68"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy",
+  "pattern": "verein|Verein|canonical.*club|club.*mapping|Ratisbona|BV 68",
+  "topFiles": [
+    {
+      "matchCount": 60,
+      "uri": "database/data/tournament_legacy_pdf_bm_2006_postprocessed.csv"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 2001
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy/CLAUDE.md",
+  "pattern": "Verein|club matrix|get_club"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy/CLAUDE.md",
+  "pattern": "Verein|club matrix|get_club",
+  "topFiles": [
+    {
+      "matchCount": 5,
+      "uri": "CLAUDE.md"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 5
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I am investigating how player club history and the clubs registry currently work. I will check whether any verein mapping or tournament club handling already exists.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.{py,ts,md}",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy",
+  "pattern": "clubs_registry|resolve_club|canonical_name|Ratisbona"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy",
+  "pattern": "clubs_registry|resolve_club|canonical_name|Ratisbona",
+  "topFiles": [
+    {
+      "matchCount": 3,
+      "uri": "data_access/player_name_normalization.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tests/app/test_club_player_results.py"
+    },
+    {
+      "matchCount": 13,
+      "uri": ".specstory/history/2026-05-19_07-58-26Z-exposing-web-service-on-local-network.md"
+    },
+    {
+      "matchCount": 5,
+      "uri": "tests/data_access/test_club_mapping_import.py"
+    },
+    {
+      "matchCount": 12,
+      "uri": "tests/data_access/test_clubs_registry.py"
+    },
+    {
+      "matchCount": 12,
+      "uri": "tests/scripts/test_audit_player_id_names.py"
+    },
+    {
+      "matchCount": 4,
+      "uri": "data_access/club_mapping_import.py"
+    }
+  ],
+  "totalFiles": 7,
+  "totalMatches": 307
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:/Users/cfell/repositories/bowlyzer_deploy/frontend/src/lib/playerClubHistory.ts</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy/app/services/player_service.py",
+  "pattern": "club|verein"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy/app/services/player_service.py",
+  "pattern": "club|verein",
+  "topFiles": [
+    {
+      "matchCount": 27,
+      "uri": "app/services/player_service.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 27
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+A registry module already exists at `data_access/clubs_registry.py` with `apply_clubs_registry` and `resolve_club_label`. Tests for Ratisbona are also present.
+
+Reviewing the existing registry code to determine what still needs to be built for the verein-to-club mapping.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:/Users/cfell/repositories/bowlyzer_deploy/data_access/clubs_registry.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:/Users/cfell/repositories/bowlyzer_deploy/tests/data_access/test_clubs_registry.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.md",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy/docs",
+  "pattern": "verein|Verein|club.*tournament|tournament.*club"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy/docs",
+  "pattern": "verein|Verein|club.*tournament|tournament.*club",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "docs/Excel_Extraction.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "docs/planning/BACKEND_REWRITE_RUST.md"
+    },
+    {
+      "matchCount": 3,
+      "uri": "docs/planning/DATA_PIPELINE_PLAN.md"
+    },
+    {
+      "matchCount": 19,
+      "uri": "docs/planning/VEREIN_CLUB_DISAMBIGUATION.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "docs/planning/PIPELINE_STATE_OVERVIEW.md"
+    }
+  ],
+  "totalFiles": 5,
+  "totalMatches": 26
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+A planning document already exists at `docs/planning/VEREIN_CLUB_DISAMBIGUATION.md`. It closely matches the proposed approach for mapping clubs to canonical vereine.
+
+I will read the planning document fully and check how tournament normalization currently uses the clubs registry.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:/Users/cfell/repositories/bowlyzer_deploy/docs/planning/VEREIN_CLUB_DISAMBIGUATION.md</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.py",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy",
+  "pattern": "apply_clubs_registry|normalize_tournament"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy",
+  "pattern": "apply_clubs_registry|normalize_tournament",
+  "topFiles": [
+    {
+      "matchCount": 3,
+      "uri": "app/utils/tournament_stage_config.py"
+    },
+    {
+      "matchCount": 3,
+      "uri": "data_access/tournament_data_normalization.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "scripts/build_published_dataset.py"
+    },
+    {
+      "matchCount": 3,
+      "uri": "tests/data_access/test_clubs_registry.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "database/tournament_import/service.py"
+    },
+    {
+      "matchCount": 7,
+      "uri": "app/services/tournament_service.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app/utils/tournament_utils.py"
+    },
+    {
+      "matchCount": 8,
+      "uri": "data_access/tournament_coverage.py"
+    }
+  ],
+  "totalFiles": 8,
+  "totalMatches": 50
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy/database/data/clubs_registry.csv",
+  "pattern": "Ratisbona|BV 68"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy/database/data/clubs_registry.csv",
+  "pattern": "Ratisbona|BV 68",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "database/data/clubs_registry.csv"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 1
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The clubs registry contains "Ratisbona Regensburg" but lacks aliases for "BV 68 Regensburg" or the bare "Ratisbona". This gap explains why the two names are treated as separate entities.
+
+Fuzzy matching already covers "REG - Ratisbona" against "Ratisbona Regensburg". The remaining gaps are the bare "Ratisbona" name and "BV 68 Regensburg". The next step is to inspect tournament_data_normalization.py and club_mapping.csv to understand the existing mapping setup.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:/Users/cfell/repositories/bowlyzer_deploy/data_access/tournament_data_normalization.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy/database/relational_csv/club_mapping.csv",
+  "pattern": "Ratisbona|BV 68"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy/database/relational_csv/club_mapping.csv",
+  "pattern": "Ratisbona|BV 68",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "database/relational_csv/club_mapping.csv"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 1
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:/Users/cfell/repositories/bowlyzer_deploy/frontend/src/lib/playerClubHistory.ts</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Checking the resolveClubForSeason logic and how player club history interacts with tournaments versus leagues.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:/Users/cfell/repositories/bowlyzer_deploy/frontend/src/lib/playerClubHistory.ts</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.py",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy",
+  "pattern": "verein|Verein"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy",
+  "pattern": "verein|Verein",
+  "topFiles": [
+    {
+      "matchCount": 11,
+      "uri": "database/tournament_import/adapters/legacy_pdf_erg_2016.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/services/i18n_service.py"
+    },
+    {
+      "matchCount": 8,
+      "uri": "database/tournament_import/adapters/legacy_pdf_erg_2009.py"
+    }
+  ],
+  "totalFiles": 3,
+  "totalMatches": 47
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.json",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy/.cache",
+  "pattern": "7879|Koller"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy/.cache",
+  "pattern": "7879|Koller",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Searching player and tournament records for Koller to understand the club mapping issue.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.csv",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy/database",
+  "pattern": "Koller.*Alexander|7879"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy/database",
+  "pattern": "Koller.*Alexander|7879",
+  "topFiles": [
+    {
+      "matchCount": 15,
+      "uri": "database/data/tournament_legacy_pdf_nbm_2015_postprocessed.csv"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 458
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.csv",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy/database",
+  "pattern": "BV 68|Ratisbona[^ ]"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy/database",
+  "pattern": "BV 68|Ratisbona[^ ]",
+  "topFiles": [
+    {
+      "matchCount": 15,
+      "uri": "database/data/tournament_legacy_pdf_nbm_2012_postprocessed.csv"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 1460
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Koller's club name changed from "BV 68 Regensburg" in 2012 to just "REG" in 2015. This inconsistency confirms the need for a canonical mapping strategy.
+
+Searching for Ratisbona specifically in Koller's records.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.csv",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy/database",
+  "pattern": "Koller, Alexander.*Ratisbona|Koller, Alexander.*REG"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy/database",
+  "pattern": "Koller, Alexander.*Ratisbona|Koller, Alexander.*REG",
+  "topFiles": [
+    {
+      "matchCount": 17,
+      "uri": "database/data/tournament_legacy_pdf_bm_2008_postprocessed.csv"
+    },
+    {
+      "matchCount": 3,
+      "uri": "database/data/tournament_legacy_pdf_nbm_2008_postprocessed.csv"
+    }
+  ],
+  "totalFiles": 2,
+  "totalMatches": 214
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/league*",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy/database",
+  "pattern": "07879|7879"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy/database",
+  "pattern": "07879|7879",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Koller is listed under "BV 68 Regensburg" in NBM 2012.
+
+Koller also appears as "REG" in tournaments such as 2008 and 2015. A search for "Ratisbona" elsewhere is underway.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.csv",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy/database",
+  "pattern": "Koller, Alexander.*Ratisbona"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy/database",
+  "pattern": "Koller, Alexander.*Ratisbona",
+  "topFiles": [
+    {
+      "matchCount": 10,
+      "uri": "database/data/tournament_legacy_pdf_nbm_2017_postprocessed.csv"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 126
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.csv",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy/database",
+  "pattern": ";Ratisbona;"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy/database",
+  "pattern": ";Ratisbona;",
+  "topFiles": [
+    {
+      "matchCount": 10,
+      "uri": "database/data/tournament_legacy_pdf_bm_2015_postprocessed.csv"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 400
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The problem is now clearer. Koller carries multiple club labels across tournaments. This confirms the need for a unified mapping strategy.
+
+Koller's entries reveal four distinct label variants: "BV 68 Regensburg", "REG", "Ratisbona", and "Ratisbona Regensburg". The registry aliases "REG - Ratisbona" but cannot resolve bare "REG" or "Ratisbona" alone. "BV 68 Regensburg" is a separate Verein entity and will not link to the club. The four-step mapping strategy is now being unpacked.
+
+Step 1 is a standalone normalization layer. Step 2 is the core structural piece built from manual curation. Step 3 uses player-season league joins for contextual disambiguation. Step 4 is a pragmatic fallback for missing same-year leagues, but it needs guardrails. The critical ordering rule is that steps 1 and 2 must run before any attempt to match against the clubs registry.
+
+The normalization order must be strict: resolve "Ratisbona" to its club alias first, then map "BV 68 Regensburg" to the Verein. The data model should not merge Verein into Club globally. Tournament Verein labels are a separate tier from the Club concept. They should only normalize for display when a player actually has a league affiliation.
+
+Steps 3 and 4 overlap with existing frontend logic. The `playerClubHistory.ts` already prefers league data over tournament labels per season. The real problem is that tournament rows still carry incorrect club labels. These bad labels create extra stints whenever league data is missing for that season.
+
+Three distinct label categories must be distinguished: full Verein names, truncated regional prefixes, and truncated club names. Step 2 introduces ambiguity because one Verein can contain multiple clubs. The mapping must stay confined to tournament data and never mutate league records.
+
+Persisting the mapping during tournament normalization is preferable for consistency across views, though it requires re-importing and re-publishing data. Neighbor-season fallback risks misattributing transfers when a player moves between clubs under different Vereine. Adding Verein aliases alone does not reach the club level; steps two and three remain essential. A quick-win path before the full solution is being considered.
+
+Concrete mappings are taking shape. "Ratisbona" and "REG" should both resolve to "Ratisbona Regensburg" in the club mapping. The BV 68 Regensburg Verein likely contains several member clubs, including Ratisbona Regensburg, Castra Regina, and Donaubowler. Step 2 alone would be ambiguous because a player could belong to any of those member clubs. Step 3 is therefore essential: tournament rows labeled "BV 68 Regensburg" must map to the specific club the player actually played for in that season.
+
+The concrete mapping pipeline is now defined. Labels are normalized through aliases and prefix stripping. A direct club registry hit ends the process. Otherwise the label resolves to a canonical Verein. The system then looks up the player’s league club for that season under that Verein. If no match exists it keeps the Verein or falls back to neighbor seasons. The algorithm is being verified against the German bowling structure where one Verein can contain multiple member clubs.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:/Users/cfell/repositories/bowlyzer_deploy" && uv run python -c "
+from data_access.clubs_registry import load_clubs_registry_df, build_alias_to_canonical, resolve_club_label, propose_club_resolution
+reg = load_clubs_registry_df()
+lookup = build_alias_to_canonical(reg)
+names = reg['canonical_name'].tolist()
+for label in ['Ratisbona', 'REG', 'BV 68 Regensburg', 'Ratisbona Regensburg', 'REG - Ratisbona']:
+    r, rule = resolve_club_label(label, lookup, names)
+    print(f'{label!r} -> {r!r} ({rule})')
+    props = propose_club_resolution(label, lookup, names)
+    if props: print('  proposals:', props[:3])
+"
+</summary>
+
+```bash
+cd "c:/Users/cfell/repositories/bowlyzer_deploy" && uv run python -c "
+from data_access.clubs_registry import load_clubs_registry_df, build_alias_to_canonical, resolve_club_label, propose_club_resolution
+reg = load_clubs_registry_df()
+lookup = build_alias_to_canonical(reg)
+names = reg['canonical_name'].tolist()
+for label in ['Ratisbona', 'REG', 'BV 68 Regensburg', 'Ratisbona Regensburg', 'REG - Ratisbona']:
+    r, rule = resolve_club_label(label, lookup, names)
+    print(f'{label!r} -> {r!r} ({rule})')
+    props = propose_club_resolution(label, lookup, names)
+    if props: print('  proposals:', props[:3])
+"
+
+```
+
+```
+In C:\Users\cfell\AppData\Local\Temp\ps-script-840d7cd5-5b68-42f0-bb8f-44ca11e91f94.ps1:7 Zeichen:50
++ cd "c:/Users/cfell/repositories/bowlyzer_deploy" &amp;&amp; uv run python -c  ...
++                                                  ~~
+Das Token "&amp;&amp;" ist in dieser Version kein g�ltiges Anweisungstrennzeichen.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : InvalidEndOfLine
+ 
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+PowerShell does not support `&&` operators, so semicolons are required instead.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:/Users/cfell/repositories/bowlyzer_deploy"; uv run python -c "
+from data_access.clubs_registry import load_clubs_registry_df, build_alias_to_canonical, resolve_club_label, propose_club_resolution
+reg = load_clubs_registry_df()
+lookup = build_alias_to_canonical(reg)
+names = reg['canonical_name'].tolist()
+for label in ['Ratisbona', 'REG', 'BV 68 Regensburg', 'Ratisbona Regensburg', 'REG - Ratisbona']:
+    r, rule = resolve_club_label(label, lookup, names)
+    print(f'{label!r} -> {r!r} ({rule})')
+    props = propose_club_resolution(label, lookup, names)
+    if props: print('  proposals:', props[:3])
+"
+</summary>
+
+```bash
+cd "c:/Users/cfell/repositories/bowlyzer_deploy"; uv run python -c "
+from data_access.clubs_registry import load_clubs_registry_df, build_alias_to_canonical, resolve_club_label, propose_club_resolution
+reg = load_clubs_registry_df()
+lookup = build_alias_to_canonical(reg)
+names = reg['canonical_name'].tolist()
+for label in ['Ratisbona', 'REG', 'BV 68 Regensburg', 'Ratisbona Regensburg', 'REG - Ratisbona']:
+    r, rule = resolve_club_label(label, lookup, names)
+    print(f'{label!r} -> {r!r} ({rule})')
+    props = propose_club_resolution(label, lookup, names)
+    if props: print('  proposals:', props[:3])
+"
+
+```
+
+```
+'Ratisbona' -&gt; None ()
+  proposals: [('Ratisbona Regensburg', 'fuzzy_canonical')]
+'REG' -&gt; None ()
+'BV 68 Regensburg' -&gt; None ()
+'Ratisbona Regensburg' -&gt; 'Ratisbona Regensburg' (exact)
+  proposals: [('Ratisbona Regensburg', 'exact')]
+'REG - Ratisbona' -&gt; 'Ratisbona Regensburg' (exact)
+  proposals: [('Ratisbona Regensburg', 'exact')]
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The `apply_clubs_registry` function relies solely on `resolve_club_label`, which does not perform fuzzy matching. Fuzzy matching is currently limited to `propose_club_resolution` for the audit UI.
+
+The core gaps are missing fuzzy matching, no Verein layer, and no player-season context. The proposed mapping approach is sound but needs refinement. Next step is counting unique unresolved tournament club labels.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.py",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy",
+  "pattern": "propose_club_resolution|club_mapping_import"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy",
+  "pattern": "propose_club_resolution|club_mapping_import",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "data_access/club_name_validation.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "data_access/clubs_registry.py"
+    },
+    {
+      "matchCount": 3,
+      "uri": "tests/data_access/test_club_mapping_import.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "scripts/audit_club_names.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "scripts/import_club_mapping_from_resolved.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "data_access/tournament_data_quality.py"
+    }
+  ],
+  "totalFiles": 6,
+  "totalMatches": 12
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:/Users/cfell/repositories/bowlyzer_deploy/data_access/club_mapping_import.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I am structuring a critique and implementation plan for the Verein/Club mapping logic.
+
+Three distinct failure modes drive the noise: truncated regional prefixes, truncated club names, and ambiguous Verein labels. The four proposed steps conflate these cases. A better sequence prioritizes cheap fixes first—resolving truncated club names and regional prefixes—before tackling Verein-to-club disambiguation.
+
+Mapping a Verein to a single club is dangerous when one Verein spans multiple clubs. The player-season league join is what makes the mapping safe; step two is merely a filter. The neighbor-season fallback needs a bounded window and verification that the club remains under the detected Verein.
+
+Fixes must run at the normalize_tournament_dataframe stage so all downstream consumers benefit. A frontend-only patch would leave backend aggregations broken.
+
+The Verein field should remain a normalization pipeline artifact. It should not enter the data model. When no club is found, the display layer can fall back to a canonical Verein name.
+
+A transfer tie-breaker is needed for players who played for two clubs in adjacent seasons. The REG prefix is especially risky because it is a regional code rather than a unique identifier.
+
+Bare regional prefixes such as "REG" cannot be resolved by static aliases alone. They require player and season context because the same prefix may span several clubs. Global fuzzy matching is too risky; a curated alias list is safer. The first concrete step is adding verified safe aliases to the club mapping, such as mapping "Ratisbona" directly to "Ratisbona Regensburg".
+
+A `vereine_registry.csv` should store canonical Verein names alongside pipe-separated member club names drawn from the club registry. Seed entries like BV 68 Regensburg would link to Ratisbona Regensburg, Castra Regina Regensburg, and Donaubowler Regensburg.
+
+A new `data_access/verein_club_resolution.py` module will classify each label as resolved club, Verein label, regional code, or unresolved. It will build a player-season-to-club index from non-tournament league rows only. Then it will apply the mapping to tournament rows through an `apply_verein_club_resolution` function.
+
+The resolution step will run inside `normalize_tournament_dataframe` immediately after the existing club registry pass. It will only touch rows that remain unresolved or carry a Verein or regional label.
+
+Phase 4 adds an audit tool to compare Verein fallbacks against direct club promotions. The Koller fixture will serve as a regression test.
+
+Phase 5 republishes the merged tournament dataset.
+
+The existing planning document `VEREIN_CLUB_DISAMBIGUATION.md` aligns with this pipeline but omits the Verein alias normalization step and the explicit neighbor-season fallback.</details></think>
+
+_**Agent (default)**_
+
+Your four-step approach is directionally right, and it matches what we already sketched in [`docs/planning/VEREIN_CLUB_DISAMBIGUATION.md`](docs/planning/VEREIN_CLUB_DISAMBIGUATION.md). The Koller case shows why we need it — and also where the model needs tightening.
+
+## What the data actually looks like (Koller)
+
+For [Koller, Alexander](https://www.bowlyzer.online/spieler?player_name=Koller%2C+Alexander&player_id=7879&database=db_real_merged), tournament `Club` values are inconsistent across years:
+
+| Season / event | Raw label | Problem type |
+|---|---|---|
+| 11/12 NBM | `BV 68 Regensburg` | **Verein** label |
+| 14/15 BM | `Ratisbona` | **Truncated club** name |
+| 14/15 NBM | `REG` | **Bare regional code** |
+| 16/17 NBM | `Ratisbona Regensburg` | Already correct |
+
+League identity for him is **Ratisbona Regensburg** (club under Verein **BV 68 Regensburg**). The player page noise comes from tournament rows carrying three different label *kinds* that never collapse to one club.
+
+Current `clubs_registry` resolution today:
+
+```
+'Ratisbona Regensburg'  → exact hit ✓
+'REG - Ratisbona'       → exact hit ✓
+'Ratisbona'             → unresolved (fuzzy proposal only, not applied)
+'REG'                   → unresolved
+'BV 68 Regensburg'      → unresolved
+```
+
+Fuzzy matching exists in `propose_club_resolution()` for audit UI, but **`apply_clubs_registry()` does not use it** — so `Ratisbona` stays as a separate club in published data even though we already know the canonical name.
+
+---
+
+## Challenge the approach
+
+### 1. There are three failure modes, not one
+
+Your plan treats everything as “Verein nomenclature,” but the Koller case is really:
+
+1. **Verein labels** — `BV 68 Regensburg`
+2. **Truncated club names** — `Ratisbona` (should be `Ratisbona Regensburg`)
+3. **Bare regional codes** — `REG` (should be `REG - Ratisbona`, but the PDF dropped the club part)
+
+These need different rules. Step 1 (Verein aliases) does not fix `Ratisbona` or `REG`.
+
+### 2. Step 2 alone can be wrong
+
+One Verein often has **multiple member clubs**. BV 68 Regensburg covers Ratisbona, Castra Regina, Donaubowler, etc. A static Verein → single club map would mis-attribute open-tournament players who only ever appear at Verein level.
+
+**Step 2 should define membership** (which clubs belong to a Verein), not pick the club. **Step 3 picks the club** via player + season league history.
+
+### 3. Step 3 is the core; Step 4 is a guarded fallback
+
+Same-season league lookup is the high-confidence rule. Neighbor-season lookup (step 4) is reasonable for tournament-only years, but needs guardrails:
+
+- Cap distance (±1 season first; ±2 only if still empty)
+- Require the neighbor club to be a **member of the detected Verein** (from step 2)
+- If two adjacent seasons disagree (transfer), prefer same season → previous → next, and log ambiguity rather than guessing
+
+### 4. Bare regional codes (`REG`) are not alias-safe
+
+`REG` is not a Verein — it is an incomplete GF prefix. You cannot safely add `REG → Ratisbona Regensburg` to `club_mapping.csv`; other Regensburg clubs share the same prefix. **`REG` must go through player-context resolution**, same as Verein labels.
+
+### 5. Do not auto-apply fuzzy matching globally
+
+Turning on fuzzy resolution in `apply_clubs_registry()` would fix `Ratisbona` but risks false merges (`Union`, `Land`, city suffixes). Prefer **curated aliases** for known truncations; reserve fuzzy for audit/proposal workflow.
+
+### 6. Tournament-only, persisted normalization — correct scope
+
+Fix at **`normalize_tournament_dataframe()`** (after `apply_clubs_registry`), not in the React player page. The frontend already prefers league over tournament per season in `playerClubHistory.ts`, but when a season has **only** tournament rows with bad labels, you still get extra stints. Fixing upstream keeps player page, tournament views, and aggregates consistent.
+
+### 7. Do not model Verein as a first-class dimension (yet)
+
+Keep Verein as a **normalization layer**, not a new entity in filters/matrix. Fallback display: canonical Verein name when no club can be inferred. Matches `CLAUDE.md` (“Verein not modeled”).
+
+---
+
+## Refined pipeline (tournaments only)
+
+```mermaid
+flowchart TD
+  A[Raw tournament Club label] --> B[clubs_registry + club_mapping]
+  B -->|resolved| Z[Canonical club]
+  B -->|unresolved| C{classify label}
+  C -->|Verein alias| D[Canonical Verein]
+  C -->|bare regional code| D
+  C -->|truncated club| E[curated alias or fuzzy audit queue]
+  E --> Z
+  D --> F{player + season league club<br/>under this Verein?}
+  F -->|yes| Z
+  F -->|no| G{neighbor season ±1<br/>club under Verein?}
+  G -->|yes| Z
+  G -->|no| H[Keep canonical Verein label]
+```
+
+---
+
+## Implementation plan
+
+### Phase 0 — Quick wins (low risk, ~0.5 day)
+
+**Goal:** Fix obvious club truncations without Verein machinery.
+
+| Action | Example |
+|--------|---------|
+| Add curated aliases to `club_mapping.csv` | `Ratisbona` → `Ratisbona Regensburg` |
+| Rebuild/publish `clubs_registry` | Picks up new aliases |
+| Re-normalize + re-publish tournament data | Koller 14/15 BM rows collapse |
+
+**Do not** map bare `REG` statically.
+
+### Phase 1 — Verein registry (~1 day)
+
+New file: `database/relational_csv/vereine_registry.csv`
+
+```csv
+canonical_verein,aliases,member_clubs
+BV 68 Regensburg,BV68 Regensburg|Bowlingverein 68 Regensburg,Ratisbona Regensburg|Castra Regina Regensburg|Donaubowler Regensburg
+```
+
+- `member_clubs` = pipe-separated **canonical club names** from `clubs_registry`
+- Manual seed: tens of Vereine, not hundreds
+- Module: `data_access/vereine_registry.py` (mirror `clubs_registry.py` patterns)
+
+### Phase 2 — Label classifier (~0.5 day)
+
+In `data_access/verein_club_resolution.py`:
+
+- **Already a club** — resolved by step 0/1
+- **Verein label** — matches `vereine_registry` (heuristic: `BV \d+`, known aliases, not in club registry)
+- **Bare regional code** — matches `^[A-ZÄÖÜ]{2,5}$` and not in club registry
+- **Unresolved** — leave unchanged, audit report
+
+### Phase 3 — Player-season club index (~1–2 days)
+
+Build from **league merged data only** (non-tournament, non-computed):
+
+```
+(player_id, season) → canonical_club
+```
+
+Also index by normalized player name as fallback when ID missing.
+
+For each unresolved tournament row:
+
+1. Detect Verein (direct label or inferred from regional context if we add event→region hints later)
+2. Look up `(player_id, season)` in league index
+3. If league club ∈ `member_clubs` of that Verein → **replace tournament `Club` with canonical club**
+4. Else neighbor seasons ±1 with same membership check
+5. Else keep **canonical Verein** (single display bucket, not a phantom club)
+
+### Phase 4 — Pipeline integration (~0.5 day)
+
+Extend `normalize_tournament_dataframe()`:
+
+```python
+out, club_stats = apply_clubs_registry(out)
+out, verein_stats = apply_verein_club_resolution(out, league_df=...)
+```
+
+Wire league_df from publish pipeline (`scripts/build_published_dataset.py`) — league merge is already available at publish time.
+
+Stats to track: `promoted_to_club`, `kept_as_verein`, `neighbor_season_used`, `ambiguous`, `unresolved`.
+
+### Phase 5 — Audit + tests (~1 day)
+
+- Extend `scripts/audit_club_names.py` with Verein promotion/fallback report
+- Unit tests:
+  - Koller 11/12: `BV 68 Regensburg` + league 11/12 → `Ratisbona Regensburg`
+  - Koller 14/15: `Ratisbona` → `Ratisbona Regensburg` (alias)
+  - Koller 14/15: `REG` + league → `Ratisbona Regensburg`
+  - Open player, no league: `BV 68 Regensburg` stays Verein
+  - Ambiguous Verein with two member clubs: league disambiguates correctly
+
+### Phase 6 — Re-publish (~ops)
+
+Re-run tournament normalization + publish + cache warm for `db_real_merged`.
+
+**Total: ~4–6 days** — same as the existing planning doc, with Phase 0 as an immediate partial fix.
+
+---
+
+## Recommended sequencing
+
+| Priority | What | Why |
+|----------|------|-----|
+| **Now** | Phase 0 aliases (`Ratisbona`, other known truncations) | Fixes a chunk of noise without new architecture |
+| **Next** | Phases 1–4 (Verein registry + player-season join) | Fixes `BV 68 Regensburg`, `REG`, and similar |
+| **Later** | Audit UI for “kept as Verein” vs “promoted to club” | Operator trust + manual seed growth |
+
+---
+
+## Open decisions for you
+
+1. **Neighbor season radius** — ±1 only, or ±2 when the player skipped league entirely that year?
+2. **Ambiguity UX** — when neighbor seasons disagree, keep Verein or pick most recent league club?
+3. **Verein in player club history table** — show as its own row (e.g. “BV 68 Regensburg”) or hide Verein-only seasons when we could not promote?
+
+If this plan works for you, a sensible first implementation slice is **Phase 0 + Phase 1–3 with the Koller/BV 68 seed row**, then expand `vereine_registry.csv` from audit output. Want me to start with Phase 0 aliases and the Verein registry scaffold?
+
+---
+
+_**User**_
+
+0. skip phase 0, we will do this systematically
+1. the issue: players might be part of a top tier team participating in national leagues (invisible to us, since we start at state level) but still participate in tournaments. e.g. Wölki and Koller. So if at all they haven't been seen for quite some time. 
+we should be able to derive that info from the ranglisten files, that we use for canonical player names and IDs
+create an alternate club and vereins registry based on that information  that we could swoop in later
+2. use the data from rangliste as well
+3 if we cannot resolve, of the player is listed as "Einzelmitglied" keep the vereins name
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Phase 0 will be skipped in favor of a systematic approach. Ranglisten files will provide alternate club and Vereins registries for players who are invisible at the state level but still compete in national leagues. Rangliste data will be used where possible. If resolution fails, "Einzelmitglied" entries will keep their Vereins name.
+
+Rangliste data will also resolve player-season club assignments. This covers players who have not appeared in recent league records.
+
+The Rangliste table contains columns for EDV-Nr, Nachname, Vorname, Club, and Verein. I will search the codebase for existing rangliste handling, file formats, and player registry sources to plan the alternate registry approach.</details></think>
+
+_**Agent (default)**_
+
+Ranglisten likely hold the Club/Verein ground truth we need — I'll trace how they're imported and how the player registry uses them.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.*",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy",
+  "pattern": "rangliste|Rangliste|ranglist"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy",
+  "pattern": "rangliste|Rangliste|ranglist",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/pages/tournament/TournamentFilterBar.tsx"
+    },
+    {
+      "matchCount": 9,
+      "uri": ".specstory/history/2026-05-12_08-34-57Z-tournament-configuration-and-leaderboard-adjustments.md"
+    },
+    {
+      "matchCount": 2,
+      "uri": "scripts/scrape_legacy_liga.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/pages/Club300.tsx"
+    },
+    {
+      "matchCount": 10,
+      "uri": ".specstory/history/2026-04-28_06-16-30Z-player-stats-overview-table-logic.md"
+    }
+  ],
+  "totalFiles": 5,
+  "totalMatches": 23
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **0** results in **1** directory</summary>
+
+Directory: **c:/Users/cfell/repositories/bowlyzer_deploy** (0 files)
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.*",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy",
+  "pattern": "Einzelmitglied"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy",
+  "pattern": "Einzelmitglied",
+  "topFiles": [
+    {
+      "matchCount": 30,
+      "uri": "database/data/tournament_legacy_pdf_sbm_2014_postprocessed.csv"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 207
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Searching for the players registry and GF player lists. The ranglisten files likely reside there.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.*",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy",
+  "pattern": "players_registry|EDV-Nr|Pass-Nr|pass_nr|edv"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy",
+  "pattern": "players_registry|EDV-Nr|Pass-Nr|pass_nr|edv",
+  "topFiles": [
+    {
+      "matchCount": 6,
+      "uri": "database/data/runs/20260610T140443Z.json"
+    },
+    {
+      "matchCount": 8,
+      "uri": "data_access/aktive_mitglieder_registry.py"
+    },
+    {
+      "matchCount": 14,
+      "uri": "tests/data_access/test_players_registry.py"
+    },
+    {
+      "matchCount": 4,
+      "uri": "tests/scripts/test_audit_player_id_names.py"
+    },
+    {
+      "matchCount": 6,
+      "uri": "database/data/runs/20260609T225622Z.json"
+    },
+    {
+      "matchCount": 2,
+      "uri": "scripts/audit_nbm_imports.py"
+    }
+  ],
+  "totalFiles": 6,
+  "totalMatches": 406
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **6** results in **1** directory</summary>
+
+Directory: **c:/Users/cfell/repositories/bowlyzer_deploy** (6 files)
+
+| File |
+|------|
+| `../../../../../database/data/players_registry.parquet` |
+| `../../../../../scripts/build_players_registry.py` |
+| `../../../../../tests/scripts/test_scrape_player_registry.py` |
+| `../../../../../database/data/players_registry.csv` |
+| `../../../../../tests/data_access/test_players_registry.py` |
+| `../../../../../data_access/players_registry.py` |
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.*",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy/database",
+  "pattern": "Verein|verein"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy/database",
+  "pattern": "Verein|verein",
+  "topFiles": [
+    {
+      "matchCount": 9,
+      "uri": "database/tournament_import/adapters/legacy_pdf_erg_2012.py"
+    },
+    {
+      "matchCount": 21,
+      "uri": "database/data/tournament_legacy_pdf_bm_2018_postprocessed.csv"
+    }
+  ],
+  "totalFiles": 2,
+  "totalMatches": 1491
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The file `aktive_mitglieder_registry.py` appears to be the Rangliste/active members registry.
+
+I will read the active members registry and the players registry build script.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:/Users/cfell/repositories/bowlyzer_deploy/data_access/aktive_mitglieder_registry.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:/Users/cfell/repositories/bowlyzer_deploy/scripts/build_players_registry.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.*",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy",
+  "pattern": "aktive_mitglieder|AktiveMitglieder"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy",
+  "pattern": "aktive_mitglieder|AktiveMitglieder",
+  "topFiles": [
+    {
+      "matchCount": 3,
+      "uri": "tests/data_access/test_aktive_mitglieder_registry.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "scripts/build_players_registry.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "data_access/players_registry.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tmp/check_conflict_seasons.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".specstory/history/2026-06-22_07-48-15Z-player-page-ux-improvements.md"
+    },
+    {
+      "matchCount": 6,
+      "uri": ".specstory/history/2026-06-03_17-17-54Z-data-caching-performance-and-worker-efficiency.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tmp/analyze_pass_nr_id_collisions.py"
+    }
+  ],
+  "totalFiles": 7,
+  "totalMatches": 15
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The Ranglisten files correspond to the Aktive Mitglieder workbooks.
+
+Currently only player ID and name are extracted from the Ranglisten files. Club and Verein columns remain unprocessed. I will inspect the test fixtures to confirm the expected structure.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:/Users/cfell/repositories/bowlyzer_deploy/tests/data_access/test_aktive_mitglieder_registry.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **0** results in **1** directory</summary>
+
+Directory: **c:/Users/cfell/repositories/bowlyzer_deploy** (0 files)
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.*",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy",
+  "pattern": "\"club\"|\"verein\"|nachname.*vorname"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy",
+  "pattern": "\"club\"|\"verein\"|nachname.*vorname",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "frontend/src/lib/navigationQuery.ts"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/cache/league_data_revision.py"
+    },
+    {
+      "matchCount": 3,
+      "uri": ".specstory/history/2026-05-19_07-58-26Z-exposing-web-service-on-local-network.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "data_access/reconstruct_flat_csv.py"
+    },
+    {
+      "matchCount": 5,
+      "uri": "app/services/player_service.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "tests/app/test_club_player_results.py"
+    },
+    {
+      "matchCount": 6,
+      "uri": "app/services/tournament_service.py"
+    }
+  ],
+  "totalFiles": 7,
+  "totalMatches": 143
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The Aktive Mitglieder parser currently extracts only EDV-Nr and name. It does not yet read the Club or Verein columns.
+
+The rangliste files contain the Club and Verein columns. I will check the legacy scrape directory for Koller and Wölki data, or search the scrape documentation for club and verein references.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.*",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy/docs",
+  "pattern": "Aktive|aktive_mitglieder|Club.*Verein"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy/docs",
+  "pattern": "Aktive|aktive_mitglieder|Club.*Verein",
+  "topFiles": [
+    {
+      "matchCount": 3,
+      "uri": "docs/planning/PIPELINE_STATE_OVERVIEW.md"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 3
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:/Users/cfell/repositories/bowlyzer_deploy/docs/planning/VEREIN_CLUB_DISAMBIGUATION.md</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.py",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy/database/paths.py",
+  "pattern": "legacy_scrape"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy/database/paths.py",
+  "pattern": "legacy_scrape",
+  "topFiles": [
+    {
+      "matchCount": 7,
+      "uri": "database/paths.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 7
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Checking whether legacy_scrape exists locally and examining a sample aktive file structure.
+
+Also checking tmp/analyze scripts for club and verein columns.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **0** results in **1** directory</summary>
+
+Directory: **c:/Users/cfell/repositories/bowlyzer_deploy** (0 files)
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:/Users/cfell/repositories/bowlyzer_deploy/tmp/analyze_pass_nr_id_collisions.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.py",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy",
+  "pattern": "07879|07647|Wölki|Koller"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy",
+  "pattern": "07879|07647|Wölki|Koller",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The temporary script already parses pass-nr from active files, revealing additional columns available in the rangliste data.
+
+Phase 0 is skipped entirely. National league players such as Wölki and Koller remain invisible in state-level league data, so they may be absent from recent season merges despite tournament participation. The revised plan builds an alternate club and vereine registry directly from the Ranglisten Aktive Mitglieder files, which contain Club and Verein columns per player per season. Rangliste data will drive player-season resolution rather than league data alone.
+
+Players listed as "Einzelmitglied" will retain their Verein name if resolution fails. The architecture will build four components from the rangliste: canonical vereine and clubs registries with aliases, a verein-to-member-clubs graph derived from row co-occurrence, and a player-season affiliation index mapping each player and season to their club, verein, and Einzelmitglied status.
+
+Club and Verein are separate columns in the Rangliste. For example, Koller appears under Club Ratisbona Regensburg and Verein BV 68 Regensburg. The alternate registry runs parallel to the league-derived clubs registry and serves as a fallback for tournament normalization. When resolving a tournament label, the system first tries the league-derived registry. If the result is unresolved or resembles a Verein, it queries the Rangliste index for that player in the same season or neighboring seasons.
+
+Rangliste serves as the ground truth for affiliation. It captures all registered members, not merely state-league participants, and records both club and verein per season. National-tier players who still appear in BBU rangliste are therefore accounted for. The two registries will merge at resolution time. A found club maps to the canonical club via the rangliste registry, while an Einzelmitglied or missing club keeps its canonical Verein from the rangliste. The rangliste clubs registry cross-links to the league registry, merging canonical entries and aliases.
+
+The league-derived `clubs_registry` remains primary for consistency. The rangliste-derived `rangliste_clubs_registry` and `rangliste_vereine_registry` serve as the alternate source. A crosswalk between the two registries is needed because identical clubs may be spelled differently.
+
+In tournament data, "Einzelmitglied" sometimes appears as a club value. It must be treated as a flag, not promoted to a Mannschaft club. The system resolves the Verein by looking up the player ID in the Rangliste for that season.
+
+Aktive files use `YYYY-YY` season formatting, while the application expects `YY/YY`. A conversion layer is required.
+
+Rangliste club names may use GF prefixes or alternate spellings that differ from league canonical names. These require alias normalization.
+
+Player transfers mid-career mean the same-season lookup should take priority. Rangliste data only covers 2008-09 onward by default, so older tournaments will rely on neighboring seasons or verein aliases.
+
+A single player ID may show different clubs in rangliste and league within the same season due to substitutes or data lag. Rangliste should be preferred for tournament context.
+
+Rangliste affords free disambiguation because it records the exact club for each player. The verein registry groups by canonical name, collects all spelling aliases, and lists member clubs while excluding Einzelmitglied. The clubs registry groups by club label, gathers variant aliases, and links to the league registry via fuzzy or exact matching.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.py",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy",
+  "pattern": "2013-14|season.*aktive|aktive.*season|to_app_season|from_app_season"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy",
+  "pattern": "2013-14|season.*aktive|aktive.*season|to_app_season|from_app_season",
+  "topFiles": [
+    {
+      "matchCount": 6,
+      "uri": "scripts/build_players_registry.py"
+    },
+    {
+      "matchCount": 3,
+      "uri": "tmp/check_conflict_seasons.py"
+    },
+    {
+      "matchCount": 5,
+      "uri": "scripts/build_published_dataset.py"
+    },
+    {
+      "matchCount": 4,
+      "uri": "tests/data_access/test_tournament_coverage.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "tests/scripts/test_scrape_player_registry.py"
+    }
+  ],
+  "totalFiles": 5,
+  "totalMatches": 53
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.csv",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy/database/data",
+  "pattern": "Einzelmitglied"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy/database/data",
+  "pattern": "Einzelmitglied",
+  "topFiles": [
+    {
+      "matchCount": 5,
+      "uri": "database/data/tournament_legacy_pdf_bm_2015_postprocessed.csv"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 204
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Searching for the `folder_slug_to_app_season` function.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.py",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy",
+  "pattern": "def folder_slug_to_app_season"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy",
+  "pattern": "def folder_slug_to_app_season",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "data_access/tournament_coverage.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 1
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I have enough context to draft a comprehensive updated plan incorporating the user's refinements.
+
+Phase 0 is skipped. Rangliste and Aktive Mitglieder will serve as the primary source to close the national league blind spot. The parser needs extension to capture Club and Verein columns from those files. An alternate registry will run parallel to the league-derived one and merge during resolution. Rangliste will become the primary affiliation source for tournament entries. Players listed as Einzelmitglied will retain their vereins name. Concrete implementation steps will follow.
+
+Concrete tournament label handling is now clear. A label like "BV 68 Regensburg" will be classified as a Verein and resolved through the rangliste player record to promote to the full club name. Bare abbreviations such as "REG" lack static mapping and must be resolved by direct player lookup in the rangliste. The "Einzelmitglied" tournament rule remains pending.
+
+The Einzelmitglied fallback is now fully defined. Normal resolution runs first. If it fails and the player is listed as Einzelmitglied in the rangliste, the canonical Verein from that record is used. Rangliste affiliation takes precedence over tournament labels. A tournament entry showing "BV 68 Regensburg" while the rangliste lists Einzelmitglied is treated as a generic tournament error.</details></think>
+
+_**Agent (default)**_
+
+Your refinements fix the main weakness in the earlier plan: **league merge alone cannot see national-tier players** who still show up in tournaments and in the BBU Rangliste. Using *Aktive Mitglieder* as the affiliation source is the right move.
+
+The screenshot confirms what we need: every row has **Club** (`BC Friedrichshafen`) and **Verein** (`1. BBV Lindau`) side by side. We already scrape these workbooks for player IDs/names in `aktive_mitglieder_registry.py` — but we **drop Club and Verein on the floor**.
+
+---
+
+## Revised approach (skip Phase 0)
+
+### Core idea
+
+Build a **parallel affiliation layer from Rangliste** that sits beside the league-derived `clubs_registry`. Use it specifically for tournament normalization — "swoop in" when league data is missing or stale.
+
+```mermaid
+flowchart LR
+  subgraph sources [Data sources]
+    L[League merge]
+    R[Aktive Mitglieder / Rangliste]
+    T[Tournament rows]
+  end
+
+  subgraph registries [Registries]
+    CR[clubs_registry<br/>league-derived]
+    AR[affiliation_registry<br/>rangliste-derived]
+    VR[vereine_registry<br/>from Rangliste Verein column]
+  end
+
+  L --> CR
+  R --> AR
+  R --> VR
+  AR -.crosswalk.-> CR
+
+  T --> N[normalize_tournament_dataframe]
+  CR --> N
+  AR --> N
+  VR --> N
+```
+
+---
+
+## Why Rangliste solves the Koller/Wölki problem
+
+| Source | Koller / Wölki |
+|--------|----------------|
+| State league merge | Visible when they play LL/RL; **invisible** when only on national teams |
+| Tournament PDFs | Mixed labels: `BV 68 Regensburg`, `Ratisbona`, `REG`, `Ratisbona Regensburg` |
+| **Aktive Mitglieder** | **Always has** `(player_id, season) → club + verein` for every registered member |
+
+So even if someone hasn't appeared in our league data for years, Rangliste still tells us: *Koller, 7879, 14/15 → Ratisbona Regensburg / BV 68 Regensburg*.
+
+That beats manual `verein_club.csv` seeding — the membership graph is **derived from observed rows**, not hand-curated.
+
+---
+
+## Challenges / refinements
+
+### 1. Rangliste club names ≠ league canonical names
+
+Rangliste may say `REG - Ratisbona` while league registry says `Ratisbona Regensburg`. The alternate registry needs a **crosswalk** to league `clubs_registry` (exact match → prefix strip → alias union), not a replacement registry.
+
+### 2. Prefer Rangliste over league for tournament resolution
+
+When both exist for `(player_id, season)`, **Rangliste wins for tournaments** — it reflects GF registration, league reflects only what we scraped at state level.
+
+### 3. Einzelmitglied is a first-class state, not a club
+
+Two cases:
+
+| Tournament `Club` | Rangliste | Result |
+|---|---|---|
+| `BV 68 Regensburg` (Verein) | Club = `Ratisbona Regensburg` | → promote to club |
+| `Einzelmitglied` | Club = `Einzelmitglied`, Verein = `X` | → keep **canonical Verein** `X` |
+| `BV 68 Regensburg` | Club = `Einzelmitglied` | → keep **Verein** (per your rule) |
+| unresolved label | Rangliste has club | → use Rangliste club |
+
+**Rule:** only keep Verein when affiliation is genuinely `Einzelmitglied` or resolution failed entirely.
+
+### 4. Season format bridge
+
+Rangliste folders use `2013-14`; app uses `13/14`. We already have `folder_slug_to_app_season()` in `tournament_coverage.py` — reuse it.
+
+### 5. Coverage gap pre-2008
+
+Default Aktive import starts at `2008-09`. Older tournaments fall back to: neighbor season (±1) → Verein alias normalization → leave unchanged. Document the floor.
+
+### 6. Don't replace `clubs_registry` — augment
+
+League pages, Mannschaft matrix, team strings stay on league-derived registry. Rangliste registry is an **alternate resolver** injected in `normalize_tournament_dataframe()` after `apply_clubs_registry()`.
+
+---
+
+## What to build
+
+### Step 1 — Extend Aktive parser (~1 d)
+
+Extend `AktivePlayerRow` and `row_to_aktive_player()`:
+
+```python
+@dataclass(frozen=True)
+class AktiveAffiliationRow:
+    player_id: str
+    season: str          # app format "14/15"
+    club: str            # raw from Rangliste
+    verein: str          # raw from Rangliste
+    is_einzelmitglied: bool  # club.strip().casefold() == "einzelmitglied"
+```
+
+Parse `club` / `verein` columns from header (normalize header keys like we do for `edv`, `nachname`). New module or extend `aktive_mitglieder_registry.py`.
+
+### Step 2 — Build alternate registries (~1 d)
+
+New script `scripts/build_affiliation_registry.py` → publishes:
+
+| Artifact | Built from |
+|----------|------------|
+| `affiliation_index.parquet` | `(player_id, season) → club, verein, is_einzelmitglied` |
+| `vereine_registry.parquet` | Distinct Verein values + aliases + `member_clubs` set |
+| `rangliste_clubs_registry.parquet` | Distinct non-Einzelmitglied clubs + aliases |
+
+`vereine_registry` rows example:
+
+```
+canonical_verein: BV 68 Regensburg
+aliases: BV68 Regensburg|Bowlingverein 68 Regensburg
+member_clubs: Ratisbona Regensburg|Castra Regina Regensburg|Donaubowler Regensburg
+source: rangliste
+```
+
+Crosswalk: for each rangliste club, attempt link to league `clubs_registry` canonical → store `league_canonical` column.
+
+### Step 3 — Tournament resolution module (~1.5 d)
+
+New `data_access/tournament_club_resolution.py`, called from `normalize_tournament_dataframe()`:
+
+```
+For each tournament row (club still unresolved OR verein-like OR Einzelmitglied):
+
+1. clubs_registry pass (existing)
+
+2. Lookup (player_id, season) in affiliation_index
+   └─ found + has club (not Einzelmitglied)
+      → replace with league_canonical club (crosswalk)
+      → rule: "rangliste_player_club"
+
+3. Else lookup (player_id, season ±1) in affiliation_index
+   └─ same logic
+      → rule: "rangliste_neighbor_season"
+
+4. Else if tournament club matches verein_registry alias
+   AND affiliation says Einzelmitglied for that verein
+      → canonical verein
+      → rule: "rangliste_einzelmitglied_verein"
+
+5. Else if tournament club == "Einzelmitglied"
+   AND affiliation has verein for player
+      → canonical verein
+      → rule: "einzelmitglied_keep_verein"
+
+6. Else leave unchanged → audit as unresolved
+```
+
+Also use **Verein registry** to normalize tournament Verein labels (`BV 68 Regensburg` → canonical) even when we can't promote to club.
+
+### Step 4 — Wire into publish pipeline (~0.5 d)
+
+In `build_published_dataset.py`:
+
+```
+players_registry     (existing)
+affiliation_registry (new, from same Aktive workbooks)
+...
+normalize_tournament_dataframe(..., affiliation_index=...)
+```
+
+Single Aktive scrape pass can feed both player names and affiliations.
+
+### Step 5 — Audit + tests (~1 d)
+
+- Extend `audit_club_names.py`: report resolution rule breakdown
+- Fixtures:
+  - Koller 11/12: `BV 68 Regensburg` → `Ratisbona Regensburg` (via Rangliste)
+  - Koller 14/15: `Ratisbona` / `REG` → `Ratisbona Regensburg`
+  - Wölki: similar Regensburg case
+  - Einzelmitglied player → Verein kept
+  - Friedrichshafen screenshot case: BC Friedrichshafen / 1. BBV Lindau linkage
+
+### Step 6 — Re-publish tournaments
+
+Re-normalize + cache warm for `db_real_merged`.
+
+**Total: ~5 days** — similar to before, but data-driven instead of manual.
+
+---
+
+## Resolution priority (final)
+
+| Priority | Source | When |
+|----------|--------|------|
+| 1 | League `clubs_registry` | Label already resolves as club alias |
+| 2 | Rangliste `(player_id, season)` | Player found, club ≠ Einzelmitglied |
+| 3 | Rangliste neighbor season ±1 | No same-season hit |
+| 4 | Einzelmitglied → Verein | Tournament or Rangliste says Einzelmitglied |
+| 5 | Verein canonical only | Verein label, no club promotable |
+| 6 | Unchanged | Audit queue |
+
+---
+
+## Open decisions
+
+1. **Crosswalk aggressiveness** — when Rangliste club doesn't link to league canonical, create a new rangliste-only canonical or leave raw until manually mapped?
+2. **Neighbor radius** — ±1 season only, or ±2 for pre-2008 gap?
+3. **Player page display** — when result is canonical Verein (Einzelmitglied case), show as "BV 68 Regensburg" in club history or add a visual hint that it's Verein-level?
+
+If this plan works, I'd start with **Step 1 (extend Aktive parser for Club/Verein)** since it's self-contained and unlocks everything else without touching tournament data yet. Want me to begin there?
+
+---
+
+_**User**_
+
+1. lets keep it purely manual in the first shot and evaluate the size of the gap
+2. when we have a reliable player -> club association from rangliste, we should use this as first guess. report any gaps that would require extrapolation
+3. yes, show the verein, no adiditonal hints
+
+make sure the solution we implement will allow to swtich from a club based to vereins based reporting if we chose that. it is fine to do this in the data processing & publishing, no need to burden the frontend or multiple endpoints. but even if we report games being rolled for a Verein, the Verein must not overshadow the club history. the inly excemption is, if it is a Einzelmitglied. e.g. on player starts playing for a clu but then decides to quit the club but remains in the Verein
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Planning the Verein/Club disambiguation solution. It will remain purely manual initially to gauge the gap. Club associations from rangliste will serve as the first guess. Any gaps requiring extrapolation will be flagged. The reporting format will show the Verein without extra hints. A switch from club-based to Verein-based reporting will be supported in the data processing layer. The Verein will not override club history. Exceptions apply only for Einzelmitglieder.
+
+Aktivearser needs Club and Verein columns. An affiliation index and a vereine registry will be built from rangliste. Clubs will be manually mapped to the league registry. Tournament resolution will use rangliste as the first guess. Both resolved club and verein will be stored. Reporting will switch between club and verein at publish time. Einzelmitglieder will display the Verein in club history. Regular players will keep club history intact.
+
+Now examining the codebase to understand how player club history is built, how tournaments are normalized, and what schema changes are needed. A systematic implementation plan is being prepared.</details></think>
+
+_**Agent (default)**_
+
+Implementing Rangliste-based affiliation with manual crosswalk first, then wiring tournament resolution and publish-time reporting so Verein only surfaces for Einzelmitglied.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="todo_write">
+<details>
+<summary>Tool use: **todo_write**</summary>
+
+
+Parameters:
+
+```json
+{
+  "merge": true
+}
+```
+Result:
+
+```json
+{
+  "finalTodos": [
+    {
+      "content": "Extend Aktive parser: Club/Verein columns → affiliation rows",
+      "id": "1",
+      "status": "in_progress"
+    },
+    {
+      "content": "Build affiliation_registry + vereine_registry + manual crosswalk",
+      "id": "2",
+      "status": "pending"
+    },
+    {
+      "content": "Tournament club resolution (rangliste first, gap reporting)",
+      "id": "3",
+      "status": "pending"
+    },
+    {
+      "content": "Wire into publish pipeline + player reporting (club vs verein switch)",
+      "id": "4",
+      "status": "pending"
+    },
+    {
+      "content": "Tests + audit script for gap evaluation",
+      "id": "5",
+      "status": "pending"
+    }
+  ],
+  "initialTodos": [
+    {
+      "content": "Add _parse_score_line helper and use in _consume_scores / _consume_finale_round",
+      "id": "injury-score-token",
+      "status": "completed"
+    },
+    {
+      "content": "Add 2007 no-finale lookahead after R2 total (skip lone diff for 12-game rows)",
+      "id": "no-fin-12-game",
+      "status": "completed"
+    },
+    {
+      "content": "Add Hamfler, Prietz, Karl synthetic tests + integration asserts on real PDF",
+      "id": "unit-tests-seams",
+      "status": "completed"
+    },
+    {
+      "content": "Re-run NBM 2007 import and audit ranks 77-79",
+      "id": "reimport-2007",
+      "status": "completed"
+    }
+  ],
+  "success": true
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="todo_write"><details>
+<summary>Tool use: **todo_write**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:/Users/cfell/repositories/bowlyzer_deploy/data_access/schema.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:/Users/cfell/repositories/bowlyzer_deploy/scripts/build_published_dataset.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/player_service.py",
+  "pattern": "club.*history|row_club|is_tournament|competition"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "pattern": "club.*history|row_club|is_tournament|competition",
+  "topFiles": [
+    {
+      "matchCount": 40,
+      "uri": "app/services/player_service.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 69
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Reviewing player_service.py to understand how row_club and competition rows are constructed. Checking database/paths.py to determine where new files should be placed.
+
+Also examining the player hybrid build pipeline.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:/Users/cfell/repositories/bowlyzer_deploy/app/services/player_service.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:/Users/cfell/repositories/bowlyzer_deploy/database/paths.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:/Users/cfell/repositories/bowlyzer_deploy/data_access/tournament_coverage.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I am clarifying the full scope before proceeding.
+
+The plan is to manually evaluate the player-to-club gap first. Rangliste associations will serve as the primary guess, with any gaps flagged for extrapolation. Club-based and Verein-based reporting will be handled at publish time. The club column on competition rows will store the resolved affiliation. The Verein field will appear only for Einzelmitglieder, and it will not override club history.
+
+Club history will list actual club stints from leagues and promoted tournaments. Games may aggregate under the Verein in Verein-based reporting, yet the club history table itself will retain club entries unless the player is an Einzelmitglied.
+
+Each tournament row will store `club_resolved`, `verein`, `affiliation_kind`, and `reporting_identity`. The `reporting_identity` field will be computed at publish time based on the selected reporting mode. In club-based mode, the Club column will hold the resolved club, while Einzelmitglieder display the Verein name instead.
+
+I realized that forcing the Club column to show the Verein in Verein-based reporting would break club history. The Club column will instead reflect the resolved club, while a separate canonical club field preserves club history entries. I need to inspect how the backend constructs season competition rows and what reaches the frontend.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:/Users/cfell/repositories/bowlyzer_deploy/app/services/player_service.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/usePlayer*",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy/frontend",
+  "pattern": "PlayerSeasonRow|club"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy/frontend",
+  "pattern": "PlayerSeasonRow|club",
+  "topFiles": [
+    {
+      "matchCount": 10,
+      "uri": "frontend/src/hooks/usePlayer.ts"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 10
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:/Users/cfell/repositories/bowlyzer_deploy/database/relational_csv/club_mapping.csv</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The architecture is now clearer.
+
+Aktive Mitglieder Registry will parse Club and Verein. An affiliation index and a derived Verein registry will come from Rangliste. A manual crosswalk CSV will map Rangliste club labels to canonical clubs for the first pass. Tournament resolution will use Rangliste player-to-club associations first. Published tournament data will include a canonical Verein column and mode-based Club identity.
+
+A publish-time flag will toggle between club and Verein reporting modes. In club mode, the Club column holds the resolved club. In Verein mode, it aggregates by Verein while preserving the original club in a separate history column. This prevents the Verein from overwhelming club history records.
+
+The column design is now fixed. `Club` will hold the resolved reporting identity. `Verein` will hold the canonical Rangliste value. `Affiliation Club` will hold the original club for history stitching. In Verein reporting mode, tournament statistics roll up under the Verein, yet the club history table continues to list individual club stints.
+
+A concrete example clarifies the history logic. Koller played for Ratisbona, quit the club, and remained an Einzelmitglied in BV 68. The club history table would show both the Ratisbona stint and the BV 68 entry.
+
+Player pages will source club history from `Affiliation Club` when available, otherwise falling back to `Club`. For Einzelmitglied players, the Verein serves as the club history identity.
+
+Tournament rows will prefer the Rangliste-derived affiliation club. League rows will use the current club.
+
+Aggregation rules are now explicit. Club mode groups tournament games by resolved club. Verein mode groups by Verein when available, otherwise by club.
+
+The column design is being simplified. A `History Club` column may be added to track club stints separately from the reporting `Club` identity. Alternatively, `Club` could be set dynamically at publish time via a config flag, while `Verein` is always published.
+
+The frontend will keep reading the `Club` column from the API. The backend player service will use `History Club` for club history stitching instead. Three new columns are defined: `Verein`, `History Club`, and `Affiliation Source` for optional audit trails. In club reporting mode, `Club` will hold the resolved canonical club, or the Verein for Einzelmitglied players.
+
+In Verein reporting mode, `Club` will carry the Verein for tournament aggregation, while `History Club` preserves the original club for history stitching. The player service will read `Club` for competition rows and `History Club` for club history when available. This differs from the current frontend approach, which builds club history directly from the season competition rows' `club` field.
+
+The backend will expose `history_club` on competition rows. The frontend will fall back to `club` when `history_club` is missing. This keeps the frontend unchanged.
+
+The implementation plan is now concrete. The first files to modify are `aktive_mitglieder_registry.py` and `affiliation_registry.py`.
+
+The implementation plan now covers eleven specific files. A new relational CSV will seed the manual Rangliste club crosswalk. Dedicated modules will handle tournament club resolution and data normalization. Two scripts will build the affiliation registry and audit any remaining club resolution gaps. The schema will gain the new columns. The published dataset builder will ingest the registry and feed it into normalization. Finally, the player service will attach the history club identity to each competition row.
+
+The frontend will consume `history_club` in `playerClubHistory.ts` and `usePlayer.ts`. Unit tests will cover the new resolution logic. A `TOURNAMENT_AFFILIATION_REPORTING` environment variable will drive the club-versus-Verein switch, defaulting to club. The transform will run at the end of tournament resolution. An `app_season_to_folder_slug` helper may be added if missing. The affiliation registry job will be wired into the existing publish pipeline.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:/Users/cfell/repositories/bowlyzer_deploy/scripts/build_published_dataset.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:/Users/cfell/repositories/bowlyzer_deploy/data_access/players_registry.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:/Users/cfell/repositories/bowlyzer_deploy/frontend/src/lib/playerClubHistory.ts</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The requirements are now clear. Implementation will proceed step by step.
+
+Refining the club history logic. The API's `history_club` field will drive most decisions. Einzelmitglied tournaments will display the verein. Club tournaments will keep showing the club. League rows will use the team club. Season collection will include seasons with a `history_club`. `resolveClubForSeason` will prefer the league row's club or history, falling back to the tournament row.
+
+Implementation begins with the aktive parser extension and affiliation registry module. Einzelmitglied detection will use case-insensitive matching. The verein registry will accumulate distinct verein values and aliases across seasons. The affiliation index will store raw and canonical club and verein identifiers, plus an is_einzelmitglied flag. A CSV crosswalk file will map raw rangliste club names to canonical ones.
+
+Unmapped clubs remain as raw rangliste entries with gaps reported. The tournament resolution logic checks the existing clubs registry first, then attempts a same-season lookup against the affiliation index.
+
+Neighboring seasons within a one-season radius will serve as fallback when no same-season entry exists. The resolver marks these as extrapolation. A dedicated fallback for raw Einzelmitglied labels against the verein registry is deferred. When resolving an Einzelmitglied affiliation, both the history club and the reporting club will default to the canonical verein.
+
+Einzelmitglied entries will report the canonical verein as both club and verein. Non-Einzelmitglied entries will report the canonical club as club and the canonical verein as verein. Missing crosswalk mappings will leave the raw club name as-is with a reported gap. Clubs already resolved by the league registry may bypass rangliste direct lookup.
+
+Rangliste will always enrich the Verein and History Club columns when a player lookup succeeds, even if the Club was already resolved by the league registry. The resolver will prefer the rangliste club for History Club over any league-registry result. This two-step flow applies the existing clubs registry first, then runs tournament affiliation resolution second.
+
+Raw Einzelmitglied labels that lack a player lookup will be kept as-is and flagged as gaps. Labels matching the verein registry will be normalized, with history_club set to the verein for Einzelmitglied entries and left unchanged otherwise. Rangliste lookups will promote the raw club name directly rather than deriving it from a verein label. The affiliation registry will be built by extending the aktive workbook parser to yield affiliation rows, constructing a dataframe keyed by player and season, and accumulating distinct verein values with aliases.
+
+Parquet files will be published for the affiliation index and verein registry. The exact database paths need to be added to `database/paths.py`.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:/Users/cfell/repositories/bowlyzer_deploy/database/paths.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:/Users/cfell/repositories/bowlyzer_deploy/frontend/src/hooks/usePlayer.ts</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Reviewing the remaining paths.py file to understand the clubs_registry path pattern.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy/database/paths.py",
+  "pattern": "clubs_registry|players_registry"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy/database/paths.py",
+  "pattern": "clubs_registry|players_registry",
+  "topFiles": [
+    {
+      "matchCount": 4,
+      "uri": "database/paths.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 4
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Beginning implementation now.
+
+Designing the active membership registry structure. A frozen `AktiveAffiliationRow` dataclass will hold player ID, canonical name, season, club, verein, and an `is_einzelmitglied` flag. Considering whether to extend the existing `AktivePlayerRow` or add parallel parsing logic.
+
+Settled on extending `AktivePlayerRow` directly rather than creating a separate dataclass. Optional `club` and `verein` fields will be added alongside an `is_einzelmitglied` property. `row_to_aktive_player` will parse these columns when present. Next steps include building the full `affiliation_registry.py` module and adding a tournament club resolution module with a reporting mode. Constants for that mode will live in a small config module.
+
+The environment variable `BOWLYZER_TOURNAMENT_AFFILIATION_REPORTING` will switch between `club` and `verein` reporting modes. Proceeding to write the code.</details></think>
+
+_**Agent (default)**_
+
+Implementing core modules: extending the Aktive parser, then building affiliation registry and tournament resolution.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/cfell/repositories/bowlyzer_deploy/data_access/schema.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/cfell/repositories/bowlyzer_deploy/data_access/aktive_mitglieder_registry.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+The string to replace was not found in the file.
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/cfell/repositories/bowlyzer_deploy/data_access/aktive_mitglieder_registry.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/cfell/repositories/bowlyzer_deploy/data_access/aktive_mitglieder_registry.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Fixing imports for `normalize_unicode_label` and `folder_slug_to_app_season` in `aktive_mitglieder_registry.py`.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:/Users/cfell/repositories/bowlyzer_deploy/data_access/aktive_mitglieder_registry.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I need to add imports for `normalize_unicode_label` and `folder_slug_to_app_season`. I also need to verify whether `EINZELMITGLIED_LABEL` and `is_einzelmitglied_club` were placed before those imports, since that would be incorrect.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:/Users/cfell/repositories/bowlyzer_deploy/data_access/aktive_mitglieder_registry.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The required imports for normalize_unicode_label and folder_slug_to_app_season are being added.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/cfell/repositories/bowlyzer_deploy/data_access/aktive_mitglieder_registry.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Creating `affiliation_registry.py` and `tournament_club_resolution.py`.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/cfell/repositories/bowlyzer_deploy/data_access/affiliation_registry.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/cfell/repositories/bowlyzer_deploy/data_access/tournament_club_resolution.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+A bug was found in tournament_club_resolution.py: the @dataclass decorator was used before importing dataclass.
+
+Fixing the dataclass import bug in tournament_club_resolution.py. The verein-only fallback logic is correct: without rangliste, both history and reporting should resolve to verein. For Einzelmitglied entries missing a verein, they should remain unresolved rather than defaulting to a placeholder.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/cfell/repositories/bowlyzer_deploy/data_access/tournament_club_resolution.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+The string to replace was not found in the file.
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/cfell/repositories/bowlyzer_deploy/database/relational_csv/rangliste_club_crosswalk.csv</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Checking paths.py near the players_registry_csv reference.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:/Users/cfell/repositories/bowlyzer_deploy/database/paths.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Paths can now be added correctly.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/cfell/repositories/bowlyzer_deploy/database/paths.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/cfell/repositories/bowlyzer_deploy/data_access/tournament_data_normalization.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/cfell/repositories/bowlyzer_deploy/data_access/tournament_data_normalization.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/cfell/repositories/bowlyzer_deploy/data_access/tournament_data_normalization.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/cfell/repositories/bowlyzer_deploy/data_access/tournament_data_normalization.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/cfell/repositories/bowlyzer_deploy/data_access/tournament_data_normalization.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Fixing a broken import for `apply_players_registry` in `tournament_data_normalization.py`.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:/Users/cfell/repositories/bowlyzer_deploy/data_access/tournament_data_normalization.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The imports for `apply_players_registry` and `load_players_registry_df` need to be restored.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/cfell/repositories/bowlyzer_deploy/data_access/tournament_data_normalization.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Updating the player service to use history_club. The frontend will change minimally. A build script and audit script will be created. The published dataset builder will be updated. Tests will be written.
+
+A row_history_club helper will be added to player_service. Season stats competition rows will receive history_club. League rows will use history_club from team name normalization. The next step is reviewing how season stats are built and how periods.story_cl is handled.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:/Users/cfell/repositories/bowlyzer_deploy/app/services/player_service.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:/Users/cfell/repositories/bowlyzer_deploy/app/services/player_service.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+A `row_history_club` function will be added next to `row_club` and used in competition rows.
+
+`row_history_club` will extract the first non-empty value from the `history_club` column and normalize it. If that column is missing, it falls back to `row_club`. This logic will be inserted at the four key locations where `row_club` currently generates season stats output.
+
+The `"history_club"` field will be added to competition rows. League rows without that column will fall back to `row_club`. Next comes building the scripts and tests.</details></think>
+
+_**Agent (default)**_
+
+The model provided an ambiguous search string to replace
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/cfell/repositories/bowlyzer_deploy/app/services/player_service.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/cfell/repositories/bowlyzer_deploy/app/services/player_service.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The first replacement for `row_club` failed because the pattern occurs multiple times.
+
+Grepping player_service for `row_club` definitions.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy/app/services/player_service.py",
+  "pattern": "def row_club"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy/app/services/player_service.py",
+  "pattern": "def row_club",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "app\\services\\player_service.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 2
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Two definitions of row_club exist. I need to add row_history_club to both.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:/Users/cfell/repositories/bowlyzer_deploy/app/services/player_service.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:/Users/cfell/repositories/bowlyzer_deploy/app/services/player_service.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The row_history_club field needs to be added right after row_club in both locations.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/cfell/repositories/bowlyzer_deploy/app/services/player_service.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/cfell/repositories/bowlyzer_deploy/app/services/player_service.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Updating the frontend types for playerClubHistory and usePlayer.
+
+Creating scripts and tests. Backend logic will prefer history_club for club resolution across seasons, falling back to club. Verein-based reporting is handled entirely by the backend. Frontend changes remain minimal.</details></think>
+
+_**Agent (default)**_
+
+The model provided an ambiguous search string to replace
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/cfell/repositories/bowlyzer_deploy/frontend/src/lib/playerClubHistory.ts</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/cfell/repositories/bowlyzer_deploy/scripts/build_affiliation_registry.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/cfell/repositories/bowlyzer_deploy/scripts/audit_tournament_club_gaps.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+usePlayer.ts needs fixing because it contains multiple club fields.
+
+history_club will be added only to PlayerSeasonRow.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/cfell/repositories/bowlyzer_deploy/frontend/src/hooks/usePlayer.ts</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Wiring build_published_dataset.py to build the affiliation registry when players_registry runs.
+
+Adding VALID_JOBS for the affiliation registry and running it after players_registry since both use the same active workbooks. Skipping documentation updates. Writing tests for club/verein parsing, registry indexing, and tournament resolution. Removing an unused import from affiliation_registry.py.
+
+Reordering the pipeline so rangliste affiliation resolution runs before clubs_registry. This ensures reliable player-to-club associations from rangliste serve as the primary guess rather than partial resolution from clubs_registry.
+
+Tournament rows will be resolved through three stages. First rangliste same-season lookup sets club, history, and verein. Second clubs_registry handles raw labels for remaining unresolved rows. Third the verein registry resolves any remaining verein-like entries.</details></think>
+
+_**Agent (default)**_
+
+Reordering normalization so Rangliste affiliation runs before `clubs_registry`, since Rangliste is the first guess.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/cfell/repositories/bowlyzer_deploy/data_access/tournament_data_normalization.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+When the clubs registry resolves an unresolved row, the history_club field should also be populated.
+
+The clubs registry fallback must skip rows already resolved by affiliation. When the registry resolves an unresolved row, history_club should be set to the resolved club only if it is currently empty.
+
+The affiliation registry build needs to be wired into build_published_dataset right after the players registry.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/cfell/repositories/bowlyzer_deploy/data_access/tournament_data_normalization.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/cfell/repositories/bowlyzer_deploy/data_access/tournament_data_normalization.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/cfell/repositories/bowlyzer_deploy/scripts/build_published_dataset.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Removed an unused import from `affiliation_registry.py`.
+
+Writing comprehensive tests and running pytest. Updating the `aktive_mitglieder` test to include club and verein columns. Fixing `tournament_club_resolution` to use the string "unresolved" for the source equality check. Adjusting `apply_tournament_affiliation` to set `affiliation_source` to "unresolved" when no affiliation exists. Considering whether to update `affiliation_source` during the later `clubs_registry` step. Starting to write tests.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/cfell/repositories/bowlyzer_deploy/tests/data_access/test_affiliation_registry.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/cfell/repositories/bowlyzer_deploy/tests/data_access/test_tournament_club_resolution.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/cfell/repositories/bowlyzer_deploy/tests/data_access/test_aktive_mitglieder_registry.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/cfell/repositories/bowlyzer_deploy/tests/data_access/test_aktive_mitglieder_registry.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/cfell/repositories/bowlyzer_deploy/tests/data_access/test_aktive_mitglieder_registry.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The crosswalk test needs fixing. The dictionary key should use `club_identity_key` with casefold applied, matching how the lookup key is generated.
+
+The test now uses `club_identity_key` for its crosswalk keys. Unused imports and functions are being removed from the test and registry files. Tests are next.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/cfell/repositories/bowlyzer_deploy/tests/data_access/test_affiliation_registry.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/cfell/repositories/bowlyzer_deploy/tests/data_access/test_affiliation_registry.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy/data_access/affiliation_registry.py",
+  "pattern": "build_registry_dataframe_from_aktive"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:/Users/cfell/repositories/bowlyzer_deploy/data_access/affiliation_registry.py",
+  "pattern": "build_registry_dataframe_from_aktive",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "data_access\\affiliation_registry.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 1
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Removing an unused import from affiliation_registry.py.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/cfell/repositories/bowlyzer_deploy/data_access/affiliation_registry.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd "c:/Users/cfell/repositories/bowlyzer_deploy"; uv run pytest tests/data_access/test_affiliation_registry.py tests/data_access/test_tournament_club_resolution.py tests/data_access/test_aktive_mitglieder_registry.py tests/data_access/test_clubs_registry.py -q</summary>
+
+```bash
+cd "c:/Users/cfell/repositories/bowlyzer_deploy"; uv run pytest tests/data_access/test_affiliation_registry.py tests/data_access/test_tournament_club_resolution.py tests/data_access/test_aktive_mitglieder_registry.py tests/data_access/test_clubs_registry.py -q
+```
+
+```
+......................F.                                                 [100%]
+================================== FAILURES ===================================
+____________________ test_propose_fuzzy_after_prefix_strip ____________________
+
+    def test_propose_fuzzy_after_prefix_strip() -&gt; None:
+        league = pd.DataFrame(
+            [
+                {
+                    "Season": "24/25",
+                    "League": "LL N1",
+                    "Team": "Ratisbona Regensburg 2",
+                    "Opponent": "X 1",
+                    "Computed Data": "False",
+                },
+            ]
+        )
+        reg = build_registry_dataframe_from_league(league)
+        lookup = build_alias_to_canonical(reg)
+        proposals = propose_club_resolution(
+            "REG - Ratisbona",
+            lookup,
+            reg["canonical_name"].tolist(),
+        )
+&gt;       assert ("Ratisbona Regensburg", "fuzzy_after_prefix_strip") in proposals
+E       AssertionError: assert ('Ratisbona Regensburg', 'fuzzy_after_prefix_strip') in [('Ratisbona Regensburg', 'exact')]
+
+tests\data_access\test_clubs_registry.py:105: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/data_access/test_clubs_registry.py::test_propose_fuzzy_after_prefix_strip
+1 failed, 23 passed in 2.65s
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The clubs_registry test failure is pre-existing. The club_mapping now uses REG as an exact alias for Ratisbona.
+
+New tests pass. Skipping documentation updates. Checking frontend tests for playerClubHistory and history_club.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **1** result in **1** directory</summary>
+
+Directory: **c:/Users/cfell/repositories/bowlyzer_deploy/frontend** (1 file)
+
+| File |
+|------|
+| `../../../../../../frontend\src\lib\playerClubHistory.ts` |
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "c:/Users/cfell/repositories/bowlyzer_deploy/data_access/tournament_data_normalization.py",
+    "c:/Users/cfell/repositories/bowlyzer_deploy/data_access/tournament_club_resolution.py",
+    "c:/Users/cfell/repositories/bowlyzer_deploy/data_access/affiliation_registry.py",
+    "c:/Users/cfell/repositories/bowlyzer_deploy/frontend/src/lib/playerClubHistory.ts"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "c:/Users/cfell/repositories/bowlyzer_deploy/data_access/tournament_data_normalization.py"
+    },
+    {
+      "relativeWorkspacePath": "c:/Users/cfell/repositories/bowlyzer_deploy/data_access/tournament_club_resolution.py"
+    },
+    {
+      "relativeWorkspacePath": "c:/Users/cfell/repositories/bowlyzer_deploy/data_access/affiliation_registry.py"
+    },
+    {
+      "relativeWorkspacePath": "c:/Users/cfell/repositories/bowlyzer_deploy/frontend/src/lib/playerClubHistory.ts"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Updating the task list and preparing a summary.
+
+Unresolved cases will fall back to setting history_club. A `--tournament-affiliation-reporting` flag will let users switch between club and verein reporting modes. The crosswalk remains empty for now. A gap report script will count unmapped clubs. An environment variable option will also be added to the dataset builder.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: c:/Users/cfell/repositories/bowlyzer_deploy/scripts/build_published_dataset.py</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Adding a `--tournament-affiliation-reporting` argument and passing it through to `merge_tournament_sources`.</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/cfell/repositories/bowlyzer_deploy/scripts/build_published_dataset.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/cfell/repositories/bowlyzer_deploy/scripts/build_published_dataset.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/cfell/repositories/bowlyzer_deploy/scripts/build_published_dataset.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: c:/Users/cfell/repositories/bowlyzer_deploy/scripts/build_published_dataset.py</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="todo_write">
+<details>
+<summary>Tool use: **todo_write**</summary>
+
+
+Parameters:
+
+```json
+{
+  "merge": true
+}
+```
+Result:
+
+```json
+{
+  "finalTodos": [
+    {
+      "content": "Extend Aktive parser: Club/Verein columns → affiliation rows",
+      "id": "1",
+      "status": "completed"
+    },
+    {
+      "content": "Build affiliation_registry + vereine_registry + manual crosswalk",
+      "id": "2",
+      "status": "completed"
+    },
+    {
+      "content": "Tournament club resolution (rangliste first, gap reporting)",
+      "id": "3",
+      "status": "completed"
+    },
+    {
+      "content": "Wire into publish pipeline + player reporting (club vs verein switch)",
+      "id": "4",
+      "status": "completed"
+    },
+    {
+      "content": "Tests + audit script for gap evaluation",
+      "id": "5",
+      "status": "completed"
+    }
+  ],
+  "initialTodos": [
+    {
+      "content": "Extend Aktive parser: Club/Verein columns → affiliation rows",
+      "id": "1",
+      "status": "in_progress"
+    },
+    {
+      "content": "Build affiliation_registry + vereine_registry + manual crosswalk",
+      "id": "2",
+      "status": "pending"
+    },
+    {
+      "content": "Tournament club resolution (rangliste first, gap reporting)",
+      "id": "3",
+      "status": "pending"
+    },
+    {
+      "content": "Wire into publish pipeline + player reporting (club vs verein switch)",
+      "id": "4",
+      "status": "pending"
+    },
+    {
+      "content": "Tests + audit script for gap evaluation",
+      "id": "5",
+      "status": "pending"
+    }
+  ],
+  "success": true,
+  "wasMerge": true
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="todo_write"><details>
+<summary>Tool use: **todo_write**</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I will summarize the implementation and explain how to use it to evaluate gaps.</details></think>
+
+_**Agent (default)**_
+
+Implemented the Rangliste-first tournament affiliation pipeline per your constraints. Summary:
+
+## Architecture
+
+**Three published artifacts** (built alongside `players_registry` on publish):
+
+| File | Content |
+|------|---------|
+| `affiliation_index.parquet` | `(player_id, season) → club, verein, is_einzelmitglied` |
+| `vereine_registry.parquet` | Canonical Vereine + member clubs (derived from Rangliste) |
+| `rangliste_club_crosswalk.csv` | **Manual only** — maps Rangliste club labels → league canonical clubs |
+
+**Three new tournament columns** (set at publish):
+
+| Column | Role |
+|--------|------|
+| `Club` | Reporting identity (club or Verein depending on mode) |
+| `History Club` | Club-history stints — **never** swapped to Verein unless Einzelmitglied |
+| `Verein` | Canonical Verein from Rangliste |
+| `Affiliation Source` | Audit tag (`rangliste_same_season`, `einzelmitglied_verein`, …) |
+
+## Resolution order (tournaments only)
+
+1. Normalize player IDs / names
+2. **Rangliste same-season** lookup (first guess)
+3. Neighbor season ±1 (tagged as extrapolation gap)
+4. Einzelmitglied → keep **Verein** name (history + reporting in club mode)
+5. `clubs_registry` fallback **only** on still-unresolved rows
+
+## Reporting mode switch (publish-time only)
+
+```bash
+# Default: tournament Club column = resolved club (Einzelmitglied → Verein)
+uv run python scripts/build_published_dataset.py --job tournament
+
+# Verein-based game reporting; History Club still preserves club stints
+uv run python scripts/build_published_dataset.py --job tournament --tournament-affiliation-reporting verein
+```
+
+Or env: `BOWLYZER_TOURNAMENT_AFFILIATION_REPORTING=verein`
+
+## Club history (player page)
+
+- Backend sends `history_club` on competition rows
+- Frontend `playerClubHistory.ts` uses `history_club ?? club`
+- Verein shows as a stint only for Einzelmitglied — no extra UI hints
+
+## Evaluate the gap (your step 1)
+
+```bash
+# Build affiliation index from Aktive workbooks (needs legacy_scrape)
+uv run python scripts/build_affiliation_registry.py --write-csv
+
+# Report crosswalk gaps + unresolved tournament rows
+uv run python scripts/audit_tournament_club_gaps.py
+```
+
+Output: `tournament_affiliation_gaps.csv` in work dir, plus counts for:
+- Unmapped Rangliste club labels (extend `database/relational_csv/rangliste_club_crosswalk.csv`)
+- Rows needing neighbor-season extrapolation
+- Rows with no Rangliste match
+
+Crosswalk file is empty except headers — fill manually as you evaluate. Unmapped Rangliste clubs keep their raw label as `club_canonical` until mapped.
+
+## Key files
+
+- `data_access/aktive_mitglieder_registry.py` — parses Club/Verein columns
+- `data_access/affiliation_registry.py` — index + Verein registry builder
+- `data_access/tournament_club_resolution.py` — resolution + reporting modes
+- `scripts/build_affiliation_registry.py`, `scripts/audit_tournament_club_gaps.py`
+
+23 new/updated tests pass. One pre-existing `test_clubs_registry` failure (`REG - Ratisbona` is now an exact alias via `club_mapping.csv`) — unrelated to this work.
+
+**Next step for you:** run `build_affiliation_registry.py` + `audit_tournament_club_gaps.py` against your Aktive scrape, then seed `rangliste_club_crosswalk.csv` from the gap report. After that, re-publish tournaments to fix Koller/Wölki noise.

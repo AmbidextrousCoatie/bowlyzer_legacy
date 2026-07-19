@@ -29,6 +29,10 @@ export type ClubNameValidationResponse = {
     mtime_utc: string | null;
     row_count: number;
   };
+  club_mapping?: {
+    path: string;
+    present: boolean;
+  };
 };
 
 export type ClubNameMappingSaveResponse = {
@@ -36,6 +40,17 @@ export type ClubNameMappingSaveResponse = {
   path: string;
   row_count: number;
   mtime_utc: string;
+  club_mapping?: {
+    path: string;
+    canonical_count: number;
+    aliases_added: number;
+    resolved_rows: number;
+  };
+  clubs_registry?: {
+    aliases_added: number;
+    skipped_unknown_canonical: number;
+    row_count: number;
+  };
 };
 
 const STALE_MS = 10 * 60 * 1000;

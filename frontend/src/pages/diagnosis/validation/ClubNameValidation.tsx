@@ -1,6 +1,7 @@
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
-import { ClubSearch } from "../../../components/ClubSearch";import {
+import { ClubSearch } from "../../../components/ClubSearch";
+import {
   useClubNameValidation,
   useSaveClubNameMappings,
   type ClubNameValidationRow,
@@ -62,16 +63,23 @@ export function ClubNameValidation() {
       setSaveError(
         t(
           "ui.diagnosis.club_mapping_save_empty",
-          "Keine Zuordnungen ausgewählt. Bitte mindestens einen Verein wählen.",
+          "Keine Zuordnungen ausgewählt. Bitte mindestens einen Club wählen.",
         ),
       );
       return;
     }
     try {
       const result = await saveMutation.mutateAsync(mappings);
+      const added = result.club_mapping?.aliases_added;
       setSaveMessage(
-        `${result.row_count} ${t("ui.diagnosis.club_mapping_save_ok", "Zuordnung(en) gespeichert.")}`,
+        added != null
+          ? `${result.row_count} ${t(
+              "ui.diagnosis.club_mapping_save_ok_committed",
+              "Zuordnung(en) in club_mapping.csv übernommen",
+            )} (+${added} Alias)`
+          : `${result.row_count} ${t("ui.diagnosis.club_mapping_save_ok", "Zuordnung(en) gespeichert.")}`,
       );
+      await query.refetch();
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : String(error));
     }
@@ -88,18 +96,18 @@ export function ClubNameValidation() {
             {t("ui.diagnosis.validation_hub_title", "Validierung")}
           </Link>
           <span className="mx-1.5">/</span>
-          <span>{t("ui.diagnosis.club_mapping_title", "Vereinszuordnung")}</span>
+          <span>{t("ui.diagnosis.club_mapping_title", "Club-Zuordnung")}</span>
         </p>
         <p className="text-label uppercase text-muted mb-2">
           {t("ui.diagnosis.eyebrow", "Diagnose")}
         </p>
         <h1 className="text-h1">
-          {t("ui.diagnosis.club_mapping_title", "Vereinszuordnung")}
+          {t("ui.diagnosis.club_mapping_title", "Club-Zuordnung")}
         </h1>
         <p className="text-body text-muted mt-2 max-w-[72ch]">
           {t(
             "ui.diagnosis.club_mapping_desc",
-            "Unaufgelöste Turnier-Vereinsnamen den kanonischen Vereinen aus der Liga-Registry zuordnen. Gespeicherte Zuordnungen landen in club_name_mapping_resolved.csv für spätere Normalisierung.",
+            "Unzugeordnete Turnier-Clubnamen dem kanonischen Club aus der Liga-Registry zuordnen. Speichern schreibt dauerhaft nach database/relational_csv/club_mapping.csv (und aktualisiert clubs_registry).",
           )}
         </p>
       </header>
@@ -119,7 +127,7 @@ export function ClubNameValidation() {
             <section className="mt-6 rounded-sm border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-body">
               {t(
                 "ui.diagnosis.club_mapping_absent",
-                "Kein Vereins-Audit gefunden. Auf dem Build-Rechner: uv run python scripts/audit_club_names.py --registry",
+                "Keine unzugeordneten Clubs gefunden (Turnierdaten und clubs_registry prüfen).",
               )}
             </section>
           )}
@@ -127,7 +135,7 @@ export function ClubNameValidation() {
           <section className="mt-6 grid gap-3 grid-cols-2 sm:grid-cols-4">
             <div className="rounded-sm border border-border bg-surface px-4 py-3">
               <p className="text-label uppercase text-muted">
-                {t("ui.diagnosis.club_mapping_kpi_unresolved", "Unaufgelöst")}
+                {t("ui.diagnosis.club_mapping_kpi_unresolved", "Unzugeordnet")}
               </p>
               <p className="text-h3 mt-1 tabular-nums">{query.data.summary.unresolved}</p>
             </div>
@@ -141,7 +149,7 @@ export function ClubNameValidation() {
             </div>
             <div className="rounded-sm border border-border bg-surface px-4 py-3">
               <p className="text-label uppercase text-muted">
-                {t("ui.diagnosis.club_mapping_kpi_registry", "Registry")}
+                {t("ui.diagnosis.club_mapping_kpi_registry", "Kanonische Clubs")}
               </p>
               <p className="text-h3 mt-1 tabular-nums">{canonicalNames.length}</p>
             </div>
@@ -162,40 +170,41 @@ export function ClubNameValidation() {
             >
               {saveMutation.isPending
                 ? t("ui.common.saving", "Speichern…")
-                : t("ui.diagnosis.club_mapping_save", "Speichern")}
+                : t("ui.diagnosis.club_mapping_save", "In club_mapping.csv speichern")}
             </button>
             <p className="text-caption text-muted">
               {resolvedCount} / {rows.length}{" "}
               {t("ui.diagnosis.club_mapping_selected", "ausgewählt")}
+              {" · "}
+              {t("ui.diagnosis.standings_kpi_source", "Quelle")}: {query.data.source}
             </p>
-            {saveMessage && <p className="text-body text-emerald-700 dark:text-emerald-400">{saveMessage}</p>}
+            {saveMessage && (
+              <p className="text-body text-emerald-700 dark:text-emerald-400">{saveMessage}</p>
+            )}
             {saveError && <p className="text-body text-rose-600">{saveError}</p>}
           </div>
 
           <section className="mt-8 rounded-sm border border-border bg-surface overflow-x-auto w-full">
             <div className="px-4 pt-4 pb-2 flex flex-wrap items-baseline justify-between gap-2">
               <h2 className="text-h3">
-                {t("ui.diagnosis.club_mapping_table", "Unaufgelöste Vereinsnamen")}
+                {t("ui.diagnosis.club_mapping_table", "Unzugeordnete Clubnamen")}
               </h2>
               <p className="text-caption text-muted">
                 {rows.length} {t("ui.diagnosis.standings_rows", "Zeilen")}
-                {query.data.report_mtime_utc
-                  ? ` · Report ${new Date(query.data.report_mtime_utc).toLocaleString()}`
-                  : null}
               </p>
             </div>
             <table className="w-full text-body text-left">
               <thead>
                 <tr className="border-t border-border text-label uppercase text-muted">
                   <th className="px-4 py-2 font-medium min-w-[14rem]">
-                    {t("ui.diagnosis.club_mapping_col_label", "Turnier-Verein")}
+                    {t("ui.diagnosis.club_mapping_col_label", "Turnier-Club")}
                   </th>
                   <th className="px-4 py-2 font-medium">Zeilen</th>
                   <th className="px-4 py-2 font-medium min-w-[10rem]">
                     {t("ui.diagnosis.club_mapping_col_proposal", "Vorschlag")}
                   </th>
                   <th className="px-4 py-2 font-medium min-w-[18rem]">
-                    {t("ui.diagnosis.club_mapping_col_registry", "Registry-Verein")}
+                    {t("ui.diagnosis.club_mapping_col_registry", "Kanonischer Club")}
                   </th>
                 </tr>
               </thead>
@@ -219,13 +228,20 @@ export function ClubNameValidation() {
                           value={selected}
                           clubs={canonicalNames}
                           isLoading={query.isLoading}
-                          placeholder={t("ui.diagnosis.club_mapping_select", "Team wählen")}
-                          ariaLabel={t("ui.diagnosis.club_mapping_col_registry", "Registry-Verein")}
+                          placeholder={t(
+                            "ui.diagnosis.club_mapping_select",
+                            "Club tippen (Fuzzy-Suche)…",
+                          )}
+                          ariaLabel={t(
+                            "ui.diagnosis.club_mapping_col_registry",
+                            "Kanonischer Club",
+                          )}
                           clearAriaLabel={t("ui.team.clear_club", "Auswahl löschen")}
                           containerClassName="relative w-full min-w-[16rem] max-w-none"
                           onSelect={(club) => updateSelection(row.club_label, club ?? "")}
                         />
-                      </td>                    </tr>
+                      </td>
+                    </tr>
                   );
                 })}
               </tbody>
@@ -234,22 +250,25 @@ export function ClubNameValidation() {
               <p className="px-4 py-6 text-body text-muted">
                 {t(
                   "ui.diagnosis.club_mapping_empty",
-                  "Keine unaufgelösten Vereinsnamen — alle Turnier-Labels passen zur Registry.",
+                  "Keine unzugeordneten Clubnamen — alle Turnier-Labels passen zur Registry.",
                 )}
               </p>
             )}
           </section>
 
-          {query.data.saved_mapping.present && (
-            <p className="mt-4 text-caption text-muted font-mono break-all">
-              {t("ui.diagnosis.club_mapping_file", "Datei")}: club_name_mapping_resolved.csv
-              {query.data.saved_mapping.mtime_utc
-                ? ` · ${new Date(query.data.saved_mapping.mtime_utc).toLocaleString()}`
-                : null}
-            </p>
-          )}
+          <p className="mt-4 text-caption text-muted font-mono break-all">
+            {t("ui.diagnosis.club_mapping_file", "Dauerhaft")}:{" "}
+            {query.data.club_mapping?.path ?? "database/relational_csv/club_mapping.csv"}
+          </p>
         </>
       )}
     </div>
   );
+}
+
+/** Old /vereine URL → /clubs */
+export function LegacyVereineRedirect() {
+  const [searchParams] = useSearchParams();
+  const suffix = searchParams.toString();
+  return <Navigate to={`/diagnose/validierung/clubs${suffix ? `?${suffix}` : ""}`} replace />;
 }

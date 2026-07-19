@@ -135,12 +135,46 @@ def test_club_legends_ranks_teams_and_leagues():
     assert "Single, S" not in [e["player_name"] for e in result["most_leagues_seen"]]
 
 
-def test_club_legends_unknown_club_returns_empty_lists():
-    svc = _service_with_df([_league_row()])
-    svc._league_service.resolve_club_name.return_value = ""
-    result = svc.get_club_legends("Missing Club")
-    assert result["most_seasons"] == []
-    assert result["most_games"] == []
+def test_club_legends_uses_registry_canonical_name(monkeypatch):
+    """Same player_id with seasonal spelling variants → one canonical label."""
+    rows = []
+    for season, name, score in (
+        ("12/13", "Glasl, Hans-Jürgen Jun", 220),
+        ("13/14", "Glasl, Hans Jürgen Jun.", 219),
+        ("14/15", "Glasl Jun., Hans-Jürgen", 218),
+    ):
+        for _ in range(8):
+            rows.append(
+                _league_row(
+                    **{
+                        Columns.season: season,
+                        Columns.player_name: name,
+                        Columns.player_id: "7408",
+                        Columns.score: score,
+                    }
+                )
+            )
+
+    monkeypatch.setattr(
+        "data_access.players_registry.load_players_registry_df",
+        lambda: pd.DataFrame(
+            [
+                {
+                    "player_id": "7408",
+                    "canonical_name": "Glasl, Hans-Jürgen",
+                    "aliases": "",
+                    "source": "test",
+                    "player_id_legacy": "",
+                    "player_id_pass": "",
+                }
+            ]
+        ),
+    )
+
+    result = _service_with_df(rows).get_club_legends("Test Club")
+    names = [e["player_name"] for e in result["best_seasons"]]
+    assert names
+    assert set(names) == {"Glasl, Hans-Jürgen"}
 
 
 def test_get_club_legends_route_returns_json():
