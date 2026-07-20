@@ -13,6 +13,7 @@ from app.services.i18n_service import i18n_service
 from app.utils.color_constants import get_theme_color
 from data_access.adapters.data_adapter_factory import DataAdapterFactory, DataAdapterSelector
 from data_access.schema import Columns
+from data_access.text_norm import normalize_unicode_label
 
 from app.cache.league_response_cache import league_cache_put, league_cache_try_get
 from app.utils.tournament_benchmark import TournamentBenchmark, tournament_benchmark_enabled
@@ -611,8 +612,9 @@ class TournamentService:
 
         return resolve_stage_event_name(season, tournament)
 
-    def get_tournaments(self, season: Optional[str] = None) -> List[str]:
+    def get_tournaments(self, season: Optional[str] = None, club: Optional[str] = None) -> List[str]:
         df = self._get_tournament_df(season=season, tournament=None)
+        df = self._filter_df_by_club(df, club)
         from data_access.competition_schema import competition_event_column
 
         event_col = competition_event_column(df)
@@ -622,12 +624,27 @@ class TournamentService:
         groups = {normalize_tournament_group_name(name) for name in raw}
         return sorted(name for name in groups if name)
 
-    def get_seasons(self, tournament: Optional[str] = None) -> List[str]:
+    def get_seasons(self, tournament: Optional[str] = None, club: Optional[str] = None) -> List[str]:
         df = self._get_tournament_df(season=None, tournament=tournament)
+        df = self._filter_df_by_club(df, club)
         if df.empty or Columns.season not in df.columns:
             return []
         vals = [str(x).strip() for x in df[Columns.season].dropna().astype(str).tolist() if str(x).strip()]
         return sorted(list(set(vals)))
+
+    def _filter_df_by_club(self, df: pd.DataFrame, club: Optional[str]) -> pd.DataFrame:
+        """Keep rows where Club (or History Club) matches ``club`` (NFC)."""
+        needle = normalize_unicode_label(club)
+        if not needle or df is None or df.empty:
+            return df
+        mask = pd.Series(False, index=df.index)
+        if Columns.club in df.columns:
+            mask = mask | df[Columns.club].map(normalize_unicode_label).eq(needle)
+        if Columns.history_club in df.columns:
+            mask = mask | df[Columns.history_club].map(normalize_unicode_label).eq(needle)
+        if not mask.any():
+            return df.iloc[0:0].copy()
+        return df.loc[mask].copy()
 
     def get_players(self, season: str, tournament: str, round_number: Optional[int] = None) -> List[str]:
         df = self._get_tournament_df(season=season, tournament=tournament)
@@ -5502,8 +5519,10 @@ class TournamentService:
         self,
         season: Optional[str] = None,
         tournament: Optional[str] = None,
+        club: Optional[str] = None,
     ) -> List[Dict[str, str]]:
         df = self._get_tournament_df(season=season, tournament=tournament)
+        df = self._filter_df_by_club(df, club)
         from data_access.competition_schema import competition_event_column
 
         event_col = competition_event_column(df)
@@ -5628,11 +5647,12 @@ class TournamentService:
         *,
         season: Optional[str] = None,
         tournament: Optional[str] = None,
+        club: Optional[str] = None,
         top_n: int = 3,
     ) -> Dict[str, Any]:
         limit = max(1, min(int(top_n or 3), 10))
         podiums: List[Dict[str, Any]] = []
-        for event in self.list_tournament_events(season=season, tournament=tournament):
+        for event in self.list_tournament_events(season=season, tournament=tournament, club=club):
             season_label = event["season"]
             tournament_label = event["tournament"]
             event_df = self._get_tournament_df(season=season_label, tournament=tournament_label)

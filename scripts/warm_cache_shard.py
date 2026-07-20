@@ -9,7 +9,8 @@ Shards:
   - league: seasons, meta/league-wide, clubs, club-legends (see ``warm_league_cache.py``)
   - player: search, seasons list, one process per all-players lifetime season, career merge,
     all-players highest-games (``season=all`` + one process per season), batched per-player
-    highest-games (career only), club-300
+    highest-games (career only), unscoped club-300, batched per-club club-300, batched
+    myClub Spieler stacks (club-filtered all-time stats for every canonical club)
   - tournament: single process (internal per-season hit/miss)
 
 Usage:
@@ -162,6 +163,7 @@ def build_cache_warm_shards(
     clubs_per_shard: int,
     season_filter: Optional[str],
     league_filter: Optional[str],
+    player_clubs_file: Optional[str] = None,
 ) -> Tuple[List[CacheWarmShard], List[CacheWarmShard]]:
     """Return (parallel_shards, finalize_shards)."""
     from app.cache.cache_warmup import seasons_for_warmup as _seasons_for_warmup
@@ -201,10 +203,18 @@ def build_cache_warm_shards(
             for p in player_catalog_players
             if str(p.get("name") or "").strip()
         ]
+        catalog_clubs = [
+            str(c).strip()
+            for c in (league_catalog.get("clubs") or [])
+            if str(c).strip()
+        ]
         for p_shard in player_mod.build_player_warm_shards(
             limited_seasons,
             players=catalog_players,
+            clubs=catalog_clubs,
+            clubs_file=player_clubs_file,
             players_per_highest_shard=PLAYERS_PER_HIGHEST_GAMES_WARM_SHARD,
+            clubs_per_myclub_shard=clubs_per_shard,
         ):
             target = finalize if p_shard.label == "player:lifetime:all" else parallel
             target.append(
@@ -605,6 +615,25 @@ def main() -> int:
             print(str(exc), file=sys.stderr)
             return 1
 
+    player_clubs_file: Optional[str] = None
+    if warm_players:
+        catalog_clubs = [
+            str(c).strip()
+            for c in (league_catalog.get("clubs") or [])
+            if str(c).strip()
+        ]
+        if catalog_clubs:
+            clubs_dir = ROOT / ".cache" / "league" / "_warm_shards"
+            clubs_dir.mkdir(parents=True, exist_ok=True)
+            clubs_path = clubs_dir / f"player_myclub_clubs__{league_database}.txt"
+            clubs_path.write_text("\n".join(catalog_clubs) + "\n", encoding="utf-8")
+            player_clubs_file = str(clubs_path)
+            print(
+                f"Catalog: wrote {len(catalog_clubs)} canonical club(s) for myClub Spieler warm "
+                f"-> {clubs_path}",
+                flush=True,
+            )
+
     parallel_shards, finalize_shards = build_cache_warm_shards(
         league_database=league_database,
         league_catalog=league_catalog,
@@ -623,6 +652,7 @@ def main() -> int:
         clubs_per_shard=args.clubs_per_shard,
         season_filter=args.season,
         league_filter=args.league,
+        player_clubs_file=player_clubs_file,
     )
 
     all_shards = parallel_shards + finalize_shards

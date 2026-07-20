@@ -9,6 +9,7 @@ import {
   usePlayerSearch,
   usePlayerSeasons,
 } from "../../hooks/usePlayer";
+import { useMyClub } from "../../hooks/useMyClub";
 import { useTranslations } from "../../hooks/useTranslations";
 import { buildPlayerClubHistory } from "../../lib/playerClubHistory";
 import { formatPlayerSearchLabel, resolvePlayerSearchEntry } from "../../lib/playerSearchLabel";
@@ -20,14 +21,16 @@ import { TrendChart } from "./blocks/TrendChart";
 export function PlayerStats() {
   const { t, formatCompetition } = useTranslations();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { active: myClubActive, resolvedClub, myClub } = useMyClub();
+  const clubFilter = myClubActive ? resolvedClub || myClub || null : null;
 
   const playerName = searchParams.get("player_name") ?? searchParams.get("player") ?? "";
   const playerId = searchParams.get("player_id") ?? "";
   const season = searchParams.get("season") ?? "all";
 
-  const playersQuery = usePlayerSearch();
-  const seasonsQuery = usePlayerSeasons(playerName, playerId);
-  const statsQuery = usePlayerLifetimeStats(playerName, playerId, season);
+  const playersQuery = usePlayerSearch(clubFilter);
+  const seasonsQuery = usePlayerSeasons(playerName, playerId, clubFilter);
+  const statsQuery = usePlayerLifetimeStats(playerName, playerId, season, clubFilter);
 
   const players = playersQuery.data ?? [];
   const knownPlayer = useMemo(
@@ -37,6 +40,29 @@ export function PlayerStats() {
         : null,
     [players, playerName, playerId],
   );
+
+  // Drop selection when Mein Club excludes the current player.
+  useEffect(() => {
+    if (!myClubActive || !clubFilter) return;
+    if (!playersQuery.isSuccess) return;
+    if (!playerName && !playerId) return;
+    if (knownPlayer) return;
+    const next = new URLSearchParams(searchParams);
+    next.delete("player_name");
+    next.delete("player");
+    next.delete("player_id");
+    next.delete("season");
+    setSearchParams(next, { replace: true });
+  }, [
+    myClubActive,
+    clubFilter,
+    playersQuery.isSuccess,
+    knownPlayer,
+    playerName,
+    playerId,
+    searchParams,
+    setSearchParams,
+  ]);
 
   useEffect(() => {
     if (!playersQuery.isSuccess || !knownPlayer) return;
@@ -114,7 +140,9 @@ export function PlayerStats() {
 
   const headlineSuffix = hasPlayerSelection
     ? playerName
-    : t("ui.player.all_players_scope", "Alle Spieler");
+    : myClubActive && clubFilter
+      ? t("ui.player.club_players_scope", "Spieler · {club}").replace("{club}", clubFilter)
+      : t("ui.player.all_players_scope", "Alle Spieler");
 
   return (
     <div className="mx-auto max-w-[1280px] px-8 pt-12 pb-24">
@@ -123,9 +151,8 @@ export function PlayerStats() {
           {t("ui.player.title", "Bowl-A-Lyzer")}
         </p>
         <h1 className="text-h1">
-          {t("ui.player.stats_headline", "Spielerstatistiken")}
-          {" "}
-          · <span className="text-muted font-normal">{headlineSuffix}</span>
+          {t("ui.player.stats_headline", "Spielerstatistiken")} ·{" "}
+          <span className="text-muted font-normal">{headlineSuffix}</span>
           {hasPlayerSelection && currentClub ? (
             <>
               {" "}
@@ -142,6 +169,7 @@ export function PlayerStats() {
         season={season}
         seasons={seasons}
         seasonsLoading={seasonsQuery.isPending}
+        clubFilter={clubFilter}
         onPlayerSelect={selectPlayer}
         onSeasonSelect={selectSeason}
         t={t}
@@ -185,7 +213,9 @@ export function PlayerStats() {
               <>
                 <LifetimeStats
                   stats={lifetime}
-                  playerId={hasPlayerSelection ? playerId || knownPlayer?.id || undefined : undefined}
+                  playerId={
+                    hasPlayerSelection ? playerId || knownPlayer?.id || undefined : undefined
+                  }
                   allPlayersScope={allPlayersScope}
                   t={t}
                 />
@@ -203,6 +233,7 @@ export function PlayerStats() {
                   selectedPlayerName={playerName}
                   selectedPlayerId={playerId || knownPlayer?.id || ""}
                   season={season}
+                  club={clubFilter}
                   t={t}
                 />
                 <TrendChart seasons={seasonRows} lifetime={lifetime} t={t} />
@@ -222,6 +253,7 @@ type FilterRailProps = {
   season: string;
   seasons: string[];
   seasonsLoading: boolean;
+  clubFilter?: string | null;
   onPlayerSelect: (entry: PlayerSearchEntry | null) => void;
   onSeasonSelect: (value: string) => void;
   t: (key: string, fallback?: string) => string;
@@ -230,6 +262,12 @@ type FilterRailProps = {
 function FilterRail(props: FilterRailProps) {
   const { t } = props;
   const showSeasons = props.seasons.length > 0 || props.seasonsLoading;
+  const playerPlaceholder = props.clubFilter
+    ? t("ui.player.type_name_club_placeholder", "Club-Spieler suchen…")
+    : t("ui.player.type_name_placeholder", "Name oder Spieler-ID…");
+  const clearLabel = props.clubFilter
+    ? t("ui.player.clear_player_club", "Alle Club-Spieler anzeigen")
+    : t("ui.player.clear_player", "Alle Spieler anzeigen");
 
   return (
     <div className="sticky top-0 z-10 -mx-8 border-b border-border bg-background/85 px-8 py-3 backdrop-blur">
@@ -239,9 +277,9 @@ function FilterRail(props: FilterRailProps) {
             value={props.playerName}
             players={props.players}
             isLoading={props.playersLoading}
-            placeholder={t("ui.player.type_name_placeholder", "Name oder Spieler-ID…")}
+            placeholder={playerPlaceholder}
             ariaLabel={t("ui.player.select_player", "Spieler auswählen")}
-            clearAriaLabel={t("ui.player.clear_player", "Alle Spieler anzeigen")}
+            clearAriaLabel={clearLabel}
             onSelect={props.onPlayerSelect}
           />
         </FilterField>

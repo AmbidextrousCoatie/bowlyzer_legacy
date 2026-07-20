@@ -60,6 +60,45 @@ def test_build_player_warm_shards_adds_batched_highest_games():
     )
 
 
+def test_build_player_warm_shards_adds_myclub_spieler_batches():
+    clubs = [f"Club {i}" for i in range(20)]
+    shards = player_warm.build_player_warm_shards(
+        ["24/25"],
+        clubs=clubs,
+        clubs_file="/tmp/clubs.txt",
+        clubs_per_myclub_shard=8,
+    )
+    labels = [s.label for s in shards]
+    assert labels.count("player:club-300:1/3") == 1
+    assert labels.count("player:club-300:2/3") == 1
+    assert labels.count("player:club-300:3/3") == 1
+    assert labels.count("player:myclub-spieler:1/3") == 1
+    assert labels.count("player:myclub-spieler:2/3") == 1
+    assert labels.count("player:myclub-spieler:3/3") == 1
+    club300_shard = next(s for s in shards if s.label == "player:club-300:2/3")
+    assert club300_shard.argv == (
+        "--phase",
+        "club-300-batch",
+        "--club-offset",
+        "8",
+        "--club-limit",
+        "8",
+        "--clubs-file",
+        "/tmp/clubs.txt",
+    )
+    batch_shard = next(s for s in shards if s.label == "player:myclub-spieler:2/3")
+    assert batch_shard.argv == (
+        "--phase",
+        "myclub-spieler-batch",
+        "--club-offset",
+        "8",
+        "--club-limit",
+        "8",
+        "--clubs-file",
+        "/tmp/clubs.txt",
+    )
+
+
 def test_merge_aggregate_empty_parts():
     from app.services.player_service import PlayerService
 

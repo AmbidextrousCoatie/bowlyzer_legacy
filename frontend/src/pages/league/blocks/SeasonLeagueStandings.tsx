@@ -10,6 +10,8 @@ import { HonorScoresPanel } from "./HonorScoresPanel";
 
 type Props = {
   season: string;
+  /** When set (Mein Club), only these league short names are shown. */
+  allowedLeagues?: string[] | null;
 };
 
 /**
@@ -20,20 +22,33 @@ type Props = {
  * colors don't clash across leagues. The legacy block does this by mutating
  * `teamColorMap` directly before rendering each table; we mirror that.
  */
-export function SeasonLeagueStandings({ season }: Props) {
+export function SeasonLeagueStandings({ season, allowedLeagues }: Props) {
   const { t } = useTranslations();
   const { data, isPending, isError, error } = useSeasonLeagueStandings(season);
+
+  const leagues = useMemo(() => {
+    const all = data?.leagues ?? [];
+    if (!allowedLeagues?.length) return all;
+    const allowed = new Set(allowedLeagues.map((l) => l.trim().normalize("NFC")));
+    return all.filter((row) =>
+      allowed.has(
+        String(row.league ?? "")
+          .trim()
+          .normalize("NFC"),
+      ),
+    );
+  }, [data?.leagues, allowedLeagues]);
 
   // Seed each league in order (legacy renders tables sequentially) so identical team
   // names in different leagues get independent palette cycles.
   useEffect(() => {
-    if (!data?.leagues?.length) return;
-    for (const leagueData of data.leagues) {
+    if (!leagues.length) return;
+    for (const leagueData of leagues) {
       if (leagueData.standings?.data?.length) {
         seedTeamColorsFromTablePayload(leagueData.standings, leagueData.league);
       }
     }
-  }, [data]);
+  }, [leagues]);
 
   if (isPending) {
     return <SectionSkeleton label={t("status.loading", "Lade Daten…")} />;
@@ -45,7 +60,7 @@ export function SeasonLeagueStandings({ season }: Props) {
       />
     );
   }
-  if (!data || !data.leagues || data.leagues.length === 0) {
+  if (!data || leagues.length === 0) {
     return (
       <SectionEmpty message={t("no_data_available_for", `Keine Daten für Saison ${season}`)} />
     );
@@ -53,7 +68,7 @@ export function SeasonLeagueStandings({ season }: Props) {
 
   return (
     <>
-      {data.leagues.map((leagueData) => (
+      {leagues.map((leagueData) => (
         <LeagueSection
           key={leagueData.league}
           season={season}

@@ -11,12 +11,18 @@ Phases (for ``warm_cache_shard.py`` or manual runs):
   highest-games-season — ``get_highest_individual_games`` all-players for one ``--season``
   player-highest-games — ``get_highest_individual_games`` for one ``--player-name`` / ``--player-id``
   player-highest-games-batch — same for ``--player-offset`` / ``--player-limit`` catalog slice
-  club-300        — ``get_club_300`` (all perfect games)
+  club-300        — ``get_club_300`` (all perfect games, no club filter)
+  club-300-batch  — ``get_club_300`` for ``--club-offset`` / ``--club-limit`` (games *for* each club)
+  myclub-spieler  — club-filtered Spieler stack for one ``--club`` (search, seasons,
+                    lifetime ``season=all``, highest games); games played *for* that club
+                    only (Club / Team label), not full alumni careers
+  myclub-spieler-batch — same for ``--club-offset`` / ``--club-limit`` over canonical clubs
 
 Usage:
   uv run python scripts/warm_player_cache.py --database db_player_merged_hybrid
   uv run python scripts/warm_player_cache.py --database db_player_merged_hybrid --phase lifetime-season --season 25/26
   uv run python scripts/warm_player_cache.py --database db_player_merged_hybrid --phase lifetime-career
+  uv run python scripts/warm_player_cache.py --database db_player_merged_hybrid --phase myclub-spieler --club "Donaubowler Regensburg"
   uv run python scripts/warm_player_cache.py --database db_player_merged_hybrid --catalog
 
 Hit/miss: each job skips work when a valid on-disk cache entry exists (``league_cache_try_get``).
@@ -74,16 +80,36 @@ def _player_warm_slug(player: Dict[str, str]) -> str:
 # Per-player highest-games warm only career (``season=all``); season filters build on demand.
 HIGHEST_GAMES_WARM_INCLUDE_PLAYER_SEASONS = False
 PLAYERS_PER_HIGHEST_GAMES_WARM_SHARD = 50
+# Club-filtered Spieler page (``?myClub=…``) — batch size for parallel shards.
+CLUBS_PER_MYCLUB_SPIELER_SHARD = 8
+
+
+def _club_batch_ranges(total: int, per_shard: int) -> List[Tuple[int, int]]:
+    """Return (offset, limit) pairs covering [0, total)."""
+    if per_shard < 1:
+        raise ValueError("per_shard must be >= 1")
+    if total <= 0:
+        return []
+    ranges: List[Tuple[int, int]] = []
+    offset = 0
+    while offset < total:
+        ranges.append((offset, min(per_shard, total - offset)))
+        offset += per_shard
+    return ranges
 
 
 def build_player_warm_shards(
     seasons: List[str],
     players: List[Dict[str, str]] | None = None,
     *,
+    clubs: List[str] | None = None,
+    clubs_file: str | None = None,
     skip_search: bool = False,
     skip_lifetime: bool = False,
+    skip_myclub: bool = False,
     include_career_merge: bool = True,
     players_per_highest_shard: int = PLAYERS_PER_HIGHEST_GAMES_WARM_SHARD,
+    clubs_per_myclub_shard: int = CLUBS_PER_MYCLUB_SPIELER_SHARD,
 ) -> List[PlayerWarmShard]:
     shards: List[PlayerWarmShard] = []
     if not skip_search:
@@ -133,6 +159,33 @@ def build_player_warm_shards(
                         "--player-limit",
                         str(limit),
                     ),
+                )
+            )
+    if not skip_myclub:
+        club_list = [str(c).strip() for c in (clubs or []) if str(c).strip()]
+        club_ranges = _club_batch_ranges(len(club_list), max(1, int(clubs_per_myclub_shard)))
+        clubs_file_argv: Tuple[str, ...] = (
+            ("--clubs-file", clubs_file) if clubs_file else ()
+        )
+        for batch_idx, (offset, limit) in enumerate(club_ranges):
+            n = len(club_ranges)
+            suffix = f"{batch_idx + 1}/{n}" if n > 1 else "1/1"
+            batch_argv = (
+                "--club-offset",
+                str(offset),
+                "--club-limit",
+                str(limit),
+            ) + clubs_file_argv
+            shards.append(
+                PlayerWarmShard(
+                    f"player:club-300:{suffix}",
+                    ("--phase", "club-300-batch") + batch_argv,
+                )
+            )
+            shards.append(
+                PlayerWarmShard(
+                    f"player:myclub-spieler:{suffix}",
+                    ("--phase", "myclub-spieler-batch") + batch_argv,
                 )
             )
     return shards
@@ -430,18 +483,24 @@ def warm_player_club_300(
     player_service: Any,
     database: str,
     *,
+    club: str | None = None,
     log: Callable[[str], None],
 ) -> Dict[str, int]:
     from app.utils.json_safe import json_safe
 
+    club_name = str(club or "").strip()
+    # Route always keys on ``club`` (empty string = unscoped).
+    query = {"database": database, "club": club_name}
     stats = {"built": 0, "hit": 0, "skip_empty": 0, "errors": 0}
-    query = {"database": database}
+    label = f"club={club_name!r}" if club_name else "all"
     try:
         status = _warm_one(
             "get_club_300",
             database,
             query,
-            lambda: json_safe(player_service.get_club_300_games()),
+            lambda: json_safe(
+                player_service.get_club_300_games(club=club_name or None)
+            ),
         )
         if status == "built":
             stats["built"] += 1
@@ -449,11 +508,123 @@ def warm_player_club_300(
             stats["hit"] += 1
         else:
             stats["skip_empty"] += 1
-        log(f"  get_club_300 -> {status}")
+        log(f"  get_club_300 {label} -> {status}")
     except Exception as exc:
         stats["errors"] += 1
-        log(f"  get_club_300 ERROR: {exc}")
+        log(f"  get_club_300 {label} ERROR: {exc}")
     return stats
+
+
+def warm_player_club_300_batch(
+    player_service: Any,
+    database: str,
+    clubs: List[str],
+    *,
+    log: Callable[[str], None],
+) -> Dict[str, int]:
+    totals = {"built": 0, "hit": 0, "skip_empty": 0, "errors": 0}
+    for club in clubs:
+        part = warm_player_club_300(player_service, database, club=club, log=log)
+        for key in totals:
+            totals[key] += part.get(key, 0)
+    return totals
+
+
+def _merge_warm_stats(*parts: Dict[str, int]) -> Dict[str, int]:
+    totals = {"built": 0, "hit": 0, "skip_empty": 0, "errors": 0}
+    for part in parts:
+        for key in totals:
+            totals[key] += part.get(key, 0)
+    return totals
+
+
+def warm_player_myclub_spieler(
+    player_service: Any,
+    database: str,
+    club: str,
+    *,
+    limit: int = 10,
+    log: Callable[[str], None],
+) -> Dict[str, int]:
+    """Warm caches for ``/spieler?myClub=…`` (club-filtered all-time stack)."""
+    from app.utils.json_safe import json_safe
+
+    club_name = str(club or "").strip()
+    if not club_name:
+        return {"built": 0, "hit": 0, "skip_empty": 0, "errors": 0}
+
+    log(f"  myClub Spieler club={club_name!r}")
+    stats = {"built": 0, "hit": 0, "skip_empty": 0, "errors": 0}
+
+    jobs: List[Tuple[str, Dict[str, str], Callable[[], Any]]] = [
+        (
+            "player_search",
+            {"database": database, "search": "", "club": club_name},
+            lambda: json_safe(player_service.search_players("", club=club_name)),
+        ),
+        (
+            "player_get_available_seasons",
+            {"database": database, "club": club_name},
+            lambda: json_safe(player_service.get_all_seasons(club=club_name)),
+        ),
+        (
+            "get_lifetime_stats",
+            {"database": database, "season": "all", "club": club_name},
+            lambda: json_safe(
+                player_service.get_aggregate_lifetime_stats(season="all", club=club_name)
+            ),
+        ),
+        (
+            "get_highest_individual_games",
+            {
+                "database": database,
+                "limit": str(limit),
+                "season": "all",
+                "club": club_name,
+            },
+            lambda: json_safe(
+                player_service.get_highest_individual_games(limit=limit, club=club_name)
+            ),
+        ),
+    ]
+
+    for endpoint, query, build in jobs:
+        try:
+            status = _warm_one(endpoint, database, query, build)
+            if status == "built":
+                stats["built"] += 1
+            elif status == "hit":
+                stats["hit"] += 1
+            else:
+                stats["skip_empty"] += 1
+            log(f"    {endpoint} club={club_name!r} -> {status}")
+        except Exception as exc:
+            stats["errors"] += 1
+            log(f"    {endpoint} club={club_name!r} ERROR: {exc}")
+    return stats
+
+
+def warm_player_myclub_spieler_batch(
+    player_service: Any,
+    database: str,
+    clubs: List[str],
+    *,
+    log: Callable[[str], None],
+) -> Dict[str, int]:
+    totals = {"built": 0, "hit": 0, "skip_empty": 0, "errors": 0}
+    for club in clubs:
+        part = warm_player_myclub_spieler(player_service, database, club, log=log)
+        for key in totals:
+            totals[key] += part.get(key, 0)
+    return totals
+
+
+def _canonical_clubs(player_service: Any, clubs: List[str] | None = None) -> List[str]:
+    if clubs is not None:
+        return [str(c).strip() for c in clubs if str(c).strip()]
+    from app.services.league_service import LeagueService
+
+    return LeagueService(database=player_service.database).get_available_clubs()
 
 
 def run_player_warm_phase(
@@ -466,6 +637,10 @@ def run_player_warm_phase(
     player_id: str | None = None,
     player_offset: int | None = None,
     player_limit: int | None = None,
+    club: str | None = None,
+    club_offset: int | None = None,
+    club_limit: int | None = None,
+    clubs: List[str] | None = None,
     log: Callable[[str], None] = print,
 ) -> Dict[str, int]:
     from app.services.player_service import PlayerService
@@ -511,9 +686,36 @@ def run_player_warm_phase(
         return warm_player_highest_games_batch(player_service, database, batch, log=log)
     if phase == "club-300":
         return warm_player_club_300(player_service, database, log=log)
+    if phase == "club-300-batch":
+        if club_offset is None or club_limit is None:
+            raise ValueError("--club-offset and --club-limit are required for club-300-batch")
+        all_clubs = _canonical_clubs(player_service, clubs)
+        start = max(0, int(club_offset))
+        end = start + max(0, int(club_limit))
+        return warm_player_club_300_batch(
+            player_service,
+            database,
+            all_clubs[start:end],
+            log=log,
+        )
+    if phase == "myclub-spieler":
+        if not club or not str(club).strip():
+            raise ValueError("--club is required for myclub-spieler")
+        return warm_player_myclub_spieler(player_service, database, str(club).strip(), log=log)
+    if phase == "myclub-spieler-batch":
+        if club_offset is None or club_limit is None:
+            raise ValueError("--club-offset and --club-limit are required for myclub-spieler-batch")
+        all_clubs = _canonical_clubs(player_service, clubs)
+        start = max(0, int(club_offset))
+        end = start + max(0, int(club_limit))
+        return warm_player_myclub_spieler_batch(
+            player_service,
+            database,
+            all_clubs[start:end],
+            log=log,
+        )
     if phase == "essential":
-        totals = {"built": 0, "hit": 0, "skip_empty": 0, "errors": 0}
-        for part in (
+        return _merge_warm_stats(
             warm_player_search(player_service, database, log=log),
             warm_player_seasons_list(player_service, database, log=log),
             *[
@@ -528,10 +730,7 @@ def run_player_warm_phase(
             ],
             warm_all_player_highest_games(player_service, database, log=log),
             warm_player_club_300(player_service, database, log=log),
-        ):
-            for key in totals:
-                totals[key] += part.get(key, 0)
-        return totals
+        )
     raise ValueError(f"Unknown phase: {phase!r}")
 
 
@@ -550,6 +749,9 @@ def main() -> int:
             "player-highest-games",
             "player-highest-games-batch",
             "club-300",
+            "club-300-batch",
+            "myclub-spieler",
+            "myclub-spieler-batch",
             "essential",
         ),
         default="essential",
@@ -571,10 +773,26 @@ def main() -> int:
         type=int,
         help="Required for --phase player-highest-games-batch (catalog slice length)",
     )
+    parser.add_argument("--club", help="Required for --phase myclub-spieler")
+    parser.add_argument(
+        "--club-offset",
+        type=int,
+        help="Required for --phase myclub-spieler-batch / club-300-batch (slice start)",
+    )
+    parser.add_argument(
+        "--club-limit",
+        type=int,
+        help="Required for --phase myclub-spieler-batch / club-300-batch (slice length)",
+    )
+    parser.add_argument(
+        "--clubs-file",
+        help="Optional newline-separated club names (same order as shard planner); "
+        "defaults to LeagueService clubs for this database",
+    )
     parser.add_argument(
         "--catalog",
         action="store_true",
-        help="Print JSON catalog {seasons: [...]} on stdout and exit",
+        help="Print JSON catalog {seasons, players, clubs} on stdout and exit",
     )
     parser.add_argument(
         "--rebuild",
@@ -598,12 +816,15 @@ def main() -> int:
         from app.services.player_service import PlayerService
 
         if args.catalog:
+            from app.services.league_service import LeagueService
+
             player_service = PlayerService(database=database)
             print(
                 json.dumps(
                     {
                         "seasons": player_service.get_all_seasons(),
                         "players": player_service.get_all_players(),
+                        "clubs": LeagueService(database=database).get_available_clubs(),
                     }
                 )
             )
@@ -612,7 +833,7 @@ def main() -> int:
         if args.dry_run:
             print(
                 f"[dry-run] warm_player_cache database={database!r} phase={args.phase!r} "
-                f"season={args.season!r} player_name={args.player_name!r}"
+                f"season={args.season!r} player_name={args.player_name!r} club={args.club!r}"
             )
             return 0
 
@@ -622,6 +843,18 @@ def main() -> int:
             removed = league_cache_invalidate_database(database)
             log(f"Rebuild: removed {removed} cached file(s) for {database!r}")
 
+        clubs_from_file: List[str] | None = None
+        if args.clubs_file:
+            club_path = Path(args.clubs_file).expanduser().resolve()
+            if not club_path.is_file():
+                print(f"clubs-file not found: {club_path}", file=sys.stderr)
+                return 1
+            clubs_from_file = [
+                line.strip()
+                for line in club_path.read_text(encoding="utf-8").splitlines()
+                if line.strip()
+            ]
+
         stats = run_player_warm_phase(
             database,
             args.phase,
@@ -630,6 +863,10 @@ def main() -> int:
             player_id=args.player_id,
             player_offset=args.player_offset,
             player_limit=args.player_limit,
+            club=args.club,
+            club_offset=args.club_offset,
+            club_limit=args.club_limit,
+            clubs=clubs_from_file,
             log=log,
         )
     return 1 if stats.get("errors") else 0

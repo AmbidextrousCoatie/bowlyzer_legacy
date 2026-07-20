@@ -115,6 +115,7 @@ def test_get_highest_individual_games_route(client):
         player_name="",
         player_id="",
         season="all",
+        club=None,
     )
 
 
@@ -165,6 +166,7 @@ def test_get_highest_individual_games_player_route(client):
         player_name="Alice",
         player_id="1",
         season="all",
+        club=None,
     )
 
 
@@ -183,4 +185,44 @@ def test_get_club_300_route(client):
 
     assert res.status_code == 200
     assert res.get_json() == sample
-    service.get_club_300_games.assert_called_once_with()
+    service.get_club_300_games.assert_called_once_with(club=None)
+
+
+def test_club_filter_keeps_only_games_for_club():
+    """myClub must count games bowled *for* the club, not full alumni careers."""
+    df = pd.DataFrame(
+        {
+            Columns.season: ["24/25", "24/25", "25/26", "25/26"],
+            Columns.league_name: ["BayL", "BayL", "BayL", "BayL"],
+            Columns.player_name: ["Stemmler", "Stemmler", "Stemmler", "Local"],
+            Columns.player_id: ["99", "99", "99", "1"],
+            Columns.team_name: [
+                "Donaubowler Regensburg 1",
+                "Donaubowler Regensburg 1",
+                "Rottendorf 1",
+                "Donaubowler Regensburg 2",
+            ],
+            Columns.score: [200, 210, 220, 230],
+            Columns.date: ["2024-10-01", "2024-10-08", "2025-10-01", "2025-10-02"],
+            Columns.input_data: ["true", "true", "true", "true"],
+            Columns.computed_data: ["false", "false", "false", "false"],
+        }
+    )
+    service = _service_with_df(df)
+    service._player_catalog_cache = {}
+    service._resolve_club_filter_label = lambda club: club  # type: ignore[method-assign]
+
+    filtered = service._filter_df_to_club_games(df, "Donaubowler Regensburg")
+    assert len(filtered) == 3
+    assert set(filtered[Columns.score].tolist()) == {200, 210, 230}
+    assert len(filtered[filtered[Columns.player_id] == "99"]) == 2
+
+    agg = service.get_aggregate_lifetime_stats(season="all", club="Donaubowler Regensburg")
+    assert agg is not None
+    assert agg["lifetime"]["total_games"] == 3
+    games_by_player: dict[str, int] = {}
+    for row in agg["player_season_totals"]:
+        name = str(row.get("player_name") or "")
+        games_by_player[name] = games_by_player.get(name, 0) + int(row.get("games") or 0)
+    assert games_by_player["Stemmler"] == 2
+    assert games_by_player["Local"] == 1

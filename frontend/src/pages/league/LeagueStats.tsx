@@ -8,6 +8,7 @@ import {
   useAvailableTeams,
   useAvailableWeeks,
 } from "../../hooks/useLeague";
+import { useMyClub } from "../../hooks/useMyClub";
 import { useTranslations } from "../../hooks/useTranslations";
 import { seasonForUrlQuery } from "../../lib/api";
 import {
@@ -17,6 +18,8 @@ import {
   leagueSeasonFilterLabel,
   resolveLeagueApiSeason,
 } from "../../lib/leagueSeason";
+import { leaguesForSeason } from "../../lib/myClub";
+import { normalizeUnicodeLabel, teamsForClub } from "../../lib/teamUtils";
 import { GameOverview, GameTeamDetails } from "./blocks/GameBlocks";
 import { LeagueOverview } from "./blocks/LeagueOverview";
 import { LeagueSeasonOverview } from "./blocks/LeagueSeasonOverview";
@@ -35,6 +38,7 @@ export function LeagueStats() {
   const team = searchParams.get("team") ?? "";
   const round = searchParams.get("round") ?? "";
   const { t } = useTranslations();
+  const { active: myClubActive, resolvedClub, participation, participationLoading } = useMyClub();
 
   useEffect(() => {
     setCompactPageChrome(true);
@@ -42,7 +46,13 @@ export function LeagueStats() {
   }, [setCompactPageChrome]);
 
   const seasonsQuery = useAvailableSeasons();
-  const seasonList = seasonsQuery.data ?? [];
+  const seasonList = useMemo(() => {
+    const all = seasonsQuery.data ?? [];
+    if (!myClubActive || !participation) return all;
+    const allowed = new Set(participation.seasons.map(normalizeUnicodeLabel));
+    return all.filter((s) => allowed.has(normalizeUnicodeLabel(s)));
+  }, [seasonsQuery.data, myClubActive, participation]);
+
   const resolvedSeason = useMemo(() => {
     if (!seasonsQuery.isSuccess) return null;
     return resolveLeagueApiSeason(season, seasonList, league);
@@ -54,20 +64,102 @@ export function LeagueStats() {
   const teamsQuery = useAvailableTeams(resolvedSeason, league || null);
   const roundsQuery = useAvailableRounds(resolvedSeason, league || null, week || null);
 
+  const filteredLeagues = useMemo(() => {
+    const all = leaguesQuery.data ?? [];
+    if (!myClubActive || !participation) return all;
+    const allowedList = leaguesForSeason(
+      participation,
+      isLeagueAllSeasons(season) ? null : resolvedSeason,
+    );
+    if (!allowedList) return all;
+    const allowed = new Set(allowedList.map(normalizeUnicodeLabel));
+    return all.filter(
+      (l) =>
+        allowed.has(normalizeUnicodeLabel(l.value)) ||
+        allowed.has(normalizeUnicodeLabel(l.short_name)),
+    );
+  }, [leaguesQuery.data, myClubActive, participation, season, resolvedSeason]);
+
+  const filteredTeams = useMemo(() => {
+    const all = teamsQuery.data ?? [];
+    if (!myClubActive || !resolvedClub) return all;
+    return teamsForClub(all, resolvedClub);
+  }, [teamsQuery.data, myClubActive, resolvedClub]);
+
+  // Drop stale liga filters that fall outside the club's participation.
+  useEffect(() => {
+    if (!myClubActive || participationLoading || !participation) return;
+    const next = new URLSearchParams(searchParams);
+    let changed = false;
+
+    if (
+      season &&
+      season !== LEAGUE_SEASON_LATEST &&
+      season !== LEAGUE_SEASON_ALL &&
+      !participation.seasons.some((s) => normalizeUnicodeLabel(s) === normalizeUnicodeLabel(season))
+    ) {
+      next.set("season", LEAGUE_SEASON_LATEST);
+      next.delete("league");
+      next.delete("week");
+      next.delete("team");
+      next.delete("round");
+      changed = true;
+    } else if (league) {
+      const allowedList = leaguesForSeason(
+        participation,
+        isLeagueAllSeasons(season) ? null : resolvedSeason,
+      );
+      const allowed = new Set((allowedList ?? []).map(normalizeUnicodeLabel));
+      if (!allowed.has(normalizeUnicodeLabel(league))) {
+        next.delete("league");
+        next.delete("week");
+        next.delete("team");
+        next.delete("round");
+        changed = true;
+      }
+    }
+
+    if (team && resolvedClub) {
+      const clubTeams = teamsForClub(teamsQuery.data ?? [], resolvedClub);
+      if (
+        teamsQuery.isSuccess &&
+        clubTeams.length > 0 &&
+        !clubTeams.some((tm) => normalizeUnicodeLabel(tm) === normalizeUnicodeLabel(team))
+      ) {
+        next.delete("team");
+        next.delete("round");
+        changed = true;
+      }
+    }
+
+    if (changed) setSearchParams(next, { replace: true });
+  }, [
+    myClubActive,
+    participationLoading,
+    participation,
+    season,
+    league,
+    team,
+    resolvedSeason,
+    resolvedClub,
+    teamsQuery.isSuccess,
+    teamsQuery.data,
+    searchParams,
+    setSearchParams,
+  ]);
+
   function setParam(key: string, value: string, drop: string[] = []) {
     const next = new URLSearchParams(searchParams);
     if (value === "") next.delete(key);
     else if (key === "season" && (value === LEAGUE_SEASON_ALL || value === LEAGUE_SEASON_LATEST)) {
       next.set("season", value);
-    }
-    else next.set(key, key === "season" ? seasonForUrlQuery(value) : value);
+    } else next.set(key, key === "season" ? seasonForUrlQuery(value) : value);
     drop.forEach((k) => next.delete(k));
     setSearchParams(next, { replace: false });
   }
 
   const showSeasonStandings = !!resolvedSeason && !league && !isLeagueAllSeasons(season);
-  const showLeagueOverview =
-    isLeagueAllSeasons(season) && !!league && !week && !team;
+  const showLeagueOverview = isLeagueAllSeasons(season) && !!league && !week && !team;
   const showLeagueSeasonOverview =
     !isLeagueAllSeasons(season) && !!league && !!resolvedSeason && !week && !team;
   const showMatchday = !!resolvedSeason && !!league && !!week && !team && !round;
@@ -77,6 +169,10 @@ export function LeagueStats() {
   const showGameTeamDetails = !!resolvedSeason && !!league && !!week && !!team && !!round;
 
   const seasonHeading = leagueSeasonFilterLabel(season, t);
+  const allowedLeaguesForStandings = useMemo(() => {
+    if (!myClubActive || !participation || !resolvedSeason) return null;
+    return leaguesForSeason(participation, resolvedSeason);
+  }, [myClubActive, participation, resolvedSeason]);
 
   return (
     <div className="mx-auto max-w-[1280px] px-4 pt-8 pb-24 max-lg:landscape:pt-2 lg:px-8 lg:pt-12">
@@ -87,8 +183,7 @@ export function LeagueStats() {
         <h1 className="text-h1">
           {t("league", "Liga")} ·{" "}
           <span className="text-muted font-normal">
-            {t("season", "Saison")}{" "}
-            <span className="font-mono">{seasonHeading}</span>
+            {t("season", "Saison")} <span className="font-mono">{seasonHeading}</span>
           </span>
         </h1>
       </header>
@@ -97,16 +192,16 @@ export function LeagueStats() {
         pageName={t("league_statistics", "Bowl-A-Lyzer")}
         pageHeading={`${t("league", "Liga")} · ${t("season", "Saison")} ${seasonHeading}`}
         season={season}
-        seasons={seasonsQuery.data ?? []}
-        seasonsLoading={seasonsQuery.isPending}
+        seasons={seasonList}
+        seasonsLoading={seasonsQuery.isPending || (myClubActive && participationLoading)}
         league={league}
-        leagues={leaguesQuery.data ?? []}
-        leaguesLoading={leaguesQuery.isPending}
+        leagues={filteredLeagues}
+        leaguesLoading={leaguesQuery.isPending || (myClubActive && participationLoading)}
         week={week}
         weeks={weeksQuery.data ?? []}
         weeksLoading={weeksQuery.isPending}
         team={team}
-        teams={teamsQuery.data ?? []}
+        teams={filteredTeams}
         teamsLoading={teamsQuery.isPending}
         round={round}
         rounds={roundsQuery.data ?? []}
@@ -121,7 +216,10 @@ export function LeagueStats() {
 
       <div className="mt-6 space-y-12 lg:mt-10">
         {showSeasonStandings && resolvedSeason && (
-          <SeasonLeagueStandings season={resolvedSeason} />
+          <SeasonLeagueStandings
+            season={resolvedSeason}
+            allowedLeagues={allowedLeaguesForStandings}
+          />
         )}
         {showLeagueOverview && <LeagueOverview league={league} />}
         {showLeagueSeasonOverview && resolvedSeason && (

@@ -2,6 +2,9 @@
  * Query keys for `/club` (club overview + team drill-down).
  * `club` is also used on `/diagnose/club-matrix` (multiple `club=` entries).
  * `team` is shared with `/liga` (league Mannschaft filter) — only strip when leaving both.
+ *
+ * Global ``myClub`` (see ``MY_CLUB_QUERY_KEY``) is intentionally NOT stripped here —
+ * it persists across routes until the user clears Mein Club.
  */
 export const CLUB_PATH = "/club";
 
@@ -67,10 +70,7 @@ function keepsStandingsValidationQuery(targetPath: string): boolean {
 }
 
 /** Return search params appropriate for ``targetPath`` (strip other pages' keys). */
-export function searchParamsForPath(
-  targetPath: string,
-  source: URLSearchParams,
-): URLSearchParams {
+export function searchParamsForPath(targetPath: string, source: URLSearchParams): URLSearchParams {
   const next = new URLSearchParams(source);
   const onClub = isClubPath(targetPath);
   const onClubMatrixDx = targetPath.startsWith("/diagnose/club-matrix");

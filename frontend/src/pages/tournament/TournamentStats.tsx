@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useMobileNav } from "../../context/MobileNavContext";
+import { useMyClub } from "../../hooks/useMyClub";
 import {
   usePlayerSectionForTournament,
   usePlayerTournamentResults,
@@ -13,6 +14,7 @@ import {
 } from "../../hooks/useTournament";
 import { useTranslations } from "../../hooks/useTranslations";
 import { seasonForUrlQuery } from "../../lib/api";
+import { normalizeUnicodeLabel } from "../../lib/teamUtils";
 import { resolveTournamentPlayerName } from "../../lib/tournamentPlayer";
 import { BestEfforts } from "./blocks/BestEfforts";
 import { KoBracket } from "./blocks/KoBracket";
@@ -29,6 +31,8 @@ export function TournamentStats() {
   const { setCompactPageChrome } = useMobileNav();
   const [searchParams, setSearchParams] = useSearchParams();
   const [heatmapEnabled, setHeatmapEnabled] = useState(false);
+  const { active: myClubActive, resolvedClub } = useMyClub();
+  const clubFilter = myClubActive ? resolvedClub || null : null;
 
   useEffect(() => {
     setCompactPageChrome(true);
@@ -47,11 +51,11 @@ export function TournamentStats() {
   const showPlayerOverview = !!player && !showEventDetail;
   const showPodiumOverview = !player && !showEventDetail;
 
-  const seasonsQuery = useTournamentSeasons(tournament || undefined);
-  const tournamentsQuery = useTournamentNames(season || null);
+  const seasonsQuery = useTournamentSeasons(tournament || undefined, clubFilter);
+  const tournamentsQuery = useTournamentNames(season || null, clubFilter);
   const roundsQuery = useTournamentRounds(season || null, tournament || null);
   const playersQuery = useTournamentPlayers(season || null, tournament || null, round || null);
-  const podiumsQuery = useTournamentPodiums(season || null, tournament || null);
+  const podiumsQuery = useTournamentPodiums(season || null, tournament || null, clubFilter);
   const playerResultsQuery = usePlayerTournamentResults(
     player || null,
     season || null,
@@ -76,6 +80,48 @@ export function TournamentStats() {
     showPlayerDetail ? resolvedPlayer || null : null,
   );
 
+  // Clear season/tournament when Mein Club excludes the current selection.
+  useEffect(() => {
+    if (!myClubActive || !clubFilter) return;
+    if (!seasonsQuery.isSuccess || !tournamentsQuery.isSuccess) return;
+    const seasons = seasonsQuery.data ?? [];
+    const tournaments = tournamentsQuery.data ?? [];
+    const next = new URLSearchParams(searchParams);
+    let changed = false;
+    if (
+      season &&
+      seasons.length > 0 &&
+      !seasons.some((s) => normalizeUnicodeLabel(s) === normalizeUnicodeLabel(season))
+    ) {
+      next.delete("season");
+      next.delete("tournament");
+      next.delete("round");
+      next.delete("player");
+      changed = true;
+    } else if (
+      tournament &&
+      tournaments.length > 0 &&
+      !tournaments.some((tn) => normalizeUnicodeLabel(tn) === normalizeUnicodeLabel(tournament))
+    ) {
+      next.delete("tournament");
+      next.delete("round");
+      next.delete("player");
+      changed = true;
+    }
+    if (changed) setSearchParams(next, { replace: true });
+  }, [
+    myClubActive,
+    clubFilter,
+    seasonsQuery.isSuccess,
+    seasonsQuery.data,
+    tournamentsQuery.isSuccess,
+    tournamentsQuery.data,
+    season,
+    tournament,
+    searchParams,
+    setSearchParams,
+  ]);
+
   useEffect(() => {
     if (!roundsQuery.isSuccess || !showEventDetail) return;
     if (!round) return;
@@ -85,8 +131,14 @@ export function TournamentStats() {
       next.delete("round");
       setSearchParams(next, { replace: true });
     }
-  }, [roundsQuery.isSuccess, roundsQuery.data, round, searchParams, setSearchParams, showEventDetail]);
-
+  }, [
+    roundsQuery.isSuccess,
+    roundsQuery.data,
+    round,
+    searchParams,
+    setSearchParams,
+    showEventDetail,
+  ]);
   useEffect(() => {
     if (!playersQuery.isSuccess || !player || !showEventDetail) return;
     const canonical = resolveTournamentPlayerName(player, playersQuery.data ?? []);
@@ -95,7 +147,14 @@ export function TournamentStats() {
       next.set("player", canonical);
       setSearchParams(next, { replace: true });
     }
-  }, [playersQuery.isSuccess, playersQuery.data, player, searchParams, setSearchParams, showEventDetail]);
+  }, [
+    playersQuery.isSuccess,
+    playersQuery.data,
+    player,
+    searchParams,
+    setSearchParams,
+    showEventDetail,
+  ]);
 
   function setParam(key: string, value: string, drop: string[] = []) {
     const next = new URLSearchParams(searchParams);
@@ -225,10 +284,7 @@ export function TournamentStats() {
               resolvedPlayer &&
               !playerSectionQuery.data && (
                 <p className="text-small text-muted">
-                  {t(
-                    "ui.tournament.no_player_data",
-                    "Keine Spielerdaten für diese Auswahl.",
-                  )}
+                  {t("ui.tournament.no_player_data", "Keine Spielerdaten für diese Auswahl.")}
                 </p>
               )}
           </>
@@ -306,11 +362,7 @@ export function TournamentStats() {
   );
 }
 
-function buildTournamentPageHeading(
-  tournament: string,
-  season: string,
-  player: string,
-): string {
+function buildTournamentPageHeading(tournament: string, season: string, player: string): string {
   const parts: string[] = [];
   if (player) parts.push(player);
   if (tournament) parts.push(tournament);

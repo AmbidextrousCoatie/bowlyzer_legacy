@@ -59,11 +59,11 @@ _ENDPOINT_PAYLOAD_VERSION: Dict[str, str] = {
     "get_available_players": "tournament-round-players-v1",
     "get_available_leagues": "metadata-index-v1",
     "team_get_teams": "metadata-index-v1",
-    "player_search": "player-catalog-v2-runtime-merge",
-    "player_get_available_seasons": "player-subset-v2-runtime-merge",
-    "get_lifetime_stats": "player-lifetime-v3-no-aggregate-ranks",
-    "get_highest_individual_games": "player-highest-games-v2",
-    "get_club_300": "player-club-300-v2",
+    "player_search": "player-catalog-v3-club-games",
+    "player_get_available_seasons": "player-subset-v3-club-games",
+    "get_lifetime_stats": "player-lifetime-v4-club-games",
+    "get_highest_individual_games": "player-highest-games-v3-club-games",
+    "get_club_300": "player-club-300-v3-club-games",
 }
 
 

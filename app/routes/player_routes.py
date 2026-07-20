@@ -41,20 +41,22 @@ def _jsonify_player_cached(
 @bp.route('/search')
 def search_players():
     search_term = request.args.get('search', '')
+    club = (request.args.get("club") or "").strip() or None
     player_service = get_player_service()
     cache_db = _player_cache_database(player_service)
-    cache_args = {"database": cache_db, "search": search_term or ""}
+    cache_args = {"database": cache_db, "search": search_term or "", "club": club or ""}
     return _jsonify_player_cached(
         "player_search",
         cache_db,
         cache_args,
-        lambda: player_service.search_players(search_term),
+        lambda: player_service.search_players(search_term, club=club),
     )
 
 @bp.route('/get_available_seasons')
 def get_available_seasons():
     player_name = request.args.get('player_name')
     player_id = request.args.get('player_id', '')
+    club = (request.args.get("club") or "").strip() or None
     player_service = get_player_service()
     cache_db = _player_cache_database(player_service)
     cache_args = dict(request.args)
@@ -63,7 +65,11 @@ def get_available_seasons():
         "player_get_available_seasons",
         cache_db,
         cache_args,
-        lambda: player_service.get_player_seasons(player_name or '', player_id=player_id),
+        lambda: player_service.get_player_seasons(
+            player_name or '',
+            player_id=player_id,
+            club=club,
+        ),
     )
 
 @bp.route('/get-stats')
@@ -78,6 +84,7 @@ def get_lifetime_stats():
    
     player_name = request.args.get('player_name')
     player_id = request.args.get('player_id', '')
+    club = (request.args.get("club") or "").strip() or None
     season_raw = request.args.get('season', 'all')
     season = normalize_season_query_value(season_raw) if season_raw and str(season_raw).strip().lower() != 'all' else 'all'
     
@@ -88,7 +95,7 @@ def get_lifetime_stats():
 
     def _compute():
         if not player_name and not player_id:
-            return player_service.get_aggregate_lifetime_stats(season=season)
+            return player_service.get_aggregate_lifetime_stats(season=season, club=club)
         return player_service.get_lifetime_stats(player_name or '', season=season, player_id=player_id)
 
     return _jsonify_player_cached("get_lifetime_stats", cache_db, cache_args, _compute)
@@ -104,6 +111,7 @@ def get_highest_individual_games():
 
     player_name = request.args.get('player_name') or ''
     player_id = request.args.get('player_id', '')
+    club = (request.args.get("club") or "").strip() or None
     season_raw = request.args.get('season', 'all')
     season = (
         normalize_season_query_value(season_raw)
@@ -126,18 +134,20 @@ def get_highest_individual_games():
             player_name=player_name,
             player_id=player_id,
             season=season,
+            club=club,
         ),
     )
 
 
 @bp.route('/get_club_300')
 def get_club_300():
+    club = (request.args.get("club") or "").strip() or None
     player_service = get_player_service()
     cache_db = _player_cache_database(player_service)
-    cache_args = {"database": cache_db}
+    cache_args = {"database": cache_db, "club": club or ""}
     return _jsonify_player_cached(
         "get_club_300",
         cache_db,
         cache_args,
-        player_service.get_club_300_games,
+        lambda: player_service.get_club_300_games(club=club),
     )

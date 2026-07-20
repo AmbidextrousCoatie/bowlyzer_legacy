@@ -11,7 +11,6 @@ import {
   ChevronsRight,
   Home as HomeIcon,
   Menu,
-  Search,
   FileText,
   Settings,
   Star,
@@ -25,6 +24,7 @@ import {
 import { Link, NavLink, useSearchParams } from "react-router-dom";
 import { AppLogo } from "./AppLogo";
 import { DatabaseSelector } from "./DatabaseSelector";
+import { MyClubControl } from "./MyClubControl";
 import { useLanguage, type AppLanguage } from "../context/LanguageContext";
 import { useTranslations } from "../hooks/useTranslations";
 import { useMobileNav } from "../context/MobileNavContext";
@@ -43,6 +43,8 @@ type NavGroupDef = {
   fallback: string;
   items: ReadonlyArray<NavItemDef>;
 };
+
+const SHOW_DIAGNOSIS = import.meta.env.DEV;
 
 const NAV_GROUPS: ReadonlyArray<NavGroupDef> = [
   {
@@ -69,19 +71,27 @@ const NAV_GROUPS: ReadonlyArray<NavGroupDef> = [
       { path: "/spieler", labelKey: "player", fallback: "Spieler", icon: User },
     ],
   },
-  {
-    labelKey: "ui.nav.group_diagnosis",
-    fallback: "Diagnose",
-    items: [
-      { path: "/diagnose/design-system", fallback: "Designsystem", icon: Palette },
-      { path: "/diagnose/club-matrix", fallback: "Club-Matrix", icon: Building2 },
-      { path: "/diagnose/liga-wochen", fallback: "Liga-Übersicht", icon: CalendarRange },
-      { path: "/diagnose/turnier-uebersicht", fallback: "Turnier-Übersicht", icon: LayoutGrid },
-      { path: "/diagnose/validierung", fallback: "Validierung", icon: ClipboardCheck },
-      { path: "/diagnose/daten-anomalien", fallback: "Anomalien", icon: AlertTriangle },
-      { path: "/diagnose/datenpipeline", fallback: "Datenpipeline", icon: Workflow },
-    ],
-  },
+  ...(SHOW_DIAGNOSIS
+    ? ([
+        {
+          labelKey: "ui.nav.group_diagnosis",
+          fallback: "Diagnose",
+          items: [
+            { path: "/diagnose/design-system", fallback: "Designsystem", icon: Palette },
+            { path: "/diagnose/club-matrix", fallback: "Club-Matrix", icon: Building2 },
+            { path: "/diagnose/liga-wochen", fallback: "Liga-Übersicht", icon: CalendarRange },
+            {
+              path: "/diagnose/turnier-uebersicht",
+              fallback: "Turnier-Übersicht",
+              icon: LayoutGrid,
+            },
+            { path: "/diagnose/validierung", fallback: "Validierung", icon: ClipboardCheck },
+            { path: "/diagnose/daten-anomalien", fallback: "Anomalien", icon: AlertTriangle },
+            { path: "/diagnose/datenpipeline", fallback: "Datenpipeline", icon: Workflow },
+          ],
+        },
+      ] as const satisfies ReadonlyArray<NavGroupDef>)
+    : []),
 ];
 
 const LANG_LABEL: Record<AppLanguage, { flag: string; name: string }> = {
@@ -89,10 +99,7 @@ const LANG_LABEL: Record<AppLanguage, { flag: string; name: string }> = {
   en: { flag: "🇺🇸", name: "English" },
 };
 
-function navLabel(
-  t: (key: string, fallback?: string) => string,
-  item: NavItemDef,
-): string {
+function navLabel(t: (key: string, fallback?: string) => string, item: NavItemDef): string {
   return item.labelKey ? t(item.labelKey, item.fallback) : item.fallback;
 }
 
@@ -196,9 +203,12 @@ export function Sidebar() {
           </button>
         </div>
 
-        {/* Search */}
+        {/* Mein Club — global lens (?myClub=), not route-scoped */}
         <div className={"px-3 pt-3 " + (collapsed ? "lg:px-2" : "")}>
-          <SearchTrigger collapsed={collapsed && !mobileOpen} label={t("ui.nav.search", "Suche")} />
+          <MyClubControl
+            collapsed={collapsed && !mobileOpen}
+            onExpand={() => setCollapsed(false)}
+          />
         </div>
 
         {/* Nav */}
@@ -225,12 +235,9 @@ export function Sidebar() {
                     />
                   </li>
                 ))}
-                {group.labelKey === "ui.nav.group_diagnosis" && (
+                {SHOW_DIAGNOSIS && group.labelKey === "ui.nav.group_diagnosis" && (
                   <li className="mt-2 pt-2 border-t border-border">
-                    <DatabaseSelector
-                      variant="sidebar"
-                      collapsed={collapsed && !mobileOpen}
-                    />
+                    <DatabaseSelector variant="sidebar" collapsed={collapsed && !mobileOpen} />
                   </li>
                 )}
               </ul>
@@ -297,42 +304,16 @@ export function Sidebar() {
 }
 
 function Brand() {
+  const [searchParams] = useSearchParams();
   return (
     <Link
-      to="/"
+      to={`/${querySuffixForPath("/", searchParams)}`}
       aria-label="Bowl-A-Lyzer — Startseite"
       className="flex items-center gap-2 rounded-sm hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
     >
       <AppLogo size={28} />
       <span className="text-body font-semibold tracking-tight text-foreground">Bowl-A-Lyzer</span>
     </Link>
-  );
-}
-
-function SearchTrigger({ collapsed, label }: { collapsed: boolean; label: string }) {
-  if (collapsed) {
-    return (
-      <button
-        type="button"
-        aria-label={label}
-        title={`${label} · ⌘K`}
-        className="grid h-9 w-full place-items-center rounded-sm text-muted hover:bg-surface-subtle hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-      >
-        <Search size={16} strokeWidth={1.75} />
-      </button>
-    );
-  }
-  return (
-    <button
-      type="button"
-      className="flex h-9 w-full items-center gap-2 rounded-sm border border-border bg-surface-subtle px-2.5 text-small text-muted hover:border-border-strong hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-    >
-      <Search size={14} strokeWidth={1.75} />
-      <span className="flex-1 text-left">{label}</span>
-      <kbd className="rounded-xs border border-border bg-surface px-1.5 font-mono text-[10px] text-subtle">
-        ⌘K
-      </kbd>
-    </button>
   );
 }
 
@@ -376,13 +357,7 @@ function NavRow({
   );
 }
 
-function LanguageButton({
-  lang,
-  onToggle,
-}: {
-  lang: AppLanguage;
-  onToggle: () => void;
-}) {
+function LanguageButton({ lang, onToggle }: { lang: AppLanguage; onToggle: () => void }) {
   return (
     <button
       type="button"

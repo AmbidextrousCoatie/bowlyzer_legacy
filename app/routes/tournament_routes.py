@@ -121,7 +121,8 @@ def get_available_tournaments():
     if cached is not None:
         return jsonify(cached)
     season = _season_param()
-    payload = get_tournament_service().get_tournaments(season=season)
+    club = (request.args.get("club") or "").strip() or None
+    payload = get_tournament_service().get_tournaments(season=season, club=club)
     _tournament_json_cache_put("get_available_tournaments", payload)
     return jsonify(payload)
 
@@ -133,7 +134,8 @@ def get_available_seasons():
         if cached is not None:
             return jsonify(cached)
         tournament = request.args.get("tournament")
-        payload = get_tournament_service().get_seasons(tournament=tournament)
+        club = (request.args.get("club") or "").strip() or None
+        payload = get_tournament_service().get_seasons(tournament=tournament, club=club)
         _tournament_json_cache_put("get_available_seasons", payload)
         return jsonify(payload)
     except Exception as e:
@@ -197,6 +199,7 @@ def get_available_players():
 def get_tournament_podiums():
     season = _season_param()
     tournament = request.args.get("tournament")
+    club = (request.args.get("club") or "").strip() or None
     top_n = request.args.get("n", default=3, type=int)
     cached = _tournament_json_cache_get("get_tournament_podiums")
     if cached is not None:
@@ -204,6 +207,7 @@ def get_tournament_podiums():
     payload = get_tournament_service().get_tournament_podiums(
         season=season,
         tournament=tournament,
+        club=club,
         top_n=top_n,
     )
     _tournament_json_cache_put("get_tournament_podiums", payload)

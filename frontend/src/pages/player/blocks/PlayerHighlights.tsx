@@ -42,6 +42,8 @@ type Props = {
   selectedPlayerName: string;
   selectedPlayerId?: string;
   season?: string;
+  /** Mein Club lens — filters all-player highest-game lists. */
+  club?: string | null;
   t: (key: string, fallback?: string) => string;
 };
 
@@ -67,6 +69,7 @@ export function PlayerHighlights({
   selectedPlayerName,
   selectedPlayerId = "",
   season = "all",
+  club = null,
   t,
 }: Props) {
   const databaseParam =
@@ -107,11 +110,19 @@ export function PlayerHighlights({
       buildPlayerHighlights(highlightInput, {
         ...baseHighlightOptions,
         minGamesAvgBySeason: minGamesAvgSeason ? PLAYER_HIGHLIGHTS_MIN_GAMES_SEASON : undefined,
-        minGamesBestCompetitions: minGamesBestComp ? PLAYER_HIGHLIGHTS_MIN_GAMES_COMPETITION : undefined,
+        minGamesBestCompetitions: minGamesBestComp
+          ? PLAYER_HIGHLIGHTS_MIN_GAMES_COMPETITION
+          : undefined,
         minGamesBestDays: minGamesLeagueWeeks ? PLAYER_HIGHLIGHTS_MIN_GAMES_LEAGUE_WEEK : undefined,
         leagueWeeksOnlyBestDays: minGamesLeagueWeeks,
       }),
-    [highlightInput, baseHighlightOptions, minGamesAvgSeason, minGamesBestComp, minGamesLeagueWeeks],
+    [
+      highlightInput,
+      baseHighlightOptions,
+      minGamesAvgSeason,
+      minGamesBestComp,
+      minGamesLeagueWeeks,
+    ],
   );
 
   const dataUnfiltered = useMemo(
@@ -123,6 +134,7 @@ export function PlayerHighlights({
     playerName: scope === "player" ? selectedPlayerName : "",
     playerId: scope === "player" ? selectedPlayerId : "",
     season,
+    club: scope === "all" ? club : null,
   });
 
   const highestIndividualGames = buildHighestIndividualGameEntries(
@@ -240,11 +252,7 @@ export function PlayerHighlights({
     <section className="rounded-sm border border-border bg-surface">
       <header className="border-b border-border px-4 py-3 lg:px-5">
         <div className="flex items-start gap-2.5">
-          <Award
-            className="mt-0.5 h-5 w-5 shrink-0 text-accent"
-            strokeWidth={1.75}
-            aria-hidden
-          />
+          <Award className="mt-0.5 h-5 w-5 shrink-0 text-accent" strokeWidth={1.75} aria-hidden />
           <div>
             <h2 className="text-h3">
               {scope === "all"
@@ -257,10 +265,7 @@ export function PlayerHighlights({
                     "ui.player.highlights_hint_all",
                     "Top-10 je Kategorie über alle Einzelleistungen in der Datenquelle.",
                   )
-                : t(
-                    "ui.player.highlights_hint",
-                    "Karriere-Überblick — Top-5 je Kategorie.",
-                  )}
+                : t("ui.player.highlights_hint", "Karriere-Überblick — Top-5 je Kategorie.")}
             </p>
           </div>
         </div>
@@ -364,7 +369,12 @@ function HighlightCategoryBlock({
             className="grid h-8 w-8 shrink-0 place-items-center rounded-sm border border-border"
             style={{ backgroundColor: `color-mix(in srgb, ${accentColor} 18%, transparent)` }}
           >
-            <Icon className="h-4 w-4" style={{ color: accentColor }} strokeWidth={1.75} aria-hidden />
+            <Icon
+              className="h-4 w-4"
+              style={{ color: accentColor }}
+              strokeWidth={1.75}
+              aria-hidden
+            />
           </span>
           <h3 className="min-w-0 text-body font-semibold leading-snug text-foreground xl:text-h3">
             {t(category.titleKey, category.titleFallback)}
@@ -391,58 +401,58 @@ function HighlightCategoryBlock({
           {t("ui.player.highlights_filter_empty", "Keine Einträge mit aktuellem Filter.")}
         </p>
       ) : (
-      <ul className="border-t border-border">
-        {category.entries.map((entry, idx) => (
-          <li
-            key={entry.id}
-            className={
-              "flex items-center gap-2.5 border-b border-border py-2.5 text-small sm:gap-3 " +
-              (idx === 0 ? "bg-accent-tint/40" : "")
-            }
-          >
-            <RankBadge rank={idx + 1} />
-            <div className="min-w-0 flex-1">
-              {entry.href ? (
-                <Link
-                  to={entry.href}
-                  className="block truncate font-medium text-foreground hover:text-accent hover:underline"
-                  title={entry.title ?? entry.label}
-                >
-                  {entry.label}
-                </Link>
-              ) : (
-                <p
-                  className="truncate font-medium text-foreground"
-                  title={entry.title ?? entry.label}
-                >
-                  {entry.label}
-                </p>
-              )}
-              {entry.detail ? (
-                entry.detailHref ? (
+        <ul className="border-t border-border">
+          {category.entries.map((entry, idx) => (
+            <li
+              key={entry.id}
+              className={
+                "flex items-center gap-2.5 border-b border-border py-2.5 text-small sm:gap-3 " +
+                (idx === 0 ? "bg-accent-tint/40" : "")
+              }
+            >
+              <RankBadge rank={idx + 1} />
+              <div className="min-w-0 flex-1">
+                {entry.href ? (
                   <Link
-                    to={entry.detailHref}
-                    className="text-label text-muted mt-0.5 block truncate hover:text-accent hover:underline"
-                    title={entry.detail}
+                    to={entry.href}
+                    className="block truncate font-medium text-foreground hover:text-accent hover:underline"
+                    title={entry.title ?? entry.label}
                   >
-                    {entry.detail}
+                    {entry.label}
                   </Link>
                 ) : (
-                  <p className="text-label text-muted mt-0.5 truncate" title={entry.detail}>
-                    {entry.detail}
+                  <p
+                    className="truncate font-medium text-foreground"
+                    title={entry.title ?? entry.label}
+                  >
+                    {entry.label}
                   </p>
-                )
-              ) : null}
-            </div>
-            <span
-              className="shrink-0 font-mono text-small font-semibold tabular-nums text-foreground sm:text-base"
-              title={entry.value}
-            >
-              {entry.value}
-            </span>
-          </li>
-        ))}
-      </ul>
+                )}
+                {entry.detail ? (
+                  entry.detailHref ? (
+                    <Link
+                      to={entry.detailHref}
+                      className="text-label text-muted mt-0.5 block truncate hover:text-accent hover:underline"
+                      title={entry.detail}
+                    >
+                      {entry.detail}
+                    </Link>
+                  ) : (
+                    <p className="text-label text-muted mt-0.5 truncate" title={entry.detail}>
+                      {entry.detail}
+                    </p>
+                  )
+                ) : null}
+              </div>
+              <span
+                className="shrink-0 font-mono text-small font-semibold tabular-nums text-foreground sm:text-base"
+                title={entry.value}
+              >
+                {entry.value}
+              </span>
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   );

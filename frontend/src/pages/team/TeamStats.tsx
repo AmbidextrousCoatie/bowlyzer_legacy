@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { ClubSearch } from "../../components/ClubSearch";
 import { seasonForUrlQuery } from "../../lib/api";
 import { useClubMatrix, type ClubMatrixPayload } from "../../hooks/useLeague";
+import { useMyClub } from "../../hooks/useMyClub";
 import { useTeamSeasons, useTeams } from "../../hooks/useTeam";
 import { useTranslations } from "../../hooks/useTranslations";
 import {
@@ -18,45 +19,42 @@ import { TeamDetail } from "./blocks/TeamDetail";
 export function TeamStats() {
   const { t } = useTranslations();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { active: myClubActive, resolvedClub: myClubResolved, myClub } = useMyClub();
 
   const clubParam = searchParams.get("club") ?? "";
   const teamParam = searchParams.get("team") ?? "";
   const season = searchParams.get("season") ?? "all";
 
   const club = useMemo(() => {
-    const raw = clubParam
-      ? clubParam
-      : teamParam
-        ? splitClubAndTeamNumber(teamParam).club
-        : "";
+    // Mein Club owns the page lens — no separate club picker.
+    if (myClubActive) {
+      return normalizeUnicodeLabel(myClubResolved || myClub);
+    }
+    const raw = clubParam ? clubParam : teamParam ? splitClubAndTeamNumber(teamParam).club : "";
     return normalizeUnicodeLabel(raw);
-  }, [clubParam, teamParam]);
+  }, [myClubActive, myClubResolved, myClub, clubParam, teamParam]);
 
   const teamsQuery = useTeams();
   /** Always load club names so URL / typed labels can resolve to canonical spellings. */
-  const clubsListQuery = useClubMatrix(null, false);
+  const clubsListQuery = useClubMatrix(null, false, { enabled: !myClubActive });
   const teamSeasonsQuery = useTeamSeasons(teamParam || null);
 
   const resolvedClub = useMemo(() => {
     if (!club) return "";
+    if (myClubActive && myClubResolved) return myClubResolved;
     const list = clubsListQuery.data?.clubs;
     if (!list?.length) return club;
-    return (
-      list.find((c) => normalizeUnicodeLabel(c) === normalizeUnicodeLabel(club)) ?? club
-    );
-  }, [club, clubsListQuery.data?.clubs]);
+    return list.find((c) => normalizeUnicodeLabel(c) === normalizeUnicodeLabel(club)) ?? club;
+  }, [club, clubsListQuery.data?.clubs, myClubActive, myClubResolved]);
 
   const clubMatrixQuery = useClubMatrix(resolvedClub || null, false, {
-    enabled: !!resolvedClub && clubsListQuery.isFetched,
+    enabled: !!resolvedClub && (myClubActive || clubsListQuery.isFetched),
   });
 
   const allTeams = teamsQuery.data ?? [];
   const clubs = clubsListQuery.data?.clubs ?? clubMatrixQuery.data?.clubs ?? [];
 
-  const clubTeams = useMemo(
-    () => (club ? teamsForClub(allTeams, club) : []),
-    [allTeams, club],
-  );
+  const clubTeams = useMemo(() => (club ? teamsForClub(allTeams, club) : []), [allTeams, club]);
 
   const team = useMemo(() => {
     if (!teamParam) return "";
@@ -68,7 +66,30 @@ export function TeamStats() {
     return "";
   }, [teamParam, clubTeams, club]);
 
+  // Keep page-local ``club=`` in sync with Mein Club (and clear foreign teams).
   useEffect(() => {
+    if (!myClubActive) return;
+    const clubForUrl = (myClubResolved || myClub || "").trim();
+    if (!clubForUrl) return;
+    const next = new URLSearchParams(searchParams);
+    let changed = false;
+    if (normalizeUnicodeLabel(clubParam) !== normalizeUnicodeLabel(clubForUrl)) {
+      next.set("club", clubForUrl);
+      changed = true;
+    }
+    if (teamParam) {
+      const teamClub = normalizeUnicodeLabel(splitClubAndTeamNumber(teamParam).club);
+      if (teamClub !== normalizeUnicodeLabel(clubForUrl)) {
+        next.delete("team");
+        next.delete("season");
+        changed = true;
+      }
+    }
+    if (changed) setSearchParams(next, { replace: true });
+  }, [myClubActive, myClubResolved, myClub, clubParam, teamParam, searchParams, setSearchParams]);
+
+  useEffect(() => {
+    if (myClubActive) return;
     if (!teamsQuery.isSuccess || !club) return;
     const next = new URLSearchParams(searchParams);
     let changed = false;
@@ -83,6 +104,7 @@ export function TeamStats() {
     }
     if (changed) setSearchParams(next, { replace: true });
   }, [
+    myClubActive,
     teamsQuery.isSuccess,
     clubParam,
     club,
@@ -94,16 +116,27 @@ export function TeamStats() {
   ]);
 
   useEffect(() => {
+    if (myClubActive) return;
     if (!clubMatrixQuery.isSuccess || !club) return;
-    const canonical = (clubMatrixQuery.data?.selected_club || clubMatrixQuery.data?.matrix.club || "")
-      .trim();
+    const canonical = (
+      clubMatrixQuery.data?.selected_club ||
+      clubMatrixQuery.data?.matrix.club ||
+      ""
+    ).trim();
     if (!canonical) return;
     if (normalizeUnicodeLabel(canonical) === normalizeUnicodeLabel(clubParam || club)) return;
     const next = new URLSearchParams(searchParams);
     next.set("club", canonical);
     setSearchParams(next, { replace: true });
-  }, [clubMatrixQuery.isSuccess, clubMatrixQuery.data, club, clubParam, searchParams, setSearchParams]);
-
+  }, [
+    myClubActive,
+    clubMatrixQuery.isSuccess,
+    clubMatrixQuery.data,
+    club,
+    clubParam,
+    searchParams,
+    setSearchParams,
+  ]);
   useEffect(() => {
     if (!teamSeasonsQuery.isSuccess || !team) return;
     if (season === "all") return;
@@ -113,7 +146,14 @@ export function TeamStats() {
       next.delete("season");
       setSearchParams(next, { replace: true });
     }
-  }, [teamSeasonsQuery.isSuccess, teamSeasonsQuery.data, season, team, searchParams, setSearchParams]);
+  }, [
+    teamSeasonsQuery.isSuccess,
+    teamSeasonsQuery.data,
+    season,
+    team,
+    searchParams,
+    setSearchParams,
+  ]);
 
   function selectClub(value: string) {
     const next = new URLSearchParams(searchParams);
@@ -152,24 +192,26 @@ export function TeamStats() {
   const matrixSeasons = matrixForClub?.matrix.seasons ?? [];
   const matrixLoading =
     !!club &&
-    (!clubsListQuery.isFetched || clubMatrixQuery.isFetching || !matrixForClub);
+    (myClubActive
+      ? clubMatrixQuery.isFetching || !matrixForClub
+      : !clubsListQuery.isFetched || clubMatrixQuery.isFetching || !matrixForClub);
   const matrixError = !!club && clubMatrixQuery.isError;
 
   const showClubOverview = !!club && !team;
   const showTeamDetail = !!club && !!team;
+  const showClubPicker = !myClubActive;
+  const showFilterBar = showClubPicker || (club && clubTeams.length > 0);
 
   return (
     <div className="mx-auto max-w-[1280px] px-4 pt-8 pb-24 lg:px-8 lg:pt-12">
       <header className="mb-6 lg:mb-8">
-        <p className="text-label uppercase text-muted mb-2">
-          {t("ui.team.eyebrow", "Akteure")}
-        </p>
+        <p className="text-label uppercase text-muted mb-2">{t("ui.team.eyebrow", "Akteure")}</p>
         <h1 className="text-h1">
           {t("ui.team.page_title", "Club")}
           {club ? (
             <>
               {" "}
-              · <span className="font-normal text-muted">{club}</span>
+              · <span className="font-normal text-muted">{resolvedClub || club}</span>
             </>
           ) : null}
         </h1>
@@ -181,46 +223,50 @@ export function TeamStats() {
         </p>
       </header>
 
-      <div className="sticky top-0 z-10 -mx-4 border-b border-border bg-background/85 px-4 py-3 backdrop-blur lg:-mx-8 lg:px-8">
-        <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
-          <FilterField label={t("ui.team.club", "Club")}>
-            <ClubSearch
-              value={club}
-              clubs={clubs}
-              isLoading={clubsListQuery.isPending}
-              placeholder={t("ui.team.select_club", "Club eingeben oder wählen…")}
-              ariaLabel={t("ui.team.select_club", "Club wählen")}
-              clearAriaLabel={t("ui.team.clear_club", "Club-Auswahl löschen")}
-              onSelect={(c) => selectClub(c ?? "")}
-            />
-          </FilterField>
+      {showFilterBar ? (
+        <div className="sticky top-0 z-10 -mx-4 border-b border-border bg-background/85 px-4 py-3 backdrop-blur lg:-mx-8 lg:px-8">
+          <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
+            {showClubPicker ? (
+              <FilterField label={t("ui.team.club", "Club")}>
+                <ClubSearch
+                  value={club}
+                  clubs={clubs}
+                  isLoading={clubsListQuery.isPending}
+                  placeholder={t("ui.team.select_club", "Club eingeben oder wählen…")}
+                  ariaLabel={t("ui.team.select_club", "Club wählen")}
+                  clearAriaLabel={t("ui.team.clear_club", "Club-Auswahl löschen")}
+                  onSelect={(c) => selectClub(c ?? "")}
+                />
+              </FilterField>
+            ) : null}
 
-          {club && clubTeams.length > 0 && (
-            <FilterField label={t("team", "Mannschaft")}>
-              <select
-                className="h-9 min-w-[min(100%,280px)] rounded-sm border border-border bg-surface-subtle px-2.5 text-small"
-                value={team}
-                onChange={(e) => selectTeam(e.target.value)}
-                style={
-                  team
-                    ? { borderLeftWidth: 4, borderLeftColor: getClubTeamColor(team) }
-                    : undefined
-                }
-              >
-                <option value="">{t("ui.team.club_overview", "Club-Übersicht")}</option>
-                {clubTeams.map((name) => (
-                  <option key={name} value={name}>
-                    {teamDisplayLabel(name)} — {name}
-                  </option>
-                ))}
-              </select>
-            </FilterField>
-          )}
+            {club && clubTeams.length > 0 && (
+              <FilterField label={t("team", "Mannschaft")}>
+                <select
+                  className="h-9 min-w-[min(100%,280px)] rounded-sm border border-border bg-surface-subtle px-2.5 text-small"
+                  value={team}
+                  onChange={(e) => selectTeam(e.target.value)}
+                  style={
+                    team
+                      ? { borderLeftWidth: 4, borderLeftColor: getClubTeamColor(team) }
+                      : undefined
+                  }
+                >
+                  <option value="">{t("ui.team.club_overview", "Club-Übersicht")}</option>
+                  {clubTeams.map((name) => (
+                    <option key={name} value={name}>
+                      {teamDisplayLabel(name)} — {name}
+                    </option>
+                  ))}
+                </select>
+              </FilterField>
+            )}
+          </div>
         </div>
-      </div>
+      ) : null}
 
       <div className="mt-8 space-y-8">
-        {!club && (
+        {!club && !myClubActive && (
           <section className="rounded-sm border border-dashed border-border p-8 text-center">
             <p className="text-body text-muted">
               {t("ui.team.select_club_prompt", "Wähle einen Club, um seine Mannschaften zu sehen.")}
@@ -239,7 +285,7 @@ export function TeamStats() {
 
         {showClubOverview && clubTeams.length > 0 && (
           <ClubOverview
-            club={club}
+            club={resolvedClub || club}
             teams={clubTeams}
             matrixRows={matrixRows}
             seasons={matrixSeasons}
@@ -252,7 +298,7 @@ export function TeamStats() {
 
         {showTeamDetail && (
           <TeamDetail
-            club={club}
+            club={resolvedClub || club}
             teamName={team}
             season={season}
             seasons={teamSeasonsQuery.data ?? []}

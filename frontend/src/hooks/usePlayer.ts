@@ -87,35 +87,45 @@ export function isAllPlayersScope(stats: PlayerStatsResponse | undefined): boole
   return stats?.scope === "all";
 }
 
-export function usePlayerSearch() {
+export function usePlayerSearch(club?: string | null) {
   return useQuery({
-    queryKey: ["player", "search"],
-    queryFn: () => fetchJson<PlayerSearchEntry[]>(buildUrl("/player/search")),
+    queryKey: ["player", "search", club ?? ""],
+    queryFn: () =>
+      fetchJson<PlayerSearchEntry[]>(buildUrl("/player/search", { club: club || undefined })),
     staleTime: 5 * 60_000,
   });
 }
 
-export function usePlayerSeasons(playerName: string, playerId: string) {
+export function usePlayerSeasons(playerName: string, playerId: string, club?: string | null) {
+  const clubFilter = !playerName && !playerId ? club || undefined : undefined;
   return useQuery({
-    queryKey: ["player", "seasons", playerName, playerId],
+    queryKey: ["player", "seasons", playerName, playerId, clubFilter ?? ""],
     queryFn: () =>
       fetchJson<string[]>(
         buildUrl("/player/get_available_seasons", {
           ...(playerName ? { player_name: playerName } : {}),
           ...(playerId ? { player_id: playerId } : {}),
+          ...(clubFilter ? { club: clubFilter } : {}),
         }),
       ),
   });
 }
 
-export function usePlayerLifetimeStats(playerName: string, playerId: string, season: string) {
+export function usePlayerLifetimeStats(
+  playerName: string,
+  playerId: string,
+  season: string,
+  club?: string | null,
+) {
+  const clubFilter = !playerName && !playerId ? club || undefined : undefined;
   return useQuery({
-    queryKey: ["player", "lifetime", playerName, playerId, season],
+    queryKey: ["player", "lifetime", playerName, playerId, season, clubFilter ?? ""],
     queryFn: () =>
       fetchJson<PlayerStatsResponse>(
         buildUrl("/player/get_lifetime_stats", {
           ...(playerName ? { player_name: playerName } : {}),
           ...(playerId ? { player_id: playerId } : {}),
+          ...(clubFilter ? { club: clubFilter } : {}),
           season: season || "all",
         }),
       ),
@@ -144,23 +154,22 @@ export function useHighestIndividualGames(
     playerName?: string;
     playerId?: string;
     season?: string;
+    club?: string | null;
   } = {},
 ) {
-  const {
-    enabled = true,
-    playerName = "",
-    playerId = "",
-    season = "all",
-  } = options;
+  const { enabled = true, playerName = "", playerId = "", season = "all", club = null } = options;
+
+  const clubFilter = !playerName && !playerId ? club || undefined : undefined;
 
   return useQuery({
-    queryKey: ["player", "highest-games", limit, playerName, playerId, season],
+    queryKey: ["player", "highest-games", limit, playerName, playerId, season, clubFilter ?? ""],
     queryFn: () =>
       fetchJson<IndividualGameRecord[]>(
         buildUrl("/player/get_highest_individual_games", {
           limit: String(limit),
           ...(playerName ? { player_name: playerName } : {}),
           ...(playerId ? { player_id: playerId } : {}),
+          ...(clubFilter ? { club: clubFilter } : {}),
           season: season || "all",
         }),
       ),
@@ -169,10 +178,13 @@ export function useHighestIndividualGames(
   });
 }
 
-export function useClub300Games() {
+export function useClub300Games(club?: string | null) {
   return useQuery({
-    queryKey: ["player", "club-300"],
-    queryFn: () => fetchJson<IndividualGameRecord[]>(buildUrl("/player/get_club_300")),
+    queryKey: ["player", "club-300", club ?? ""],
+    queryFn: () =>
+      fetchJson<IndividualGameRecord[]>(
+        buildUrl("/player/get_club_300", { club: club || undefined }),
+      ),
     staleTime: 5 * 60_000,
   });
 }

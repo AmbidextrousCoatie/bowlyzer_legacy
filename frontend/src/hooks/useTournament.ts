@@ -295,26 +295,28 @@ export type TournamentPlayerResultRow = {
   club?: string | null;
 };
 
-export function useTournamentSeasons(tournament?: string | null) {
+export function useTournamentSeasons(tournament?: string | null, club?: string | null) {
   return useQuery({
-    queryKey: ["tournament", "seasons", tournament ?? ""],
+    queryKey: ["tournament", "seasons", tournament ?? "", club ?? ""],
     queryFn: () =>
       fetchJson<string[]>(
         buildTournamentUrl("/tournament/get_available_seasons", {
           tournament: tournament ?? undefined,
+          club: club || undefined,
         }),
       ),
     staleTime: TOURNAMENT_LIST_STALE_MS,
   });
 }
 
-export function useTournamentNames(season: string | null) {
+export function useTournamentNames(season: string | null, club?: string | null) {
   return useQuery({
-    queryKey: ["tournament", "tournaments", season ?? ""],
+    queryKey: ["tournament", "tournaments", season ?? "", club ?? ""],
     queryFn: () =>
       fetchJson<string[]>(
         buildTournamentUrl("/tournament/get_available_tournaments", {
           season: season || undefined,
+          club: club || undefined,
         }),
       ),
     staleTime: TOURNAMENT_LIST_STALE_MS,
@@ -367,15 +369,20 @@ export function useTournamentPlayers(
   });
 }
 
-export function useTournamentPodiums(season: string | null, tournament: string | null) {
+export function useTournamentPodiums(
+  season: string | null,
+  tournament: string | null,
+  club?: string | null,
+) {
   const showOverview = !(season && tournament);
   return useQuery({
-    queryKey: ["tournament", "podiums", season ?? "", tournament ?? ""],
+    queryKey: ["tournament", "podiums", season ?? "", tournament ?? "", club ?? ""],
     queryFn: () =>
       fetchJson<TournamentPodiumsPayload>(
         buildTournamentUrl("/tournament/get_tournament_podiums", {
           season: season || undefined,
           tournament: tournament || undefined,
+          club: club || undefined,
           n: 3,
         }),
       ),

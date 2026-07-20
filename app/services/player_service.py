@@ -191,6 +191,67 @@ class PlayerService:
         self._player_catalog_cache[cache_key] = sorted_out
         return sorted_out
 
+    def _resolve_club_filter_label(self, club: str) -> str:
+        """Map URL/user club input to the canonical club label when possible."""
+        needle = str(club or "").strip()
+        if not needle:
+            return ""
+        try:
+            from app.services.league_service import LeagueService
+
+            league_svc = LeagueService(database=self.database)
+            clubs = league_svc.get_available_clubs()
+            resolved = league_svc.resolve_club_name(needle, clubs)
+            if resolved:
+                return str(resolved).strip()
+        except Exception:
+            pass
+        return needle
+
+    def _filter_df_to_club_games(self, df: pd.DataFrame, club: str | None) -> pd.DataFrame:
+        """Keep only game rows played *for* ``club`` (Club / Team label).
+
+        Unlike a roster filter, this does not include games the same players
+        bowled for other clubs.
+        """
+        if df is None or df.empty or not club or not str(club).strip():
+            return df
+        from app.services.club_legends_service import _club_series, _normalize_club_label
+
+        club_norm = _normalize_club_label(self._resolve_club_filter_label(club))
+        if not club_norm:
+            return df.iloc[0:0].copy()
+        row_clubs = _club_series(df)
+        mask = row_clubs.eq(club_norm)
+        if not mask.any():
+            return df.iloc[0:0].copy()
+        return df.loc[mask].copy()
+
+    def _player_ids_and_names_for_club_games(self, club: str) -> Tuple[set[str], set[str]]:
+        """Players who have at least one game row for ``club``."""
+        from data_access.text_norm import normalize_unicode_label
+
+        base = self.data_manager.df
+        if base is None or base.empty:
+            return set(), set()
+        games = self._filter_df_to_club_games(self._safe_player_rows(base), club)
+        if games.empty:
+            return set(), set()
+
+        ids: set[str] = set()
+        names: set[str] = set()
+        if Columns.player_id in games.columns:
+            for raw in games[Columns.player_id].tolist():
+                pid = self._normalize_player_id(raw)
+                if pid:
+                    ids.add(pid)
+        if Columns.player_name in games.columns:
+            for raw in games[Columns.player_name].tolist():
+                pname = normalize_unicode_label(str(raw or "").strip())
+                if pname:
+                    names.add(pname)
+        return ids, names
+
     def _subset_player_games(
         self,
         player_name: str,
@@ -656,42 +717,62 @@ class PlayerService:
             }
         }
 
-    def search_players(self, search_term: str) -> List[Dict[str, str]]:
-        """Search players by name"""
-        # Get all players first
+    def search_players(self, search_term: str, club: str | None = None) -> List[Dict[str, str]]:
+        """Search players by name; optional ``club`` limits to players with games for that club."""
+        from data_access.text_norm import normalize_unicode_label
+
         all_players = self.get_all_players()
-        
-        # Filter players based on search term
+        if club and str(club).strip():
+            ids, names = self._player_ids_and_names_for_club_games(club)
+            if ids or names:
+                filtered = []
+                for player in all_players:
+                    pid = self._normalize_player_id(player.get("id", ""))
+                    pname = normalize_unicode_label(player.get("name", ""))
+                    if (pid and pid in ids) or (pname and pname in names):
+                        filtered.append(player)
+                all_players = filtered
+            else:
+                all_players = []
+
         if search_term:
             search_term = search_term.lower()
-            filtered_players = [
+            return [
                 player
                 for player in all_players
                 if search_term in str(player.get("name", "")).lower()
                 or search_term in str(player.get("id", "")).lower()
             ]
-            return filtered_players
-        
+
         return all_players
 
-    def get_player_seasons(self, player_name: str, player_id: str = "") -> List[str]:
-        """Get sorted season list for a specific player."""
+    def get_player_seasons(
+        self,
+        player_name: str,
+        player_id: str = "",
+        club: str | None = None,
+    ) -> List[str]:
+        """Get sorted season list for a specific player (or all / club games)."""
         if not player_name and not player_id:
-            return self.get_all_seasons()
+            return self.get_all_seasons(club=club)
         games_df = self._subset_player_games(player_name, player_id)
         if games_df.empty or Columns.season not in games_df.columns:
             return []
         seasons = [str(s).strip() for s in games_df[Columns.season].dropna().unique().tolist() if str(s).strip()]
         return sorted(seasons)
 
-    def get_all_seasons(self) -> List[str]:
-        """Sorted season list across all players in the current database."""
+    def get_all_seasons(self, club: str | None = None) -> List[str]:
+        """Sorted season list across all players (optional club game filter)."""
         base = self.data_manager.df
         if base is None or base.empty or Columns.season not in base.columns:
             return []
+        games_df = self._safe_player_rows(base)
+        games_df = self._filter_df_to_club_games(games_df, club)
+        if games_df.empty or Columns.season not in games_df.columns:
+            return []
         seasons = [
             str(s).strip()
-            for s in base[Columns.season].dropna().unique().tolist()
+            for s in games_df[Columns.season].dropna().unique().tolist()
             if str(s).strip()
         ]
         return sorted(seasons)
@@ -824,13 +905,15 @@ class PlayerService:
         player_name: str = "",
         player_id: str = "",
         season: str = "all",
+        club: str | None = None,
     ) -> List[Dict[str, Any]]:
-        """Top single-game scores (all players or one player, optional season)."""
+        """Top single-game scores (all players or one player, optional season / club)."""
         if player_name or player_id:
             games_df = self._subset_player_games(player_name, player_id, season=season)
         else:
             season_filter = season if str(season).strip().lower() != "all" else None
             games_df = self._subset_all_player_games(season=season_filter)
+            games_df = self._filter_df_to_club_games(games_df, club)
         if games_df.empty:
             return []
         work = games_df.copy()
@@ -845,9 +928,10 @@ class PlayerService:
             out.append(self._individual_game_record(row))
         return out
 
-    def get_club_300_games(self) -> List[Dict[str, Any]]:
-        """All perfect 300 games, newest first."""
+    def get_club_300_games(self, club: str | None = None) -> List[Dict[str, Any]]:
+        """All perfect 300 games, newest first (optional club game filter)."""
         games_df = self._subset_all_player_games()
+        games_df = self._filter_df_to_club_games(games_df, club)
         if games_df.empty:
             return []
         perfect = games_df[games_df[Columns.score] == 300].copy()
@@ -1352,20 +1436,25 @@ class PlayerService:
             },
         }
 
-    def get_aggregate_lifetime_stats(self, season: str = "all"):
+    def get_aggregate_lifetime_stats(self, season: str = "all", club: str | None = None):
         """Lifetime stats across all players (``all`` merges per-season payloads)."""
         season_norm = str(season).strip() if season is not None else "all"
         if str(season_norm).lower() == "all":
             parts = []
-            for season_value in self.get_all_seasons():
-                part = self._aggregate_lifetime_stats_for_season(season_value)
+            for season_value in self.get_all_seasons(club=club):
+                part = self._aggregate_lifetime_stats_for_season(season_value, club=club)
                 if part:
                     parts.append(part)
             return self.merge_aggregate_lifetime_payloads(parts)
-        return self._aggregate_lifetime_stats_for_season(season_norm)
+        return self._aggregate_lifetime_stats_for_season(season_norm, club=club)
 
-    def _aggregate_lifetime_stats_for_season(self, season: str) -> Optional[Dict[str, Any]]:
+    def _aggregate_lifetime_stats_for_season(
+        self,
+        season: str,
+        club: str | None = None,
+    ) -> Optional[Dict[str, Any]]:
         games_df = self._subset_all_player_games(season=season)
+        games_df = self._filter_df_to_club_games(games_df, club)
         if games_df.empty:
             return None
         return self._build_aggregate_lifetime_stats_from_games(games_df)

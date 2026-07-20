@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Star } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
+import { useMyClub } from "../hooks/useMyClub";
 import { useClub300Games } from "../hooks/usePlayer";
 import { useTranslations } from "../hooks/useTranslations";
 import { EChart } from "../lib/charts/EChart";
@@ -16,7 +17,9 @@ export function Club300() {
   const { t, tournamentAbbreviations } = useTranslations();
   const [searchParams] = useSearchParams();
   const databaseParam = searchParams.get("database");
-  const gamesQuery = useClub300Games();
+  const { active: myClubActive, resolvedClub, myClub } = useMyClub();
+  const clubFilter = myClubActive ? resolvedClub || myClub || null : null;
+  const gamesQuery = useClub300Games(clubFilter);
   const games = gamesQuery.data ?? [];
 
   const bubble = useMemo(() => buildClub300BubblePoints(games), [games]);
@@ -30,22 +33,29 @@ export function Club300() {
     [tiers],
   );
 
+  const subtitle = clubFilter
+    ? t(
+        "ui.club300.subtitle_club",
+        "Perfekte 300er von Spielern aus {club} (aktiv & Alumni).",
+      ).replace("{club}", clubFilter)
+    : t("ui.club300.subtitle", "Alle perfekten 300er in der Datenquelle — neueste zuerst.");
+
+  const emptyMessage = clubFilter
+    ? t(
+        "ui.club300.empty_club",
+        "Keine 300er für Spieler aus {club} in der aktuellen Datenquelle.",
+      ).replace("{club}", clubFilter)
+    : t("ui.club300.empty", "Keine 300er in der aktuellen Datenquelle.");
+
   return (
     <div className="mx-auto max-w-[1280px] px-4 pt-8 pb-24 lg:px-8 lg:pt-12">
       <header className="mb-10">
-        <p className="text-label uppercase text-muted mb-2">
-          {t("ui.nav.group_start", "Start")}
-        </p>
+        <p className="text-label uppercase text-muted mb-2">{t("ui.nav.group_start", "Start")}</p>
         <div className="flex items-start gap-3">
           <Star className="mt-1 h-7 w-7 shrink-0 text-accent" strokeWidth={1.75} aria-hidden />
           <div>
             <h1 className="text-h1">{t("ui.club300.title", "Club 300")}</h1>
-            <p className="text-body text-muted mt-2 max-w-[72ch]">
-              {t(
-                "ui.club300.subtitle",
-                "Alle perfekten 300er in der Datenquelle — neueste zuerst.",
-              )}
-            </p>
+            <p className="text-body text-muted mt-2 max-w-[72ch]">{subtitle}</p>
           </div>
         </div>
       </header>
@@ -60,7 +70,7 @@ export function Club300() {
 
       {gamesQuery.isSuccess && games.length === 0 && (
         <section className="rounded-sm border border-dashed border-border p-6 text-small text-muted">
-          {t("ui.club300.empty", "Keine 300er in der aktuellen Datenquelle.")}
+          {emptyMessage}
         </section>
       )}
 
@@ -123,9 +133,7 @@ export function Club300() {
               <p className="text-label uppercase text-muted mb-1.5">
                 {t("ui.club300.table_eyebrow", "Chronik")}
               </p>
-              <h2 className="text-h2">
-                {t("ui.club300.table_title", "Alle 300er")}
-              </h2>
+              <h2 className="text-h2">{t("ui.club300.table_title", "Alle 300er")}</h2>
               <p className="text-small text-muted mt-1">
                 {t(
                   "ui.club300.table_hint",
