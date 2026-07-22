@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
-IMPORTER_PATH = ROOT / "database" / "input" / "import_bayerische_meisterschaft_xlsx.py"
+IMPORTER_PATH = ROOT / "scripts" / "data" / "import_bayerische_meisterschaft_xlsx.py"
 
 
 def _load_importer():

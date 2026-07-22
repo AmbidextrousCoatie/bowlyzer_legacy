@@ -443,7 +443,7 @@ def main() -> int:
     )
     parser.add_argument(
         "--output-dir",
-        default="database/input/gf_tables_export",
+        default="database/work/gf",
         help="Output folder for generated CSVs.",
     )
     parser.add_argument(

@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from database.paths import historical_league_results_csv
-from extract_excel_data import (
+from scripts.data.extract_excel_data import (
     combo_processing_cache_key,
     process_scope_cache_key,
     resolve_process_output_paths,

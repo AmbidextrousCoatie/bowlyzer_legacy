@@ -19,7 +19,7 @@ Important work-dir artifacts (from `database/paths.py`):
 | File | Purpose |
 |------|---------|
 | `extract_excel_analysis_log.json` | Analyze/process cache (per-file SHA256, format, eligibility) |
-| `historical_league_results.csv` | Default merged output of `extract_excel_data.py` **process** mode |
+| `historical_league_results.csv` | Default merged output of `scripts/data/extract_excel_data.py` **process** mode |
 | `historical_league_results_combos/` | Per league+season combo CSVs (sibling dir of merged file) |
 | `legacy_scrape_extracted.csv` | Output after processing scraped `.xls` (see legacy scrape) |
 
@@ -53,7 +53,7 @@ Tournament XLSX (openpyxl)
 
 Legacy web .xls (HTTP scrape, not local Excel folder)
         scrape_legacy_liga.py → .xls files on disk
-        → extract_excel_data.py (convert + process) → legacy_scrape_extracted.csv
+        → scripts/data/extract_excel_data.py (convert + process) → legacy_scrape_extracted.csv
                 │
                 └─ analyze_legacy_scrape_csv.py  (LOW_WEEKS / LOW_TEAMS / HIGH_TEAMS)
 
@@ -67,7 +67,7 @@ Merged league CSV (any source)
 
 ---
 
-## 1. `extract_excel_data.py` — historical league Excel
+## 1. `scripts/data/extract_excel_data.py` — historical league Excel
 
 **Location:** repo root  
 **Input:** Bowling Bayern / regional **Liga** workbooks (team sheets `Erfassung*`, season sheet `Schiedsrichterinfos`, week sheets, `Spielzettel`, etc.)  
@@ -112,27 +112,27 @@ Discovery skips paths containing `fehlerhaft` or `logdatei`. If both `.xls` and 
 
 ```powershell
 # Analyze entire historical tree (writes/updates analysis log)
-uv run python extract_excel_data.py --mode analyze `
+uv run python scripts/data/extract_excel_data.py --mode analyze `
   --folder "C:\tmp\Sammlung-Ligaergebnisse" -r `
   --analysis-output "C:\tmp\bowlyzer\data\excel_analyze_report.csv"
 
 # Convert legacy .xls to .xlsx before processing (LibreOffice must be on PATH)
-uv run python extract_excel_data.py --mode convert_legacy_xls `
+uv run python scripts/data/extract_excel_data.py --mode convert_legacy_xls `
   --folder "C:\tmp\Sammlung-Ligaergebnisse" -r
 
 # Full extract → historical merged CSV (typical batch)
 $env:BOWLYZER_WORK_DATA_DIR = "C:\tmp\bowlyzer\data"
-uv run python extract_excel_data.py --mode process `
+uv run python scripts/data/extract_excel_data.py --mode process `
   --folder "C:\tmp\Sammlung-Ligaergebnisse" -r `
   --output-file "C:\tmp\bowlyzer\data\historical_league_results.csv"
 
 # Process one workbook, weeks 1–3
-uv run python extract_excel_data.py --mode process `
+uv run python scripts/data/extract_excel_data.py --mode process `
   --file "C:\tmp\Sammlung-Ligaergebnisse\Liga 2024-25\BYL Männer.xlsx" `
   --weeks 1,2,3
 
 # Re-normalize an existing extract without re-reading Excel
-uv run python extract_excel_data.py --mode normalize_data `
+uv run python scripts/data/extract_excel_data.py --mode normalize_data `
   --input "C:\tmp\bowlyzer\data\historical_league_results.csv"
 ```
 
@@ -186,7 +186,7 @@ uv run python scripts/analyze_legacy_scrape_csv.py --csv "C:\tmp\bowlyzer\data\l
 uv run python scripts/analyze_legacy_scrape_csv.py --export database/data/legacy_scrape/legacy_scrape_summary.csv
 ```
 
-Run **after** `extract_excel_data.py --mode process` on scraped `.xls` (or on `historical_league_results.csv` with `--csv`).
+Run **after** `scripts/data/extract_excel_data.py --mode process` on scraped `.xls` (or on `historical_league_results.csv` with `--csv`).
 
 ### `scripts/analyze_missing_league_weeks.py`
 
@@ -532,8 +532,8 @@ Operator guide: [`DATA_PIPELINE.md`](DATA_PIPELINE.md).
 
 | Source | Tool |
 |--------|------|
-| Liga Excel archive (Sammlung) | `extract_excel_data.py` |
-| Legacy web `.xls` | `scrape_legacy_liga.py` → `extract_excel_data.py` |
+| Liga Excel archive (Sammlung) | `scripts/data/extract_excel_data.py` |
+| Legacy web `.xls` | `scripts/scrape_legacy_liga.py` → `scripts/data/extract_excel_data.py` |
 | Too few weeks / too many teams (scrape CSV) | `scripts/analyze_legacy_scrape_csv.py` |
 | Missing weeks (Excel analyze log) | `scripts/analyze_missing_league_weeks.py` |
 | Schema / team-week validation (flat CSV) | `data_access/validate_data.py` |

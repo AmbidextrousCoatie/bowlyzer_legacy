@@ -241,7 +241,7 @@ def parse_reference_weekly_points_pool(
     ref_week: Optional[int] = None,
 ) -> Dict[int, float]:
     """League points pool per week from Excel TabGes (falls back to TabGes{N} sheets)."""
-    from extract_excel_data import get_sheet_names_safely, read_excel_safely
+    from scripts.data.extract_excel_data import get_sheet_names_safely, read_excel_safely
 
     path = Path(workbook_path)
     if not path.is_file():

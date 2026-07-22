@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import extract_excel_data as m
+from scripts.data import extract_excel_data as m
 
 m._LEAGUE_MAPPING_CACHE = None
 

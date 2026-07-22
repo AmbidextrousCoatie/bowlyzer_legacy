@@ -156,7 +156,7 @@ def _cell_contains(value: Any, needle: str) -> bool:
 
 def _normalize_team_key(name: str) -> str:
     try:
-        from extract_excel_data import normalize_team_name
+        from scripts.data.extract_excel_data import normalize_team_name
 
         return str(normalize_team_name(name) or "").strip().casefold()
     except Exception:
@@ -168,7 +168,7 @@ def _normalize_league_id(raw: Any) -> Optional[str]:
     if not text:
         return None
     try:
-        from extract_excel_data import normalize_league_display_to_canonical
+        from scripts.data.extract_excel_data import normalize_league_display_to_canonical
 
         mapped = normalize_league_display_to_canonical(text)
         return mapped or text
@@ -416,7 +416,7 @@ def parse_standings_from_workbook(
     sheet_name: Optional[str] = None,
     max_week: Optional[int] = None,
 ) -> Tuple[List[StandingRow], str]:
-    from extract_excel_data import get_sheet_names_safely, read_excel_safely
+    from scripts.data.extract_excel_data import get_sheet_names_safely, read_excel_safely
 
     path = Path(workbook_path)
     sheet_names = get_sheet_names_safely(path)
@@ -494,7 +494,7 @@ def _week_from_sheet_name(sheet_name: str) -> Optional[int]:
 
 def discover_excel_reference_targets(analysis_log_path: Path) -> List[ExcelReferenceTarget]:
     """Pick the last-week workbook per league×season from the Excel analysis log."""
-    from extract_excel_data import load_analysis_log
+    from scripts.data.extract_excel_data import load_analysis_log
 
     payload = load_analysis_log(analysis_log_path)
     files = payload.get("files") or {}
@@ -572,7 +572,7 @@ def collect_pre_2022_reference_weekly_team_points(
     max_week: Optional[int] = None,
 ) -> Dict[int, Dict[str, float]]:
     """Per-team Spieltag totals from per-matchday pre-2022 ``Tabelle`` workbooks."""
-    from extract_excel_data import get_sheet_names_safely, read_excel_safely
+    from scripts.data.extract_excel_data import get_sheet_names_safely, read_excel_safely
     from data_access.league_weekly_points_analysis import parse_pre_2022_tabelle_weekly_team_points
 
     if not analysis_log_path.is_file():
@@ -606,7 +606,7 @@ def collect_pre_2022_reference_weekly_team_points(
 
 
 def _iter_analysis_rows(analysis_log_path: Path) -> Iterable[Tuple[str, Dict[str, Any]]]:
-    from extract_excel_data import load_analysis_log
+    from scripts.data.extract_excel_data import load_analysis_log
 
     payload = load_analysis_log(analysis_log_path)
     files = payload.get("files") or {}
@@ -758,7 +758,7 @@ def _load_team_number_override_map() -> Dict[Tuple[str, str, str, str], str]:
     global _TEAM_NUMBER_OVERRIDE_MAP
     if _TEAM_NUMBER_OVERRIDE_MAP is not None:
         return _TEAM_NUMBER_OVERRIDE_MAP
-    from extract_excel_data import load_team_number_overrides, normalize_optional_text
+    from scripts.data.extract_excel_data import load_team_number_overrides, normalize_optional_text
 
     override_map: Dict[Tuple[str, str, str, str], str] = {}
     overrides_df = load_team_number_overrides()
@@ -778,7 +778,7 @@ def _load_team_number_override_map() -> Dict[Tuple[str, str, str, str], str]:
 
 def _apply_team_name_normalization(team: str) -> str:
     """Single-pass team name normalization (same as merge ``normalize_extracted_dataframe``)."""
-    from extract_excel_data import normalize_team_name
+    from scripts.data.extract_excel_data import normalize_team_name
 
     return str(normalize_team_name(team) or "").strip()
 
@@ -810,7 +810,7 @@ def _apply_team_number(
     league: str,
     override_map: Mapping[Tuple[str, str, str, str], str],
 ) -> str:
-    from extract_excel_data import _split_team_base_and_number, normalize_optional_text
+    from scripts.data.extract_excel_data import _split_team_base_and_number, normalize_optional_text
 
     team_raw = normalize_optional_text(team)
     if not team_raw:

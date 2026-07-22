@@ -47,6 +47,8 @@ Supersedes the scrape-flag and hybrid-player guidance in older planning docs (`d
 
 ## Published artifacts (`database/data/`)
 
+Parquet-only at runtime (CSV mirrors in `database/published_csv/` when built with `--write-csv`):
+
 | Artifact | Role |
 |----------|------|
 | `league_results_merged.parquet` | All league seasons (scrape + historical + GF) |
@@ -56,6 +58,8 @@ Supersedes the scrape-flag and hybrid-player guidance in older planning docs (`d
 | `clubs_registry.parquet` | Canonical Club names + aliases / team labels |
 | `vereine_registry.parquet` | Verein catalog from Rangliste |
 | `runs/latest.json` | Last publish manifest |
+
+Pipeline intermediates (scrape, staging CSVs, GF exports) live in **`database/work/`** (gitignored). Migrate with `scripts/migrate_data_layout.ps1`.
 
 Hand-edited (repo, not regenerated blindly):
 
@@ -76,9 +80,6 @@ Rangliste historical spellings (e.g. `BC Donau - Bowler`) are folded through the
 After editing `club_mapping.csv` and/or `team_name_normalization.json`:
 
 ```powershell
-$env:BOWLYZER_WORK_DATA_DIR = "C:\tmp\bowlyzer\data"
-
-# 1) Rebuild published Parquets + registries (scrape included by default)
 uv run python scripts/build_published_dataset.py --job league,tournament --write-csv
 
 # 2) Rebuild API disk caches (required — otherwise UI keeps old club matrices)

@@ -16,7 +16,7 @@ from data_access.player_name_normalization import normalize_player_label
 from data_access.players_registry import REGISTRY_COLUMNS, _join_aliases
 from data_access.text_norm import normalize_unicode_label
 from data_access.tournament_coverage import folder_slug_to_app_season
-from extract_excel_data import get_sheet_names_safely, read_excel_safely
+from scripts.data.extract_excel_data import get_sheet_names_safely, read_excel_safely
 
 MEMBER_SHEET_NAMES = ("member", "mitglieder", "aktive")
 AKTIVE_WORKBOOK_RE = re.compile(r"aktive.*\.xls$", re.IGNORECASE)

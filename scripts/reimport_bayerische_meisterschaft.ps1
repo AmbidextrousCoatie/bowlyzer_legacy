@@ -9,7 +9,7 @@ if (-not (Test-Path $XlsxDir)) {
     New-Item -ItemType Directory -Path $XlsxDir | Out-Null
 }
 $Args = @(
-    "database/input/import_bayerische_meisterschaft_xlsx.py"
+    "scripts/data/import_bayerische_meisterschaft_xlsx.py"
     "--xlsx-dir"
     $XlsxDir
     "--include-ko-finale"

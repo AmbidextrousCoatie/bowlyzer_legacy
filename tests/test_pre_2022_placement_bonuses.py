@@ -1,6 +1,6 @@
 """Pre-2022 weekly scratch placement bonus (1..N for N league teams)."""
 
-from extract_excel_data import (
+from scripts.data.extract_excel_data import (
     _is_phantom_pre_2022_team_name,
     _pre_2022_placement_team_count,
     _pre_2022_weekly_placement_bonuses,

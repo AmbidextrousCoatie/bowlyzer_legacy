@@ -26,7 +26,7 @@ STATE_DIR="${STATE_DIR:-${BOWLYZER_DIR}/work/clubmeisterschaft}"
 CLUBMEISTERSCHAFT_ARCHIVE="${CLUBMEISTERSCHAFT_ARCHIVE:-${STATE_DIR}/archive}"
 TOURNAMENT_INPUTS_DIR="${TOURNAMENT_INPUTS_DIR:-${BOWLYZER_DIR}/work/tournament_inputs}"
 GF_TOURNAMENT_CSV="${GF_TOURNAMENT_CSV:-${TOURNAMENT_INPUTS_DIR}/gf_tournaments_2026__combined_postprocessed.csv}"
-MANUAL_TOURNAMENT_CSV="${MANUAL_TOURNAMENT_CSV:-${BOWLYZER_DIR}/database/data/tournament_manual_postprocessed.csv}"
+MANUAL_TOURNAMENT_CSV="${MANUAL_TOURNAMENT_CSV:-${BOWLYZER_DIR}/database/work/tournaments/tournament_manual_postprocessed.csv}"
 TOURNAMENTS_PUBLISHED_CSV="${TOURNAMENTS_PUBLISHED_CSV:-${BOWLYZER_DIR}/database/data/tournaments_postprocessed.csv}"
 
 LAST_HASH_FILE="${LAST_HASH_FILE:-${STATE_DIR}/.last_import_sha256}"
@@ -63,7 +63,7 @@ die() { log "ERROR: $*"; exit 1; }
 run_workbook_fingerprint() {
   local xlsx="$1"
   local fp_args=(
-    database/input/import_clubmeisterschaft_donaubowler_xlsx.py
+    scripts/data/import_clubmeisterschaft_donaubowler_xlsx.py
     --fingerprint
     --xlsx "/in/clubmeisterschaft_import.xlsx"
     --date "${IMPORT_DATE}"
@@ -319,10 +319,10 @@ fi
 XLSX_WORK="${CLUBMEISTERSCHAFT_WORK}/clubmeisterschaft_import.xlsx"
 cp -f "${XLSX_SRC}" "${XLSX_WORK}"
 
-IMPORTER_SCRIPT="${IMPORTER_SCRIPT:-${BOWLYZER_DIR}/database/input/import_clubmeisterschaft_donaubowler_xlsx.py}"
+IMPORTER_SCRIPT="${IMPORTER_SCRIPT:-${BOWLYZER_DIR}/scripts/data/import_clubmeisterschaft_donaubowler_xlsx.py}"
 IMPORT_MOUNTS=()
 if [[ -f "${IMPORTER_SCRIPT}" ]]; then
-  IMPORT_MOUNTS=(-v "${IMPORTER_SCRIPT}:/app/database/input/import_clubmeisterschaft_donaubowler_xlsx.py:ro")
+  IMPORT_MOUNTS=(-v "${IMPORTER_SCRIPT}:/app/scripts/data/import_clubmeisterschaft_donaubowler_xlsx.py:ro")
 else
   die "Missing importer ${IMPORTER_SCRIPT} (run install_clubmeisterschaft_auto_import.sh)"
 fi
@@ -363,6 +363,7 @@ log "archived workbook -> ${ARCHIVE_DEST}"
 [[ -f "${GF_TOURNAMENT_CSV}" ]] || die "Missing GF tournament snapshot ${GF_TOURNAMENT_CSV} (deploy with -SyncDatabase or bootstrap script)"
 
 DOCKER_DATA_MOUNT=(-v "${BOWLYZER_DIR}/database/data:/app/database/data")
+DOCKER_WORK_MOUNT=(-v "${BOWLYZER_DIR}/database/work:/app/database/work")
 DOCKER_RO_MOUNTS=(
   -v "${BOWLYZER_DIR}/database/relational_csv:/app/database/relational_csv:ro"
   -v "${BOWLYZER_DIR}/database/config:/app/database/config:ro"
@@ -370,7 +371,7 @@ DOCKER_RO_MOUNTS=(
 
 # --- Step 3: Excel -> manual tournament CSV ---
 IMPORT_ARGS=(
-  database/input/import_clubmeisterschaft_donaubowler_xlsx.py
+  scripts/data/import_clubmeisterschaft_donaubowler_xlsx.py
   --xlsx "/in/clubmeisterschaft_import.xlsx"
   --date "${IMPORT_DATE}"
   --year "${IMPORT_YEAR}"
@@ -382,6 +383,7 @@ fi
 log "step 3: import via ${DOCKER_IMAGE}"
 docker run --rm \
   "${DOCKER_DATA_MOUNT[@]}" \
+  "${DOCKER_WORK_MOUNT[@]}" \
   "${DOCKER_RO_MOUNTS[@]}" \
   "${IMPORT_MOUNTS[@]}" \
   -v "${XLSX_WORK}:/in/clubmeisterschaft_import.xlsx:ro" \
@@ -407,14 +409,15 @@ fi
 log "step 4: rebuild tournaments_postprocessed (GF host snapshot + manual)"
 docker run --rm \
   "${DOCKER_DATA_MOUNT[@]}" \
+  "${DOCKER_WORK_MOUNT[@]}" \
   -v "${GF_TOURNAMENT_CSV}:/in/gf_tournaments.csv:ro" \
   -v "${PUBLISH_SCRIPT}:/app/scripts/publish_tournament_parquet.py:ro" \
   --entrypoint python \
   "${DOCKER_IMAGE}" \
   /app/scripts/publish_tournament_parquet.py \
   --gf-tournaments /in/gf_tournaments.csv \
-  --manual-tournaments "/app/database/data/$(basename "${MANUAL_TOURNAMENT_CSV}")" \
-  --tournaments-out "/app/database/data/$(basename "${TOURNAMENTS_PUBLISHED_CSV}")"
+  --manual-tournaments "/app/database/work/tournaments/$(basename "${MANUAL_TOURNAMENT_CSV}")" \
+  --tournaments-out "/app/database/data/$(basename "${TOURNAMENTS_PUBLISHED_CSV%.csv}.csv")"
 
 PARQUET_OUT="${TOURNAMENTS_PUBLISHED_CSV%.csv}.parquet"
 [[ -f "${PARQUET_OUT}" ]] || die "Expected parquet at ${PARQUET_OUT}"

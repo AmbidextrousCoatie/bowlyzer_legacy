@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from extract_excel_data import (
+from scripts.data.extract_excel_data import (
     _map_series_with_progress,
     normalize_extracted_dataframe,
     normalize_team_name,

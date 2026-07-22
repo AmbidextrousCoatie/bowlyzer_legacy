@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import extract_excel_data as m
+from scripts.data import extract_excel_data as m
 
 
 def test_infer_season_from_legacy_scrape_folder():

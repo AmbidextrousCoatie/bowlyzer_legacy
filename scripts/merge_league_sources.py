@@ -28,7 +28,7 @@ from data_access.players_registry import (
     load_players_registry_df,
 )
 from data_access.competition_schema import apply_league_competition_schema_v2
-from extract_excel_data import (
+from scripts.data.extract_excel_data import (
     load_team_number_overrides,
     normalize_extracted_dataframe,
     normalize_team_numbering_dataframe,

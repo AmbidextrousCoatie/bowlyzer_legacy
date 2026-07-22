@@ -10,9 +10,13 @@ from pathlib import Path
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-IMPORTER_PATH = REPO_ROOT / "database" / "input" / "import_clubmeisterschaft_donaubowler_xlsx.py"
-SAMPLE_XLSX = REPO_ROOT / "database/input/clubmeisterschaft_donaubowler/Clubpokal DB 2026.xlsx"
-OLDER_XLSX = REPO_ROOT / "database/input/clubmeisterschaft_donaubowler/Clubpokal DB 2026_05_21.xlsx"
+IMPORTER_PATH = REPO_ROOT / "scripts" / "data" / "import_clubmeisterschaft_donaubowler_xlsx.py"
+SAMPLE_XLSX = REPO_ROOT / "database/work/raw/clubmeisterschaft_donaubowler/Clubpokal DB 2026.xlsx"
+OLDER_XLSX = REPO_ROOT / "database/work/raw/clubmeisterschaft_donaubowler/Clubpokal DB 2026_05_21.xlsx"
+if not SAMPLE_XLSX.is_file():
+    SAMPLE_XLSX = REPO_ROOT / "database/input/clubmeisterschaft_donaubowler/Clubpokal DB 2026.xlsx"
+if not OLDER_XLSX.is_file():
+    OLDER_XLSX = REPO_ROOT / "database/input/clubmeisterschaft_donaubowler/Clubpokal DB 2026_05_21.xlsx"
 
 
 def _load_importer():

@@ -7,7 +7,7 @@ See also [`../DATA_PIPELINE.md`](../DATA_PIPELINE.md).
 | Source | Seasons (typical) | How |
 |--------|-------------------|-----|
 | Legacy web scrape | 08/09–18/19 | `scripts/scrape_legacy_liga.py` → convert/process → `legacy_scrape_extracted.csv` |
-| Historical Excel | 19/20–24/25 | `extract_excel_data.py` → `historical_league_results.csv` |
+| Historical Excel | 19/20–24/25 | `scripts/data/extract_excel_data.py` → `historical_league_results.csv` |
 | GF API | current | `scripts/run_gf_pipeline.py --mode incremental\|full` → `pipeline/.../legacy_out/latest.csv` |
 
 Work dir (default): `BOWLYZER_WORK_DATA_DIR` (e.g. `C:\tmp\bowlyzer\data`).

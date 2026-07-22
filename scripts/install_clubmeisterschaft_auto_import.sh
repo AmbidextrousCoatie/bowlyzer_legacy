@@ -89,14 +89,14 @@ mkdir -p \
 ln -sf "${REPO_ROOT}/scripts/clubmeisterschaft_auto_import.sh" \
   "${BIN_DIR}/clubmeisterschaft_auto_import.sh"
 
-mkdir -p "${BOWLYZER_DIR}/scripts" "${BOWLYZER_DIR}/database/input"
+mkdir -p "${BOWLYZER_DIR}/scripts/data" "${BOWLYZER_DIR}/database/work/tournaments"
 install_if_different "${REPO_ROOT}/scripts/publish_tournament_parquet.py" \
   "${BOWLYZER_DIR}/scripts/publish_tournament_parquet.py"
 install_if_different "${REPO_ROOT}/scripts/send_notify_email.py" \
   "${BOWLYZER_DIR}/scripts/send_notify_email.py"
-if [[ -f "${REPO_ROOT}/database/input/import_clubmeisterschaft_donaubowler_xlsx.py" ]]; then
-  install_if_different "${REPO_ROOT}/database/input/import_clubmeisterschaft_donaubowler_xlsx.py" \
-    "${BOWLYZER_DIR}/database/input/import_clubmeisterschaft_donaubowler_xlsx.py"
+if [[ -f "${REPO_ROOT}/scripts/data/import_clubmeisterschaft_donaubowler_xlsx.py" ]]; then
+  install_if_different "${REPO_ROOT}/scripts/data/import_clubmeisterschaft_donaubowler_xlsx.py" \
+    "${BOWLYZER_DIR}/scripts/data/import_clubmeisterschaft_donaubowler_xlsx.py"
 fi
 
 ENV_FILE="${CONFIG_DIR}/clubmeisterschaft-import.env"

@@ -68,8 +68,9 @@ If `bowling_ergebnisse_real.csv` is missing, the app logs one warning and disabl
 
 | | Windows / dev repo | VPS |
 |--|-------------------|-----|
-| Work/intermediates | `C:\tmp\bowlyzer\data` (`BOWLYZER_WORK_DATA_DIR`) | — |
-| Published output | `database/data/` (or `BOWLYZER_DATA_DIR`) | Same paths under `~/bowlyzer/database/data/` |
+| Work/intermediates | `database/work/` (`BOWLYZER_WORK_DATA_DIR`) | — |
+| Published Parquet | `database/data/*.parquet` (`BOWLYZER_DATA_DIR`) | Same paths under `~/bowlyzer/database/data/` |
+| Published CSV mirrors | `database/published_csv/` (local inspection) | — |
 | Full Python tree | Whole repo | **Image only** (not host mount) |
 
 See `database/data/README.md` for Parquet build and deploy sync commands.

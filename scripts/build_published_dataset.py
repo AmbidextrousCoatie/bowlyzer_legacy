@@ -18,7 +18,8 @@ Outputs (under ``BOWLYZER_DATA_DIR`` / ``database/data`` by default):
 League/tournament jobs automatically run ``players_registry`` first unless
 ``--skip-players-registry`` is passed.
 
-Intermediate / duplicate reports go to ``BOWLYZER_WORK_DATA_DIR`` (e.g. ``C:\\tmp\\bowlyzer\\data``).
+Intermediate / duplicate reports go to ``database/work/`` (override with ``BOWLYZER_WORK_DATA_DIR``).
+CSV mirrors (with ``--write-csv``) go to ``database/published_csv/``.
 
 Usage:
   uv run python scripts/build_published_dataset.py

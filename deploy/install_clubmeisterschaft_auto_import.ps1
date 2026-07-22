@@ -58,7 +58,7 @@ $paths = @(
     "scripts/publish_tournament_parquet.py",
     "scripts/send_notify_email.py",
     "scripts/clubmeisterschaft_auto_import.sh",
-    "database/input/import_clubmeisterschaft_donaubowler_xlsx.py",
+    "scripts/data/import_clubmeisterschaft_donaubowler_xlsx.py",
     "scripts/bootstrap_clubmeisterschaft_dropbox.sh",
     "scripts/install_clubmeisterschaft_auto_import.sh",
     "scripts/install_clubmeisterschaft_linger.sh",
