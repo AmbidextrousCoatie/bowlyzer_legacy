@@ -542,12 +542,18 @@ export function useWeekMatrix() {
   });
 }
 
-export type DataOddityType = "unnumbered_team" | "low_score" | "incomplete_row";
+export type DataOddityType =
+  | "unnumbered_team"
+  | "low_score"
+  | "incomplete_row"
+  | "incomplete_squad"
+  | "over_roster"
+  | "named_missing_side";
 
 export type DataOddity = {
   id: string;
   type: DataOddityType;
-  severity: "warn" | "bad" | "critical";
+  severity: "info" | "warn" | "bad" | "critical";
   message: string;
   context: Record<string, string | number | null | undefined>;
   deep_link?: { path: string; params: Record<string, string> };

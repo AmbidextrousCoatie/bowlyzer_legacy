@@ -5,15 +5,26 @@ import { useTranslations } from "../../hooks/useTranslations";
 import { DiagnosisToolbar } from "../../components/DiagnosisToolbar";
 import { oddityLigaPath } from "../../lib/diagnosisLinks";
 
-const ALL_TYPES: DataOddityType[] = ["unnumbered_team", "low_score", "incomplete_row"];
+const ALL_TYPES: DataOddityType[] = [
+  "unnumbered_team",
+  "low_score",
+  "incomplete_row",
+  "incomplete_squad",
+  "over_roster",
+  "named_missing_side",
+];
 
 const TYPE_LABEL: Record<DataOddityType, string> = {
   unnumbered_team: "Mannschaft ohne Nummer",
   low_score: "Ergebnis < 1",
   incomplete_row: "Spieltag / Ergebnis fehlt",
+  incomplete_squad: "Unvollständige Aufstellung",
+  over_roster: "Überbesetzte Aufstellung",
+  named_missing_side: "Gegner ohne Spielerzeilen",
 };
 
 const SEVERITY_ROW: Record<string, string> = {
+  info: "border-l-4 border-l-sky-400",
   warn: "border-l-4 border-l-amber-400",
   bad: "border-l-4 border-l-orange-500",
   critical: "border-l-4 border-l-rose-500",

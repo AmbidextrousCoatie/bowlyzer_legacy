@@ -62,30 +62,62 @@ class ColumnWidths:
     location = "120px"
 
 
-def _lineup_base(positions: set[int]) -> int:
-    """Offset to convert stored Position values to 0-based lineup slots."""
-    if not positions:
-        return 0
-    return 1 if 0 not in positions and min(positions) >= 1 else 0
-
-
-def _lineup_slot_lookup(df: pd.DataFrame) -> dict[int, pd.Series]:
-    """Map 0-based lineup slot index to the player row for that slot."""
+def _parse_position_values(df: pd.DataFrame) -> list[int]:
     if df.empty or Columns.position not in df.columns:
-        return {}
-    positions = {
+        return []
+    return [
         int(p)
         for p in pd.to_numeric(df[Columns.position], errors="coerce").dropna()
-    }
-    base = _lineup_base(positions)
+    ]
+
+
+def _densify_position_map(positions: list[int]) -> dict[int, int]:
+    """Map sparse stored Position values to contiguous 0..n-1 (sorted by raw value)."""
+    unique = sorted(set(positions))
+    return {raw: idx for idx, raw in enumerate(unique)}
+
+
+def _canonical_lineup_slots(df: pd.DataFrame, expected: int) -> dict[int, pd.Series]:
+    """
+    Map API lineup slots 0..expected-1 to player rows.
+
+    - When stored positions already lie in 0..expected-1 (post-2022 lanes), keep them
+      so vacant lanes stay empty.
+    - When any stored position is outside that range (pre-2022 column indices),
+      densify sorted unique positions to 0..n-1. Order is insignificant in that era.
+    """
+    if expected <= 0 or df.empty or Columns.position not in df.columns:
+        return {}
+
+    positions = _parse_position_values(df)
+    if not positions:
+        return {}
+
+    use_absolute = max(positions) < expected
+    densify_map = None if use_absolute else _densify_position_map(positions)
+
     lookup: dict[int, pd.Series] = {}
     for _, row in df.iterrows():
         pos_raw = row.get(Columns.position)
         if pd.isna(pos_raw):
             continue
-        slot = int(pos_raw) - base
-        lookup[slot] = row
+        raw = int(pos_raw)
+        slot = raw if use_absolute else densify_map[raw]
+        if 0 <= slot < expected:
+            lookup[slot] = row
     return lookup
+
+
+def _expected_players_per_team(*frames: pd.DataFrame) -> int:
+    from data_access.league_points_budget import DEFAULT_PLAYERS_PER_TEAM
+
+    for frame in frames:
+        if frame is None or frame.empty or Columns.players_per_team not in frame.columns:
+            continue
+        ppt = pd.to_numeric(frame[Columns.players_per_team], errors="coerce").dropna()
+        if not ppt.empty:
+            return int(ppt.iloc[0])
+    return DEFAULT_PLAYERS_PER_TEAM
 
 
 class LeagueService:
@@ -547,9 +579,17 @@ class LeagueService:
         """
         Scan league input rows for data-quality oddities with Liga deep-link context.
 
-        Supported types: unnumbered_team, low_score, incomplete_row
+        Supported types: unnumbered_team, low_score, incomplete_row, incomplete_squad,
+        over_roster, named_missing_side
         """
-        allowed_types = {"unnumbered_team", "low_score", "incomplete_row"}
+        allowed_types = {
+            "unnumbered_team",
+            "low_score",
+            "incomplete_row",
+            "incomplete_squad",
+            "over_roster",
+            "named_missing_side",
+        }
         selected_types = (
             {t for t in (types or []) if t in allowed_types} or allowed_types
         )
@@ -573,6 +613,7 @@ class LeagueService:
             Columns.player_name,
             Columns.position,
             Columns.score,
+            Columns.players_per_team,
         ]
         df = self.adapter.get_filtered_data(filters=filters, columns=columns)
         if df is None or df.empty:
@@ -820,6 +861,267 @@ class LeagueService:
                                 "missing_score": 1 if sm else 0,
                             },
                             "deep_link": {"path": "/liga", "params": link_params},
+                        }
+                    ):
+                        break
+
+        roster_types = {"incomplete_squad", "over_roster", "named_missing_side"}
+        if selected_types & roster_types and len(oddities) < limit:
+            # Squad-size KPIs: incomplete / over-roster / named opponent with no player rows.
+            from data_access.league_points_budget import DEFAULT_PLAYERS_PER_TEAM
+
+            def _is_phantom_team(name: str) -> bool:
+                text = str(name or "").strip()
+                if not text:
+                    return True
+                compact = text.replace(" ", "")
+                return compact in {"0", "01", "00"} or text.startswith("0 ")
+
+            def _event_label(week, round_number) -> str:
+                week_label = ""
+                if week is not None and str(week).strip() not in {"", "nan"}:
+                    week_label = (
+                        f" · Spieltag {int(float(week))}"
+                        if str(week).replace(".", "", 1).isdigit()
+                        else f" · Spieltag {week}"
+                    )
+                round_label = ""
+                if round_number is not None and str(round_number).strip() not in {"", "nan", "0"}:
+                    round_label = (
+                        f" · Spiel {int(float(round_number))}"
+                        if str(round_number).replace(".", "", 1).isdigit()
+                        else f" · Spiel {round_number}"
+                    )
+                return f"{week_label}{round_label}"
+
+            work = df.copy()
+            if Columns.player_name in work.columns:
+                players = work[Columns.player_name].fillna("").astype(str).str.strip()
+                work = work.loc[players.ne("") & players.ne("Team Total")]
+            if not work.empty:
+                rounds = pd.to_numeric(work[Columns.round_number], errors="coerce")
+                work = work.loc[rounds.gt(0)]
+
+            roster_rows: List[Dict[str, Any]] = []
+            present_keys: set[tuple] = set()
+            if not work.empty:
+                group_cols = [
+                    Columns.season,
+                    Columns.league_name,
+                    Columns.week,
+                    Columns.round_number,
+                    Columns.team_name,
+                ]
+                for key, group in work.groupby(group_cols, sort=False):
+                    season, league, week, round_number, team = key
+                    season_s = str(season or "").strip()
+                    league_s = str(league or "").strip()
+                    team_s = str(team or "").strip()
+                    week_i = None
+                    try:
+                        if week is not None and str(week).strip() not in {"", "nan"}:
+                            week_i = int(float(week))
+                    except (TypeError, ValueError):
+                        week_i = week
+                    round_i = None
+                    try:
+                        if round_number is not None and str(round_number).strip() not in {"", "nan"}:
+                            round_i = int(float(round_number))
+                    except (TypeError, ValueError):
+                        round_i = round_number
+                    present_keys.add((season_s, league_s, week_i, round_i, team_s))
+                    if _is_phantom_team(team_s):
+                        continue
+                    expected = DEFAULT_PLAYERS_PER_TEAM
+                    if Columns.players_per_team in group.columns:
+                        ppt = pd.to_numeric(group[Columns.players_per_team], errors="coerce").dropna()
+                        if not ppt.empty:
+                            expected = int(ppt.iloc[0])
+                    opponent = str(group[Columns.team_name_opponent].iloc[0] or "").strip()
+                    roster_rows.append(
+                        {
+                            "season": season_s,
+                            "league": league_s,
+                            "week": week_i if week_i is not None else week,
+                            "round": round_i if round_i is not None else round_number,
+                            "team": team_s,
+                            "opponent": opponent,
+                            "count": len(group),
+                            "expected": expected,
+                        }
+                    )
+
+            if "incomplete_squad" in selected_types:
+                for row in roster_rows:
+                    if len(oddities) >= limit:
+                        break
+                    if row["count"] >= row["expected"]:
+                        continue
+                    event = _event_label(row["week"], row["round"])
+                    opp_label = f' vs "{row["opponent"]}"' if row["opponent"] else ""
+                    message = (
+                        f'Unvollständige Aufstellung: "{row["team"]}" {row["count"]}/{row["expected"]}'
+                        f'{opp_label} — {row["league"] or "—"} · {row["season"] or "—"}{event}'
+                    )
+                    if not _append(
+                        {
+                            "id": "|".join(
+                                [
+                                    "incomplete_squad",
+                                    row["season"],
+                                    row["league"],
+                                    str(row["week"]),
+                                    str(row["round"]),
+                                    row["team"],
+                                ]
+                            ),
+                            "type": "incomplete_squad",
+                            "severity": "info",
+                            "message": message,
+                            "context": {
+                                "season": row["season"],
+                                "league": row["league"],
+                                "week": row["week"],
+                                "round": row["round"],
+                                "team": row["team"],
+                                "opponent": row["opponent"],
+                                "players": row["count"],
+                                "expected": row["expected"],
+                                "phantom_opponent": 1 if _is_phantom_team(row["opponent"]) else 0,
+                            },
+                            "deep_link": {
+                                "path": "/liga",
+                                "params": self._liga_deep_link_params(
+                                    season=row["season"],
+                                    league=row["league"],
+                                    week=row["week"],
+                                    team=row["team"],
+                                    round_number=row["round"],
+                                ),
+                            },
+                        }
+                    ):
+                        break
+
+            if "over_roster" in selected_types:
+                for row in roster_rows:
+                    if len(oddities) >= limit:
+                        break
+                    if row["count"] <= row["expected"]:
+                        continue
+                    event = _event_label(row["week"], row["round"])
+                    opp_label = f' vs "{row["opponent"]}"' if row["opponent"] else ""
+                    message = (
+                        f'Überbesetzte Aufstellung: "{row["team"]}" {row["count"]}/{row["expected"]}'
+                        f'{opp_label} — {row["league"] or "—"} · {row["season"] or "—"}{event}'
+                    )
+                    if not _append(
+                        {
+                            "id": "|".join(
+                                [
+                                    "over_roster",
+                                    row["season"],
+                                    row["league"],
+                                    str(row["week"]),
+                                    str(row["round"]),
+                                    row["team"],
+                                ]
+                            ),
+                            "type": "over_roster",
+                            "severity": "info",
+                            "message": message,
+                            "context": {
+                                "season": row["season"],
+                                "league": row["league"],
+                                "week": row["week"],
+                                "round": row["round"],
+                                "team": row["team"],
+                                "opponent": row["opponent"],
+                                "players": row["count"],
+                                "expected": row["expected"],
+                            },
+                            "deep_link": {
+                                "path": "/liga",
+                                "params": self._liga_deep_link_params(
+                                    season=row["season"],
+                                    league=row["league"],
+                                    week=row["week"],
+                                    team=row["team"],
+                                    round_number=row["round"],
+                                ),
+                            },
+                        }
+                    ):
+                        break
+
+            if "named_missing_side" in selected_types:
+                seen_missing: set[tuple] = set()
+                for row in roster_rows:
+                    if len(oddities) >= limit:
+                        break
+                    opponent = row["opponent"]
+                    if not opponent or _is_phantom_team(opponent):
+                        continue
+                    opp_key = (
+                        row["season"],
+                        row["league"],
+                        row["week"],
+                        row["round"],
+                        opponent,
+                    )
+                    if opp_key in present_keys:
+                        continue
+                    # Dedup A→B and B→A if both somehow listed (only A has rows here).
+                    fixture_key = (
+                        row["season"],
+                        row["league"],
+                        row["week"],
+                        row["round"],
+                        tuple(sorted([row["team"], opponent])),
+                    )
+                    if fixture_key in seen_missing:
+                        continue
+                    seen_missing.add(fixture_key)
+                    event = _event_label(row["week"], row["round"])
+                    message = (
+                        f'Gegner ohne Spielerzeilen: "{opponent}" '
+                        f'(genannt von "{row["team"]}") — '
+                        f'{row["league"] or "—"} · {row["season"] or "—"}{event}'
+                    )
+                    if not _append(
+                        {
+                            "id": "|".join(
+                                [
+                                    "named_missing_side",
+                                    row["season"],
+                                    row["league"],
+                                    str(row["week"]),
+                                    str(row["round"]),
+                                    row["team"],
+                                    opponent,
+                                ]
+                            ),
+                            "type": "named_missing_side",
+                            "severity": "info",
+                            "message": message,
+                            "context": {
+                                "season": row["season"],
+                                "league": row["league"],
+                                "week": row["week"],
+                                "round": row["round"],
+                                "team": row["team"],
+                                "opponent": opponent,
+                            },
+                            "deep_link": {
+                                "path": "/liga",
+                                "params": self._liga_deep_link_params(
+                                    season=row["season"],
+                                    league=row["league"],
+                                    week=row["week"],
+                                    team=row["team"],
+                                    round_number=row["round"],
+                                ),
+                            },
                         }
                     ):
                         break
@@ -1162,68 +1464,67 @@ class LeagueService:
                     title=f"{i18n_service.get_text('no_data_available')} - {team}, {i18n_service.get_text('game')} {round_number} (missing position column)"
                 )
             
-            player_data_sorted = player_data.sort_values(by=Columns.position)
-            team_positions = {
-                int(p)
-                for p in pd.to_numeric(player_data[Columns.position], errors="coerce").dropna()
-            }
-            team_base = _lineup_base(team_positions)
-            opponent_by_slot = _lineup_slot_lookup(opponent_data)
+            expected_ppt = _expected_players_per_team(player_data, opponent_data)
+            team_by_slot = _canonical_lineup_slots(player_data, expected_ppt)
+            opponent_by_slot = _canonical_lineup_slots(opponent_data, expected_ppt)
             
             total_points = 0.0
             total_player_pins = 0
             total_opponent_pins = 0
-            
             total_opponent_points = 0.0
             
-            for _, row in player_data_sorted.iterrows():
+            for slot in range(expected_ppt):
                 try:
-                    player_name = str(row[Columns.player_name]) if pd.notna(row[Columns.player_name]) else ""
-                    player_pins = pinfall_display(row[Columns.score])
-                    points = float(row[Columns.points]) if pd.notna(row[Columns.points]) else 0.0
-                    position = int(row[Columns.position]) if pd.notna(row[Columns.position]) else 0
-                    slot = position - team_base
-                    
-                    # Match opponent player at the same 0-based lineup slot
-                    opponent_pins = 0
-                    opponent_player_name = ""
-                    opponent_points = 0.0
+                    row = team_by_slot.get(slot)
                     opponent_player = opponent_by_slot.get(slot)
+
+                    player_name = ""
+                    player_pins: int | str = ""
+                    points: float | str = ""
+                    if row is not None:
+                        player_name = (
+                            str(row[Columns.player_name])
+                            if pd.notna(row[Columns.player_name])
+                            else ""
+                        )
+                        player_pins = pinfall_display(row[Columns.score])
+                        points = float(row[Columns.points]) if pd.notna(row[Columns.points]) else 0.0
+                        total_points += points
+                        total_player_pins += int(pinfall_for_total(row[Columns.score]))
+
+                    opponent_player_name = ""
+                    opponent_pins: int | str = ""
+                    opponent_points: float | str = ""
                     if opponent_player is not None:
-                        try:
-                            if Columns.score in opponent_player.index:
-                                opponent_pins = pinfall_display(opponent_player[Columns.score])
-                            if Columns.player_name in opponent_player.index:
-                                opponent_player_name = (
-                                    str(opponent_player[Columns.player_name])
-                                    if pd.notna(opponent_player[Columns.player_name])
-                                    else ""
-                                )
-                            if Columns.points in opponent_player.index:
-                                opponent_points = (
-                                    float(opponent_player[Columns.points])
-                                    if pd.notna(opponent_player[Columns.points])
-                                    else 0.0
-                                )
-                        except (IndexError, KeyError, ValueError) as e:
-                            print(f"get_game_team_details_data: Error getting opponent data for slot {slot}: {e}")
-                    
+                        opponent_player_name = (
+                            str(opponent_player[Columns.player_name])
+                            if Columns.player_name in opponent_player.index
+                            and pd.notna(opponent_player[Columns.player_name])
+                            else ""
+                        )
+                        if Columns.score in opponent_player.index:
+                            opponent_pins = pinfall_display(opponent_player[Columns.score])
+                            total_opponent_pins += int(
+                                pinfall_for_total(opponent_player[Columns.score])
+                            )
+                        if Columns.points in opponent_player.index:
+                            opponent_points = (
+                                float(opponent_player[Columns.points])
+                                if pd.notna(opponent_player[Columns.points])
+                                else 0.0
+                            )
+                            total_opponent_points += float(opponent_points)
+
                     data.append([
                         player_name,
                         player_pins,
                         points,
                         opponent_points,
                         opponent_pins,
-                        opponent_player_name
+                        opponent_player_name,
                     ])
-                    
-                    total_points += points
-                    total_player_pins += int(pinfall_for_total(row[Columns.score]))
-                    if opponent_player is not None and Columns.score in opponent_player.index:
-                        total_opponent_pins += int(pinfall_for_total(opponent_player[Columns.score]))
-                    total_opponent_points += opponent_points
                 except Exception as e:
-                    print(f"get_game_team_details_data: Error processing player row: {e}")
+                    print(f"get_game_team_details_data: Error processing lineup slot {slot}: {e}")
                     import traceback
                     traceback.print_exc()
                     continue
