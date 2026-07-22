@@ -11,6 +11,7 @@ type PlayerSearchProps = {
   placeholder?: string;
   ariaLabel?: string;
   clearAriaLabel?: string;
+  autoFocus?: boolean;
   onSelect: (entry: PlayerSearchEntry | null) => void;
 };
 
@@ -23,6 +24,7 @@ export function PlayerSearch({
   placeholder,
   ariaLabel,
   clearAriaLabel = "Clear",
+  autoFocus,
   onSelect,
 }: PlayerSearchProps) {
   const [draft, setDraft] = useState(value);
@@ -141,6 +143,7 @@ export function PlayerSearch({
         autoComplete="off"
         spellCheck={false}
         disabled={isLoading}
+        autoFocus={autoFocus}
         className={
           "h-9 w-full rounded-sm border border-border bg-surface text-small text-foreground hover:border-border-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:opacity-60 " +
           (showClear ? "pl-2.5 pr-8" : "px-2.5")

@@ -60,6 +60,24 @@ def test_build_player_warm_shards_adds_batched_highest_games():
     )
 
 
+def test_build_player_warm_shards_myclub_spieler_only():
+    clubs = [f"Club {i}" for i in range(5)]
+    shards = player_warm.build_player_warm_shards(
+        [],
+        clubs=clubs,
+        clubs_file="/tmp/clubs.txt",
+        myclub_spieler_only=True,
+        clubs_per_myclub_shard=2,
+    )
+    labels = [s.label for s in shards]
+    assert labels == [
+        "player:myclub-spieler:1/3",
+        "player:myclub-spieler:2/3",
+        "player:myclub-spieler:3/3",
+    ]
+    assert all(s.argv[1] == "myclub-spieler-batch" for s in shards)
+
+
 def test_build_player_warm_shards_adds_myclub_spieler_batches():
     clubs = [f"Club {i}" for i in range(20)]
     shards = player_warm.build_player_warm_shards(

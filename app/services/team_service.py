@@ -12,6 +12,108 @@ from app.services.statistics_service import StatisticsService
 from app.models.statistics_models import TeamStatistics
 from app.utils.json_safe import to_json_float, to_json_int
 from app.utils.league_utils import get_league_level
+from data_access.league_points_budget import DEFAULT_PLAYERS_PER_TEAM
+
+MatchRosterKey = tuple[str, str, int, int, str]
+MatchRosterLookup = dict[MatchRosterKey, tuple[int, int]]
+
+
+def _build_match_roster_lookup(
+    adapter: Any,
+    *,
+    season: str | None,
+    teams: set[str] | None = None,
+) -> MatchRosterLookup:
+    """
+    Map (season, league, week, round, team) -> (roster_count, expected_players_per_team).
+
+    Counts input-data player rows (round > 0, excluding Team Total).
+    """
+    filters: Dict[str, Any] = {Columns.computed_data: {"value": False, "operator": "eq"}}
+    if season:
+        filters[Columns.season] = {"value": season, "operator": "eq"}
+
+    player_rows = adapter.get_filtered_data(
+        filters=filters,
+        columns=[
+            Columns.season,
+            Columns.league_name,
+            Columns.week,
+            Columns.round_number,
+            Columns.team_name,
+            Columns.player_name,
+            Columns.players_per_team,
+        ],
+    )
+    if player_rows is None or player_rows.empty:
+        return {}
+
+    work = player_rows.copy()
+    if teams:
+        team_set = {str(t).strip() for t in teams if str(t).strip()}
+        work = work.loc[work[Columns.team_name].astype(str).isin(team_set)]
+    if work.empty:
+        return {}
+
+    names = work[Columns.player_name].fillna("").astype(str).str.strip()
+    work = work.loc[names.ne("") & names.ne("Team Total")]
+    rounds = pd.to_numeric(work[Columns.round_number], errors="coerce")
+    work = work.loc[rounds.gt(0)]
+    if work.empty:
+        return {}
+
+    lookup: MatchRosterLookup = {}
+    group_cols = [Columns.season, Columns.league_name, Columns.week, Columns.round_number, Columns.team_name]
+    for key_parts, group in work.groupby(group_cols, sort=False):
+        season, league, week, round_num, team = key_parts
+        week_i = to_json_int(week)
+        round_i = to_json_int(round_num)
+        if week_i is None or round_i is None:
+            continue
+        ppt_series = pd.to_numeric(group[Columns.players_per_team], errors="coerce").dropna()
+        expected = int(ppt_series.iloc[0]) if not ppt_series.empty else DEFAULT_PLAYERS_PER_TEAM
+        key: MatchRosterKey = (
+            str(season).strip(),
+            str(league).strip(),
+            int(week_i),
+            int(round_i),
+            str(team).strip(),
+        )
+        lookup[key] = (len(group), expected)
+    return lookup
+
+
+def _match_roster_key(row: pd.Series, team_name: str) -> MatchRosterKey | None:
+    season = str(row.get(Columns.season) or "").strip()
+    league = str(row.get(Columns.league_name) or "").strip()
+    week = to_json_int(row.get(Columns.week))
+    round_num = to_json_int(row.get(Columns.round_number))
+    team = str(team_name or "").strip()
+    if not season or not league or week is None or round_num is None or not team:
+        return None
+    return (season, league, int(week), int(round_num), team)
+
+
+def _is_full_roster_match(row: pd.Series, roster: MatchRosterLookup) -> bool:
+    """Both sides fielded the league's expected players (e.g. 4 vs 4)."""
+    opponent = str(row.get(Columns.team_name_opponent) or "").strip()
+    if not opponent:
+        return False
+
+    team_key = _match_roster_key(row, str(row.get(Columns.team_name) or ""))
+    opp_key = _match_roster_key(row, opponent)
+    if team_key is None or opp_key is None:
+        return False
+
+    team_info = roster.get(team_key)
+    opp_info = roster.get(opp_key)
+    if not team_info or not opp_info:
+        return False
+
+    team_count, team_expected = team_info
+    opp_count, opp_expected = opp_info
+    expected = team_expected if team_expected == opp_expected else max(team_expected, opp_expected)
+    return team_count == expected and opp_count == expected
 
 
 class TeamService:
@@ -317,7 +419,30 @@ class TeamService:
         
         if team_matches.empty:
             return {}
-        
+
+        # Per-match rows only (round > 0). Round 0 is the weekly team total and
+        # dominates highs/wins while opponent_score is often missing.
+        round_nums = pd.to_numeric(team_matches[Columns.round_number], errors="coerce")
+        team_matches = team_matches.loc[round_nums.gt(0)].copy()
+        if team_matches.empty:
+            return {}
+
+        teams_in_scope = set(team_matches[Columns.team_name].astype(str)) | set(
+            team_matches[Columns.team_name_opponent].astype(str)
+        )
+        # Always apply: if roster lookup is empty/incomplete, treat as not full
+        # so bye/partial lineups cannot leak through when verification fails.
+        roster = _build_match_roster_lookup(
+            self.server.data_adapter,
+            season=season,
+            teams=teams_in_scope,
+        )
+        team_matches = team_matches.loc[
+            team_matches.apply(lambda row: _is_full_roster_match(row, roster), axis=1)
+        ].copy()
+        if team_matches.empty:
+            return {}
+
         # Convert DataFrame to list of dictionaries for easier processing
         matches_list = []
         for _, row in team_matches.iterrows():
@@ -331,19 +456,27 @@ class TeamService:
                 "Season": row[Columns.season],
                 "League": row[Columns.league_name],
                 "Week": to_json_int(row[Columns.week], default=0) or 0,
+                "Round": to_json_int(row[Columns.round_number], default=0) or 0,
                 "Score": to_json_float(sc, default=0.0) or 0.0,
                 "Opponent": row[Columns.team_name_opponent],
                 "OpponentScore": to_json_float(opp_sc, default=0.0) or 0.0,
                 "WinMargin": to_json_float(float(sc) - float(opp_sc), default=0.0) or 0.0,
             }
             matches_list.append(match_info)
-        
+
         # Sort and take top 5 for each category
         special_matches = {
             "highest_scores": sorted(matches_list, key=lambda x: x["Score"], reverse=True)[:5],
             "lowest_scores": sorted(matches_list, key=lambda x: x["Score"])[:5],
-            "biggest_win_margin": sorted(matches_list, key=lambda x: x["WinMargin"], reverse=True)[:5],
-            "biggest_loss_margin": sorted(matches_list, key=lambda x: x["WinMargin"])[:5]
+            "biggest_win_margin": sorted(
+                [m for m in matches_list if m["WinMargin"] > 0],
+                key=lambda x: x["WinMargin"],
+                reverse=True,
+            )[:5],
+            "biggest_loss_margin": sorted(
+                [m for m in matches_list if m["WinMargin"] < 0],
+                key=lambda x: x["WinMargin"],
+            )[:5],
         }
         
         return special_matches

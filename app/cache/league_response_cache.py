@@ -35,7 +35,7 @@ _ENDPOINT_PAYLOAD_VERSION: Dict[str, str] = {
     "get_team_win_percentage_table": "pos-rank-v2",
     "get_team_analysis": "abs-pinfall-v1",
     "get_individual_averages": "abs-pinfall-v1",
-    "get_game_team_details": "abs-pinfall-v1",
+    "get_game_team_details": "lineup-slot-v2",
     "get_team_week_details_table": "abs-pinfall-v1",
     "get_team_week_head_to_head_table": "abs-pinfall-v1",
     "get_week_matrix": "per-league-weeks-v3-bl-bzol-merge",
@@ -45,6 +45,7 @@ _ENDPOINT_PAYLOAD_VERSION: Dict[str, str] = {
     "get_club_matrix": "matrix-pos-v2",
     "get_club_legends": "club-legends-v3",
     "get_club_player_results": "club-player-results-v2",
+    "get_club_rankings": "club-rankings-v4",
     # Nested ELIM.rounds + KO-then-net-average standings for elim/stepladder.
     "get_tournament_section": "elim-stepladder-standings-net-avg-v19",
     "get_player_section": "player-progress-chart-cap-v19",

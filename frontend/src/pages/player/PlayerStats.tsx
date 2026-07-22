@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { PlayerSearch } from "../../components/PlayerSearch";
+import { TopicPageHeader } from "../../components/TopicPageHeader";
 import { seasonForUrlQuery } from "../../lib/api";
 import {
   type PlayerSearchEntry,
@@ -27,6 +28,14 @@ export function PlayerStats() {
   const playerName = searchParams.get("player_name") ?? searchParams.get("player") ?? "";
   const playerId = searchParams.get("player_id") ?? "";
   const season = searchParams.get("season") ?? "all";
+  const focusSearch = searchParams.get("focus") === "search";
+
+  useEffect(() => {
+    if (!focusSearch) return;
+    const next = new URLSearchParams(searchParams);
+    next.delete("focus");
+    setSearchParams(next, { replace: true });
+  }, [focusSearch, searchParams, setSearchParams]);
 
   const playersQuery = usePlayerSearch(clubFilter);
   const seasonsQuery = usePlayerSeasons(playerName, playerId, clubFilter);
@@ -146,21 +155,27 @@ export function PlayerStats() {
 
   return (
     <div className="mx-auto max-w-[1280px] px-8 pt-12 pb-24">
-      <header className="mb-8">
-        <p className="text-label uppercase text-muted mb-2">
-          {t("ui.player.title", "Bowl-A-Lyzer")}
-        </p>
-        <h1 className="text-h1">
-          {t("ui.player.stats_headline", "Spielerstatistiken")} ·{" "}
-          <span className="text-muted font-normal">{headlineSuffix}</span>
-          {hasPlayerSelection && currentClub ? (
-            <>
-              {" "}
-              · <span className="text-muted font-normal">{currentClub}</span>
-            </>
-          ) : null}
-        </h1>
-      </header>
+      <TopicPageHeader
+        topic="player"
+        eyebrow={t("ui.player.title", "Bowl-A-Lyzer")}
+        className="mb-8"
+        title={
+          <>
+            {t("ui.player.stats_headline", "Spielerstatistiken")} ·{" "}
+            <span className="text-muted font-normal">{headlineSuffix}</span>
+            {hasPlayerSelection && currentClub ? (
+              <>
+                {" "}
+                · <span className="text-muted font-normal">{currentClub}</span>
+              </>
+            ) : null}
+          </>
+        }
+        description={t(
+          "ui.player.page_desc",
+          "Spieler suchen oder auswählen — Karrierestatistiken aus Liga und Turnieren.",
+        )}
+      />
 
       <FilterRail
         playerName={playerSearchValue}
@@ -170,6 +185,7 @@ export function PlayerStats() {
         seasons={seasons}
         seasonsLoading={seasonsQuery.isPending}
         clubFilter={clubFilter}
+        focusSearch={focusSearch}
         onPlayerSelect={selectPlayer}
         onSeasonSelect={selectSeason}
         t={t}
@@ -254,6 +270,7 @@ type FilterRailProps = {
   seasons: string[];
   seasonsLoading: boolean;
   clubFilter?: string | null;
+  focusSearch?: boolean;
   onPlayerSelect: (entry: PlayerSearchEntry | null) => void;
   onSeasonSelect: (value: string) => void;
   t: (key: string, fallback?: string) => string;
@@ -280,6 +297,7 @@ function FilterRail(props: FilterRailProps) {
             placeholder={playerPlaceholder}
             ariaLabel={t("ui.player.select_player", "Spieler auswählen")}
             clearAriaLabel={clearLabel}
+            autoFocus={props.focusSearch}
             onSelect={props.onPlayerSelect}
           />
         </FilterField>

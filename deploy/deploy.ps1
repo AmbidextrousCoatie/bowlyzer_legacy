@@ -208,7 +208,10 @@ function Sync-RemoteDatabase {
         Write-Host '    warning: no Parquet/JSON (or CSV with -SyncDatabaseCsv) in database/data/ to upload'
     }
 
-    $gfTournament = Join-Path $databasePath "input/gf_tables_export/gf_tournaments_2026__combined_postprocessed.csv"
+    $gfTournament = Join-Path $databasePath "work\gf\gf_tournaments_2026__combined_postprocessed.csv"
+    if (-not (Test-Path -LiteralPath $gfTournament)) {
+        $gfTournament = Join-Path $databasePath "input\gf_tables_export\gf_tournaments_2026__combined_postprocessed.csv"
+    }
     if (Test-Path -LiteralPath $gfTournament) {
         $gfRemoteDir = "${RemoteDir}/work/tournament_inputs"
         Write-Host "==> SCP: GF tournament snapshot -> ${gfRemoteDir}/ (club import merge)"

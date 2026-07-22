@@ -44,6 +44,7 @@ from app.utils.league_level5_merge import (
 from app.utils.league_week_expectations import expected_weeks_for_league_season, schema_rule_summary
 # from data_access.series_data import calculate_series_data, get_player_series_data, get_team_series_data
 
+
 class ColumnWidths:
     """Class to store column widths for the league service"""
     player = "120px"
@@ -59,6 +60,32 @@ class ColumnWidths:
     date = "120px"
     misc = "80px"
     location = "120px"
+
+
+def _lineup_base(positions: set[int]) -> int:
+    """Offset to convert stored Position values to 0-based lineup slots."""
+    if not positions:
+        return 0
+    return 1 if 0 not in positions and min(positions) >= 1 else 0
+
+
+def _lineup_slot_lookup(df: pd.DataFrame) -> dict[int, pd.Series]:
+    """Map 0-based lineup slot index to the player row for that slot."""
+    if df.empty or Columns.position not in df.columns:
+        return {}
+    positions = {
+        int(p)
+        for p in pd.to_numeric(df[Columns.position], errors="coerce").dropna()
+    }
+    base = _lineup_base(positions)
+    lookup: dict[int, pd.Series] = {}
+    for _, row in df.iterrows():
+        pos_raw = row.get(Columns.position)
+        if pd.isna(pos_raw):
+            continue
+        slot = int(pos_raw) - base
+        lookup[slot] = row
+    return lookup
 
 
 class LeagueService:
@@ -1136,6 +1163,12 @@ class LeagueService:
                 )
             
             player_data_sorted = player_data.sort_values(by=Columns.position)
+            team_positions = {
+                int(p)
+                for p in pd.to_numeric(player_data[Columns.position], errors="coerce").dropna()
+            }
+            team_base = _lineup_base(team_positions)
+            opponent_by_slot = _lineup_slot_lookup(opponent_data)
             
             total_points = 0.0
             total_player_pins = 0
@@ -1149,23 +1182,31 @@ class LeagueService:
                     player_pins = pinfall_display(row[Columns.score])
                     points = float(row[Columns.points]) if pd.notna(row[Columns.points]) else 0.0
                     position = int(row[Columns.position]) if pd.notna(row[Columns.position]) else 0
+                    slot = position - team_base
                     
-                    # Find opponent player at same position
+                    # Match opponent player at the same 0-based lineup slot
                     opponent_pins = 0
                     opponent_player_name = ""
                     opponent_points = 0.0
-                    if not opponent_data.empty and Columns.position in opponent_data.columns:
-                        opponent_player = opponent_data[opponent_data[Columns.position] == position]
-                        if not opponent_player.empty:
-                            try:
-                                if Columns.score in opponent_player.columns:
-                                    opponent_pins = pinfall_display(opponent_player[Columns.score].iloc[0])
-                                if Columns.player_name in opponent_player.columns:
-                                    opponent_player_name = str(opponent_player[Columns.player_name].iloc[0]) if pd.notna(opponent_player[Columns.player_name].iloc[0]) else ""
-                                if Columns.points in opponent_player.columns:
-                                    opponent_points = float(opponent_player[Columns.points].iloc[0]) if pd.notna(opponent_player[Columns.points].iloc[0]) else 0.0
-                            except (IndexError, KeyError, ValueError) as e:
-                                print(f"get_game_team_details_data: Error getting opponent data for position {position}: {e}")
+                    opponent_player = opponent_by_slot.get(slot)
+                    if opponent_player is not None:
+                        try:
+                            if Columns.score in opponent_player.index:
+                                opponent_pins = pinfall_display(opponent_player[Columns.score])
+                            if Columns.player_name in opponent_player.index:
+                                opponent_player_name = (
+                                    str(opponent_player[Columns.player_name])
+                                    if pd.notna(opponent_player[Columns.player_name])
+                                    else ""
+                                )
+                            if Columns.points in opponent_player.index:
+                                opponent_points = (
+                                    float(opponent_player[Columns.points])
+                                    if pd.notna(opponent_player[Columns.points])
+                                    else 0.0
+                                )
+                        except (IndexError, KeyError, ValueError) as e:
+                            print(f"get_game_team_details_data: Error getting opponent data for slot {slot}: {e}")
                     
                     data.append([
                         player_name,
@@ -1178,10 +1219,8 @@ class LeagueService:
                     
                     total_points += points
                     total_player_pins += int(pinfall_for_total(row[Columns.score]))
-                    if not opponent_data.empty and Columns.position in opponent_data.columns:
-                        opp_at_pos = opponent_data[opponent_data[Columns.position] == position]
-                        if not opp_at_pos.empty and Columns.score in opp_at_pos.columns:
-                            total_opponent_pins += int(pinfall_for_total(opp_at_pos[Columns.score].iloc[0]))
+                    if opponent_player is not None and Columns.score in opponent_player.index:
+                        total_opponent_pins += int(pinfall_for_total(opponent_player[Columns.score]))
                     total_opponent_points += opponent_points
                 except Exception as e:
                     print(f"get_game_team_details_data: Error processing player row: {e}")

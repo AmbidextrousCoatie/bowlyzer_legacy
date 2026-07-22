@@ -76,12 +76,14 @@ def test_collect_global_page_jobs_endpoints():
     assert endpoints == [
         "get_week_matrix",
         "home_stats",
+        "get_club_rankings",
         "get_latest_events",
         "get_latest_events",
     ]
     assert jobs[0][1] == {"database": "db_real_merged"}
-    assert jobs[2][1]["limit"] == "8"
-    assert jobs[3][1]["limit"] == "10"
+    assert jobs[2][1] == {"database": "db_real_merged"}
+    assert jobs[3][1]["limit"] == "8"
+    assert jobs[4][1]["limit"] == "10"
 
 
 def test_build_warm_shards_meta_monolith():

@@ -81,6 +81,13 @@ class I18nService:
             "block.consistency_metrics.description": {"en": "Team performance consistency and statistical analysis", "de": "Team-Leistungskonsistenz und statistische Analyse"},
             "block.special_matches.title": {"en": "Special Moments", "de": "Besondere Momente"},
             "block.special_matches.description": {"en": "Team record performances and notable results", "de": "Team-Rekordleistungen und bemerkenswerte Ergebnisse"},
+            "ui.special.highest_scores": {"en": "Highest scores", "de": "Höchste Ergebnisse"},
+            "ui.special.lowest_scores": {"en": "Lowest scores", "de": "Niedrigste Ergebnisse"},
+            "ui.special.biggest_wins": {"en": "Biggest wins", "de": "Höchste Siege"},
+            "ui.special.biggest_losses": {"en": "Biggest losses", "de": "Höchste Niederlagen"},
+            "ui.special.opponent_score": {"en": "Opponent", "de": "Gegner"},
+            "ui.special.margin": {"en": "Margin", "de": "Diff"},
+            "ui.special.open_matchday": {"en": "Open matchday in league view", "de": "Spieltag in der Liga-Ansicht öffnen"},
 
             # Namespaced: Clutch Analysis UI
             "ui.clutch.threshold": {"en": "Clutch Threshold", "de": "Schwelle für enge Spiele"},
@@ -279,6 +286,59 @@ class I18nService:
             },
             "ui.team.club_legends_most_leagues": {"en": "Most leagues seen", "de": "Meiste Ligen"},
             "ui.team.club_legends_teams_list": {"en": "Teams", "de": "Mannschaften"},
+            "ui.team.club_rankings_heading": {
+                "en": "Club rankings",
+                "de": "Club-Ranglisten",
+            },
+            "ui.team.club_rankings_hint": {
+                "en": "Top clubs across the dataset — pick a club above for details.",
+                "de": "Top-Clubs in der Datenquelle — wähle oben einen Club für Details.",
+            },
+            "ui.team.club_rankings_loading": {
+                "en": "Loading club rankings…",
+                "de": "Club-Ranglisten werden geladen…",
+            },
+            "ui.team.club_rankings_error": {
+                "en": "Club rankings could not be loaded.",
+                "de": "Club-Ranglisten konnten nicht geladen werden.",
+            },
+            "ui.team.club_rankings_empty": {
+                "en": "No club rankings available.",
+                "de": "Keine Club-Ranglisten verfügbar.",
+            },
+            "ui.team.club_rankings_highest_total_pinfall": {
+                "en": "Highest total pinfall",
+                "de": "Höchster Gesamtpinfall",
+            },
+            "ui.team.club_rankings_most_members": {"en": "Most members", "de": "Meiste Mitglieder"},
+            "ui.team.club_rankings_highest_weekly_team_average": {
+                "en": "Highest matchday team average",
+                "de": "Höchster Spieltagsschnitt",
+            },
+            "ui.team.club_rankings_highest_team_game_average": {
+                "en": "Highest team game average",
+                "de": "Höchstes Mannschaftsspiel",
+            },
+            "ui.team.club_rankings_most_tournament_wins": {
+                "en": "Most tournament wins",
+                "de": "Meiste Turniersiege",
+            },
+            "ui.team.club_rankings_most_league_wins": {
+                "en": "Most league wins",
+                "de": "Meiste Ligasiege",
+            },
+            "ui.team.club_rankings_event_context": {
+                "en": "{season} · {league} · W{week}",
+                "de": "{season} · {league} · W{week}",
+            },
+            "ui.team.club_rankings_match_context": {
+                "en": "{total} pins · {season} · {league} · W{week} · Game {round}",
+                "de": "{total} Pins · {season} · {league} · W{week} · Spiel {round}",
+            },
+            "ui.team.club_rankings_headline_team": {
+                "en": "{club} · {team}",
+                "de": "{club} · {team}",
+            },
             "ui.team.club_player_results_heading": {
                 "en": "Club player results",
                 "de": "Spielerergebnisse im Club",

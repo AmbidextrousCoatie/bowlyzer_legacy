@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Star } from "lucide-react";
+import { TopicPageHeader } from "../components/TopicPageHeader";
 import { useSearchParams } from "react-router-dom";
 import { useMyClub } from "../hooks/useMyClub";
 import { useClub300Games } from "../hooks/usePlayer";
@@ -49,16 +49,13 @@ export function Club300() {
 
   return (
     <div className="mx-auto max-w-[1280px] px-4 pt-8 pb-24 lg:px-8 lg:pt-12">
-      <header className="mb-10">
-        <p className="text-label uppercase text-muted mb-2">{t("ui.nav.group_start", "Start")}</p>
-        <div className="flex items-start gap-3">
-          <Star className="mt-1 h-7 w-7 shrink-0 text-accent" strokeWidth={1.75} aria-hidden />
-          <div>
-            <h1 className="text-h1">{t("ui.club300.title", "Club 300")}</h1>
-            <p className="text-body text-muted mt-2 max-w-[72ch]">{subtitle}</p>
-          </div>
-        </div>
-      </header>
+      <TopicPageHeader
+        topic="club300"
+        eyebrow={t("ui.nav.group_start", "Start")}
+        className="mb-10"
+        title={t("ui.club300.title", "Club 300")}
+        description={subtitle}
+      />
 
       {gamesQuery.isError && (
         <section className="mb-8 rounded-sm border border-danger-fg/40 bg-surface p-6 text-small text-danger-fg">

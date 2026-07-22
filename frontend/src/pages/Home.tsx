@@ -1,8 +1,16 @@
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useLatestEvents, useHomeStats, resolveHomeStats } from "../hooks/useHome";
-import { HOME_EXAMPLE_LINKS } from "../lib/homeExamples";
-import { buildUrl } from "../lib/api";
+import { useAppLink } from "../hooks/useAppLink";
+import { useMyClub } from "../hooks/useMyClub";
+import { buildHomeExampleLinks } from "../lib/homeExamples";import { HOME_FOOTER, HOME_SECTIONS } from "../lib/homeContent";
 import { SITE_CONTACT } from "../lib/siteContact";
+import { HomeHero } from "../components/home/HomeHero";
+import { HomeHeroActions } from "../components/home/HomeHeroActions";
+import { HomeExplainerSections } from "../components/home/HomeExplainerSections";
+import { HomeEntityMap } from "../components/home/HomeEntityMap";
+import { HomeStatsOverview } from "../components/home/HomeStatsOverview";
+import { HomeLegacyBridge } from "../components/home/HomeLegacyBridge";
+import { HOME_BLOCK_STACK } from "../components/home/HomeSection";
 
 function formatCount(value: number | undefined): string {
   if (value == null || Number.isNaN(value)) return "—";
@@ -13,90 +21,93 @@ export function Home() {
   const statsQuery = useHomeStats();
   const eventsQuery = useLatestEvents(8);
   const stats = resolveHomeStats(statsQuery.data);
+  const { active: myClubActive, resolvedClub } = useMyClub();
+  const link = useAppLink();
+
+  const games = formatCount(stats?.games);
+  const leagueSeasons = formatCount(stats?.league_seasons);
+  const years = formatCount(stats?.years);
+  const tournaments = formatCount(stats?.tournaments);
+  const players = formatCount(stats?.players);
 
   return (
     <div className="mx-auto max-w-[1080px] px-4 pt-8 pb-24 lg:px-8 lg:pt-12">
-      <header className="mb-10">
-        <p className="text-label uppercase text-muted mb-2">Bowl-A-Lyzer</p>
-        <h1 className="text-h1 mb-4">Willkommen</h1>
-        <p className="text-body text-muted max-w-[72ch] leading-relaxed">
-          Diese Seite ist ein Proof of Concept zur Darstellung von Ergebnissen und Statistiken rund
-          um Bowling-Ligen, Turniere und Pokalwettbewerbe. Ich verwende die offiziellen Daten der <a href="https://bowlingbayern.de/BBU" target="_blank" rel="noopener noreferrer">Bayerischen Bowling Union</a> und bin stetig dabei, die Datenbasis zu erweitern. 
-          Die Auswertungen findest du in der Navigation — oder starte mit einem der Beispiele unten.
-        </p>
-        <p className="mt-4 text-body text-muted max-w-[72ch] leading-relaxed">
-          Feedback und Vorschläge gerne per E-Mail an{" "}
+      <div className={HOME_BLOCK_STACK}>
+        <HomeHero myClubActive={myClubActive} resolvedClub={resolvedClub} />
+
+        <HomeStatsOverview
+          games={games}
+          leagueSeasons={leagueSeasons}
+          years={years}
+          tournaments={tournaments}
+          players={players}
+          loading={statsQuery.isPending}
+          error={statsQuery.isError}
+        />
+
+        <HomeHeroActions myClubActive={myClubActive} resolvedClub={resolvedClub} />
+
+        <HomeEntityMap />
+        <HomeExplainerSections />
+
+        <div className="grid gap-8 lg:grid-cols-2">
+          <ExampleList />
+          <LatestEventsList
+            loading={eventsQuery.isPending}
+            error={eventsQuery.isError}
+            events={eventsQuery.data ?? []}
+            database={stats?.database ?? "db_real_merged"}
+          />
+        </div>
+
+        <HomeLegacyBridge />
+      </div>
+
+      <footer className="mt-10 space-y-2 border-t border-border pt-6 text-small text-muted">
+        <p>{HOME_FOOTER.dataNote}</p>
+        <p>
+          Feedback:{" "}
           <a
             href={`mailto:${SITE_CONTACT.email}`}
             className="text-accent hover:text-accent-hover hover:underline"
           >
             {SITE_CONTACT.email}
           </a>
-          .
         </p>
-        <p className="mt-3 text-small text-muted">Cheers, Chris</p>
-      </header>
-
-      <section className="mb-10" aria-label="Überblick">
-        <h2 className="text-h2 mb-4">Daten im Überblick</h2>
-        {statsQuery.isError && (
-          <p className="text-small text-danger-fg mb-4">
-            Statistiken konnten nicht geladen werden.
-          </p>
-        )}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-          <StatCard label="Spiele" value={formatCount(stats?.games)} loading={statsQuery.isPending} />
-          <StatCard
-            label="Liga-Saisons"
-            value={formatCount(stats?.league_seasons)}
-            loading={statsQuery.isPending}
-          />
-          <StatCard
-            label="Jahre"
-            value={formatCount(stats?.years)}
-            loading={statsQuery.isPending}
-          />
-          <StatCard
-            label="Turniere"
-            value={formatCount(stats?.tournaments)}
-            loading={statsQuery.isPending}
-          />
-          <StatCard
-            label="Spieler"
-            value={formatCount(stats?.players)}
-            loading={statsQuery.isPending}
-          />
-        </div>
-      </section>
-
-      <div className="grid gap-8 lg:grid-cols-2">
-        <ExampleList />
-        <LatestEventsList
-          loading={eventsQuery.isPending}
-          error={eventsQuery.isError}
-          events={eventsQuery.data ?? []}
-          database={stats?.database ?? "db_real_merged"}
-        />
-      </div>
-
-      <p className="mt-8 text-small text-muted">
-        <Link to="/impressum" className="text-accent hover:text-accent-hover hover:underline">
-          Impressum
-        </Link>
-      </p>
+        <p>{HOME_FOOTER.cheers}</p>
+        <p>
+          <Link to={link("/impressum")} className="text-accent hover:text-accent-hover hover:underline">
+            Impressum
+          </Link>
+          {" · "}
+          <Link to={link("/glossar")} className="text-accent hover:text-accent-hover hover:underline">
+            Glossar
+          </Link>
+          {" · "}
+          <Link
+            to={link("/warum-bowlyzer")}
+            className="text-accent hover:text-accent-hover hover:underline"
+          >
+            Warum Bowl-A-Lyzer?
+          </Link>
+        </p>
+      </footer>
     </div>
   );
 }
 
 function ExampleList() {
+  const [searchParams] = useSearchParams();
+  const examples = buildHomeExampleLinks(searchParams);
+
   return (
     <section className="rounded-sm border border-border bg-surface">
       <header className="border-b border-border px-4 py-3 lg:px-5">
-        <h2 className="text-h3">Beispiele</h2>
+        <h2 className="text-h3">{HOME_SECTIONS.examples}</h2>
       </header>
       <ul className="divide-y divide-border">
-        {HOME_EXAMPLE_LINKS.map((ex) => (
-          <li key={ex.to}>
+        {examples.map((ex) => (
+          <li key={ex.label}>
             <Link
               to={ex.to}
               className="block px-4 py-3 text-small text-accent hover:bg-surface-subtle hover:text-accent-hover lg:px-5"
@@ -109,7 +120,6 @@ function ExampleList() {
     </section>
   );
 }
-
 function LatestEventsList({
   loading,
   error,
@@ -121,10 +131,15 @@ function LatestEventsList({
   events: Array<{ Season: string; League: string; Week: number | string; Date: string }>;
   database: string;
 }) {
+  const link = useAppLink();
+
   return (
-    <section className="rounded-sm border border-border bg-surface">
+    <section
+      id={HOME_SECTIONS.latestEventsAnchor}
+      className="rounded-sm border border-border bg-surface scroll-mt-8"
+    >
       <header className="border-b border-border px-4 py-3 lg:px-5">
-        <h2 className="text-h3">Letzte Events</h2>
+        <h2 className="text-h3">{HOME_SECTIONS.latestEvents}</h2>
       </header>
       {loading && <p className="px-4 py-4 text-small text-muted lg:px-5">Laden…</p>}
       {error && (
@@ -138,7 +153,7 @@ function LatestEventsList({
             <li className="px-4 py-4 text-small text-muted lg:px-5">Keine Events gefunden.</li>
           ) : (
             events.map((ev) => {
-              const href = buildUrl("/liga", {
+              const href = link("/liga", {
                 season: ev.Season,
                 league: ev.League,
                 week: String(ev.Week),
@@ -164,28 +179,5 @@ function LatestEventsList({
         </ul>
       )}
     </section>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  loading,
-}: {
-  label: string;
-  value: string;
-  loading?: boolean;
-}) {
-  return (
-    <div className="rounded-sm border border-border bg-surface px-4 py-3">
-      <p className="text-label uppercase text-muted mb-1">{label}</p>
-      <p className="font-mono text-h2 tabular-nums text-foreground">
-        {loading ? (
-          <span className="inline-block h-7 w-16 animate-pulse rounded-xs bg-surface-subtle" />
-        ) : (
-          value
-        )}
-      </p>
-    </div>
   );
 }

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ClubSearch } from "../../components/ClubSearch";
+import { TopicPageHeader } from "../../components/TopicPageHeader";
 import { seasonForUrlQuery } from "../../lib/api";
 import { useClubMatrix, type ClubMatrixPayload } from "../../hooks/useLeague";
 import { useMyClub } from "../../hooks/useMyClub";
@@ -14,6 +15,7 @@ import {
   teamsForClub,
 } from "../../lib/teamUtils";
 import { ClubOverview } from "./blocks/ClubOverview";
+import { ClubRankingsOverview } from "./blocks/ClubRankingsOverview";
 import { TeamDetail } from "./blocks/TeamDetail";
 
 export function TeamStats() {
@@ -204,24 +206,25 @@ export function TeamStats() {
 
   return (
     <div className="mx-auto max-w-[1280px] px-4 pt-8 pb-24 lg:px-8 lg:pt-12">
-      <header className="mb-6 lg:mb-8">
-        <p className="text-label uppercase text-muted mb-2">{t("ui.team.eyebrow", "Akteure")}</p>
-        <h1 className="text-h1">
-          {t("ui.team.page_title", "Club")}
-          {club ? (
-            <>
-              {" "}
-              · <span className="font-normal text-muted">{resolvedClub || club}</span>
-            </>
-          ) : null}
-        </h1>
-        <p className="text-body text-muted mt-2 max-w-[72ch]">
-          {t(
-            "ui.team.page_desc",
-            "Club-Übersicht mit allen Mannschaften — Detailanalyse pro Team wie in der bisherigen Mannschaftsansicht.",
-          )}
-        </p>
-      </header>
+      <TopicPageHeader
+        topic="club"
+        eyebrow={t("ui.team.eyebrow", "Akteure")}
+        title={
+          <>
+            {t("ui.team.page_title", "Club")}
+            {club ? (
+              <>
+                {" "}
+                · <span className="font-normal text-muted">{resolvedClub || club}</span>
+              </>
+            ) : null}
+          </>
+        }
+        description={t(
+          "ui.team.page_desc",
+          "Club-Übersicht mit allen Mannschaften — Detailanalyse pro Team wie in der bisherigen Mannschaftsansicht.",
+        )}
+      />
 
       {showFilterBar ? (
         <div className="sticky top-0 z-10 -mx-4 border-b border-border bg-background/85 px-4 py-3 backdrop-blur lg:-mx-8 lg:px-8">
@@ -267,11 +270,17 @@ export function TeamStats() {
 
       <div className="mt-8 space-y-8">
         {!club && !myClubActive && (
-          <section className="rounded-sm border border-dashed border-border p-8 text-center">
-            <p className="text-body text-muted">
-              {t("ui.team.select_club_prompt", "Wähle einen Club, um seine Mannschaften zu sehen.")}
-            </p>
-          </section>
+          <>
+            <section className="rounded-sm border border-dashed border-border p-6 text-center">
+              <p className="text-body text-muted">
+                {t(
+                  "ui.team.select_club_prompt",
+                  "Wähle einen Club, um seine Mannschaften zu sehen.",
+                )}
+              </p>
+            </section>
+            <ClubRankingsOverview t={t} />
+          </>
         )}
 
         {club && clubTeams.length === 0 && teamsQuery.isSuccess && (

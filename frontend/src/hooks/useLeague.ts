@@ -416,6 +416,56 @@ export function useClubPlayerResults(club: string | null, options?: { enabled?: 
   });
 }
 
+export type ClubRankingEntry = {
+  club: string;
+  value: number;
+  team?: string;
+  season?: string;
+  league?: string;
+  week?: string;
+  round?: string;
+  match_total?: number;
+};
+
+export type ClubRankingsPayload = {
+  top_n: number;
+  highest_total_pinfall: ClubRankingEntry[];
+  most_members: ClubRankingEntry[];
+  highest_weekly_team_average: ClubRankingEntry[];
+  highest_team_game_average: ClubRankingEntry[];
+  most_tournament_wins: ClubRankingEntry[];
+  most_league_wins: ClubRankingEntry[];
+};
+
+export function normalizeClubRankingsPayload(
+  raw: Partial<ClubRankingsPayload> | null | undefined,
+): ClubRankingsPayload {
+  return {
+    top_n: raw?.top_n ?? 5,
+    highest_total_pinfall: raw?.highest_total_pinfall ?? [],
+    most_members: raw?.most_members ?? [],
+    highest_weekly_team_average: raw?.highest_weekly_team_average ?? [],
+    highest_team_game_average: raw?.highest_team_game_average ?? [],
+    most_tournament_wins: raw?.most_tournament_wins ?? [],
+    most_league_wins: raw?.most_league_wins ?? [],
+  };
+}
+
+export function useClubRankings(options?: { enabled?: boolean }) {
+  const database =
+    typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("database")
+      : null;
+  const enabled = options?.enabled ?? true;
+  return useQuery({
+    queryKey: ["league", "club-rankings", database ?? ""],
+    queryFn: () => fetchJson<ClubRankingsPayload>(buildUrl("/league/get_club_rankings")),
+    select: normalizeClubRankingsPayload,
+    staleTime: DIAGNOSIS_LIST_STALE_MS,
+    enabled,
+  });
+}
+
 export function useClubLegends(club: string | null, options?: { enabled?: boolean }) {
   const database =
     typeof window !== "undefined"

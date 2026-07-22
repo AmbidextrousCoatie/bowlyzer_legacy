@@ -6,13 +6,11 @@ import csv
 from pathlib import Path
 from typing import Dict, List, Sequence, Tuple
 
-from database.paths import get_data_dir
+from database.paths import gf_tournaments_combined_postprocessed_csv, manual_tournament_postprocessed_csv
 from database.tournament_import.schema import POSTPROCESSED_HEADERS
 
-MANUAL_TOURNAMENT_CSV = get_data_dir() / "tournament_manual_postprocessed.csv"
-GF_REGIONAL_TOURNAMENT_CSV = (
-    Path(__file__).resolve().parents[1] / "input" / "gf_tables_export" / "gf_tournaments_2026__combined_postprocessed.csv"
-)
+MANUAL_TOURNAMENT_CSV = manual_tournament_postprocessed_csv()
+GF_REGIONAL_TOURNAMENT_CSV = gf_tournaments_combined_postprocessed_csv()
 
 
 def read_csv_rows(path: Path) -> List[Dict[str, str]]:

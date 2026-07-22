@@ -107,11 +107,37 @@ def build_player_warm_shards(
     skip_search: bool = False,
     skip_lifetime: bool = False,
     skip_myclub: bool = False,
+    myclub_spieler_only: bool = False,
     include_career_merge: bool = True,
     players_per_highest_shard: int = PLAYERS_PER_HIGHEST_GAMES_WARM_SHARD,
     clubs_per_myclub_shard: int = CLUBS_PER_MYCLUB_SPIELER_SHARD,
 ) -> List[PlayerWarmShard]:
     shards: List[PlayerWarmShard] = []
+    if myclub_spieler_only:
+        if skip_myclub:
+            return shards
+        club_list = [str(c).strip() for c in (clubs or []) if str(c).strip()]
+        club_ranges = _club_batch_ranges(len(club_list), max(1, int(clubs_per_myclub_shard)))
+        clubs_file_argv: Tuple[str, ...] = (
+            ("--clubs-file", clubs_file) if clubs_file else ()
+        )
+        for batch_idx, (offset, limit) in enumerate(club_ranges):
+            n = len(club_ranges)
+            suffix = f"{batch_idx + 1}/{n}" if n > 1 else "1/1"
+            batch_argv = (
+                "--club-offset",
+                str(offset),
+                "--club-limit",
+                str(limit),
+            ) + clubs_file_argv
+            shards.append(
+                PlayerWarmShard(
+                    f"player:myclub-spieler:{suffix}",
+                    ("--phase", "myclub-spieler-batch") + batch_argv,
+                )
+            )
+        return shards
+
     if not skip_search:
         shards.append(PlayerWarmShard("player:search", ("--phase", "search")))
         shards.append(PlayerWarmShard("player:seasons", ("--phase", "seasons-list")))
@@ -547,61 +573,20 @@ def warm_player_myclub_spieler(
     log: Callable[[str], None],
 ) -> Dict[str, int]:
     """Warm caches for ``/spieler?myClub=…`` (club-filtered all-time stack)."""
-    from app.utils.json_safe import json_safe
+    from app.cache.cache_warmup import warm_myclub_spieler_for_club
 
     club_name = str(club or "").strip()
     if not club_name:
         return {"built": 0, "hit": 0, "skip_empty": 0, "errors": 0}
 
     log(f"  myClub Spieler club={club_name!r}")
-    stats = {"built": 0, "hit": 0, "skip_empty": 0, "errors": 0}
-
-    jobs: List[Tuple[str, Dict[str, str], Callable[[], Any]]] = [
-        (
-            "player_search",
-            {"database": database, "search": "", "club": club_name},
-            lambda: json_safe(player_service.search_players("", club=club_name)),
-        ),
-        (
-            "player_get_available_seasons",
-            {"database": database, "club": club_name},
-            lambda: json_safe(player_service.get_all_seasons(club=club_name)),
-        ),
-        (
-            "get_lifetime_stats",
-            {"database": database, "season": "all", "club": club_name},
-            lambda: json_safe(
-                player_service.get_aggregate_lifetime_stats(season="all", club=club_name)
-            ),
-        ),
-        (
-            "get_highest_individual_games",
-            {
-                "database": database,
-                "limit": str(limit),
-                "season": "all",
-                "club": club_name,
-            },
-            lambda: json_safe(
-                player_service.get_highest_individual_games(limit=limit, club=club_name)
-            ),
-        ),
-    ]
-
-    for endpoint, query, build in jobs:
-        try:
-            status = _warm_one(endpoint, database, query, build)
-            if status == "built":
-                stats["built"] += 1
-            elif status == "hit":
-                stats["hit"] += 1
-            else:
-                stats["skip_empty"] += 1
-            log(f"    {endpoint} club={club_name!r} -> {status}")
-        except Exception as exc:
-            stats["errors"] += 1
-            log(f"    {endpoint} club={club_name!r} ERROR: {exc}")
-    return stats
+    return warm_myclub_spieler_for_club(
+        player_service,
+        database,
+        club_name,
+        limit=limit,
+        log=log,
+    )
 
 
 def warm_player_myclub_spieler_batch(

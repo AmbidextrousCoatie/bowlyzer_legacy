@@ -39,9 +39,9 @@
       "id": "clubmeisterschaft-donaubowler-2026",
       "enabled": false,
       "format": "club_donaubowler_xlsx",
-      "source": "{repo_root}/database/input/clubmeisterschaft_donaubowler",
+      "source": "{raw_dir}/clubmeisterschaft_donaubowler",
       "merge_target": "manual",
-      "output": "{data_dir}/tournament_clubmeisterschaft_donaubowler_2026_postprocessed.csv",
+      "output": "{staging_dir}/tournament_clubmeisterschaft_donaubowler_2026_postprocessed.csv",
       "options": {
         "year": 2026,
         "date": "2026-05-15",
@@ -52,9 +52,9 @@
       "id": "bm-xlsx-2026",
       "enabled": false,
       "format": "bm_xlsx_optionen",
-      "source": "{repo_root}/database/input/bayerische_meisterschaft_xlsx",
+      "source": "{raw_dir}/bayerische_meisterschaft_xlsx",
       "merge_target": "gf_regional",
-      "output": "{data_dir}/tournament_bayerische_meisterschaft_2026_postprocessed.csv",
+      "output": "{staging_dir}/tournament_bayerische_meisterschaft_2026_postprocessed.csv",
       "options": {
         "include_ko_finale": false
       }
@@ -65,7 +65,7 @@
       "format": "legacy_pdf_erg_2016",
       "source": "{work_dir}/tournaments/input/bm2019_akt_sb_he_erg.pdf",
       "merge_target": "manual",
-      "output": "{data_dir}/tournament_legacy_pdf_sbm_2019_postprocessed.csv"
+      "output": "{staging_dir}/tournament_legacy_pdf_sbm_2019_postprocessed.csv"
     },
     {
       "id": "sbm-2018-herren",
@@ -73,7 +73,7 @@
       "format": "legacy_pdf_erg_2016",
       "source": "{work_dir}/tournaments/input/bm2018_nb_he_erg.pdf",
       "merge_target": "manual",
-      "output": "{data_dir}/tournament_legacy_pdf_nbm_2018_postprocessed.csv"
+      "output": "{staging_dir}/tournament_legacy_pdf_nbm_2018_postprocessed.csv"
     },
     {
       "id": "sbm-2018-frauen",
@@ -81,7 +81,7 @@
       "format": "legacy_pdf_erg_2016",
       "source": "{work_dir}/tournaments/input/bm2018_akt_einz_f_erg.pdf",
       "merge_target": "manual",
-      "output": "{data_dir}/tournament_legacy_pdf_bm_2018_frauen_postprocessed.csv"
+      "output": "{staging_dir}/tournament_legacy_pdf_bm_2018_frauen_postprocessed.csv"
     },
     {
       "id": "sbm-2017-herren",
@@ -89,7 +89,7 @@
       "format": "legacy_pdf_erg_2016",
       "source": "{work_dir}/tournaments/input/bm2017_sb_he_erg.pdf",
       "merge_target": "manual",
-      "output": "{data_dir}/tournament_legacy_pdf_sbm_2017_postprocessed.csv"
+      "output": "{staging_dir}/tournament_legacy_pdf_sbm_2017_postprocessed.csv"
     },
     {
       "id": "sbm-2016-herren",
@@ -97,7 +97,7 @@
       "format": "legacy_pdf_erg_2016",
       "source": "{work_dir}/tournaments/input/bm2016_sb_he_erg.pdf",
       "merge_target": "manual",
-      "output": "{data_dir}/tournament_legacy_pdf_sbm_2016_postprocessed.csv",
+      "output": "{staging_dir}/tournament_legacy_pdf_sbm_2016_postprocessed.csv",
       "options": {
         "skip_line_patterns": ["Keine Teilnahme BM!"]
       }
@@ -108,7 +108,7 @@
       "format": "legacy_pdf_erg_2016",
       "source": "{work_dir}/tournaments/input/bm2016_einz_he_erg.pdf",
       "merge_target": "manual",
-      "output": "{data_dir}/tournament_legacy_pdf_bm_2016_postprocessed.csv"
+      "output": "{staging_dir}/tournament_legacy_pdf_bm_2016_postprocessed.csv"
     },
     {
       "id": "legacy-bm-2007-xls-herren",
@@ -116,7 +116,7 @@
       "format": "legacy_bm_einz_xls_dual",
       "source": "{work_dir}/tournaments/input/bm2007_einz_erg.xls",
       "merge_target": "manual",
-      "output": "{data_dir}/tournament_legacy_bm_2007_herren_postprocessed.csv",
+      "output": "{staging_dir}/tournament_legacy_bm_2007_herren_postprocessed.csv",
       "options": {
         "sheet": "Herren",
         "season": "06/07",
@@ -130,7 +130,7 @@
       "format": "legacy_bm_einz_xls_dual",
       "source": "{work_dir}/tournaments/input/bm2007_einz_erg.xls",
       "merge_target": "manual",
-      "output": "{data_dir}/tournament_legacy_bm_2007_damen_postprocessed.csv",
+      "output": "{staging_dir}/tournament_legacy_bm_2007_damen_postprocessed.csv",
       "options": {
         "sheet": "Damen",
         "season": "06/07",

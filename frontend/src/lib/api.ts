@@ -6,6 +6,7 @@
  */
 
 import { readStoredLanguage } from "./language";
+import { MY_CLUB_QUERY_KEY } from "./myClub";
 
 export class ApiError extends Error {
   status: number;
@@ -125,6 +126,12 @@ export function buildUrl(
   }
   if (apiWire && !parts.some((p) => p.startsWith("language="))) {
     parts.push(formatQueryPair("language", readStoredLanguage(), apiWire));
+  }
+  if (!apiWire && typeof window !== "undefined") {
+    const myClub = new URLSearchParams(window.location.search).get(MY_CLUB_QUERY_KEY)?.trim();
+    if (myClub && !parts.some((p) => p.startsWith(`${MY_CLUB_QUERY_KEY}=`))) {
+      parts.push(formatQueryPair(MY_CLUB_QUERY_KEY, myClub, false));
+    }
   }
   const qs = parts.join("&");
   return qs ? `${path}?${qs}` : path;

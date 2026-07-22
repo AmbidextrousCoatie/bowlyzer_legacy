@@ -753,12 +753,14 @@ def _build_week_matrix_payload(ls) -> Dict[str, Any]:
 
 def collect_global_page_jobs(ls, database: str) -> List[Job]:
     """
-    Landing page + Liga-Wochen diagnosis (database-wide, not per season/league).
+    Landing page + Liga-Wochen diagnosis + club page empty state (database-wide).
 
     Matches React:
       - /  -> /home/stats, /league/get_latest_events?limit=8
       - /diagnose/liga-wochen -> /league/get_week_matrix
+      - /club (no selection) -> /league/get_club_rankings
     """
+    from app.services.club_rankings_service import ClubRankingsService
     from app.services.home_service import get_home_stats
     from app.utils.json_safe import json_safe
 
@@ -766,6 +768,11 @@ def collect_global_page_jobs(ls, database: str) -> List[Job]:
     jobs: List[Job] = [
         ("get_week_matrix", dict(dbq), lambda: _build_week_matrix_payload(ls)),
         ("home_stats", dict(dbq), lambda: get_home_stats(database)),
+        (
+            "get_club_rankings",
+            dict(dbq),
+            lambda: json_safe(ClubRankingsService(league_database=database).get_club_rankings()),
+        ),
     ]
     for limit in (8, 10):
         jobs.append(
@@ -778,7 +785,7 @@ def collect_global_page_jobs(ls, database: str) -> List[Job]:
     return jobs
 
 
-GLOBAL_PAGE_JOB_COUNT = 4
+GLOBAL_PAGE_JOB_COUNT = 5
 
 
 def collect_filter_dropdown_jobs(
@@ -1658,7 +1665,7 @@ def main() -> int:
                 global_jobs = collect_global_page_jobs(ls0, database)
                 if global_jobs and not args.dry_run:
                     _warm_log(
-                        f"Warming landing + Liga-Wochen ({len(global_jobs)} endpoint(s)) …",
+                        f"Warming landing + Liga-Wochen + club rankings ({len(global_jobs)} endpoint(s)) …",
                         quiet=quiet,
                     )
                     _warm_season_worker(

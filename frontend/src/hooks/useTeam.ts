@@ -70,6 +70,7 @@ export type SpecialMatchRow = {
   Season?: string;
   League?: string;
   Week?: number;
+  Round?: number;
   Score?: number;
   Opponent?: string;
   OpponentScore?: number;

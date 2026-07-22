@@ -32,14 +32,35 @@ tests/__pycache__/*.pyc
 docs/__pycache__/*.pyc
 docs/features/__pycache__/*.pyc
 docs/features/fastAPI/__pycache__/*.pyc
-data_access/schema/__pycache__/*.pyc    
-data_access/adapters/__pycache__/*.pyc    
-data_access/models/__pycache__/*.pyc    
+data_access/schema/__pycache__/*.pyc
+data_access/adapters/__pycache__/*.pyc
+data_access/models/__pycache__/*.pyc
 __pycache__/__init__.cpython-312.pyc
 database/input/__pycache__/generate_geek_tournament_data.cpython-312.pyc
+
+# Root-level analysis scratch output
 analysis_report.csv
 xlsx_analysis_report.csv
 report.csv
+
+# Pipeline work data (all intermediates — see database/work/README.md)
+database/work/
+
+# Published CSV mirrors (Parquet in database/data/ is source of truth)
+database/published_csv/
+
+# database/data: ignore everything except published Parquet, runs, config JSON, docs
+database/data/*
+!database/data/*.parquet
+!database/data/*.json
+!database/data/runs/
+!database/data/runs/**
+!database/data/README.md
+!database/data/ARTIFACTS.md
+
+# Legacy intermediate paths (pre-layout migration; safe to delete locally)
+database/data/legacy_scrape/
+database/data/tmp/
 database/data/extract_excel_analysis_log.json
 database/data/league_weeks_combined_matrix.csv
 database/data/available_weeks_matrix.csv
@@ -50,33 +71,31 @@ database/data/unique_team_names_after_merge.csv
 database/data/league_results_merged_duplicates.csv
 database/data/league_results_merged_duplicates_non_exact.csv
 database/data/historical_league_results.csv
-database/data/historical_league_results.csv
-# Pipeline intermediates (default: C:\tmp\bowlyzer\data on Windows via database/paths.py)
-database/data/legacy_scrape/
-database/data/tmp/
-database/data/historical_league_results.csv
-database/data/league_results_merged_duplicates*.csv
-database/data/unique_team_names_after_merge.csv
 database/data/bowling_ergebnisse*.csv
-database/data/legacy_scrape/*
-database/input/clubmeisterschaft_donaubowler/Clubpokal DB 2026_25_05.xlsx
-database/input/clubmeisterschaft_donaubowler/Clubpokal DB 2026_21_05.xlsx
-
-# Excel lock files while a workbook is open
-**/.~lock.*
-
-# Local dataset experiments (not published to VPS)
+database/data/tournament_*postprocessed*.csv
+database/data/tournament_*clean*.csv
+database/data/tournament_*stage_meta*.csv
 database/data/*no scraping*.parquet
 database/data/team_name_clusters_report.csv
 database/data/team_name_regex_proposals.json
 database/data/team_name_roster_pairs.csv
-database/input/clubmeisterschaft_donaubowler/Clubpokal DB 2026_05_21.xlsx
-database/input/clubmeisterschaft_donaubowler/Clubpokal DB 2026_05_25.xlsx
-database/input/clubmeisterschaft_donaubowler/Clubpokal DB 2026_06_02.xlsx
-database/input/clubmeisterschaft_donaubowler/Clubpokal DB 2026_06_09.xlsx
-database/input/clubmeisterschaft_donaubowler/Clubpokal DB 2026_06_11.xlsx
-database/input/clubmeisterschaft_donaubowler/Clubpokal DB 2026_06_16.xlsx
-tmp/pass_nr_id_renumbers.csv
-tmp/player_id_name_conflicts.csv
+
+# GF / pipeline intermediates (now under database/work/)
+database/input/gf_tables_export/
+database/pipeline/
+
+# Repo scratch (debug scripts may stay; outputs gitignored)
+tmp/*.csv
+tmp/*.txt
+tmp/*.bak
+
+# Excel lock files while a workbook is open
+**/.~lock.*
+
+# Local clubmeisterschaft workbook snapshots (not published)
+database/input/clubmeisterschaft_donaubowler/Clubpokal DB 2026_*.xlsx
 database/input/clubmeisterschaft_donaubowler/Clubpokal DB 2026 Finale.ods
 database/input/clubmeisterschaft_donaubowler/Clubpokal DB 2026_vorletzte.xlsx
+database/work/raw/clubmeisterschaft_donaubowler/Clubpokal DB 2026_*.xlsx
+database/work/raw/clubmeisterschaft_donaubowler/Clubpokal DB 2026 Finale.ods
+database/work/raw/clubmeisterschaft_donaubowler/Clubpokal DB 2026_vorletzte.xlsx

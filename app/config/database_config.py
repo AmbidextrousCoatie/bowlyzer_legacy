@@ -11,7 +11,10 @@ from pathlib import Path
 
 from database.paths import (
     get_data_dir,
+    gf_tournament_export_dir,
     historical_league_results_csv,
+    manual_tournament_postprocessed_csv,
+    pipeline_gf_league_csv,
     tournaments_postprocessed_csv,
 )
 
@@ -20,15 +23,12 @@ APP_DIR = Path(__file__).parent.parent
 LEGACY_V1_DIR = APP_DIR.parent if APP_DIR.name == 'app' else APP_DIR
 
 DATABASE_DATA_DIR = get_data_dir()
-PIPELINE_GF_LEGACY_CSV = (
-    LEGACY_V1_DIR / "database" / "pipeline" / "bowling_bayern" / "legacy_out" / "latest.csv"
-)
-GF_TOURNAMENT_EXPORT_DIR = LEGACY_V1_DIR / "database" / "input" / "gf_tables_export"
+PIPELINE_GF_LEGACY_CSV = pipeline_gf_league_csv()
+GF_TOURNAMENT_EXPORT_DIR = gf_tournament_export_dir()
 GF_SBM_CANONICAL_CSV = GF_TOURNAMENT_EXPORT_DIR / "gf_table_124__sbm_suedbayerische_meisterschaft_2026__canonical_clean.csv"
 GF_NBM_CANONICAL_CSV = GF_TOURNAMENT_EXPORT_DIR / "gf_table_125__nbm_nordbayerische_meisterschaft_2026__canonical_clean.csv"
 GF_REGIONAL_COMBINED_POSTPROCESSED_CSV = GF_TOURNAMENT_EXPORT_DIR / "gf_tournaments_2026__combined_postprocessed.csv"
-# Club / Excel imports that are not produced by the GF tables export pipeline (keeps GF CSV overwrite-safe).
-MANUAL_TOURNAMENT_POSTPROCESSED_CSV = DATABASE_DATA_DIR / "tournament_manual_postprocessed.csv"
+MANUAL_TOURNAMENT_POSTPROCESSED_CSV = manual_tournament_postprocessed_csv()
 GF_PLAYER_COMBINED_CSV = GF_TOURNAMENT_EXPORT_DIR / "gf_player_stats__league_plus_tournaments.csv"
 HISTORICAL_LEAGUE_RESULTS_CSV = historical_league_results_csv()
 MERGED_LEAGUE_RESULTS_CSV = DATABASE_DATA_DIR / "league_results_merged.csv"

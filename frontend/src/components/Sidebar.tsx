@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   Award,
+  BookOpen,
   Building2,
   AlertTriangle,
   CalendarRange,
@@ -9,7 +10,9 @@ import {
   Palette,
   ChevronsLeft,
   ChevronsRight,
+  HelpCircle,
   Home as HomeIcon,
+  Medal,
   Menu,
   FileText,
   Settings,
@@ -29,6 +32,11 @@ import { useLanguage, type AppLanguage } from "../context/LanguageContext";
 import { useTranslations } from "../hooks/useTranslations";
 import { useMobileNav } from "../context/MobileNavContext";
 import { querySuffixForPath } from "../lib/navigationQuery";
+import {
+  type HomeTopicPaletteKey,
+  homePaletteColorForTopic,
+  topicTintStyle,
+} from "../lib/homePalette";
 
 type Theme = "light" | "dark";
 type NavItemDef = {
@@ -36,6 +44,7 @@ type NavItemDef = {
   labelKey?: string;
   fallback: string;
   icon: typeof Trophy;
+  topicKey?: HomeTopicPaletteKey;
 };
 
 type NavGroupDef = {
@@ -52,23 +61,61 @@ const NAV_GROUPS: ReadonlyArray<NavGroupDef> = [
     fallback: "Start",
     items: [
       { path: "/", labelKey: "ui.nav.home", fallback: "Übersicht", icon: HomeIcon },
-      { path: "/club-300", labelKey: "ui.nav.club_300", fallback: "Club 300", icon: Star },
-    ],
-  },
-  {
-    labelKey: "ui.nav.group_play",
-    fallback: "Spielbetrieb",
-    items: [
-      { path: "/liga", labelKey: "league", fallback: "Liga", icon: Trophy },
-      { path: "/turnier", labelKey: "ui.tournament.tournament", fallback: "Turnier", icon: Award },
+      {
+        path: "/warum-bowlyzer",
+        labelKey: "ui.nav.why",
+        fallback: "Warum Bowl-A-Lyzer?",
+        icon: HelpCircle,
+      },
+      {
+        path: "/club-300",
+        labelKey: "ui.nav.club_300",
+        fallback: "Club 300",
+        icon: Star,
+        topicKey: "club300",
+      },
+      {
+        path: "/glossar",
+        labelKey: "ui.nav.glossary",
+        fallback: "Glossar",
+        icon: BookOpen,
+        topicKey: "glossary",
+      },
     ],
   },
   {
     labelKey: "ui.nav.group_actors",
     fallback: "Akteure",
     items: [
-      { path: "/club", labelKey: "ui.team.page_title", fallback: "Club", icon: Users },
-      { path: "/spieler", labelKey: "player", fallback: "Spieler", icon: User },
+      { path: "/spieler", labelKey: "player", fallback: "Spieler", icon: User, topicKey: "player" },
+      {
+        path: "/club",
+        labelKey: "ui.team.page_title",
+        fallback: "Club",
+        icon: Users,
+        topicKey: "club",
+      },
+    ],
+  },
+  {
+    labelKey: "ui.nav.group_play",
+    fallback: "Spielbetrieb",
+    items: [
+      { path: "/liga", labelKey: "league", fallback: "Liga", icon: Trophy, topicKey: "league" },
+      {
+        path: "/turnier",
+        labelKey: "ui.tournament.tournament",
+        fallback: "Turnier",
+        icon: Award,
+        topicKey: "tournament",
+      },
+      {
+        path: "/clubpokal",
+        labelKey: "ui.nav.clubpokal",
+        fallback: "Clubpokal",
+        icon: Medal,
+        topicKey: "clubpokal",
+      },
     ],
   },
   ...(SHOW_DIAGNOSIS
@@ -128,7 +175,6 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Mobile top bar */}
       <div
         className={
           "lg:hidden sticky top-0 z-30 flex items-center justify-between border-b border-border bg-background px-4 py-3 " +
@@ -148,7 +194,6 @@ export function Sidebar() {
         </div>
       </div>
 
-      {/* Mobile drawer overlay */}
       {mobileOpen && (
         <button
           type="button"
@@ -162,17 +207,14 @@ export function Sidebar() {
         data-collapsed={collapsed}
         className={
           "group/sidebar flex flex-col border-r border-border bg-surface " +
-          // desktop: persistent, width depends on collapsed
           "lg:sticky lg:top-0 lg:h-screen " +
           (collapsed ? "lg:w-[56px]" : "lg:w-[240px]") +
           " " +
-          // mobile: drawer
           "fixed inset-y-0 left-0 z-50 w-[260px] transition-transform " +
           (mobileOpen ? "translate-x-0" : "-translate-x-full") +
           " lg:translate-x-0"
         }
       >
-        {/* Header / brand + collapse toggle */}
         <div
           className={
             "flex items-center border-b border-border " +
@@ -203,7 +245,6 @@ export function Sidebar() {
           </button>
         </div>
 
-        {/* Mein Club — global lens (?myClub=), not route-scoped */}
         <div className={"px-3 pt-3 " + (collapsed ? "lg:px-2" : "")}>
           <MyClubControl
             collapsed={collapsed && !mobileOpen}
@@ -211,7 +252,6 @@ export function Sidebar() {
           />
         </div>
 
-        {/* Nav */}
         <nav className="flex-1 overflow-y-auto px-2 pt-4 pb-2">
           {NAV_GROUPS.map((group) => (
             <div key={group.labelKey} className="mb-4 last:mb-0">
@@ -263,7 +303,6 @@ export function Sidebar() {
           </NavLink>
         </div>
 
-        {/* Footer micro-controls */}
         <div
           className={
             "border-t border-border p-2 " +
@@ -331,6 +370,8 @@ function NavRow({
   onNavigate: () => void;
 }) {
   const Icon = item.icon;
+  const topicKey = item.topicKey;
+
   return (
     <NavLink
       to={to}
@@ -338,21 +379,33 @@ function NavRow({
       title={collapsed ? label : undefined}
       className={({ isActive }) =>
         "group/row relative flex h-9 items-center gap-2.5 rounded-sm px-2 text-small transition-colors hover:bg-surface-subtle focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring " +
-        (isActive ? "bg-accent-tint text-foreground" : "text-muted hover:text-foreground")
+        (isActive ? "text-foreground" : "text-muted hover:text-foreground") +
+        (isActive && !topicKey ? " bg-accent-tint" : "")
       }
+      style={({ isActive }) => (isActive && topicKey ? topicTintStyle(topicKey) : undefined)}
     >
-      {({ isActive }) => (
-        <>
-          {isActive && (
-            <span
-              aria-hidden
-              className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-full bg-accent"
+      {({ isActive }) => {
+        const accentColor =
+          isActive && topicKey ? homePaletteColorForTopic(topicKey) : undefined;
+        return (
+          <>
+            {isActive && (
+              <span
+                aria-hidden
+                className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-full bg-accent"
+                style={accentColor ? { backgroundColor: accentColor } : undefined}
+              />
+            )}
+            <Icon
+              size={16}
+              strokeWidth={1.75}
+              className={isActive && !topicKey ? "text-accent" : ""}
+              style={accentColor ? { color: accentColor } : undefined}
             />
-          )}
-          <Icon size={16} strokeWidth={1.75} className={isActive ? "text-accent" : ""} />
-          <span className={collapsed ? "lg:hidden" : ""}>{label}</span>
-        </>
-      )}
+            <span className={collapsed ? "lg:hidden" : ""}>{label}</span>
+          </>
+        );
+      }}
     </NavLink>
   );
 }

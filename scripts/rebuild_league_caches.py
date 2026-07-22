@@ -21,6 +21,7 @@ See docs/DATA_PIPELINE.md for full scenarios.
   and one cached response per division code that has data that season
 - All league-scoped endpoints per (season, league) and league-wide aggregation tables
 - With --warm-clubs (default): team list + get_club_matrix for every club (club page)
+- Global page jobs (with seasons phase): home_stats, get_club_rankings (club empty state), …
 - With --warm-club-legends (default with --all-published): get_club_legends per club
   (separate warm phase from club matrix — expensive player aggregations)
 - With --all-published: also player_search (db_player_merged_hybrid) + tournament caches

@@ -28,6 +28,9 @@ import { SeasonLeagueStandings } from "./blocks/SeasonLeagueStandings";
 import { TeamDetails } from "./blocks/TeamDetails";
 import { TeamPerformance } from "./blocks/TeamPerformance";
 import { LeagueFilterBar } from "./LeagueFilterBar";
+import { ContextualHint } from "../../components/ContextualHint";
+import { TopicPageHeader } from "../../components/TopicPageHeader";
+import { Link } from "react-router-dom";
 
 export function LeagueStats() {
   const { setCompactPageChrome } = useMobileNav();
@@ -176,17 +179,35 @@ export function LeagueStats() {
 
   return (
     <div className="mx-auto max-w-[1280px] px-4 pt-8 pb-24 max-lg:landscape:pt-2 lg:px-8 lg:pt-12">
-      <header className="mb-6 max-lg:landscape:hidden lg:mb-8">
-        <p className="text-label uppercase text-muted mb-2">
-          {t("league_statistics", "Bowl-A-Lyzer")}
-        </p>
-        <h1 className="text-h1">
-          {t("league", "Liga")} ·{" "}
-          <span className="text-muted font-normal">
-            {t("season", "Saison")} <span className="font-mono">{seasonHeading}</span>
-          </span>
-        </h1>
-      </header>
+      <TopicPageHeader
+        topic="league"
+        eyebrow={t("league_statistics", "Bowl-A-Lyzer")}
+        hideOnLandscape
+        title={
+          <>
+            {t("league", "Liga")} ·{" "}
+            <span className="text-muted font-normal">
+              {t("season", "Saison")} <span className="font-mono">{seasonHeading}</span>
+            </span>
+          </>
+        }
+        description={t(
+          "ui.league.page_desc",
+          "Ligatabellen und Spieltag-Ergebnisse — wähle Saison, Liga und Spieltag in der Filterleiste.",
+        )}
+      />
+
+      <ContextualHint hintId="league-filter-cascade" className="mb-6 max-lg:landscape:hidden">
+        <span>
+          {t(
+            "ui.league.filter_hint",
+            "So navigierst du: Saison → Liga → Spieltag → Mannschaft. Die Tabelle zeigt die Platzierungen wie in der gewohnten Ergebnisliste.",
+          )}{" "}
+          <Link to="/glossar" className="text-accent hover:underline">
+            {t("ui.nav.glossary", "Glossar")}
+          </Link>
+        </span>
+      </ContextualHint>
 
       <LeagueFilterBar
         pageName={t("league_statistics", "Bowl-A-Lyzer")}

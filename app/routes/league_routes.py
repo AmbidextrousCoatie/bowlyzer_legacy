@@ -153,6 +153,22 @@ def get_club_player_results():
         return jsonify({"error": str(e)}), 500
 
 
+@bp.route("/league/get_club_rankings")
+def get_club_rankings():
+    """JSON cross-club leaderboards for the club page empty state."""
+    try:
+        def _build():
+            from app.services.club_rankings_service import ClubRankingsService
+
+            database = request.args.get("database") or database_config.get_default_source()
+            top_n = request.args.get("top_n", "5")
+            return ClubRankingsService(league_database=database).get_club_rankings(top_n=top_n)
+
+        return _jsonify_cached_or_compute("get_club_rankings", _build)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @bp.route("/league/get_week_matrix")
 def get_week_matrix():
     """JSON for React League Week Matrix."""

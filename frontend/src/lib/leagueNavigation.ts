@@ -48,9 +48,14 @@ export function teamFromHonorEntry(entry: {
 }
 
 /** Bestleistungen → team week view (no player page yet); game when round is known. */
-/** Team stats “Besondere Momente” → matchday team week sheet. */
+/** Team stats “Besondere Momente” → game sheet when round is known, else week sheet. */
 export function resolveSpecialMatchNavPath(
-  match: { Season?: string; League?: string; Week?: number | string | null },
+  match: {
+    Season?: string;
+    League?: string;
+    Week?: number | string | null;
+    Round?: number | string | null;
+  },
   teamName: string,
 ): string | null {
   const season = match.Season != null ? String(match.Season).trim() : "";
@@ -58,6 +63,15 @@ export function resolveSpecialMatchNavPath(
   const week = match.Week;
   if (!season || !league || week === undefined || week === null || String(week) === "") {
     return null;
+  }
+  const round = match.Round;
+  const hasRound =
+    round !== undefined && round !== null && String(round) !== "" && String(round) !== "0";
+  if (hasRound) {
+    return buildLeagueNavPath(
+      { view: "league-game", team: teamName, week, round },
+      { season, league, defaultWeek: week },
+    );
   }
   return buildLeagueNavPath(
     { view: "league-week-team", team: teamName, week },

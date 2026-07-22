@@ -24,6 +24,9 @@ import { TeamStats } from "./pages/team/TeamStats";
 import { TournamentStats } from "./pages/tournament/TournamentStats";
 import { Home } from "./pages/Home";
 import { Club300 } from "./pages/Club300";
+import { ClubpokalPlaceholder } from "./pages/ClubpokalPlaceholder";
+import { Glossary } from "./pages/Glossary";
+import { WhyBowlyzer } from "./pages/WhyBowlyzer";
 import { Impressum } from "./pages/Impressum";
 import { queryClient } from "./lib/queryClient";
 
@@ -45,6 +48,7 @@ function App() {
                   <Route path="/club-300" element={<Club300 />} />
                   <Route path="/liga" element={<LeagueStats />} />
                   <Route path="/turnier" element={<TournamentStats />} />
+                  <Route path="/clubpokal" element={<ClubpokalPlaceholder />} />
                   <Route path="/club" element={<TeamStats />} />
                   <Route path="/mannschaft" element={<LegacyMannschaftRedirect />} />
                   <Route path="/spieler" element={<PlayerStats />} />
@@ -79,6 +83,8 @@ function App() {
                     <Route path="/diagnose/*" element={<Navigate to="/" replace />} />
                   )}
                   <Route path="/impressum" element={<Impressum />} />
+                  <Route path="/glossar" element={<Glossary />} />
+                  <Route path="/warum-bowlyzer" element={<WhyBowlyzer />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </main>

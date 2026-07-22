@@ -1,3 +1,5 @@
+import { seasonForUrlQuery } from "./api";
+
 /**
  * Query keys for `/club` (club overview + team drill-down).
  * `club` is also used on `/diagnose/club-matrix` (multiple `club=` entries).
@@ -107,6 +109,27 @@ export function searchParamsForPath(targetPath: string, source: URLSearchParams)
 export function querySuffixForPath(targetPath: string, source: URLSearchParams): string {
   const s = searchParamsForPath(targetPath, source).toString();
   return s ? `?${s}` : "";
+}
+
+/** Build an in-app route URL, preserving global params (e.g. ``myClub``) and stripping foreign keys. */
+export function linkForPath(
+  targetPath: string,
+  source: URLSearchParams,
+  params: Record<string, string | number | undefined | null> = {},
+): string {
+  const [pathPart, existingQs = ""] = targetPath.split("?");
+  const next = searchParamsForPath(pathPart, source);
+  const existing = new URLSearchParams(existingQs);
+  existing.forEach((value, key) => {
+    next.set(key, key === "season" ? seasonForUrlQuery(value) : value);
+  });
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null && value !== "") {
+      next.set(key, key === "season" ? seasonForUrlQuery(String(value)) : String(value));
+    }
+  }
+  const qs = next.toString();
+  return qs ? `${pathPart}?${qs}` : pathPart;
 }
 
 export function stripClubQueryKeys(params: URLSearchParams): URLSearchParams {

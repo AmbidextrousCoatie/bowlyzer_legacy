@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Sequence
 
-from database.paths import get_data_dir, tournaments_input_dir
+from database.paths import tournament_staging_dir, tournaments_input_dir
 from database.tournament_import.config import ImportEntry
 from database.tournament_import.legacy_pdf_format import resolve_legacy_pdf_import_format
 from database.tournament_import.source_registry import lookup_source_row
@@ -155,7 +155,8 @@ def import_entry_for_target(target: LegacyPdfTarget) -> ImportEntry:
         enabled=True,
         merge_target="manual",
         output=str(
-            get_data_dir() / f"tournament_legacy_pdf_{tournament_code}_{target.calendar_year}_postprocessed.csv"
+            tournament_staging_dir()
+            / f"tournament_legacy_pdf_{tournament_code}_{target.calendar_year}_postprocessed.csv"
         ),
         options=options,
     )

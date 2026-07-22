@@ -225,6 +225,30 @@ be redefined for series colors**. UI chrome (accent, status) is aligned to
 
 Series colors come from `ColorUtils.getCurrentPalette()` unchanged.
 
+### Topic colors (home & nav grouping)
+
+Landing-page cards, entity map, and related chrome use fixed slots on
+`rainbowPastel` so the same topic always reads with the same hue. Source of
+truth: `frontend/src/lib/homePalette.ts` (`HOME_TOPIC_PALETTE`).
+
+| Slot | Topic | Index | Hex |
+|------|-------|-------|-----|
+| 1 | Spieler | 0 | `#1B8CA6` |
+| 2 | Club | 1 | `#2CA89A` |
+| 3 | Liga | 2 | `#8CBF8A` |
+| 4 | Turnier | 3 | `#E6C86E` |
+| 5 | Clubpokal | 4 | `#F7A86E` |
+| 6 | Club 300 / Mein Club | 5 | `#E86E56` |
+| 7 | Glossar | 6 | `#D95A6A` |
+
+Keep element order within each container aligned with this sequence (left →
+right, top → bottom) so color bands stay visually consistent — e.g. hero CTAs
+1→2→6→7, entity map row 1 = 1→2→6, row 2 = 3→4→5, sidebar Akteure = 1→2,
+Spielbetrieb = 3→4→5, Start extras = 6→7.
+
+Solid in-card CTAs (e.g. Glossar button) use `homePaletteButtonStyleForTopic`;
+cards use top border + tinted fill via `homePaletteStylesForTopic`.
+
 ## Component direction (high level — full specs land later)
 
 - **Buttons**: rectangular with 4 px radius. Variants: `primary` (filled

@@ -16,6 +16,7 @@ Shards:
 Usage:
   uv run python scripts/warm_cache_shard.py --database db_real_merged --warm-all --rebuild --max-parallel 12
   uv run python scripts/warm_cache_shard.py --all-published --rebuild --max-parallel 12
+  uv run python scripts/warm_cache_shard.py --database db_real_merged --warm-myclub-spieler --max-parallel 8
   uv run python scripts/warm_cache_shard.py --database db_real_merged --warm-players --max-parallel 8
   uv run python scripts/warm_cache_shard.py --database db_real_merged --season "25/26" --dry-run
 
@@ -154,6 +155,7 @@ def build_cache_warm_shards(
     warm_clubs: bool,
     warm_club_legends: bool,
     warm_players: bool,
+    warm_myclub_spieler: bool,
     warm_tournament: bool,
     skip_seasons: bool,
     skip_meta: bool,
@@ -195,14 +197,18 @@ def build_cache_warm_shards(
             )
         )
 
-    if warm_players:
+    if warm_players or warm_myclub_spieler:
         player_mod = _load_player_warm()
-        limited_seasons = _seasons_for_warmup(player_seasons)
-        catalog_players = [
-            {"id": str(p.get("id") or ""), "name": str(p.get("name") or "")}
-            for p in player_catalog_players
-            if str(p.get("name") or "").strip()
-        ]
+        limited_seasons = _seasons_for_warmup(player_seasons) if warm_players else []
+        catalog_players = (
+            [
+                {"id": str(p.get("id") or ""), "name": str(p.get("name") or "")}
+                for p in player_catalog_players
+                if str(p.get("name") or "").strip()
+            ]
+            if warm_players
+            else []
+        )
         catalog_clubs = [
             str(c).strip()
             for c in (league_catalog.get("clubs") or [])
@@ -213,6 +219,7 @@ def build_cache_warm_shards(
             players=catalog_players,
             clubs=catalog_clubs,
             clubs_file=player_clubs_file,
+            myclub_spieler_only=warm_myclub_spieler and not warm_players,
             players_per_highest_shard=PLAYERS_PER_HIGHEST_GAMES_WARM_SHARD,
             clubs_per_myclub_shard=clubs_per_shard,
         ):
@@ -540,6 +547,14 @@ def main() -> int:
         action="store_true",
         help="player_search + all-players lifetime (per season + career merge)",
     )
+    parser.add_argument(
+        "--warm-myclub-spieler",
+        action="store_true",
+        help=(
+            "Only club-filtered Spieler stacks (/spieler?myClub=…); "
+            "parallel shards, incremental hit/miss"
+        ),
+    )
     parser.add_argument("--warm-tournament", action="store_true", help="Full tournament cache warm")
     parser.add_argument("--skip-seasons", action="store_true")
     parser.add_argument("--skip-meta", action="store_true")
@@ -589,7 +604,15 @@ def main() -> int:
     warm_clubs = warm_all or args.warm_clubs
     warm_club_legends = warm_all or args.warm_club_legends
     warm_players = (warm_all or args.warm_players) and not args.skip_players
+    warm_myclub_spieler = bool(args.warm_myclub_spieler) and not args.skip_players
     warm_tournament = (warm_all or args.warm_tournament) and not args.skip_tournament
+    myclub_only = warm_myclub_spieler and not warm_players and not warm_all
+    skip_seasons = args.skip_seasons or myclub_only
+    skip_meta = args.skip_meta or myclub_only
+    if myclub_only:
+        warm_clubs = False
+        warm_club_legends = False
+        warm_tournament = False
 
     quiet_children = not args.verbose
     os.environ.setdefault("LEAGUE_CACHE_ENABLED", "1")
@@ -616,7 +639,7 @@ def main() -> int:
             return 1
 
     player_clubs_file: Optional[str] = None
-    if warm_players:
+    if warm_players or warm_myclub_spieler:
         catalog_clubs = [
             str(c).strip()
             for c in (league_catalog.get("clubs") or [])
@@ -643,9 +666,10 @@ def main() -> int:
         warm_clubs=warm_clubs,
         warm_club_legends=warm_club_legends,
         warm_players=warm_players,
+        warm_myclub_spieler=warm_myclub_spieler,
         warm_tournament=warm_tournament,
-        skip_seasons=args.skip_seasons,
-        skip_meta=args.skip_meta,
+        skip_seasons=skip_seasons,
+        skip_meta=skip_meta,
         skip_clubs=args.skip_clubs,
         skip_club_legends=args.skip_club_legends,
         meta_per_league=not args.meta_monolith,
@@ -664,7 +688,9 @@ def main() -> int:
         f"Shard plan: {len(parallel_shards)} parallel + {len(finalize_shards)} finalize, "
         f"max_parallel={args.max_parallel} "
         f"(league={league_database!r}, player={player_database!r}, "
-        f"players={'on' if warm_players else 'off'}, tournament={'on' if warm_tournament else 'off'})",
+        f"players={'on' if warm_players else 'off'}, "
+        f"myclub_spieler={'on' if warm_myclub_spieler else 'off'}, "
+        f"tournament={'on' if warm_tournament else 'off'})",
         flush=True,
     )
 

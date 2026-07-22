@@ -13,6 +13,7 @@ import {
   useTournamentSection,
 } from "../../hooks/useTournament";
 import { useTranslations } from "../../hooks/useTranslations";
+import { TopicPageHeader } from "../../components/TopicPageHeader";
 import { seasonForUrlQuery } from "../../lib/api";
 import { normalizeUnicodeLabel } from "../../lib/teamUtils";
 import { resolveTournamentPlayerName } from "../../lib/tournamentPlayer";
@@ -195,20 +196,26 @@ export function TournamentStats() {
 
   return (
     <div className="mx-auto max-w-[1280px] px-4 pt-8 pb-24 max-lg:landscape:pt-2 lg:px-8 lg:pt-12">
-      <header className="mb-6 max-lg:landscape:hidden lg:mb-8">
-        <p className="text-label uppercase text-muted mb-2">
-          {t("ui.tournament.title", "Bowl-A-Lyzer")}
-        </p>
-        <h1 className="text-h1">
-          {t("ui.tournament.title", "Turnier")}
-          {tournament ? (
-            <>
-              {" "}
-              · <span className="text-muted font-normal">{tournament}</span>
-            </>
-          ) : null}
-        </h1>
-      </header>
+      <TopicPageHeader
+        topic="tournament"
+        eyebrow={t("ui.tournament.title", "Bowl-A-Lyzer")}
+        hideOnLandscape
+        title={
+          <>
+            {t("ui.tournament.title", "Turnier")}
+            {tournament ? (
+              <>
+                {" "}
+                · <span className="text-muted font-normal">{tournament}</span>
+              </>
+            ) : null}
+          </>
+        }
+        description={t(
+          "ui.tournament.page_desc",
+          "Meisterschaftsergebnisse nach Saison und Turnier — Format-Details über das ℹ-Symbol.",
+        )}
+      />
 
       <TournamentFilterBar
         pageHeading={buildTournamentPageHeading(tournament, season, resolvedPlayer)}

@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Mapping
 
-from database.paths import REPO_ROOT, get_data_dir, get_work_data_dir
+from database.paths import REPO_ROOT, get_data_dir, get_work_data_dir, tournament_staging_dir
 
 DEFAULT_CONFIG_PATH = REPO_ROOT / "database" / "config" / "tournament_imports.json"
 
@@ -44,6 +44,8 @@ def _resolve_template(value: str) -> str:
         "{repo_root}": str(REPO_ROOT),
         "{data_dir}": str(get_data_dir()),
         "{work_dir}": str(get_work_data_dir()),
+        "{staging_dir}": str(tournament_staging_dir()),
+        "{raw_dir}": str(get_work_data_dir() / "raw"),
     }
     out = value
     for key, repl in replacements.items():
@@ -76,7 +78,7 @@ def resolve_output_path(entry: ImportEntry, event_names: List[str]) -> Path:
     if entry.output.strip():
         return Path(_resolve_template(entry.output)).resolve()
     slug = entry.id.replace("/", "-")
-    return get_data_dir() / f"tournament_import_{slug}_postprocessed.csv"
+    return tournament_staging_dir() / f"tournament_import_{slug}_postprocessed.csv"
 
 
 def load_config(path: str | Path | None = None) -> TournamentImportConfig:

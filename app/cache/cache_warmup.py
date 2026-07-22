@@ -3,6 +3,9 @@ Warm the heaviest disk-backed API caches after data load.
 
 Focused on Liga season overview (per-season standings), Spieler player search catalog,
 and all-players lifetime stats (per season + merged career).
+
+Club-filtered Spieler (``/spieler?myClub=…``) is warmed via sharded jobs in
+``scripts/warm_cache_shard.py --warm-myclub-spieler`` (see ``warm_myclub_spieler_for_club``).
 """
 
 from __future__ import annotations
@@ -152,6 +155,117 @@ def warm_all_players_lifetime_caches(
         stats["errors"] += 1
         log(f"  get_lifetime_stats all-players season=all ERROR: {exc}")
 
+    return stats
+
+
+def warm_myclub_spieler_for_club(
+    player_service: Any,
+    player_database: str,
+    club: str,
+    *,
+    limit: int = 10,
+    log: Callable[[str], None] = print,
+    tally: Callable[[str], None] | None = None,
+) -> Dict[str, int]:
+    """
+    Warm caches for ``/spieler?myClub=…`` (club-filtered all-players stack).
+
+    Covers player search, seasons list, lifetime ``season=all``, and highest games.
+    """
+    club_name = str(club or "").strip()
+    stats = {"built": 0, "hit": 0, "skip_empty": 0, "errors": 0}
+    if not club_name:
+        return stats
+
+    def _tally(status: str) -> None:
+        if tally is not None:
+            tally(status)
+            return
+        if status == "built":
+            stats["built"] += 1
+        elif status == "hit":
+            stats["hit"] += 1
+        elif status == "skip-empty":
+            stats["skip_empty"] += 1
+
+    jobs: List[tuple[str, Dict[str, str], Callable[[], Any]]] = [
+        (
+            "player_search",
+            {"database": player_database, "search": "", "club": club_name},
+            lambda: json_safe(player_service.search_players("", club=club_name)),
+        ),
+        (
+            "player_get_available_seasons",
+            {"database": player_database, "club": club_name},
+            lambda: json_safe(player_service.get_all_seasons(club=club_name)),
+        ),
+        (
+            "get_lifetime_stats",
+            {"database": player_database, "season": "all", "club": club_name},
+            lambda: json_safe(
+                player_service.get_aggregate_lifetime_stats(season="all", club=club_name)
+            ),
+        ),
+        (
+            "get_highest_individual_games",
+            {
+                "database": player_database,
+                "limit": str(limit),
+                "season": "all",
+                "club": club_name,
+            },
+            lambda: json_safe(
+                player_service.get_highest_individual_games(limit=limit, club=club_name)
+            ),
+        ),
+    ]
+
+    for endpoint, query, build in jobs:
+        try:
+            status = _warm_one(endpoint, player_database, query, build)
+            _tally(status)
+            log(f"  myClub Spieler {endpoint} club={club_name!r} -> {status}")
+        except Exception as exc:
+            stats["errors"] += 1
+            log(f"  myClub Spieler {endpoint} club={club_name!r} ERROR: {exc}")
+    return stats
+
+
+def warm_myclub_spieler_caches(
+    player_database: str,
+    clubs: List[str],
+    player_service: Any | None = None,
+    *,
+    limit: int = 10,
+    log: Callable[[str], None] = print,
+    tally: Callable[[str], None] | None = None,
+) -> Dict[str, int]:
+    """Warm myClub Spieler stacks for every canonical club name."""
+    from app.services.player_service import PlayerService
+    from data_access.shared_pandas_store import get_shared_pandas_adapter
+
+    canonical = [str(c).strip() for c in clubs if str(c).strip()]
+    stats = {"built": 0, "hit": 0, "skip_empty": 0, "errors": 0}
+    if not canonical:
+        log("myClub Spieler warmup: no clubs to warm.")
+        return stats
+
+    if player_service is None:
+        get_shared_pandas_adapter(player_database)
+        player_service = PlayerService(database=player_database)
+
+    log(f"myClub Spieler warmup: {len(canonical)} club(s) …")
+    for club in canonical:
+        part = warm_myclub_spieler_for_club(
+            player_service,
+            player_database,
+            club,
+            limit=limit,
+            log=log,
+            tally=tally,
+        )
+        for key in stats:
+            stats[key] += part.get(key, 0)
     return stats
 
 
