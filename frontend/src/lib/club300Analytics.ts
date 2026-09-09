@@ -85,6 +85,99 @@ export function buildClub300BubblePoints(games: IndividualGameRecord[]): {
   return { seasons, levelOrder, points };
 }
 
+export type Club300HonorPlayer = {
+  name: string;
+  playerId?: string | null;
+  count: number;
+  rank: number;
+  games: IndividualGameRecord[];
+  lastDate: string;
+  lastCompetition: string;
+};
+
+export type Club300Summary = {
+  gameCount: number;
+  playerCount: number;
+  repeaterCount: number;
+  recordCount: number;
+  recordHolders: Club300HonorPlayer[];
+  latest: IndividualGameRecord | null;
+};
+
+function playerKey(game: IndividualGameRecord): string {
+  const name = String(game.player_name ?? "").trim();
+  return String(game.player_id ?? "").trim() || name;
+}
+
+export function formatClub300Date(raw: string | null | undefined): string {
+  const text = String(raw ?? "").trim();
+  if (!text) return "—";
+  const iso = /^(\d{4})-(\d{2})-(\d{2})/.exec(text);
+  if (iso) return `${iso[3]}.${iso[2]}.${iso[1]}`;
+  return text;
+}
+
+export function buildClub300HonorRoll(games: IndividualGameRecord[]): Club300HonorPlayer[] {
+  const byPlayer = new Map<
+    string,
+    {
+      name: string;
+      playerId?: string | null;
+      games: IndividualGameRecord[];
+    }
+  >();
+
+  for (const game of games) {
+    const name = String(game.player_name ?? "").trim();
+    if (!name) continue;
+    const key = playerKey(game);
+    const prev = byPlayer.get(key) ?? { name, playerId: game.player_id, games: [] };
+    prev.games.push(game);
+    byPlayer.set(key, prev);
+  }
+
+  const sorted = [...byPlayer.values()]
+    .map((entry) => {
+      const last = entry.games[0];
+      return {
+        name: entry.name,
+        playerId: entry.playerId,
+        count: entry.games.length,
+        rank: 0,
+        games: entry.games,
+        lastDate: String(last?.date ?? "").trim(),
+        lastCompetition: String(last?.competition ?? "").trim(),
+      };
+    })
+    .sort((a, b) => {
+      if (b.count !== a.count) return b.count - a.count;
+      return a.name.localeCompare(b.name, "de");
+    });
+
+  let lastCount = Number.NaN;
+  let rank = 0;
+  return sorted.map((player, index) => {
+    if (player.count !== lastCount) {
+      rank = index + 1;
+      lastCount = player.count;
+    }
+    return { ...player, rank };
+  });
+}
+
+export function buildClub300Summary(games: IndividualGameRecord[]): Club300Summary {
+  const honor = buildClub300HonorRoll(games);
+  const recordCount = honor[0]?.count ?? 0;
+  return {
+    gameCount: games.length,
+    playerCount: honor.length,
+    repeaterCount: honor.filter((player) => player.count >= 2).length,
+    recordCount,
+    recordHolders: honor.filter((player) => player.count === recordCount && recordCount > 0),
+    latest: games[0] ?? null,
+  };
+}
+
 export function buildClub300PlayerTiers(games: IndividualGameRecord[]): Club300PlayerTier[] {
   const byPlayer = new Map<string, { name: string; id?: string | null; count: number }>();
 
