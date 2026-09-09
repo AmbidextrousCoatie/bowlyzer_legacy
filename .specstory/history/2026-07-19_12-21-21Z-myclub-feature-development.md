@@ -6879,6 +6879,8 @@ output_path: C:\Users\cfell\.cursor\projects\c-Users-cfell-repositories-bowlyzer
 </system_notification>
 <user_query>Briefly inform the user about the task result and perform any follow-up actions (if needed). If there's no follow-ups needed, don't explicitly say that.</user_query>
 
+---
+
 _**User**_
 
 <timestamp>Sunday, Jul 19, 2026, 3:13 PM (UTC+2)</timestamp>

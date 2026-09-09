@@ -8098,3 +8098,272 @@ The ribbon uses the myClub topic color instead of generic accent teal.
 `HOME_TOPIC_PALETTE` indices are corrected to match the documented 1–7 scheme (they had drifted).
 
 New helpers in `homePalette.ts`: `topicTintStyle`, `topicAccentColor`. Typecheck and tests pass.
+
+---
+
+_**User**_
+
+i did some changes on my own, but i dont see them reflected in the frontend:
+@einstiegStories.ts (40-76) 
+what else besides adding content here is required to publish the content?
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Changes to einstiegStories.ts aren't appearing in the frontend. Need to identify what else is required to publish content.
+
+Tracing how einstiegStories is consumed and what the publish pipeline requires.
+</details></think>
+
+_**Agent (default)**_
+
+I'll trace how `einstiegStories` is wired into the UI so we can see what else needs to happen for your beats to show up.
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\einstiegStories.ts</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend",
+  "pattern": "einstiegStories|EINSTIEG|Einstieg"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend",
+  "pattern": "einstiegStories|EINSTIEG|Einstieg",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/pages/WhyBowlyzer.tsx"
+    },
+    {
+      "matchCount": 6,
+      "uri": "frontend/src/lib/storyQuery.ts"
+    },
+    {
+      "matchCount": 30,
+      "uri": "frontend/src/lib/einstiegStories.ts"
+    },
+    {
+      "matchCount": 9,
+      "uri": "frontend/src/pages/Einstieg.tsx"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/lib/navigationQuery.ts"
+    },
+    {
+      "matchCount": 7,
+      "uri": "frontend/src/components/StoryChrome.tsx"
+    },
+    {
+      "matchCount": 30,
+      "uri": "frontend\\src\\lib\\einstiegStories.ts"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/components/Sidebar.tsx"
+    },
+    {
+      "matchCount": 2,
+      "uri": "frontend/src/App.tsx"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/pages/Home.tsx"
+    },
+    {
+      "matchCount": 19,
+      "uri": "frontend/src/lib/einstiegStories.test.ts"
+    },
+    {
+      "matchCount": 4,
+      "uri": "frontend/src/lib/homeContent.ts"
+    }
+  ],
+  "totalFiles": 12,
+  "totalMatches": 111
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\storyQuery.ts</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Checking how StoryChrome handles tournament and round query parameters. This may explain why the updated content isn't appearing in the frontend.
+
+The `/spieler` route likely ignores tournament and round query parameters, or StoryChrome renders captions directly from the beats array. The test expects two beats but the data now contains three. For Einstieg stories, editing `EINSTIEG_STORIES` is the sole source of truth; no separate CMS or deployment step is needed. The dev server must refresh, and the user should navigate to `/einstieg` to start the story.
+
+StoryChrome renders captions only when both story and beat query parameters are present. The beat path and parameters must match keys the target page actually recognizes. PlayerStats likely does not read tournament or round parameters.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\components\StoryChrome.tsx</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src\\pages\\player",
+  "pattern": "tournament|round|searchParams\\.get"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src\\pages\\player",
+  "pattern": "tournament|round|searchParams\\.get",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "frontend/src/pages/player/blocks/TrendChart.tsx"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/pages/player/blocks/LifetimeStats.tsx"
+    },
+    {
+      "matchCount": 14,
+      "uri": "frontend/src/pages/player/PlayerStats.tsx"
+    },
+    {
+      "matchCount": 4,
+      "uri": "frontend/src/pages/player/blocks/CompetitionBreakdownCharts.tsx"
+    },
+    {
+      "matchCount": 20,
+      "uri": "frontend/src/pages/player/blocks/PlayerHighlights.tsx"
+    },
+    {
+      "matchCount": 5,
+      "uri": "frontend/src/pages/player/blocks/SeasonStats.tsx"
+    },
+    {
+      "matchCount": 4,
+      "uri": "frontend/src/pages/player/blocks/ClubHistory.tsx"
+    }
+  ],
+  "totalFiles": 7,
+  "totalMatches": 50
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\einstiegStories.test.ts</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **2** results in **1** directory</summary>
+
+Directory: **`C:\Users\cfell\.cursor\projects\c-Users-cfell-repositories-bowlyzer-deploy\terminals`** (2 files)
+
+| File |
+|------|
+| `../..\..\.cursor\projects\c-Users-cfell-repositories-bowlyzer-deploy\terminals\2.txt` |
+| `../..\..\.cursor\projects\c-Users-cfell-repositories-bowlyzer-deploy\terminals\1.txt` |
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The content in einstiegStories.ts is the publish mechanism itself. This file is not a CMS.
+
+The dev server must be running for HMR to pick up the changes. The user should visit `/einstieg` and start the "spieler" story, then navigate through beats with "Weiter". Caption text comes from StoryChrome. The third beat uses `/spieler` with `tournament` and `round` parameters, but PlayerStats only reads `player_name`, `player_id`, `season`, and `focus`. This means the page will not visually change between beats 2 and 3. To display tournament results, the user should use the `/turnier` path instead.
+
+Tests still expect two beats for the spieler story. This does not block the UI, but it should be updated. No separate build or deploy is required because the content is compiled at build time.
+</details></think>
+
+_**Agent (default)**_
+
+Editing `einstiegStories.ts` **is** the publish step for Einstieg content. There is no separate CMS, API, or content build — `EINSTIEG_STORIES` is imported by `/einstieg` and by `StoryChrome` via `?story=` / `?beat=`.
+
+### What you need for it to show up
+
+1. **Frontend running with that file** — Vite HMR should pick up the change; if not, hard-refresh. A stale Flask-only process or an old `vp build` output won’t show edits.
+2. **Open the right surface** — go to `/einstieg`, start **„Ich will meine Zahlen verstehen“**, then use **Weiter**. Captions appear in the sticky `StoryChrome` bar, not as new home-page cards.
+3. **Beat `path` + `params` must match what the target page reads** — that’s the usual reason a change “doesn’t show”.
+
+### Why your 3rd beat likely looks unchanged
+
+Beat 3 stays on `/spieler` with `tournament` and `round`. `PlayerStats` only uses roughly:
+
+- `player_name` / `player_id`
+- `season`
+- `focus`
+
+It **ignores** `tournament` and `round`. So beat 2 → beat 3 keeps the same Spieler UI; only the chrome caption may change.
+
+To show “how did Steffen finish in a tournament?”, point the beat at the turnier page, e.g.:
+
+```ts
+{
+  path: "/turnier",
+  params: {
+    database: EINSTIEG_DEMO_DATABASE,
+    season: "25/26",
+    tournament: BM_MAENNER,
+    round: "3",
+    // if the turnier page supports player deep-link:
+    // player: "Birkner, Steffen",
+  },
+  caption: "…",
+}
+```
+
+(Confirm the exact query keys on `/turnier` — often `season`, `tournament`, `round`, `player`.)
+
+### Optional hygiene (not required for UI)
+
+- Update `einstiegStories.test.ts` (it still expects `spieler` to have **2** beats).
+- Hard-refresh or restart `vp dev` if HMR missed the edit.
+
+**Bottom line:** add/edit stories in `einstiegStories.ts`, keep beats on routes/params the destination page understands, then walk the story from `/einstieg`. No extra publish pipeline.

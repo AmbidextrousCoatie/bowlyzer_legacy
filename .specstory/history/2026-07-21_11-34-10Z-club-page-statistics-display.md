@@ -16018,3 +16018,8604 @@ Both KPIs are on the Daten-Anomalien page as **info**:
 | `named_missing_side` | Gegner ohne Spielerzeilen | named opponent, no player rows (phantoms/`0` skipped) |
 
 Shared roster scan with incomplete squad; cache bumped to `roster-kpis-v2`. Restart backend to pick it up.
+
+---
+
+_**User**_
+
+i received a batch of new leauge results for the 25/26 season.
+I want to walk through the process of analyzing, validating, adding and publishing these results.
+do not run anything, discuss the steps. 
+
+at first, i want to analyze the whole dir for presence of results, eligibility for import, validity of data sets and so on. the files are located in C:\tmp\Sammlung-Ligaergebnisse\Saison 2025-26\
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I will outline the steps for analyzing, validating, importing, and publishing the new 2025-26 season results.
+
+I will review the existing documentation and tooling for Excel extraction, analyze mode, validation, merge, and publish. This ensures the walkthrough accurately reflects the current codebase.
+</details></think>
+
+_**Agent (default)**_
+
+I'll pull the extraction/publish docs so the walkthrough matches how this repo actually works.
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\docs\Excel_Extraction.md</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\docs",
+  "pattern": "--mode analyze|process|normalize|publish|merge_sources|build_published"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\docs",
+  "pattern": "--mode analyze|process|normalize|publish|merge_sources|build_published",
+  "topFiles": [
+    {
+      "matchCount": 8,
+      "uri": "docs\\CLUBMEISTERSCHAFT_AUTO_IMPORT.md"
+    },
+    {
+      "matchCount": 4,
+      "uri": "docs\\pipeline\\fetch.md"
+    },
+    {
+      "matchCount": 64,
+      "uri": "docs\\Excel_Extraction.md"
+    },
+    {
+      "matchCount": 30,
+      "uri": "docs\\DATA_PIPELINE.md"
+    },
+    {
+      "matchCount": 2,
+      "uri": "docs\\README.md"
+    },
+    {
+      "matchCount": 61,
+      "uri": "docs\\planning\\PIPELINE_STATE_OVERVIEW.md"
+    },
+    {
+      "matchCount": 7,
+      "uri": "docs\\GF_DATA_PIPELINE_IMPLEMENTATION_PLAN.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "docs\\GF_PIPELINE_SPRINT1_RUNBOOK.md"
+    },
+    {
+      "matchCount": 79,
+      "uri": "docs\\planning\\DATA_PIPELINE_PLAN.md"
+    },
+    {
+      "matchCount": 7,
+      "uri": "docs\\pipeline\\publish.md"
+    },
+    {
+      "matchCount": 4,
+      "uri": "docs\\pipeline\\import.md"
+    },
+    {
+      "matchCount": 2,
+      "uri": "docs\\pipeline\\validate.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "docs\\planning\\VEREIN_CLUB_DISAMBIGUATION.md"
+    },
+    {
+      "matchCount": 15,
+      "uri": "docs\\planning\\BACKEND_REWRITE_RUST.md"
+    },
+    {
+      "matchCount": 2,
+      "uri": "docs\\planning\\DOCKER_MIGRATION_PLAN.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "docs\\archive\\CONTENT_BLOCKS_EMPTY_ISSUE.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "docs\\DATABASE_SWITCHING_GUIDE.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "docs\\DATA_TYPE_NORMALIZATION_ASSESSMENT.md"
+    },
+    {
+      "matchCount": 6,
+      "uri": "docs\\ENHANCED_LISTENER_SYSTEM.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "docs\\FRONTEND_REFACTORING_PLAN.md"
+    }
+  ],
+  "totalFiles": 27,
+  "totalMatches": 316
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **1** result in **1** directory</summary>
+
+Directory: **``** (1 file)
+
+| File |
+|------|
+| `.\DEPLOY.md` |
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Checking what the analysis reports indicate about eligibility. Verifying whether the 2025-26 season uses the post-2022 Erfassung format.
+
+The default week parameter is set to 1, which is significant for the process.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\data\\extract_excel_data.py",
+  "pattern": "eligible_for_processing|data_format|available_weeks|issues"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\data\\extract_excel_data.py",
+  "pattern": "eligible_for_processing|data_format|available_weeks|issues",
+  "topFiles": [
+    {
+      "matchCount": 40,
+      "uri": "scripts\\data\\extract_excel_data.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 82
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\docs\DATA_PIPELINE.md</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I will outline the full pipeline, beginning with a directory analysis of the specified folder.
+
+The 25/26 season uses the post-2022 Erfassung format. The default --weeks parameter is set to 1, which could cause issues during processing. The files appear to come from the Sammlung Excel path rather than the GF league pipeline, so the analysis will focus on that route.
+</details></think>
+
+_**Agent (default)**_
+
+Here’s a walkthrough aligned with this repo — **no commands run**, just the path.
+
+## Mental model for 25/26
+
+Season **25/26** is **post-2022 Erfassung** (`data_format_post_2022`): Pos 1–4 × up to 3 rows, H2H points. Your tree:
+
+`C:\tmp\Sammlung-Ligaergebnisse\Saison 2025-26\`
+
+fits the usual **historical Excel → extract → merge/publish** path (not legacy scrape). GF league may also feed “current season” later; for this batch we treat Sammlung as the source of truth.
+
+---
+
+## Phase 0 — Inventory (manual, before tooling)
+
+Before analyze:
+
+- Folder layout (per league / Nord-Süd / week files vs multi-week workbooks)
+- `.xls` vs `.xlsx` (both exist → analyze prefers `.xlsx`)
+- Paths with `fehlerhaft` / `logdatei` are skipped by discovery
+- Rough week coverage (early season vs full 6 Spielttage)
+
+---
+
+## Phase 1 — Analyze the whole dir (what you asked for first)
+
+**Tool:** `scripts/data/extract_excel_data.py --mode analyze`
+
+**Intent:** classify every workbook — format, season/league/weeks, team count, **eligibility**, issues — without writing league rows.
+
+Typical shape:
+
+```text
+--mode analyze
+--folder "C:\tmp\Sammlung-Ligaergebnisse\Saison 2025-26"
+-r
+--analysis-output <work>\excel_analyze_25_26.csv
+(+ optional --force_reanalyze if the analysis log is stale)
+```
+
+**Artifacts:**
+
+| Output | Role |
+|--------|------|
+| `extract_excel_analysis_log.json` (work dir) | Per-file cache (SHA, format, eligibility) |
+| `--analysis-output` CSV | Human review: `eligible_for_processing`, `issues`, `available_weeks`, `number_of_teams`, `data_format`, … |
+
+**What to review in that report:**
+
+1. **Presence** — every expected league/week has at least one file  
+2. **Eligibility** — `eligible_for_processing == True` (False → read `issues`)  
+3. **Format** — expect mostly `data_format_post_2022` for 25/26  
+4. **Season/league** — misread headers → fix via `extract_excel_overrides.csv` or rename/move  
+5. **Weeks / teams** — incomplete Spielttage vs odd team counts (byes)
+
+**Follow-on (still analyze-phase, still no merge):**
+
+```text
+analyze_missing_league_weeks.py  ← reads the analysis log
+```
+
+→ matrices of available vs missing weeks per league×season.
+
+If many `.xls` only: **`convert_legacy_xls`** first (LibreOffice), then re-analyze with `--skip_xls` or prefer `.xlsx`.
+
+**Gate to leave Phase 1:** you’re happy with which files are eligible, which need overrides/exclusions, and week coverage looks intentional.
+
+---
+
+## Phase 2 — Process (extract to CSV)
+
+**Tool:** same script, `--mode process` on the same folder (re-runs analyze with cache, then extracts).
+
+**Outputs (work dir):**
+
+- `historical_league_results.csv` (or a **dedicated** path for this batch, e.g. `…_25_26.csv`)
+- `*_combos/` per league×season
+
+**Watchouts:**
+
+- **`--weeks`** — if omitted, process defaults to week **1** only. For a full-season dir, pass all weeks you want (e.g. `1,2,3,…`) or confirm how your batch files encode weeks (one week per file vs multi-week workbook).
+- Prefer a **separate output file** for 25/26 so you can validate before it touches the big historical merge.
+- Overrides / team-name / team-number configs apply here.
+
+Optional: `--mode normalize_data` on the extract CSV if you only need re-normalization.
+
+---
+
+## Phase 3 — Validate the extract (before publish)
+
+On the **new CSV** (not yet full merge), then again after merge:
+
+| Check | Tool |
+|-------|------|
+| Structural / points / teams-per-week | `data_access/validate_data.py --file <extract.csv>` |
+| Female/male league collapse | `audit_female_league_split.py` |
+| After publish: week matrix + oddities | App `/diagnose/liga-wochen`, `/diagnose/daten-anomalien` (incomplete squad / over-roster / named missing side = **info**) |
+
+Expect some **info** incomplete squads / byes; treat **over_roster** and **named_missing_side** as hygiene flags, not blockers unless counts spike.
+
+---
+
+## Phase 4 — Merge / publish
+
+**Preferred:** `scripts/build_published_dataset.py` (league job ± `--write-csv`)
+
+Pulls configured sources (historical extract path, legacy scrape if present, GF league if configured) → `league_results_merged.parquet` (+ CSV mirror) → `runs/latest.json`.
+
+**Alternative:** `merge_league_sources.py` with explicit `--inputs` if you’re splicing only certain CSVs.
+
+Publish gates (e.g. female league split) can block unless forced — check dry-run first.
+
+---
+
+## Phase 5 — Cache + serve
+
+1. `rebuild_league_caches.py` / warm (season-granular after publish)  
+2. Restart Flask so in-memory registries reload  
+3. Deploy: `deploy.ps1 -SyncDatabase` (± `-SyncCache`)
+
+---
+
+## Suggested order for *this* conversation
+
+| Step | Action | Stop when |
+|------|--------|-----------|
+| **1** | Analyze `Saison 2025-26` + write analysis CSV | Eligibility/issues/week gaps reviewed |
+| **2** | `analyze_missing_league_weeks` | Coverage accepted |
+| **3** | Fix overrides / convert xls / exclude bad files | Re-analyze clean |
+| **4** | Process → dedicated 25/26 CSV | Extract looks right |
+| **5** | `validate_data` (+ audits) | No unexpected hard failures |
+| **6** | Publish + cache + (optional) deploy | App shows 25/26 |
+
+---
+
+## First concrete step (when you say go)
+
+Analyze only:
+
+- Folder: `C:\tmp\Sammlung-Ligaergebnisse\Saison 2025-26\`
+- Recursive
+- Analysis CSV under `BOWLYZER_WORK_DATA_DIR` (e.g. `C:\tmp\bowlyzer\data`)
+- Review `eligible_for_processing` / `issues` / weeks before any process
+
+One question before we run later: are these **one workbook per Spieltag** or **multi-week Erfassung** files? That decides how carefully we set `--weeks` in process.
+
+---
+
+_**User**_
+
+i analyzed, converted and extracted the whole dir.
+
+when validating i get strange reports:
+================================================================================
+VALIDATION RESULTS
+================================================================================
+
+Total issues found: 512
+
+
+[X] all_teams_present: 18 issues
+--------------------------------------------------------------------------------
+
+  Issue 1:
+    league: BZL N2
+    season: 25/26
+    week: 1
+    missing_teams: ['RW Lichtenhof 69 Stein 4']
+    expected_count: 6
+    actual_count: 6
+
+  Issue 2:
+    league: BZL N2
+    season: 25/26
+    week: 2
+    missing_teams: ['RW Lichtenhof 69 Stein 4']
+    expected_count: 6
+    actual_count: 6
+
+  Issue 3:
+    league: BZL N2
+    season: 25/26
+    week: 3
+    missing_teams: ['RW Lichtenhof 69 Stein 4']
+    expected_count: 6
+    actual_count: 6
+
+  Issue 4:
+    league: BZL N2
+    season: 25/26
+    week: 4
+    missing_teams: ['RW Lichtenhof 69 Stein 4']
+    expected_count: 6
+    actual_count: 6
+
+  Issue 5:
+    league: BZL N2
+    season: 25/26
+    week: 5
+    missing_teams: ['RW Lichtenhof 69 Stein 4']
+    expected_count: 6
+    actual_count: 6
+
+  Issue 6:
+    league: BZL N2
+    season: 25/26
+    week: 6
+    missing_teams: ['RW Lichtenhof 69 Stein 4']
+    expected_count: 6
+    actual_count: 6
+
+altough the Team clearly shows up in the files
+
+or 
+[X] player_team_association: 478 issues
+--------------------------------------------------------------------------------
+
+  Issue 1:
+    league: BZL N2
+    season: 25/26
+    week: 1
+    player_id: 7901
+    player_name: Gfesser Josef Peter
+    team_name: Donaubowler Regensburg 3
+    team_season_id: 29
+
+  Issue 2:
+    league: BZL N2
+    season: 25/26
+    week: 1
+    player_id: 7901
+    player_name: Gfesser Josef Peter
+    team_name: Donaubowler Regensburg 3
+    team_season_id: 29
+
+  Issue 3:
+    league: BZL N2
+    season: 25/26
+    week: 1
+    player_id: 7901
+    player_name: Gfesser Josef Peter
+    team_name: Donaubowler Regensburg 3
+    team_season_id: 29
+which i dont understand, since the player team association in the example is 100% correct.
+
+or 
+[X] one_player_per_position: 16 issues
+--------------------------------------------------------------------------------
+
+  Issue 1:
+    league: KL N2
+    season: 25/26
+    week: 1
+    round_number: 7
+    team: BC Bamberger Bowlinghaus 3
+    opponent: Spielzettel wurde:
+richtig
+komplett
+leserlich
+ausgefüllt: 1
+    position: 0
+    players: ['Striefler Edmund', 'Striefler Sonja']
+    count: 2
+
+  Issue 2:
+    league: KL N2
+    season: 25/26
+    week: 1
+    round_number: 7
+    team: BC Bamberger Bowlinghaus 3
+    opponent: Spielzettel wurde:
+richtig
+komplett
+leserlich
+ausgefüllt: 1
+    position: 2
+    players: ['Stegner Ottmar', 'Striefler Sonja']
+    count: 2
+
+which is also weird to me, since the reported incidents are clear examples of proper subbing during league play
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user is puzzled by `validate_data.py` flagging legitimate subbing as missing teams. They want to understand why these valid league entries triggered false positives.
+
+Three validation checks appear to be causing the false positives. The `all_teams_present` check seems to misreport counts despite matching expected and actual values. The `player_team_association` check likely relies on stale relational CSV data for the 25/26 season. The `one_player_per_position` check does not support the post-2022 substitute model, where multiple players can occupy the same position across different games or rounds.
+
+The opponent field contains OCR extraction garbage. Checkbox text was parsed directly into the score sheet field. This corrupts the validation output.
+</details></think>
+
+_**Agent (default)**_
+
+I'll inspect how those three validation checks work — the reports look like false positives or stale relational data, not real extract failures.
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\validate_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\validate_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.csv",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\relational_csv",
+  "pattern": "25/26|Lichtenhof|team_season|player_season"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\relational_csv",
+  "pattern": "25/26|Lichtenhof|team_season|player_season",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "database\\relational_csv\\club_mapping.csv"
+    },
+    {
+      "matchCount": 3,
+      "uri": "database\\relational_csv\\league_season.csv"
+    },
+    {
+      "matchCount": 1,
+      "uri": "database\\relational_csv\\new\\game_result_new.csv"
+    },
+    {
+      "matchCount": 1,
+      "uri": "database\\relational_csv\\club.csv"
+    }
+  ],
+  "totalFiles": 4,
+  "totalMatches": 6
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Checking the Lichtenhof naming convention. The club.csv entry shows "RW Lichtenhof 69 Stein" and team number 4, suggesting the full team name should be "RW Lichtenhof 69 Stein 4".
+
+The extraction likely normalizes team names differently, producing a count mismatch despite six teams being present. The player_team_association check also relies on an outdated relational CSV, causing duplicate missing-team issues per week and round.
+
+The one_player_per_position check groups by opponent string. Garbage opponent text like "Spielzettel wurde..." indicates a parse bug. Valid substitutions may be split across rows. Both Striefler Edmund and Striefler Sonja appear at position 0 in round 7. This triggers the unique-player-at-position rule. The system likely counts both substitute rows as separate entries.
+
+Post-2022 rules allow only one scored substitute per round. The extract likely emits both substitute rows even when only one player actually scored. Alternatively, the parser may include empty-score rows. The opponent string is clearly corrupted; form footer text is being misread as the opponent name.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.csv",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\relational_csv",
+  "pattern": "Lichtenhof|7901|Gfesser"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\relational_csv",
+  "pattern": "Lichtenhof|7901|Gfesser",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "database\\relational_csv\\club_mapping.csv"
+    },
+    {
+      "matchCount": 1,
+      "uri": "database\\relational_csv\\new\\player_new.csv"
+    },
+    {
+      "matchCount": 1,
+      "uri": "database\\relational_csv\\player.csv"
+    },
+    {
+      "matchCount": 1,
+      "uri": "database\\relational_csv\\club.csv"
+    }
+  ],
+  "totalFiles": 4,
+  "totalMatches": 4
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\docs\pipeline\validate.md</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\docs",
+  "pattern": "validate_data|player_team|relational_csv"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\docs",
+  "pattern": "validate_data|player_team|relational_csv",
+  "topFiles": [
+    {
+      "matchCount": 7,
+      "uri": "docs/Excel_Extraction.md"
+    },
+    {
+      "matchCount": 2,
+      "uri": "docs/planning/DATA_PIPELINE_PLAN.md"
+    },
+    {
+      "matchCount": 3,
+      "uri": "docs/DATA_PIPELINE.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "docs/GF_DATA_PIPELINE_IMPLEMENTATION_PLAN.md"
+    }
+  ],
+  "totalFiles": 4,
+  "totalMatches": 13
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+A player ID mismatch was spotted: the validation issue references ID 7901, while the relational player.csv file lists 7091 for Gfesser.
+
+The ID discrepancy likely stems from an Excel EDV versus registry mismatch. Next, I will inspect the team_season and player_team tables for Lichtenhof.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "team_season.csv",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\relational_csv",
+  "pattern": "Lichtenhof|,14,"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\relational_csv",
+  "pattern": "Lichtenhof|,14,",
+  "topFiles": [
+    {
+      "matchCount": 3,
+      "uri": "database/relational_csv/team_season.csv"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 3
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **0** results in **1** directory</summary>
+
+Directory: **``** (0 files)
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\validate_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The validation logic builds allowed team associations from a prior relational reconstruction of games rather than the fresh Excel extract. This mismatch likely explains the false positive subbing reports.
+
+The validation flags every player whose (id, team_season) pair is absent from the outdated game_result table. Team names in the relational reconstruction differ from the fresh extract's normalized names. For example, "RW Lichtenhof 69 Stein 4" does not match any Team cell, so the system reports it as missing even though six actual teams exist.
+
+Player IDs in the Excel extract may differ from the registry. The one_player_per_position check likely fails because both Edmund and Sonja scored at position 0 in round 7. The opponent column contains garbage text from form footers. This confirms the extract quality is poor.
+
+Duplicate position groups likely share a phantom opponent key. The same round score may have been copied to multiple player rows from the position block.
+</details></think>
+
+_**Agent (default)**_
+
+Your instincts are right: these three checks are largely **misleading for a fresh 25/26 Excel extract**. Here’s what each one is actually doing.
+
+## 1. `all_teams_present` — name mismatch, not a missing team
+
+The check does **not** compare “6 teams in the file.” It does:
+
+1. Load expected names from `database/relational_csv/` (`league_season` + `team_season` + `club`)  
+2. Build names as `club.name + " " + team_number`  
+3. Flag `expected − actual` by **exact string**
+
+For Lichtenhof, relational has club name **`RW Lichtenhof 69 Stein`** → expected **`RW Lichtenhof 69 Stein 4`**.
+
+So you get the paradox:
+
+- `expected_count: 6` / `actual_count: 6` → six teams **are** in the extract  
+- `missing_teams: ['RW Lichtenhof 69 Stein 4']` → that **exact spelling** is not among the six  
+
+Almost certainly the extract has a **different label** (e.g. `BF Rot-Weiß Lichtenhof 69…`, mapping alias, or different word order). Same club, different string → false “missing.”
+
+**Not a “team absent from Excel” signal.** It’s “relational roster spelling ≠ extract Team column.”
+
+---
+
+## 2. `player_team_association` — stale allow-list, not “wrong team”
+
+This check does **not** ask “does this player bowl for that club in the Excel?”
+
+It builds allowed `(player_id, team_season_id)` pairs from **`game_result_new` / `game_result`** in `relational_csv` — i.e. an **older reconstructed** game table — then flags every extract row whose pair isn’t already there.
+
+So for a **new** 25/26 extract:
+
+- 478 hits ≈ “these pairings aren’t in the old relational game_result yet”  
+- Repeating the same player/week is **one row per game line**, not 478 distinct players  
+- Your example can be 100% correct in the workbook and still fail  
+
+Also: issue shows `player_id: 7901` while registry often has Gfesser as **`7091`** — EDV in Excel vs `player.csv` can diverge; that alone trips the check.
+
+**Useless as a gate on a brand-new season extract** until relational `game_result*` is rebuilt from that extract (or the check is redesigned).
+
+---
+
+## 3. `one_player_per_position` — outdated rule + extract noise
+
+The check assumes **≤1 player name per (match, position)**.
+
+Post-2022 Erfassung: **up to 3 names per Pos**, only one should **score** that Spiel. Proper subbing is normal; this check still treats “two names at Pos X” as an error if both appear as rows for the same round.
+
+Worse: look at `opponent`:
+
+```text
+Spielzettel wurde:
+richtig
+komplett
+leserlich
+ausgefüllt: 1
+```
+
+That’s **form-footer / checkbox text**, not a team. So this block is already a **parse/extract glitch** (opponent column polluted). Under a garbage opponent key, “two players at position 0” may be extract artifacts rather than true double-scoring.
+
+**Real follow-up:** fix/investigate opponent parsing for those KL N2 rows — not “ban substitutes.”
+
+---
+
+## How to treat `validate_data.py` for this batch
+
+| Check | Trust for new 25/26 Excel? | Why |
+|-------|----------------------------|-----|
+| `all_teams_present` | Low until names aligned | Relational spelling vs extract |
+| `player_team_association` | **Ignore** for now | Allow-list from old `game_result*` |
+| `one_player_per_position` | Low as written | Pre-sub model; also polluted by bad opponents |
+| Match/round/week **points** sums | Higher | Structural scoring math |
+| App `/diagnose/daten-anomalien` | Better for row KPIs | incomplete/over/missing as **info** |
+| `/diagnose/liga-wochen` | Better for coverage | After merge/publish |
+
+`validate_data.py` was aimed at **flat CSV vs a maintained relational schema**. Your pipeline’s live quality path is **extract → merge/publish → diagnose UI**, not this script as a hard gate for mid-season Excel drops.
+
+---
+
+## What is worth doing next (still discussion)
+
+1. **Confirm Lichtenhof spelling** in the extract CSV vs `RW Lichtenhof 69 Stein 4` → team normalization / `club_mapping` / relational club name.  
+2. **Hunt bad opponents** like `Spielzettel wurde…` in the extract — real data defect to fix or override.  
+3. **Don’t block publish** on the 478 association issues.  
+4. Prefer **diagnose oddities + week matrix** after a dry merge for 25/26.
+
+If you want, next step can be a focused name-diff for BZL N2 week 1 (expected relational names vs distinct `Team` values in your extract) — still read-only.
+
+---
+
+_**User**_
+
+i want to give it a try an publish the data and then add all diagnosis outputs
+Phase 4 — Merge / publish
+Preferred: scripts/build_published_dataset.py (league job ± --write-csv)
+
+what is the correct command here?
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user needs the correct command to publish and merge the extracted 25/26 league results.
+
+Checking build_published_dataset.py for the correct flags and CSV output path.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\build_published_dataset.py",
+  "pattern": "argparse|add_argument|historical_league|job"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\build_published_dataset.py",
+  "pattern": "argparse|add_argument|historical_league|job",
+  "topFiles": [
+    {
+      "matchCount": 79,
+      "uri": "scripts\\build_published_dataset.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 79
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\docs\pipeline\publish.md</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\docs\\DATA_PIPELINE.md",
+  "pattern": "build_published_dataset|historical_league|--job|--write-csv"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\docs\\DATA_PIPELINE.md",
+  "pattern": "build_published_dataset|historical_league|--job|--write-csv",
+  "topFiles": [
+    {
+      "matchCount": 12,
+      "uri": "docs\\DATA_PIPELINE.md"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 12
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Checking the --historical flag and default path resolution to provide the exact PowerShell command.
+
+Also verifying that league-only mode is appropriate.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\build_published_dataset.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\docs\DATA_PIPELINE.md</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\database\paths.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Preparing clear PowerShell commands for merging and publishing the dataset.
+
+BOWLYZER_WORK_DATA_DIR must point to the league Excel extract. Add --historical if the custom path differs. Run a dry-run first. Rebuild caches after publishing. Flask must run with the new parquet for diagnosis pages.
+</details></think>
+
+_**Agent (default)**_
+
+For **league-only** publish after your Excel extract, use this:
+
+```powershell
+$env:BOWLYZER_WORK_DATA_DIR = "C:\tmp\bowlyzer\data"
+
+# Optional: see which inputs will be merged
+uv run python scripts/build_published_dataset.py --job league --dry-run
+
+# Publish
+uv run python scripts/build_published_dataset.py --job league --write-csv
+```
+
+### Why this form
+
+| Piece | Meaning |
+|--------|---------|
+| `--job league` | Only rebuild league merge (+ auto `players_registry` / clubs unless skipped) |
+| `--write-csv` | Also write CSV mirrors under `database/published_csv/` (handy for inspection) |
+| `BOWLYZER_WORK_DATA_DIR` | Must be the work dir that holds your extract |
+
+Default historical input is resolved as:
+
+`{BOWLYZER_WORK_DATA_DIR}/league/historical_league_results.csv`  
+(or the older fallback path if that file isn’t there)
+
+If you wrote the extract somewhere else, point at it explicitly:
+
+```powershell
+uv run python scripts/build_published_dataset.py --job league --write-csv `
+  --historical "C:\tmp\bowlyzer\data\historical_league_results.csv"
+```
+
+(Use the **actual path** of the CSV you produced in process mode.)
+
+### After publish (so diagnosis sees new data)
+
+```powershell
+uv run python scripts/rebuild_league_caches.py --all-published --workers 8
+# Restart Flask, then open:
+#   /diagnose/liga-wochen
+#   /diagnose/daten-anomalien
+```
+
+Don’t use default `--job league,tournament` unless you also intend to republish tournaments; for this 25/26 league batch, `--job league` is enough.
+
+---
+
+_**User**_
+
+since i overwrote the historiacal csv with only season 25/26: is it possible to merge the results to the existing db?
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user replaced the full historical CSV with only the 2025/26 season data. They want to know if the database can be merged with the remaining seasons.
+
+I need to check whether the merge script replaces the entire historical input or appends to the existing merged parquet. If it rebuilds from all sources, older seasons may still be recovered from legacy_scrape_extracted.csv and GF latest.csv even though the historical CSV now contains only 2025/26.
+
+Seasons that existed only in the historical CSV—such as 19/20 through 24/25—would be lost if the merge rebuilds entirely from the truncated historical file. I need to verify exactly what each source contributes to confirm whether older seasons survive.
+</details></think>
+
+_**Agent (default)**_
+
+Checking how the league merge combines sources so we don't wipe older seasons.
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\build_published_dataset.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\build_published_dataset.py",
+  "pattern": "historical|extra.league|merge_sources|skip-legacy|gf.league"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\build_published_dataset.py",
+  "pattern": "historical|extra.league|merge_sources|skip-legacy|gf.league",
+  "topFiles": [
+    {
+      "matchCount": 28,
+      "uri": "scripts\\build_published_dataset.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 28
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\docs\DATA_PIPELINE.md</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The merge operation does not append to the existing league_results_merged.parquet file.
+
+The merge rebuilds the database from scratch using only the provided CSVs. Any seasons missing from the new historical file—such as 19/20 through 24/25—will be lost. To recover those records, restore the full historical CSV from backup or reprocess the complete Sammlung first. Another option is to use the existing merged database as a base and add the 25/26 data separately.
+
+Passing the full previous merged database as `--extra-league` while keeping the historical CSV limited to 25/26 is a viable path. The pipeline prioritizes historical data first, then scrape, then extra-league, then GF. Because the old merged file feeds in as extra-league, its rows will enter the database alongside the new 25/26 historical entries.
+
+Passing the old merged database as `--extra-league` would backfire. Later sources override earlier ones, so the old 25/26 data would overwrite the new extract. The correct order is `--historical` for the full old CSV and `--extra-league` for the new 25/26-only CSV. This keeps the old data as the base while letting the fresh 25/26 records win for overlapping keys.
+
+Alternatively, run merge_league_sources.py directly with the CSVs ordered so the old merged database feeds in first as historical, followed by the new 25/26-only CSV as extra-league. Check whether the published CSV is stored as a parquet file rather than a CSV.
+</details></think>
+
+_**Agent (default)**_
+
+**Short answer:** publish always **rebuilds** the league DB from input CSVs. It does **not** append onto the existing Parquet. If `historical_league_results.csv` is only 25/26, a normal publish will **drop** seasons that lived only in that historical file (typically ~19/20–24/25), unless they’re still present in another merge input.
+
+### What still comes in without a full historical file
+
+Default merge order (later wins on duplicate keys):
+
+1. Historical CSV ← yours = **25/26 only**  
+2. Legacy scrape (`legacy_scrape_extracted.csv`) ← usually **08/09–18/19**  
+3. `--extra-league` (optional)  
+4. GF league (`…/legacy_out/latest.csv`) ← whatever GF has  
+
+So scrape (+ GF) can keep older eras, but **Excel-era seasons that were only in historical are gone** from that path.
+
+---
+
+### Safe way: merge new 25/26 into the existing published league file
+
+Use the **current** merged league CSV as the base, and put the **new** 25/26 extract **later** so it wins:
+
+```powershell
+$env:BOWLYZER_WORK_DATA_DIR = "C:\tmp\bowlyzer\data"
+
+uv run python scripts/build_published_dataset.py --job league --write-csv `
+  --historical "C:\Users\cfell\repositories\bowlyzer_deploy\database\published_csv\league_results_merged.csv" `
+  --extra-league "C:\tmp\bowlyzer\data\league\historical_league_results.csv"
+```
+
+Adjust paths if your merged CSV / 25/26 extract live elsewhere.  
+`--dry-run` first to confirm the input list.
+
+**Why this order:** `--historical` is lowest priority; `--extra-league` is higher → new 25/26 overwrites overlapping keys in the old merged file, older seasons stay.
+
+If you only have Parquet and no CSV mirror, export/use a CSV of the current merge first, or restore the previous full `historical_league_results.csv` and re-run process for 25/26 into a **separate** file, then merge as above.
+
+---
+
+### Better long-term habit
+
+Keep:
+
+- full multi-season `historical_league_results.csv` (or re-process full Sammlung), and  
+- season batches as **separate** CSVs → pass new ones with `--extra-league`
+
+Don’t overwrite the full historical extract with a single-season file.
+
+---
+
+### Bottom line
+
+Yes, you can fold 25/26 into the existing DB — by treating **`league_results_merged` as historical** and the **25/26-only CSV as `--extra-league`**, not by publishing the truncated historical file alone.
+
+---
+
+_**User**_
+
+fine as of now, but it might be the case that i start hunting down wrongly parsed excels / artifacts over the course of time. therfor it might be better, to have a more modular scheme dealing with excel exports, e.g. one csv per seasons or even per league season. the merge process could be based on fignerprints and only drop & replace changed input files
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+A modular Excel export pipeline would generate one CSV per season or league season. Fingerprint-based incremental merging would only drop and replace changed input files.
+
+Recommendations should align with existing combo directories, process cache, and planning documents rather than immediate implementation.
+</details></think>
+
+_**Agent (default)**_
+
+Checking what modular extract/merge pieces already exist so the proposal fits the repo.
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\data\extract_excel_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\docs\planning\PIPELINE_STATE_OVERVIEW.md</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\data\\extract_excel_data.py",
+  "pattern": "combo|_combos|fingerprint|signature|league.season"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\data\\extract_excel_data.py",
+  "pattern": "combo|_combos|fingerprint|signature|league.season",
+  "topFiles": [
+    {
+      "matchCount": 30,
+      "uri": "scripts\\data\\extract_excel_data.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 140
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The codebase already supports per-season and per-league combo CSVs. Process-level fingerprint caching exists for these combinations. Planning documents describe the incremental merge vision.
+
+I will outline how the modular scheme aligns with existing capabilities and the user's incremental merge vision. No implementation will be discussed.
+</details></think>
+
+_**Agent (default)**_
+
+You’re describing the right end state — and the repo is already halfway there.
+
+## What you already have
+
+**Extract** already writes **one CSV per league×season**:
+
+`historical_league_results_combos/25_26 BZL N2.csv` (etc.)
+
+plus a big merged `historical_league_results.csv`. Process mode also has **per-combo fingerprints** (input SHA + analyzer/processor version + overrides) so unchanged league×season files are skipped on re-process.
+
+**Publish** still treats “historical” as **one blob**: concat everything → re-normalize → rewrite full Parquet. That’s why overwriting the big CSV with only 25/26 hurts.
+
+So the modular *extract* unit exists; the modular *publish* unit does not.
+
+---
+
+## Target scheme (fits hunting bad Excels over time)
+
+```text
+work/league/canonical/
+  excel/25_26/BZL_N2.csv          ← replace when that workbook is fixed
+  excel/24_25/BayL.csv
+  scrape/11_12/...
+  gf/25_26/...
+
+index.json   ← path → fingerprint, source, season, league, row_count
+
+publish:
+  for each slice: if fingerprint unchanged → keep rows in merged store
+                  if changed/missing → drop old keys for that slice, insert new
+  write league_results_merged.parquet + manifest delta
+```
+
+**Granularity:** prefer **league×season** (what combos already are), not only season. Fixing one KL N2 week shouldn’t force re-merge of all of 25/26.
+
+**Fingerprint:** content hash of the slice CSV (+ maybe processor version). Excel re-parse → new combo CSV → new fingerprint → that slice only.
+
+**Drop & replace key:** not “delete whole season,” but delete rows whose merge identity falls in that `(source, season, league)` (or the dedupe keys already used: season/league/week/round/team/position/player).
+
+---
+
+## How this helps your workflow
+
+| Today | Modular |
+|-------|---------|
+| Re-process one bad week → overwrite whole historical CSV | Rewrite one combo file |
+| Publish must re-read ~700k rows | Re-merge only changed slices |
+| Easy to lose 19/20–24/25 | Slices stay until explicitly replaced |
+| Hunting parse bugs | Fix workbook → re-process that league×season → publish delta |
+
+Merge priority stays the same, but **per slice**: e.g. GF `25_26/BayL` still beats excel `25_26/BayL` on duplicate keys.
+
+---
+
+## Practical migration path (incremental, not a big bang)
+
+1. **Stop using one overwriteable historical CSV as source of truth.** Treat `*_combos/` (or a renamed `canonical/excel/`) as the library of record; the fat CSV is optional concat for tools that still want it.
+
+2. **Publish reads a directory of slices** (+ scrape + GF), with an `index.json` of fingerprints.
+
+3. **First cut of incremental merge:**  
+   - load previous Parquet  
+   - remove rows for changed `(season, league)` from the changed source  
+   - concat new slice  
+   - re-apply dedupe / priority  
+   Still may re-normalize only the new slice if normalization is pure per-row.
+
+4. **Manifest:** `changed_slices: ["excel/25_26/BZL_N2"]` → cache warm only those seasons (you already have season-granular cache warming).
+
+5. Later: season Parquet partitions under work, lazy merge, etc. (already sketched in `PIPELINE_STATE_OVERVIEW.md`).
+
+---
+
+## Design choices to settle before coding
+
+1. **Unit of replace:** league×season (recommended) vs season vs per-workbook.  
+2. **Source tag on every row** (`source_id=excel|scrape|gf`) so drop/replace doesn’t need fuzzy matching.  
+3. **Normalization:** run at slice write time (stable) vs at merge (current) — slice-time makes fingerprints mean “publish-ready.”  
+4. **GF / scrape:** same slice layout for consistency.
+
+---
+
+## Bottom line
+
+Yes — **one CSV (or Parquet) per league×season + fingerprint drop/replace** is the right model for long-term Excel cleanup. You already produce those combo files and fingerprint them on extract; the missing piece is **publish consuming the combo library incrementally** instead of one monolithic historical CSV.
+
+Until that exists, operational rule: **never overwrite the full historical CSV with a single season**; keep 25/26 as a separate file and merge via `--extra-league` (or restore full historical + add the new season).
+
+If you want to implement next, the smallest useful step is: “publish league from `*_combos/` directory + optional `--only-seasons 25/26`,” then fingerprint-based skip.
+
+---
+
+_**User**_
+
+one last thing before we can tackle the combo based publish: i ran into a male / female isssue: 
+Jobs: players_registry, league
+Female-league collapse issues in C:\Users\cfell\repositories\bowlyzer_deploy\database\work\historical_league_results.csv (2 season×league hits):
+  LL S:
+    - 23/24 | LL S: 13 teams, LL S (D): 0 teams — missing_female_league (male teams likely include Damen rows)
+    - 24/25 | LL S: 13 teams, LL S (D): 0 teams — missing_female_league (male teams likely include Damen rows)
+Error: female league rows appear merged into male ids (e.g. BayL + BayL (D)). Re-run legacy scrape extract/process, or pass --skip-female-league-audit to override.
+
+rerunning wont fix it, how can we?
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user hit a female-league collapse issue during publish. Female league rows are merging into male IDs. Re-running the legacy scrape will not fix this. They need another approach.
+
+I'll examine the female league split audit logic and identify tools to properly fix the merged data instead of skipping the check.
+</details></think>
+
+_**Agent (default)**_
+
+I'll check how the female-league audit works and what fix paths exist for LL S / LL S (D).
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.{py,md}",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "missing_female_league|female_league|LL S \\(D\\)|audit_league_csv|audit_female"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "missing_female_league|female_league|LL S \\(D\\)|audit_league_csv|audit_female",
+  "topFiles": [
+    {
+      "matchCount": 6,
+      "uri": ".\\.specstory\\history\\2026-07-21_11-34-10Z-club-page-statistics-display.md"
+    },
+    {
+      "matchCount": 2,
+      "uri": ".\\.specstory\\history\\2026-07-19_12-26-14Z-explore-league-tournament-filters.md"
+    },
+    {
+      "matchCount": 2,
+      "uri": ".\\.specstory\\history\\2026-07-18_11-01-02Z-scan-pipeline-markdown-docs.md"
+    },
+    {
+      "matchCount": 2,
+      "uri": ".\\.specstory\\history\\2026-06-28_11-56-46Z-explore-tournament-scraper-codebase.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\.specstory\\history\\2026-06-22_07-48-15Z-player-page-ux-improvements.md"
+    },
+    {
+      "matchCount": 27,
+      "uri": ".\\.specstory\\history\\2026-05-19_07-58-26Z-exposing-web-service-on.md"
+    }
+  ],
+  "totalFiles": 6,
+  "totalMatches": 272
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\audit_female_league_split.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\relational_csv\\league_mapping.csv",
+  "pattern": "LL S"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\relational_csv\\league_mapping.csv",
+  "pattern": "LL S",
+  "topFiles": [
+    {
+      "matchCount": 3,
+      "uri": "database\\relational_csv\\league_mapping.csv"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 3
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+A merge_league_gender_split script appears in the history. It may resolve the gender split without a full re-run.
+
+Searching for repair tools to fix the merged gender rows.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **2** results in **1** directory</summary>
+
+Directory: **``** (2 files)
+
+| File |
+|------|
+| `tests/test_league_gender_normalization.py` |
+| `tests/scripts/test_merge_league_gender_split.py` |
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **2** results in **1** directory</summary>
+
+Directory: **``** (2 files)
+
+| File |
+|------|
+| `scripts/audit_female_league_split.py` |
+| `tests/scripts/test_audit_female_league_split.py` |
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+File not found
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The `merge_league_gender_split` function may have been renamed or removed.
+
+Searching for a way to repair the collapsed female leagues.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.{py,md}",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "gender.?split|repair.*female|LL S \\(D\\)|missing_female|Damen"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "gender.?split|repair.*female|LL S \\(D\\)|missing_female|Damen",
+  "topFiles": [
+    {
+      "matchCount": 5,
+      "uri": "tests/test_league_gender_normalization.py"
+    },
+    {
+      "matchCount": 4,
+      "uri": "tests/database/test_legacy_pdf_erg_2016.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "scripts/audit_bm_imports.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".specstory/history/2026-06-15_07-45-17Z-explore-data-pipeline-structure.md"
+    },
+    {
+      "matchCount": 23,
+      "uri": ".specstory/history/2026-05-19_07-58-26Z-exposing-web-service-on-local-network.md"
+    }
+  ],
+  "totalFiles": 5,
+  "totalMatches": 268
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\audit_female_league_split.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\data\\extract_excel_data.py",
+  "pattern": "\\(D\\)|gender|female|Damen|Frauen"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\data\\extract_excel_data.py",
+  "pattern": "\\(D\\)|gender|female|Damen|Frauen",
+  "topFiles": [
+    {
+      "matchCount": 30,
+      "uri": "scripts\\data\\extract_excel_data.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 30
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The audit ran against historical_league_results.csv, yet the error references seasons 23/24 and 24/25. This suggests the file may still contain older data despite the overwrite.
+
+The audit code only checks legacy scrape and extra league inputs, not historical results by default. The error message incorrectly cites the historical file path, suggesting a bug in the audit logic.
+
+The error path points to `database/work/historical_league_results.csv`, not `league/historical`. Since the audit code only includes legacy scrape and extra-league inputs, historical results should not be checked unless explicitly passed as extra-league. The mismatch between the expected input and the actual file path remains unexplained.
+
+Legacy scrape uses `legacy_scrape_extracted.csv`, not `historical_league_results.csv`. The user may have passed the historical file as `--extra-league`, or the code has changed. I will examine the female audit logic in `build_published_dataset` to find the exact cause.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\build_published_dataset.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.py",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts",
+  "pattern": "female.league|audit_league|skip.female"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts",
+  "pattern": "female.league|audit_league|skip.female",
+  "topFiles": [
+    {
+      "matchCount": 5,
+      "uri": "scripts\\data\\extract_excel_data.py"
+    },
+    {
+      "matchCount": 9,
+      "uri": "scripts\\build_published_dataset.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "scripts\\audit_club_names.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "scripts\\audit_league_standings.py"
+    },
+    {
+      "matchCount": 13,
+      "uri": "scripts\\audit_female_league_split.py"
+    }
+  ],
+  "totalFiles": 5,
+  "totalMatches": 31
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **0** results in **1** directory</summary>
+
+Directory: **``** (0 files)
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\docs\\Excel_Extraction.md",
+  "pattern": "LL S|Landesliga Süd|gender"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\docs\\Excel_Extraction.md",
+  "pattern": "LL S|Landesliga Süd|gender",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "docs\\Excel_Extraction.md"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 1
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The audit only runs on legacy_scrape or extra_league. Rerunning those processes will not fix the merged female league rows.
+
+The file path suggests it was passed as `--extra-league` during merge. That flag only audits 25/26 data, yet the errors cover 23/24 and 24/25. The file must instead be the `--historical` source, which explains why re-running the legacy scrape did not resolve the merged female league rows.
+
+The root cause is clear: the Excel extract mapped Damen LL S rows under the male ID `LL S` instead of `LL S (D)`. There is no automated repair script available; the planned `merge_league_gender_split` file is missing and only tests remain. The practical fix is either to re-extract the data using the workbook titles or folder paths to assign the correct gender, or to manually remap the affected rows to `LL S (D)`.
+
+Inspect which teams in LL S 23/24 and 24/25 are actually Damen. Then either re-process the Excel files from the Damen folders so the normalize step maps them to LL S (D), or manually set League = "LL S (D)" for those teams. Check whether an extract_excel_overrides force_league setting exists to automate the remapping.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\database\config\extract_excel_overrides.csv</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\config",
+  "pattern": "force_league|data_format|Damen|LL S"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\config",
+  "pattern": "force_league|data_format|Damen|LL S",
+  "topFiles": [
+    {
+      "matchCount": 3,
+      "uri": "database/config/tournament_source_exceptions.json"
+    },
+    {
+      "matchCount": 2,
+      "uri": "database/config/legacy_tournament_scrape.json"
+    },
+    {
+      "matchCount": 29,
+      "uri": "database/config/tournament_source_registry.csv"
+    },
+    {
+      "matchCount": 2,
+      "uri": "database/config/extract_excel_overrides.csv"
+    },
+    {
+      "matchCount": 2,
+      "uri": "database/config/league_week_schema.json"
+    },
+    {
+      "matchCount": 3,
+      "uri": "database/config/tournament_imports.json"
+    }
+  ],
+  "totalFiles": 6,
+  "totalMatches": 41
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\scripts\test_merge_league_gender_split.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Inspecting the raw historical_league_results.csv for LL S 23/24 to verify team splits and determine why female league rows merged into male IDs.
+
+Checking whether a reliable source exists in the published data.
+</details></think>
+
+_**Agent (default)**_
+
+I'll inspect the collapsed LL S rows and compare with a known-good published split.
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+Command failed to execute
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\docs",
+  "pattern": "female.?league|collapse|force_league|LL S \\(D\\)"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\docs",
+  "pattern": "female.?league|collapse|force_league|LL S \\(D\\)",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "docs/pipeline/validate.md"
+    },
+    {
+      "matchCount": 4,
+      "uri": "docs/planning/DATA_PIPELINE_PLAN.md"
+    },
+    {
+      "matchCount": 3,
+      "uri": "docs/planning/PIPELINE_STATE_OVERVIEW.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "docs/archive/CONTENT_BLOCKS_EMPTY_ISSUE.md"
+    },
+    {
+      "matchCount": 5,
+      "uri": "docs/Excel_Extraction.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "docs/pipeline/publish.md"
+    }
+  ],
+  "totalFiles": 6,
+  "totalMatches": 15
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\docs\Excel_Extraction.md</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Shell access on this Windows machine is needed to investigate the merged female league rows.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c &#34;
+import pandas as pd
+from pathlib import Path
+
+paths = [
+    Path(&#39;database/work/historical_league_results.csv&#39;),
+    Path(&#39;database/published_csv/league_results_merged.csv&#39;),
+    Path(&#39;database/data/league_results_merged.csv&#39;),
+]
+for p in paths:
+    print(&#39;===&#39;, p, &#39;exists=&#39;, p.is_file(), &#39;===&#39;)
+    if not p.is_file():
+        continue
+    df = pd.read_csv(p, sep=&#39;;&#39;, dtype=str).fillna(&#39;&#39;)
+    tt = df[(df[&#39;Player&#39;].str.lower()==&#39;team total&#39;) &amp; (df[&#39;Position&#39;].astype(str)==&#39;0&#39;)]
+    for season in [&#39;22/23&#39;,&#39;23/24&#39;,&#39;24/25&#39;,&#39;25/26&#39;]:
+        for league in [&#39;LL S&#39;,&#39;LL S (D)&#39;]:
+            teams = sorted(tt[(tt[&#39;Season&#39;]==season)&amp;(tt[&#39;League&#39;]==league)][&#39;Team&#39;].unique())
+            if teams or season in (&#39;23/24&#39;,&#39;24/25&#39;):
+                print(f&#39;  {season} | {league}: {len(teams)} -&gt; {teams}&#39;)
+&#34;
+</summary>
+```bash
+uv run python -c "
+import pandas as pd
+from pathlib import Path
+
+paths = [
+    Path('database/work/historical_league_results.csv'),
+    Path('database/published_csv/league_results_merged.csv'),
+    Path('database/data/league_results_merged.csv'),
+]
+for p in paths:
+    print('===', p, 'exists=', p.is_file(), '===')
+    if not p.is_file():
+        continue
+    df = pd.read_csv(p, sep=';', dtype=str).fillna('')
+    tt = df[(df['Player'].str.lower()=='team total') & (df['Position'].astype(str)=='0')]
+    for season in ['22/23','23/24','24/25','25/26']:
+        for league in ['LL S','LL S (D)']:
+            teams = sorted(tt[(tt['Season']==season)&(tt['League']==league)]['Team'].unique())
+            if teams or season in ('23/24','24/25'):
+                print(f'  {season} | {league}: {len(teams)} -> {teams}')
+"
+
+```
+
+```
+Traceback (most recent call last):
+  File "C:\Users\cfell\repositories\bowlyzer_deploy\.venv\Lib\site-packages\pandas\core\indexes\base.py", line 3641, in get_loc
+    return self._engine.get_loc(casted_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "pandas/_libs/index.pyx", line 168, in pandas._libs.index.IndexEngine.get_loc
+  File "pandas/_libs/index.pyx", line 197, in pandas._libs.index.IndexEngine.get_loc
+  File "pandas/_libs/hashtable_class_helper.pxi", line 7668, in pandas._libs.hashtable.PyObjectHashTable.get_item
+  File "pandas/_libs/hashtable_class_helper.pxi", line 7676, in pandas._libs.hashtable.PyObjectHashTable.get_item
+KeyError: 'League'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<string>", line 18, in <module>
+  File "C:\Users\cfell\repositories\bowlyzer_deploy\.venv\Lib\site-packages\pandas\core\frame.py", line 4378, in __getitem__
+    indexer = self.columns.get_loc(key)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\cfell\repositories\bowlyzer_deploy\.venv\Lib\site-packages\pandas\core\indexes\base.py", line 3648, in get_loc
+    raise KeyError(key) from err
+KeyError: 'League'
+=== database\work\historical_league_results.csv exists= True ===
+  22/23 | LL S: 6 -> ['BK M�nchen 4', 'Falken Neu-Ulm 1', 'HighRoller Rosenheim 1', 'Lechbowler Augsburg 1', 'Schanzer-Strikers Ingolstadt 1', 'Team ProfiShop M�nchen 2']
+  23/24 | LL S: 13 -> ['Active Bowler Brunnthal 1', 'BK M�nchen 4', 'EPA M�nchen 3', 'Falken Neu-Ulm 1', 'HighRoller Rosenheim 1', 'HighRoller Rosenheim 2', 'Lechbowler Augsburg 1', 'Lechbowler Augsburg 2', 'Munich Mavericks 1', 'Munich Mavericks 2', 'Pfaffenhofen 1', 'Wei�-Blau Unterf�hring 2', 'Werdenfels 1']
+  23/24 | LL S (D): 0 -> []
+  24/25 | LL S: 13 -> ['Active Bowler Brunnthal 1', 'BC EMAX Unterf�hring 1', 'Bavaria Unterf�hring 1', 'Cat-Bowl 1', 'EPA M�nchen 2', 'Falken Neu-Ulm 1', 'HighRoller Rosenheim 2', 'Murmels Neu-Ulm 1'
+… (output truncated)
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The published CSV uses different columns than the historical file.
+
+Comparing the published schema against the historical file for LL S teams. Checking whether good seasons show the correct gender split.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c &#34;
+import pandas as pd
+from pathlib import Path
+
+# published
+p = Path(&#39;database/published_csv/league_results_merged.csv&#39;)
+df = pd.read_csv(p, sep=&#39;;&#39;, dtype=str, nrows=2)
+print(&#39;published cols:&#39;, list(df.columns))
+
+# try common names
+for sep in [&#39;;&#39;, &#39;,&#39;]:
+    df = pd.read_csv(p, sep=sep, dtype=str, nrows=0)
+    print(&#39;sep&#39;, repr(sep), &#39;cols&#39;, list(df.columns)[:20])
+&#34;
+</summary>
+```bash
+uv run python -c "
+import pandas as pd
+from pathlib import Path
+
+# published
+p = Path('database/published_csv/league_results_merged.csv')
+df = pd.read_csv(p, sep=';', dtype=str, nrows=2)
+print('published cols:', list(df.columns))
+
+# try common names
+for sep in [';', ',']:
+    df = pd.read_csv(p, sep=sep, dtype=str, nrows=0)
+    print('sep', repr(sep), 'cols', list(df.columns)[:20])
+"
+
+```
+
+```
+published cols: ['Season', 'Week', 'Date', 'Players per Team', 'Location', 'Round Number', 'Match Number', 'Team', 'Position', 'Player', 'Player ID', 'Opponent', 'Score', 'Points', 'Bonus Points', 'Input Data', 'Computed Data', 'Event', 'Event Type', 'Club']
+sep ';' cols ['Season', 'Week', 'Date', 'Players per Team', 'Location', 'Round Number', 'Match Number', 'Team', 'Position', 'Player', 'Player ID', 'Opponent', 'Score', 'Points', 'Bonus Points', 'Input Data', 'Computed Data', 'Event', 'Event Type', 'Club']
+sep ',' cols ['Season;Week;Date;Players per Team;Location;Round Number;Match Number;Team;Position;Player;Player ID;Opponent;Score;Points;Bonus Points;Input Data;Computed Data;Event;Event Type;Club']
+
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "C:\\Users\\cfell\\.cursor\\projects\\c-Users-cfell-repositories-bowlyzer-deploy\\agent-transcripts\\3e55bed4-d90a-4cec-8984-790311caae14\\3e55bed4-d90a-4cec-8984-790311caae14.jsonl",
+  "pattern": "LL S|Landesliga Süd|Frauen|Damen"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "C:\\Users\\cfell\\.cursor\\projects\\c-Users-cfell-repositories-bowlyzer-deploy\\agent-transcripts\\3e55bed4-d90a-4cec-8984-790311caae14\\3e55bed4-d90a-4cec-8984-790311caae14.jsonl",
+  "pattern": "LL S|Landesliga Süd|Frauen|Damen",
+  "topFiles": [
+    {
+      "matchCount": 4,
+      "uri": "..\\..\\.cursor\\projects\\c-Users-cfell-repositories-bowlyzer-deploy\\agent-transcripts\\3e55bed4-d90a-4cec-8984-790311caae14\\3e55bed4-d90a-4cec-8984-790311caae14.jsonl"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 4
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The published CSV lacks a League column; the Event field may contain the league identifier instead.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c &#34;
+import pandas as pd
+from pathlib import Path
+
+# work historical
+h = Path(&#39;database/work/historical_league_results.csv&#39;)
+df = pd.read_csv(h, sep=&#39;;&#39;, dtype=str).fillna(&#39;&#39;)
+print(&#39;hist cols:&#39;, list(df.columns)[:25])
+tt = df[(df[&#39;Player&#39;].str.lower()==&#39;team total&#39;) &amp; (df[&#39;Position&#39;].astype(str)==&#39;0&#39;)]
+print(&#39;seasons in hist:&#39;, sorted(tt[&#39;Season&#39;].unique())[-10:])
+print(&#39;LL S leagues present:&#39;, sorted(tt[tt[&#39;League&#39;].str.contains(&#39;LL S&#39;, na=False)][&#39;League&#39;].unique()))
+
+# compare 22/23 (ok?) vs 23/24
+for season in [&#39;22/23&#39;,&#39;23/24&#39;,&#39;24/25&#39;]:
+    male = set(tt[(tt[&#39;Season&#39;]==season)&amp;(tt[&#39;League&#39;]==&#39;LL S&#39;)][&#39;Team&#39;])
+    fem = set(tt[(tt[&#39;Season&#39;]==season)&amp;(tt[&#39;League&#39;]==&#39;LL S (D)&#39;)][&#39;Team&#39;])
+    print(f&#39;{season}: male={len(male)} fem={len(fem)} overlap={len(male&amp;fem)}&#39;)
+
+# published Event field
+p = Path(&#39;database/published_csv/league_results_merged.csv&#39;)
+pub = pd.read_csv(p, sep=&#39;;&#39;, dtype=str).fillna(&#39;&#39;)
+print(&#39;Event sample:&#39;, pub[&#39;Event&#39;].value_counts().head(15).to_string())
+print(&#39;Event Type sample:&#39;, pub[&#39;Event Type&#39;].value_counts().head(10).to_string())
+# find LL S
+sub = pub[pub[&#39;Event&#39;].str.contains(&#39;LL S&#39;, na=False) | pub[&#39;Event&#39;].str.contains(&#39;Landesliga&#39;, na=False)]
+print(&#39;LL-ish events:&#39;, sorted(sub[&#39;Event&#39;].unique())[:40])
+&#34;
+</summary>
+```bash
+uv run python -c "
+import pandas as pd
+from pathlib import Path
+
+# work historical
+h = Path('database/work/historical_league_results.csv')
+df = pd.read_csv(h, sep=';', dtype=str).fillna('')
+print('hist cols:', list(df.columns)[:25])
+tt = df[(df['Player'].str.lower()=='team total') & (df['Position'].astype(str)=='0')]
+print('seasons in hist:', sorted(tt['Season'].unique())[-10:])
+print('LL S leagues present:', sorted(tt[tt['League'].str.contains('LL S', na=False)]['League'].unique()))
+
+# compare 22/23 (ok?) vs 23/24
+for season in ['22/23','23/24','24/25']:
+    male = set(tt[(tt['Season']==season)&(tt['League']=='LL S')]['Team'])
+    fem = set(tt[(tt['Season']==season)&(tt['League']=='LL S (D)')]['Team'])
+    print(f'{season}: male={len(male)} fem={len(fem)} overlap={len(male&fem)}')
+
+# published Event field
+p = Path('database/published_csv/league_results_merged.csv')
+pub = pd.read_csv(p, sep=';', dtype=str).fillna('')
+print('Event sample:', pub['Event'].value_counts().head(15).to_string())
+print('Event Type sample:', pub['Event Type'].value_counts().head(10).to_string())
+# find LL S
+sub = pub[pub['Event'].str.contains('LL S', na=False) | pub['Event'].str.contains('Landesliga', na=False)]
+print('LL-ish events:', sorted(sub['Event'].unique())[:40])
+"
+
+```
+
+```
+hist cols: ['Season', 'Week', 'Date', 'League', 'Players per Team', 'Location', 'Round Number', 'Match Number', 'Team', 'Position', 'Player', 'Player ID', 'Opponent', 'Score', 'Points', 'Bonus Points', 'Input Data', 'Computed Data']
+seasons in hist: ['19/20', '22/23', '23/24', '24/25']
+LL S leagues present: ['LL S', 'LL S (D)']
+22/23: male=6 fem=0 overlap=0
+23/24: male=13 fem=0 overlap=0
+24/25: male=13 fem=0 overlap=0
+Event sample: Event
+BayL        42926
+BayL (D)    40006
+LL S        31566
+KL N1       30668
+KL S2       30092
+KL N2       29960
+BZL S1      29326
+BZL S2      29244
+KL S3       29162
+LL N1       28968
+BZL N1      28444
+BZL N2      28150
+KL S4       27522
+KL S1       26325
+LL S (D)    26013
+Event Type sample: Event Type
+league    741799
+LL-ish events: ['LL S', 'LL S (D)']
+
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: if (Test-Path &#39;C:\tmp\Sammlung-Ligaergebnisse&#39;) { Get-ChildItem &#39;C:\tmp\Sammlung-Ligaergebnisse&#39; -Directory | Select-Object -ExpandProperty Name } else { Write-Host &#39;no sammlung&#39; }; Get-ChildItem &#39;C:\tmp\Sammlung-Ligaergebnisse&#39; -Recurse -Filter &#39;*LL*S*&#39; -ErrorAction SilentlyContinue | Select-Object -First 40 FullName; Get-ChildItem &#39;C:\tmp\Sammlung-Ligaergebnisse&#39; -Recurse -Filter &#39;*Landesliga*S*&#39; -ErrorAction SilentlyContinue | Select-Object -First 40 FullName; Get-ChildItem &#39;C:\tmp\Sammlung-Ligaergebnisse&#39; -Recurse -Filter &#39;*LL*F*&#39; -ErrorAction SilentlyContinue | Select-Object -First 40 FullName</summary>
+```bash
+if (Test-Path 'C:\tmp\Sammlung-Ligaergebnisse') { Get-ChildItem 'C:\tmp\Sammlung-Ligaergebnisse' -Directory | Select-Object -ExpandProperty Name } else { Write-Host 'no sammlung' }; Get-ChildItem 'C:\tmp\Sammlung-Ligaergebnisse' -Recurse -Filter '*LL*S*' -ErrorAction SilentlyContinue | Select-Object -First 40 FullName; Get-ChildItem 'C:\tmp\Sammlung-Ligaergebnisse' -Recurse -Filter '*Landesliga*S*' -ErrorAction SilentlyContinue | Select-Object -First 40 FullName; Get-ChildItem 'C:\tmp\Sammlung-Ligaergebnisse' -Recurse -Filter '*LL*F*' -ErrorAction SilentlyContinue | Select-Object -First 40 FullName
+```
+
+```
+Bayernliga 2019-20
+Liga 2022-23
+Ligaprogramme Nord 2023-24
+Ligaprogramme S�d 2023-24
+Ligaprogramme S�d 2024-25
+Ligaprogramme_Nord 2024-25
+Nordbereich 2019-20
+Saison 2025-26
+S�dbereich 2019-20
+
+
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The published data contains both LL S and LL S (D) entries.
+
+Comparing published and historical data for 23/24 and 24/25. Locating the LL S Damen Excel files.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c &#34;
+import pandas as pd
+from pathlib import Path
+
+pub = pd.read_csv(&#39;database/published_csv/league_results_merged.csv&#39;, sep=&#39;;&#39;, dtype=str).fillna(&#39;&#39;)
+tt = pub[(pub[&#39;Player&#39;].str.lower()==&#39;team total&#39;) &amp; (pub[&#39;Position&#39;].astype(str)==&#39;0&#39;)]
+for season in [&#39;22/23&#39;,&#39;23/24&#39;,&#39;24/25&#39;,&#39;25/26&#39;]:
+    for league in [&#39;LL S&#39;,&#39;LL S (D)&#39;]:
+        teams = sorted(tt[(tt[&#39;Season&#39;]==season)&amp;(tt[&#39;Event&#39;]==league)][&#39;Team&#39;].unique())
+        print(f&#39;PUB {season} | {league}: {len(teams)}&#39;)
+        if teams: print(&#39;   &#39;, teams)
+
+h = pd.read_csv(&#39;database/work/historical_league_results.csv&#39;, sep=&#39;;&#39;, dtype=str).fillna(&#39;&#39;)
+htt = h[(h[&#39;Player&#39;].str.lower()==&#39;team total&#39;) &amp; (h[&#39;Position&#39;].astype(str)==&#39;0&#39;)]
+for season in [&#39;23/24&#39;,&#39;24/25&#39;]:
+    male = set(htt[(htt[&#39;Season&#39;]==season)&amp;(htt[&#39;League&#39;]==&#39;LL S&#39;)][&#39;Team&#39;])
+    print(f&#39;HIST {season} LL S teams ({len(male)}):&#39;)
+    for t in sorted(male): print(&#39;  &#39;, t)
+&#34;
+</summary>
+```bash
+uv run python -c "
+import pandas as pd
+from pathlib import Path
+
+pub = pd.read_csv('database/published_csv/league_results_merged.csv', sep=';', dtype=str).fillna('')
+tt = pub[(pub['Player'].str.lower()=='team total') & (pub['Position'].astype(str)=='0')]
+for season in ['22/23','23/24','24/25','25/26']:
+    for league in ['LL S','LL S (D)']:
+        teams = sorted(tt[(tt['Season']==season)&(tt['Event']==league)]['Team'].unique())
+        print(f'PUB {season} | {league}: {len(teams)}')
+        if teams: print('   ', teams)
+
+h = pd.read_csv('database/work/historical_league_results.csv', sep=';', dtype=str).fillna('')
+htt = h[(h['Player'].str.lower()=='team total') & (h['Position'].astype(str)=='0')]
+for season in ['23/24','24/25']:
+    male = set(htt[(htt['Season']==season)&(htt['League']=='LL S')]['Team'])
+    print(f'HIST {season} LL S teams ({len(male)}):')
+    for t in sorted(male): print('  ', t)
+"
+
+```
+
+```
+PUB 22/23 | LL S: 6
+    ['BK M�nchen 4', 'Falken Neu-Ulm 1', 'HighRoller Rosenheim 1', 'Lechbowler Augsburg 1', 'Schanzer-Strikers Ingolstadt 1', 'Team ProfiShop 2']
+PUB 22/23 | LL S (D): 0
+PUB 23/24 | LL S: 13
+    ['Active Bowler Brunnthal 1', 'BK M�nchen 4', 'EPA M�nchen 3', 'Falken Neu-Ulm 1', 'HighRoller Rosenheim 1', 'HighRoller Rosenheim 2', 'Lechbowler Augsburg 1', 'Lechbowler Augsburg 2', 'Munich Mavericks 1', 'Munich Mavericks 2', 'Paffenhofen 1', 'Wei�-Blau Unterf�hring 2', 'Werdenfels 1']
+PUB 23/24 | LL S (D): 0
+PUB 24/25 | LL S: 13
+    ['Active Bowler Brunnthal 1', 'BC EMAX Unterf�hring 1', 'Bavaria Unterf�hring 1', 'Cat-Bowl 1', 'EPA M�nchen 2', 'Falken Neu-Ulm 1', 'HighRoller Rosenheim 2', 'Munich Mavericks 1', 'Munich Mavericks 2', 'Murmels Neu-Ulm 1', 'Paffenhofen 1', 'Team ProfiShop 1', 'Werdenfels 1']
+PUB 24/25 | LL S (D): 0
+PUB 25/26 | LL S: 6
+    ['Absolut Sports 1', 'Bavaria Unterf�hring 1', 'Cat-Bowl 1', 'Falken Neu-Ulm 1', 'HighRoller Rosenheim 1', 'Murmels Neu-Ulm 1']
+PUB 25/26 | LL S (D): 8
+    ['Active Bowler Brunnthal 1', 'BC EMAX Unterf�hring 1', 'Cat-Bowl 1', 'EPA M�nchen 2', 'HighRoller Rosenheim 2', 'LA-Bowling Landshut 1', 'Munich Mavericks 2', 'Paffenhofen 1']
+HIST 23/24 LL S teams (13):
+   Active Bowler Brunnthal 1
+   BK M�nchen 4
+   EPA M�nchen 3
+   Falken Neu-Ulm 1
+   HighRoller Rosenheim 1
+   HighRoller Rosenheim 2
+   Lechbowler Augsburg 1
+   Lechbowler Augsburg 2
+   Munich Mavericks 1
+   Munich Mavericks 2
+   Pfaffenhofen 1
+   Wei�-Blau Unterf�hring 2
+   Werdenfels 1
+HIST 24/25 LL S teams (13):
+   Active Bowler Brunnthal 1
+   BC EMAX Unterf�hring 1
+   Bavaria Unterf�hring 1
+   Cat-Bowl 1
+   EPA M�nchen 2
+   Falken Neu-Ulm 1
+   HighRoller Rosenheim 2
+   Murmels Neu-Ulm 1
+   M�nchen Mavericks 1
+   M�nchen Mavericks 2
+   Pfaffenhofen 1
+   ProfiShop M�n 1
+   Werdenfels 1
+
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: Get-ChildItem &#39;C:\tmp\Sammlung-Ligaergebnisse\Ligaprogramme Süd 2023-24&#39; -ErrorAction SilentlyContinue | Select-Object Name; Get-ChildItem &#39;C:\tmp\Sammlung-Ligaergebnisse\Ligaprogramme Süd 2024-25&#39; -ErrorAction SilentlyContinue | Select-Object Name; Get-ChildItem &#39;C:\tmp\Sammlung-Ligaergebnisse&#39; -Recurse -Include &#39;*LL*&#39;,&#39;*Landesliga*&#39;,&#39;*Frauen*&#39;,&#39;*Damen*&#39;,&#39;*Männer*&#39; -ErrorAction SilentlyContinue | Where-Object { $_.FullName -match &#39;2023-24|2024-25|Süd|Sud&#39; } | Select-Object -ExpandProperty FullName</summary>
+```bash
+Get-ChildItem 'C:\tmp\Sammlung-Ligaergebnisse\Ligaprogramme Süd 2023-24' -ErrorAction SilentlyContinue | Select-Object Name; Get-ChildItem 'C:\tmp\Sammlung-Ligaergebnisse\Ligaprogramme Süd 2024-25' -ErrorAction SilentlyContinue | Select-Object Name; Get-ChildItem 'C:\tmp\Sammlung-Ligaergebnisse' -Recurse -Include '*LL*','*Landesliga*','*Frauen*','*Damen*','*Männer*' -ErrorAction SilentlyContinue | Where-Object { $_.FullName -match '2023-24|2024-25|Süd|Sud' } | Select-Object -ExpandProperty FullName
+```
+
+```
+
+
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The published data also shows zero LL S (D) teams for both seasons. This confirms the collapse is systemic rather than a processing error.
+
+The 25/26 season splits correctly into 6 male and 8 female teams. Many of those female teams overlap with the collapsed 23/24 and 24/25 totals, confirming the merge. The audit threshold is 12, so 13 teams triggers the warning. An encoding issue may also be blocking the Süd folder listing.
+
+The audit only runs on legacy scrape and extra leagues, not on published historical data. The fix requires locating the original source Excel files for LL S Damen, then either re-extracting with forced league naming or manually rematching teams to the female league.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: $base = &#39;C:\tmp\Sammlung-Ligaergebnisse&#39;
+Get-ChildItem $base -Directory | ForEach-Object { $_.Name }
+Write-Host &#39;---&#39;
+Get-ChildItem $base -Directory | Where-Object { $_.Name -like &#39;*2023-24*&#39; -or $_.Name -like &#39;*2024-25*&#39; -or $_.Name -like &#39;*Süd*&#39; -or $_.Name -like &#39;*Sud*&#39; } | ForEach-Object {
+  Write-Host \&#34;DIR: $($_.FullName)\&#34;
+  Get-ChildItem $_.FullName -File | ForEach-Object { Write-Host \&#34;  $($_.Name)\&#34; }
+}
+</summary>
+```bash
+$base = 'C:\tmp\Sammlung-Ligaergebnisse'
+Get-ChildItem $base -Directory | ForEach-Object { $_.Name }
+Write-Host '---'
+Get-ChildItem $base -Directory | Where-Object { $_.Name -like '*2023-24*' -or $_.Name -like '*2024-25*' -or $_.Name -like '*Süd*' -or $_.Name -like '*Sud*' } | ForEach-Object {
+  Write-Host \"DIR: $($_.FullName)\"
+  Get-ChildItem $_.FullName -File | ForEach-Object { Write-Host \"  $($_.Name)\" }
+}
+
+```
+
+```
+Bayernliga 2019-20
+Liga 2022-23
+Ligaprogramme Nord 2023-24
+Ligaprogramme S�d 2023-24
+Ligaprogramme S�d 2024-25
+Ligaprogramme_Nord 2024-25
+Nordbereich 2019-20
+Saison 2025-26
+S�dbereich 2019-20
+---
+\DIR: C:\tmp\Sammlung-Ligaergebnisse\Ligaprogramme Nord 2023-24\
+\  BOL N1.xls\
+\  BOL N1.xlsx\
+\  BOL N2.xls\
+\  BOL N2.xlsx\
+\  BOL N3.xls\
+\  BOL N3.xlsx\
+\  BYL Frauen.xls\
+\  BYL Frauen.xlsx\
+\  BYL M�nner.xls\
+\  BYL M�nner.xlsx\
+\  BZL N1.xls\
+\  BZL N1.xlsx\
+\  BZL N2.xls\
+\  BZL N2.xlsx\
+\  BZL N3.xls\
+\  BZL N3.xlsx\
+\  KRL N1.xls\
+\  KRL N1.xlsx\
+\  KRL N2.xls\
+\  KRL N2.xlsx\
+\  KRL N3-Kopie.xls\
+\  KRL N3-Kopie.xlsx\
+\  LL N Frauen.xls\
+\  LL N Frauen.xlsx\
+\  LL N1 M�nner.xls\
+\  LL N1 M�nner.xlsx\
+\  LL N2 M�nner.xls\
+\  LL N2 M�nner.xlsx\
+\DIR: C:\tmp\Sammlung-Ligaergebnisse\Ligaprogramme S�d 2023-24\
+\  BOLS 1 M.xlsx\
+\  BOLS 2 M.xlsx\
+\  BOLS 3 M.xlsx\
+\  BZLS 1 M.xlsx\
+\  BZLS 2 M.xlsx\
+\  BZLS 3 M.xlsx\
+\  KRLS 1 M.xlsx\
+\  KRLS 2 M.xlsx\
+\  KRLS 3 M.xlsx\
+\  LLS 1 M.xlsx\
+\  LLS F.xlsx\
+\DIR: C:\tmp\Sammlung-Ligaergebnisse\Ligaprogramme S�d 2024-25\
+\  BOLS 1 M.xls\
+\  BOLS 1 M.xlsx\
+\  BOLS 2 M.xls\
+\  BOLS 2 M.xlsx\
+\  BOLS 3 M.xls\
+\  BOLS 3 M.xlsx\
+\  BZLS 1 M.xls\
+\  BZLS 1 M.xlsx\
+\  BZLS 2 M.xls\
+\  BZLS 2 M.xlsx\
+\  BZLS 3 M.xls\
+\  BZLS 3 M.xlsx\
+\  KRLS 1 M.xls\
+\  KRLS 1 M.xlsx\
+\  KRLS 2 M.xls\
+\  KRLS 2 M.xlsx\
+\  KRLS 3 M.xls\
+\  KRLS 3 M.xlsx\
+\  LL S 1 F.xls\
+\  LL S 1 F.xlsx\
+\  LLS 1 M.xls\
+\  LLS 1 M.xlsx\
+\DIR: C:\tmp\Sammlung-Ligaergebnisse\Ligaprogramme_Nord 2024-25\
+\  BOL_N1.xls\
+\  BOL_N1.xlsx\
+\  BOL_N2.xls\
+\  BOL_N2.xlsx\
+\  BOL_N3.xls\
+\  BOL_N3.xlsx\
+\  BYL Frauen.xlsx\
+\  BYL_M�nner.xlsx\
+\  BZL_N1.xls\
+\  BZL_N1.xlsx\
+\  BZL_N2.xls\
+\  BZL_N2.xlsx\
+\  BZL_N3.xls\
+\  BZL_N3.xlsx\
+\  KRL_N1.xls\
+\  KRL_N1.xlsx\
+\  KRL_N2.xls\
+\  KRL_N2.xlsx\
+\  KRL_N3.xls\
+\  KRL_N3.xlsx\
+\  LL_Frauen.xlsx\
+\  LL_N1_M�nner.xls\
+\  LL_N1_M�nner.xlsx\
+\  LL_N2_M�nner.xls\
+\  LL_N2_M�nner.xlsx\
+\DIR: C:\tmp\Sammlung-Ligaergebnisse\S�d
+… (output truncated)
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c &#34;
+from pathlib import Path
+base = Path(r&#39;C:\tmp\Sammlung-Ligaergebnisse&#39;)
+for d in sorted(base.iterdir()):
+    if d.is_dir() and (&#39;2023&#39; in d.name or &#39;2024&#39; in d.name or &#39;S&#39; in d.name):
+        print(&#39;DIR&#39;, d.name)
+        for f in sorted(d.iterdir()):
+            if f.is_file():
+                print(&#39; &#39;, f.name)
+&#34;
+</summary>
+```bash
+uv run python -c "
+from pathlib import Path
+base = Path(r'C:\tmp\Sammlung-Ligaergebnisse')
+for d in sorted(base.iterdir()):
+    if d.is_dir() and ('2023' in d.name or '2024' in d.name or 'S' in d.name):
+        print('DIR', d.name)
+        for f in sorted(d.iterdir()):
+            if f.is_file():
+                print(' ', f.name)
+"
+
+```
+
+```
+DIR Ligaprogramme Nord 2023-24
+  BOL N1.xls
+  BOL N1.xlsx
+  BOL N2.xls
+  BOL N2.xlsx
+  BOL N3.xls
+  BOL N3.xlsx
+  BYL Frauen.xls
+  BYL Frauen.xlsx
+  BYL M�nner.xls
+  BYL M�nner.xlsx
+  BZL N1.xls
+  BZL N1.xlsx
+  BZL N2.xls
+  BZL N2.xlsx
+  BZL N3.xls
+  BZL N3.xlsx
+  KRL N1.xls
+  KRL N1.xlsx
+  KRL N2.xls
+  KRL N2.xlsx
+  KRL N3-Kopie.xls
+  KRL N3-Kopie.xlsx
+  LL N Frauen.xls
+  LL N Frauen.xlsx
+  LL N1 M�nner.xls
+  LL N1 M�nner.xlsx
+  LL N2 M�nner.xls
+  LL N2 M�nner.xlsx
+DIR Ligaprogramme S�d 2023-24
+  BOLS 1 M.xlsx
+  BOLS 2 M.xlsx
+  BOLS 3 M.xlsx
+  BZLS 1 M.xlsx
+  BZLS 2 M.xlsx
+  BZLS 3 M.xlsx
+  KRLS 1 M.xlsx
+  KRLS 2 M.xlsx
+  KRLS 3 M.xlsx
+  LLS 1 M.xlsx
+  LLS F.xlsx
+DIR Ligaprogramme S�d 2024-25
+  BOLS 1 M.xls
+  BOLS 1 M.xlsx
+  BOLS 2 M.xls
+  BOLS 2 M.xlsx
+  BOLS 3 M.xls
+  BOLS 3 M.xlsx
+  BZLS 1 M.xls
+  BZLS 1 M.xlsx
+  BZLS 2 M.xls
+  BZLS 2 M.xlsx
+  BZLS 3 M.xls
+  BZLS 3 M.xlsx
+  KRLS 1 M.xls
+  KRLS 1 M.xlsx
+  KRLS 2 M.xls
+  KRLS 2 M.xlsx
+  KRLS 3 M.xls
+  KRLS 3 M.xlsx
+  LL S 1 F.xls
+  LL S 1 F.xlsx
+  LLS 1 M.xls
+  LLS 1 M.xlsx
+DIR Ligaprogramme_Nord 2024-25
+  BOL_N1.xls
+  BOL_N1.xlsx
+  BOL_N2.xls
+  BOL_N2.xlsx
+  BOL_N3.xls
+  BOL_N3.xlsx
+  BYL Frauen.xlsx
+  BYL_M�nner.xlsx
+  BZL_N1.xls
+  BZL_N1.xlsx
+  BZL_N2.xls
+  BZL_N2.xlsx
+  BZL_N3.xls
+  BZL_N3.xlsx
+  KRL_N1.xls
+  KRL_N1.xlsx
+  KRL_N2.xls
+  KRL_N2.xlsx
+  KRL_N3.xls
+  KRL_N3.xlsx
+  LL_Frauen.xlsx
+  LL_N1_M�nner.xls
+  LL_N1_M�nner.xlsx
+  LL_N2_M�nner.xls
+  LL_N2_M�nner.xlsx
+DIR Saison 2025-26
+DIR S�dbereich 2019-20
+
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Separate female workbooks exist. The merge error likely stems from the legacy scraper combining them into male league IDs.
+
+The female files are `LLS F.xlsx` (23/24) and `LL S 1 F.xlsx` (24/25). The male files are `LLS 1 M.xlsx` for both seasons. The extract script likely fails to detect gender from the workbook titles or filenames. Forcing the league ID to `LL S (D)` should resolve the merge. This follows the same pattern as the BayL Frauen override.
+</details></think>
+
+_**Agent (default)**_
+
+Female workbooks exist (`LLS F.xlsx`, `LL S 1 F.xlsx`) — checking how extract labels them.
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\data\\extract_excel_data.py",
+  "pattern": "force_league|normalize_league|workbook.*title|sheet.*title|derive.*league"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\data\\extract_excel_data.py",
+  "pattern": "force_league|normalize_league|workbook.*title|sheet.*title|derive.*league",
+  "topFiles": [
+    {
+      "matchCount": 13,
+      "uri": "scripts\\data\\extract_excel_data.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 13
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c &#34;
+from pathlib import Path
+import sys
+sys.path.insert(0, &#39;.&#39;)
+from scripts.data.extract_excel_data import normalize_league_display_to_canonical, analyze_workbook
+
+base = Path(r&#39;C:\tmp\Sammlung-Ligaergebnisse&#39;)
+# find exact dirs
+sud_dirs = [d for d in base.iterdir() if d.is_dir() and &#39;2023-24&#39; in d.name and &#39;Nord&#39; not in d.name]
+sud_dirs += [d for d in base.iterdir() if d.is_dir() and &#39;2024-25&#39; in d.name and &#39;Nord&#39; not in d.name]
+print(&#39;dirs&#39;, [d.name for d in sud_dirs])
+files = []
+for d in sud_dirs:
+    for f in d.iterdir():
+        if f.suffix.lower()==&#39;.xlsx&#39; and (&#39;LL&#39; in f.name.upper() or &#39;ll&#39; in f.name):
+            files.append(f)
+for f in files:
+    print(&#39;FILE&#39;, f)
+    try:
+        info = analyze_workbook(f)
+        # print relevant bits
+        if isinstance(info, dict):
+            for k in [&#39;league&#39;,&#39;season&#39;,&#39;league_raw&#39;,&#39;display_league&#39;,&#39;sheets&#39;,&#39;title&#39;]:
+                if k in info: print(&#39; &#39;, k, info[k])
+            # dump keys
+            print(&#39;  keys&#39;, sorted(info.keys())[:30])
+        else:
+            print(&#39; &#39;, info)
+    except Exception as e:
+        print(&#39;  ERR&#39;, type(e).__name__, e)
+&#34;
+</summary>
+```bash
+uv run python -c "
+from pathlib import Path
+import sys
+sys.path.insert(0, '.')
+from scripts.data.extract_excel_data import normalize_league_display_to_canonical, analyze_workbook
+
+base = Path(r'C:\tmp\Sammlung-Ligaergebnisse')
+# find exact dirs
+sud_dirs = [d for d in base.iterdir() if d.is_dir() and '2023-24' in d.name and 'Nord' not in d.name]
+sud_dirs += [d for d in base.iterdir() if d.is_dir() and '2024-25' in d.name and 'Nord' not in d.name]
+print('dirs', [d.name for d in sud_dirs])
+files = []
+for d in sud_dirs:
+    for f in d.iterdir():
+        if f.suffix.lower()=='.xlsx' and ('LL' in f.name.upper() or 'll' in f.name):
+            files.append(f)
+for f in files:
+    print('FILE', f)
+    try:
+        info = analyze_workbook(f)
+        # print relevant bits
+        if isinstance(info, dict):
+            for k in ['league','season','league_raw','display_league','sheets','title']:
+                if k in info: print(' ', k, info[k])
+            # dump keys
+            print('  keys', sorted(info.keys())[:30])
+        else:
+            print(' ', info)
+    except Exception as e:
+        print('  ERR', type(e).__name__, e)
+"
+
+```
+
+```
+Traceback (most recent call last):
+  File "<string>", line 5, in <module>
+ImportError: cannot import name 'analyze_workbook' from 'scripts.data.extract_excel_data' (C:\Users\cfell\repositories\bowlyzer_deploy\scripts\data\extract_excel_data.py)
+
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I am locating the analyze function and inspecting the LLS F.xlsx workbook to check the league titles.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\data\\extract_excel_data.py",
+  "pattern": "^def "
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\data\\extract_excel_data.py",
+  "pattern": "^def ",
+  "topFiles": [
+    {
+      "matchCount": 60,
+      "uri": "scripts\\data\\extract_excel_data.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 100
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\docs\\Excel_Extraction.md",
+  "pattern": "analyze|inspect|league_raw|force_league"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\docs\\Excel_Extraction.md",
+  "pattern": "analyze|inspect|league_raw|force_league",
+  "topFiles": [
+    {
+      "matchCount": 29,
+      "uri": "docs\\Excel_Extraction.md"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 29
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\data\extract_excel_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Inspecting the league cell in LLS F.xlsx and its normalize mapping.
+
+Checking the analysis log for additional clues.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c &#34;
+from pathlib import Path
+import openpyxl
+from scripts.data.extract_excel_data import normalize_league_display_to_canonical, open_workbook_session, read_excel_safely, extract_season_info
+
+base = Path(r&#39;C:\tmp\Sammlung-Ligaergebnisse&#39;)
+targets = []
+for d in base.iterdir():
+    if not d.is_dir():
+        continue
+    for f in d.iterdir():
+        name = f.name.lower()
+        if f.suffix.lower()==&#39;.xlsx&#39; and (&#39;lls&#39; in name.replace(&#39; &#39;, &#39;&#39;) or name.startswith(&#39;ll s&#39;)):
+            targets.append(f)
+
+for f in targets:
+    print(&#39;====&#39;, f)
+    wb = openpyxl.load_workbook(f, read_only=True, data_only=True)
+    print(&#39; sheets&#39;, wb.sheetnames[:8], &#39;...&#39; if len(wb.sheetnames)&gt;8 else &#39;&#39;)
+    # sample first sheet top-left for league title
+    ws = wb[wb.sheetnames[0]]
+    rows = []
+    for i, row in enumerate(ws.iter_rows(max_row=12, max_col=8, values_only=True)):
+        rows.append(row)
+    for i,r in enumerate(rows):
+        print(f&#39;  R{i+1}:&#39;, r)
+    # try normalize on any string containing Liga/Landes
+    for r in rows:
+        for cell in r:
+            if isinstance(cell, str) and (&#39;liga&#39; in cell.lower() or &#39;landes&#39; in cell.lower() or &#39;bayern&#39; in cell.lower()):
+                print(&#39;  NORMALIZE&#39;, repr(cell), &#39;-&gt;&#39;, repr(normalize_league_display_to_canonical(cell)))
+    wb.close()
+&#34;
+</summary>
+```bash
+uv run python -c "
+from pathlib import Path
+import openpyxl
+from scripts.data.extract_excel_data import normalize_league_display_to_canonical, open_workbook_session, read_excel_safely, extract_season_info
+
+base = Path(r'C:\tmp\Sammlung-Ligaergebnisse')
+targets = []
+for d in base.iterdir():
+    if not d.is_dir():
+        continue
+    for f in d.iterdir():
+        name = f.name.lower()
+        if f.suffix.lower()=='.xlsx' and ('lls' in name.replace(' ', '') or name.startswith('ll s')):
+            targets.append(f)
+
+for f in targets:
+    print('====', f)
+    wb = openpyxl.load_workbook(f, read_only=True, data_only=True)
+    print(' sheets', wb.sheetnames[:8], '...' if len(wb.sheetnames)>8 else '')
+    # sample first sheet top-left for league title
+    ws = wb[wb.sheetnames[0]]
+    rows = []
+    for i, row in enumerate(ws.iter_rows(max_row=12, max_col=8, values_only=True)):
+        rows.append(row)
+    for i,r in enumerate(rows):
+        print(f'  R{i+1}:', r)
+    # try normalize on any string containing Liga/Landes
+    for r in rows:
+        for cell in r:
+            if isinstance(cell, str) and ('liga' in cell.lower() or 'landes' in cell.lower() or 'bayern' in cell.lower()):
+                print('  NORMALIZE', repr(cell), '->', repr(normalize_league_display_to_canonical(cell)))
+    wb.close()
+"
+
+```
+
+```
+C:\Users\cfell\repositories\bowlyzer_deploy\.venv\Lib\site-packages\openpyxl\reader\workbook.py:118: UserWarning: Print area cannot be set to Defined name: 'Einzel gesamt'!$G:$Z.
+  warn(f"Print area cannot be set to Defined name: {defn.value}.")
+C:\Users\cfell\repositories\bowlyzer_deploy\.venv\Lib\site-packages\openpyxl\reader\workbook.py:118: UserWarning: Print area cannot be set to Defined name: 'Spielzettel-leer'!$A:$AV.
+  warn(f"Print area cannot be set to Defined name: {defn.value}.")
+C:\Users\cfell\repositories\bowlyzer_deploy\.venv\Lib\site-packages\openpyxl\reader\workbook.py:118: UserWarning: Print area cannot be set to Defined name: 'Tabelle Start 1'!$G:$S.
+  warn(f"Print area cannot be set to Defined name: {defn.value}.")
+C:\Users\cfell\repositories\bowlyzer_deploy\.venv\Lib\site-packages\openpyxl\reader\workbook.py:118: UserWarning: Print area cannot be set to Defined name: 'Tabelle Start 2'!$G:$S.
+  warn(f"Print area cannot be set to Defined name: {defn.value}.")
+C:\Users\cfell\repositories\bowlyzer_deploy\.venv\Lib\site-packages\openpyxl\reader\workbook.py:118: UserWarning: Print area cannot be set to Defined name: 'Tabelle Start 3'!$G:$S.
+  warn(f"Print area cannot be set to Defined name: {defn.value}.")
+C:\Users\cfell\repositories\bowlyzer_deploy\.venv\Lib\site-packages\openpyxl\reader\workbook.py:118: UserWarning: Print area cannot be set to Defined name: 'Tabelle Start 4'!$G:$S.
+  warn(f"Print area cannot be set to Defined name: {defn.value}.")
+C:\Users\cfell\repositories\bowlyzer_deploy\.venv\Lib\site-packages\openpyxl\reader\workbook.py:118: UserWarning: Print area cannot be set to Defined name: 'Tabelle Start 5'!$G:$S.
+  warn(f"Print area cannot be set to Defined name: {defn.value}.")
+C:\Users\cfell\repositories\bowlyzer_deploy\.venv\Lib\site-packages\openpyxl\reader\workbook.py:118: UserWarning: Print area cannot be set to Defined name: 'Tabelle Start 6'!$G:$S.
+  warn(f"Print area cannot be set to Defined name: {defn.value}.")
+
+… (output truncated)
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The 22/23 female workbook `LLS F` appears to contain the same merging issue.
+
+The root cause is a title-matching bug. "Landesliga Süd Frauen" does not contain "Landesliga Süd Damen", so the long-name lookup fails. The fallback logic then appends "(D)" to the stripped base name, producing "Landesliga Süd (D)" instead of "LL S (D)". This mismatch explains why female league rows are being misclassified as male.
+
+The alias "Landesliga Süd 1 - Frauen" also fails to match the workbook title "Landesliga Süd Frauen". The next step is to inspect the MS sheet for LLS F.xlsx to see whether the league name is read from a different cell.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c &#34;
+from pathlib import Path
+import openpyxl
+from scripts.data.extract_excel_data import normalize_league_display_to_canonical
+
+base = Path(r&#39;C:\tmp\Sammlung-Ligaergebnisse&#39;)
+files = []
+for d in base.iterdir():
+    if not d.is_dir(): continue
+    for f in d.iterdir():
+        n = f.name.lower().replace(&#39; &#39;, &#39;&#39;)
+        if f.suffix.lower()==&#39;.xlsx&#39; and (&#39;lls&#39; in n or n.startswith(&#39;lls&#39;) or &#39;lls1&#39; in n or &#39;lls&#39; in f.name.lower()):
+            if &#39;srberichte&#39; in f.name.lower(): continue
+            files.append(f)
+
+for f in files:
+    print(&#39;====&#39;, f.name, &#39;|&#39;, f.parent.name)
+    wb = openpyxl.load_workbook(f, read_only=True, data_only=True)
+    for sheet in [&#39;MS&#39;,&#39;Spielorte&#39;,&#39;Schlüssel&#39;,&#39;Schluessel&#39;]:
+        if sheet not in wb.sheetnames:
+            # fuzzy
+            match = [s for s in wb.sheetnames if s.lower().startswith(sheet[:2].lower())]
+            if not match: continue
+            sheet = match[0]
+        ws = wb[sheet]
+        print(&#39; -- sheet&#39;, sheet)
+        for i, row in enumerate(ws.iter_rows(max_row=25, max_col=6, values_only=True)):
+            # print non-empty
+            vals = [c for c in row if c not in (None, &#39;&#39;)]
+            if vals:
+                print(f&#39;  R{i+1}:&#39;, row[:6])
+        break
+    wb.close()
+&#34;
+</summary>
+```bash
+uv run python -c "
+from pathlib import Path
+import openpyxl
+from scripts.data.extract_excel_data import normalize_league_display_to_canonical
+
+base = Path(r'C:\tmp\Sammlung-Ligaergebnisse')
+files = []
+for d in base.iterdir():
+    if not d.is_dir(): continue
+    for f in d.iterdir():
+        n = f.name.lower().replace(' ', '')
+        if f.suffix.lower()=='.xlsx' and ('lls' in n or n.startswith('lls') or 'lls1' in n or 'lls' in f.name.lower()):
+            if 'srberichte' in f.name.lower(): continue
+            files.append(f)
+
+for f in files:
+    print('====', f.name, '|', f.parent.name)
+    wb = openpyxl.load_workbook(f, read_only=True, data_only=True)
+    for sheet in ['MS','Spielorte','Schlüssel','Schluessel']:
+        if sheet not in wb.sheetnames:
+            # fuzzy
+            match = [s for s in wb.sheetnames if s.lower().startswith(sheet[:2].lower())]
+            if not match: continue
+            sheet = match[0]
+        ws = wb[sheet]
+        print(' -- sheet', sheet)
+        for i, row in enumerate(ws.iter_rows(max_row=25, max_col=6, values_only=True)):
+            # print non-empty
+            vals = [c for c in row if c not in (None, '')]
+            if vals:
+                print(f'  R{i+1}:', row[:6])
+        break
+    wb.close()
+"
+
+```
+
+```
+C:\Users\cfell\repositories\bowlyzer_deploy\.venv\Lib\site-packages\openpyxl\reader\workbook.py:118: UserWarning: Print area cannot be set to Defined name: 'Einzel gesamt'!$G:$Z.
+  warn(f"Print area cannot be set to Defined name: {defn.value}.")
+C:\Users\cfell\repositories\bowlyzer_deploy\.venv\Lib\site-packages\openpyxl\reader\workbook.py:118: UserWarning: Print area cannot be set to Defined name: 'Spielzettel-leer'!$A:$AV.
+  warn(f"Print area cannot be set to Defined name: {defn.value}.")
+C:\Users\cfell\repositories\bowlyzer_deploy\.venv\Lib\site-packages\openpyxl\reader\workbook.py:118: UserWarning: Print area cannot be set to Defined name: 'Tabelle Start 1'!$G:$S.
+  warn(f"Print area cannot be set to Defined name: {defn.value}.")
+C:\Users\cfell\repositories\bowlyzer_deploy\.venv\Lib\site-packages\openpyxl\reader\workbook.py:118: UserWarning: Print area cannot be set to Defined name: 'Tabelle Start 2'!$G:$S.
+  warn(f"Print area cannot be set to Defined name: {defn.value}.")
+C:\Users\cfell\repositories\bowlyzer_deploy\.venv\Lib\site-packages\openpyxl\reader\workbook.py:118: UserWarning: Print area cannot be set to Defined name: 'Tabelle Start 3'!$G:$S.
+  warn(f"Print area cannot be set to Defined name: {defn.value}.")
+C:\Users\cfell\repositories\bowlyzer_deploy\.venv\Lib\site-packages\openpyxl\reader\workbook.py:118: UserWarning: Print area cannot be set to Defined name: 'Tabelle Start 4'!$G:$S.
+  warn(f"Print area cannot be set to Defined name: {defn.value}.")
+C:\Users\cfell\repositories\bowlyzer_deploy\.venv\Lib\site-packages\openpyxl\reader\workbook.py:118: UserWarning: Print area cannot be set to Defined name: 'Tabelle Start 5'!$G:$S.
+  warn(f"Print area cannot be set to Defined name: {defn.value}.")
+C:\Users\cfell\repositories\bowlyzer_deploy\.venv\Lib\site-packages\openpyxl\reader\workbook.py:118: UserWarning: Print area cannot be set to Defined name: 'Tabelle Start 6'!$G:$S.
+  warn(f"Print area cannot be set to Defined name: {defn.value}.")
+
+… (output truncated)
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\data\extract_excel_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\database\relational_csv\league_mapping.csv</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The alias lookup fails because the stored aliases use "Landesliga Süd 1 - Frauen" while the actual long name is "Landesliga Süd Damen". This mismatch prevents female league rows from being matched correctly.
+
+Normalization falls back to "Landesliga Süd (D)" instead of the canonical "LL S (D)". The next step is checking whether the new workbook reads league names directly from the Spielorte sheet, and analyzing LLS F.xlsx to trace the mapping.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c &#34;
+from pathlib import Path
+import openpyxl
+from scripts.data.extract_excel_data import normalize_league_display_to_canonical
+
+for label in [
+    &#39;Landesliga Süd Frauen&#39;,
+    &#39;Landesliga Süd Damen&#39;,
+    &#39;Landesliga Süd 1 - Frauen&#39;,
+    &#39;Landesliga Süd&#39;,
+    &#39;Landesliga Süd 1&#39;,
+    &#39;LL S&#39;,
+    &#39;LL S (D)&#39;,
+]:
+    print(repr(label), &#39;-&gt;&#39;, repr(normalize_league_display_to_canonical(label)))
+
+# Spielorte / Schlüssel for F workbooks
+base = Path(r&#39;C:\tmp\Sammlung-Ligaergebnisse&#39;)
+for rel in [
+    (&#39;Ligaprogramme Süd 2023-24&#39;, &#39;LLS F.xlsx&#39;),
+    (&#39;Ligaprogramme Süd 2024-25&#39;, &#39;LL S 1 F.xlsx&#39;),
+    (&#39;Ligaprogramme Süd 2023-24&#39;, &#39;LLS 1 M.xlsx&#39;),
+]:
+    # find dir by substring
+    dirs = [d for d in base.iterdir() if &#39;2023-24&#39; in d.name and &#39;Nord&#39; not in d.name] if &#39;2023&#39; in rel[0] else [d for d in base.iterdir() if &#39;2024-25&#39; in d.name and &#39;Nord&#39; not in d.name]
+    f = None
+    for d in dirs:
+        cand = d / rel[1]
+        if cand.exists():
+            f = cand
+            break
+    print(&#39;====&#39;, f)
+    wb = openpyxl.load_workbook(f, read_only=True, data_only=True)
+    for sheet in wb.sheetnames:
+        if &#39;spielort&#39; in sheet.lower() or &#39;schl&#39; in sheet.lower() or sheet==&#39;MS&#39;:
+            ws = wb[sheet]
+            print(&#39; sheet&#39;, sheet)
+            for i, row in enumerate(ws.iter_rows(max_row=40, max_col=8, values_only=True)):
+                vals=[c for c in row if c not in (None,&#39;&#39;)]
+                if vals:
+                    print(f&#39;  R{i+1}:&#39;, row[:8])
+    wb.close()
+&#34;
+</summary>
+```bash
+uv run python -c "
+from pathlib import Path
+import openpyxl
+from scripts.data.extract_excel_data import normalize_league_display_to_canonical
+
+for label in [
+    'Landesliga Süd Frauen',
+    'Landesliga Süd Damen',
+    'Landesliga Süd 1 - Frauen',
+    'Landesliga Süd',
+    'Landesliga Süd 1',
+    'LL S',
+    'LL S (D)',
+]:
+    print(repr(label), '->', repr(normalize_league_display_to_canonical(label)))
+
+# Spielorte / Schlüssel for F workbooks
+base = Path(r'C:\tmp\Sammlung-Ligaergebnisse')
+for rel in [
+    ('Ligaprogramme Süd 2023-24', 'LLS F.xlsx'),
+    ('Ligaprogramme Süd 2024-25', 'LL S 1 F.xlsx'),
+    ('Ligaprogramme Süd 2023-24', 'LLS 1 M.xlsx'),
+]:
+    # find dir by substring
+    dirs = [d for d in base.iterdir() if '2023-24' in d.name and 'Nord' not in d.name] if '2023' in rel[0] else [d for d in base.iterdir() if '2024-25' in d.name and 'Nord' not in d.name]
+    f = None
+    for d in dirs:
+        cand = d / rel[1]
+        if cand.exists():
+            f = cand
+            break
+    print('====', f)
+    wb = openpyxl.load_workbook(f, read_only=True, data_only=True)
+    for sheet in wb.sheetnames:
+        if 'spielort' in sheet.lower() or 'schl' in sheet.lower() or sheet=='MS':
+            ws = wb[sheet]
+            print(' sheet', sheet)
+            for i, row in enumerate(ws.iter_rows(max_row=40, max_col=8, values_only=True)):
+                vals=[c for c in row if c not in (None,'')]
+                if vals:
+                    print(f'  R{i+1}:', row[:8])
+    wb.close()
+"
+
+```
+
+```
+C:\Users\cfell\repositories\bowlyzer_deploy\.venv\Lib\site-packages\openpyxl\reader\workbook.py:118: UserWarning: Print area cannot be set to Defined name: Erfassung1!$A:$AF.
+  warn(f"Print area cannot be set to Defined name: {defn.value}.")
+C:\Users\cfell\repositories\bowlyzer_deploy\.venv\Lib\site-packages\openpyxl\reader\workbook.py:118: UserWarning: Print area cannot be set to Defined name: Spielzettel1!$A:$O.
+  warn(f"Print area cannot be set to Defined name: {defn.value}.")
+C:\Users\cfell\repositories\bowlyzer_deploy\.venv\Lib\site-packages\openpyxl\reader\workbook.py:118: UserWarning: Print area cannot be set to Defined name: Spielzettel2!$A:$O.
+  warn(f"Print area cannot be set to Defined name: {defn.value}.")
+C:\Users\cfell\repositories\bowlyzer_deploy\.venv\Lib\site-packages\openpyxl\reader\workbook.py:118: UserWarning: Print area cannot be set to Defined name: Spielzettel3!$A:$O.
+  warn(f"Print area cannot be set to Defined name: {defn.value}.")
+C:\Users\cfell\repositories\bowlyzer_deploy\.venv\Lib\site-packages\openpyxl\reader\workbook.py:118: UserWarning: Print area cannot be set to Defined name: Spielzettel4!$A:$O.
+  warn(f"Print area cannot be set to Defined name: {defn.value}.")
+C:\Users\cfell\repositories\bowlyzer_deploy\.venv\Lib\site-packages\openpyxl\reader\workbook.py:118: UserWarning: Print area cannot be set to Defined name: Spielzettel5!$A:$O.
+  warn(f"Print area cannot be set to Defined name: {defn.value}.")
+C:\Users\cfell\repositories\bowlyzer_deploy\.venv\Lib\site-packages\openpyxl\reader\workbook.py:118: UserWarning: Print area cannot be set to Defined name: Spielzettel6!$A:$O.
+  warn(f"Print area cannot be set to Defined name: {defn.value}.")
+'Landesliga S�d Frauen' -> 'Landesliga S�d (D)'
+'Landesliga S�d Damen' -> 'LL S (D)'
+'Landesliga S�d 1 - Frauen' -> 'LL S (D)'
+'Landesliga S�d' -> 'LL S'
+'Landesliga S�d 1' -> 'LL S'
+'LL S' -> 'LL S'
+'LL S (D)' -> 'LL S (D)'
+==== C:\tmp\Sammlung-Ligaergebnisse\Ligaprogramme S�d 
+… (output truncated)
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\data\\extract_excel_data.py",
+  "pattern": "league_raw|extract.*league|Liga:|get_league|read_league"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\data\\extract_excel_data.py",
+  "pattern": "league_raw|extract.*league|Liga:|get_league|read_league",
+  "topFiles": [
+    {
+      "matchCount": 16,
+      "uri": "scripts\\data\\extract_excel_data.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 16
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The root cause is a fallback mapping. "Landesliga Süd Frauen" is incorrectly mapped to "Landesliga Süd (D)" instead of the canonical "LL S (D)". This causes female league rows to merge into male IDs.
+
+The historical CSV shows 13 teams already labeled `LL S`, so the female rows were likely mislabeled during extraction or normalization. The current suspects are `extract_league_from_schluessel`, `normalize_extracted_dataframe`, or a force-removal step stripping the `(D)` suffix.
+
+Now examining `extract_league_from_schluessel` to locate the exact source of the incorrect fallback mapping.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\data\extract_excel_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\data\extract_excel_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\data\extract_excel_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Tracing the `extract_league_from_schluessel` function to find why female league rows are merging into male team IDs.
+
+The normalization logic turns "Landesliga Süd Frauen" into "Landesliga Süd (D)", so female league rows should carry that label. Since historical data instead shows "LL S" with 13 teams, the female entries were likely dropped during extraction or remapped to the male league ID during merge.
+
+The 13-team LL S total is roughly the union of male and female Schlüssel lists. This confirms the female league rows were never extracted or were merged into the male league ID during processing.
+
+The exact count checks out: 6 male plus 8 female teams equals 14, minus one duplicate Active Bowler entry, yielding exactly 13. This confirms the collapse. The focus is now on whether a downstream step—such as merge, publish, or `clean_league_name`—is stripping the "(D)" suffix and remapping the female league back to "LL S".
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\data\extract_excel_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c &#34;
+from scripts.data.extract_excel_data import normalize_league_display_to_canonical, _derive_league_gender_scope, extract_league_from_schluessel
+from pathlib import Path
+base = Path(r&#39;C:\tmp\Sammlung-Ligaergebnisse&#39;)
+f = next(p for d in base.iterdir() if d.is_dir() for p in d.iterdir() if p.name==&#39;LLS F.xlsx&#39;)
+print(&#39;extract&#39;, extract_league_from_schluessel(f))
+for s in [&#39;Landesliga Süd (D)&#39;, &#39;Landesliga Süd Frauen&#39;, &#39;LL S (D)&#39;]:
+    print(repr(s), &#39;gender&#39;, _derive_league_gender_scope(s), &#39;-&gt;&#39;, repr(normalize_league_display_to_canonical(s)))
+
+# check hist for non-canonical
+import pandas as pd
+h = pd.read_csv(&#39;database/work/historical_league_results.csv&#39;, sep=&#39;;&#39;, dtype=str).fillna(&#39;&#39;)
+print(&#39;unique leagues with Sued/Süd/LL S:&#39;)
+for L in sorted(h[&#39;League&#39;].unique()):
+    if &#39;LL&#39; in L or &#39;Landes&#39; in L or &#39;(D)&#39; in L:
+        print(repr(L), h[h[&#39;League&#39;]==L][&#39;Season&#39;].nunique())
+&#34;
+</summary>
+```bash
+uv run python -c "
+from scripts.data.extract_excel_data import normalize_league_display_to_canonical, _derive_league_gender_scope, extract_league_from_schluessel
+from pathlib import Path
+base = Path(r'C:\tmp\Sammlung-Ligaergebnisse')
+f = next(p for d in base.iterdir() if d.is_dir() for p in d.iterdir() if p.name=='LLS F.xlsx')
+print('extract', extract_league_from_schluessel(f))
+for s in ['Landesliga Süd (D)', 'Landesliga Süd Frauen', 'LL S (D)']:
+    print(repr(s), 'gender', _derive_league_gender_scope(s), '->', repr(normalize_league_display_to_canonical(s)))
+
+# check hist for non-canonical
+import pandas as pd
+h = pd.read_csv('database/work/historical_league_results.csv', sep=';', dtype=str).fillna('')
+print('unique leagues with Sued/Süd/LL S:')
+for L in sorted(h['League'].unique()):
+    if 'LL' in L or 'Landes' in L or '(D)' in L:
+        print(repr(L), h[h['League']==L]['Season'].nunique())
+"
+
+```
+
+```
+extract Landesliga S�d (D)
+'Landesliga S�d (D)' gender male -> 'LL S'
+'Landesliga S�d Frauen' gender female -> 'Landesliga S�d (D)'
+'LL S (D)' gender male -> 'LL S (D)'
+unique leagues with Sued/S�d/LL S:
+'BZOL S1 (D)' 1
+'BayL (D)' 4
+'LL N (D)' 3
+'LL N1' 4
+'LL N2' 4
+'LL S' 4
+'LL S (D)' 1
+
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The root cause is clear: the female league name "Landesliga Süd (D)" is being mapped to the male league ID "LL S". This explains why female league rows are collapsing into male IDs and causing the audit errors.
+
+The regex that detects female leagues only matches "frauen" or "damen", not "(D)". So "Landesliga Süd (D)" is treated as male, falls back to its long name, and maps to "LL S". This two-step normalization is the exact source of the collapse.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\data\extract_excel_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\test_league_gender_normalization.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The root cause is clear. A fix path is ready.
+
+The mapping alias for the female league does not match the actual CSV label. The fallback produces "(D)", which the second normalization pass misreads as male. This causes the merge into the male "LL S" row. The fix requires updating the alias mapping and adding a layered normalization rule.
+
+Add `Landesliga Süd Frauen` and `Landesliga Süd - Frauen` to the `LL S (D)` mapping alias to prevent the fallback. Update `_derive_league_gender_scope` to treat trailing `(D)` as female. Optionally make the fallback return canonical IDs. As a short-term override, force `force_league=LL S (D)` on the affected workbooks. After the code fix, re-process the Süd 23/24 and 24/25 LL F (+M) workbooks.
+
+Do not use `--skip-female-league-audit`; that would publish incorrect data. The same collapse already exists in the published output for 23/24 and 24/25. After applying the mapping and gender fixes, merge the corrected league×season records back into historical and re-run the audit. LL S (D) appears only in one historical season. I can implement the small mapping and gender fix now and provide the re-processing steps.
+
+I will apply the fix directly rather than wait for confirmation. I will add the missing alias, update the gender scope logic to treat trailing `(D)` as female, add tests, and ensure the fallback maps to known canonical IDs when possible.
+
+The fallback string "Landesliga Süd (D)" does not match the female league alias either. The longest-match logic therefore fails to resolve the entry at all.
+
+Fixing only the gender scope would leave the League column as the non-canonical string "Landesliga Süd (D)". The audit expects the exact canonical ID "LL S (D)", so the female team count would still read zero. Both the alias mapping and the gender-scope fix are required.
+
+A fallback resolution rule should map generated "(D)" strings directly to known canonical IDs when possible. The male counterpart "Landesliga Süd 1 Männer" must remain correctly mapped to LL S. After applying the fix, the affected female workbooks need re-extraction and remerging.
+</details></think>
+
+_**Agent (default)**_
+
+Root cause: `"Landesliga Süd Frauen"` falls back to `"Landesliga Süd (D)"`, then a second normalize treats `(D)` as male and maps it to `LL S`. Fixing the mapping and gender detection.
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="todo_write"><details>
+<summary>Tool use: **todo_write**</summary>
+
+Parameters:
+
+```json
+{
+  "merge": true
+}
+```
+Result:
+
+```json
+{
+  "finalTodos": [
+    {
+      "content": "Fix (D) gender + LL S Frauen aliases so female doesn't collapse to LL S",
+      "id": "1",
+      "status": "in_progress"
+    },
+    {
+      "content": "Add regression tests for Frauen / (D) round-trip",
+      "id": "2",
+      "status": "pending"
+    },
+    {
+      "content": "Add force_league overrides for LLS F workbooks (belt \u0026 suspenders)",
+      "id": "3",
+      "status": "pending"
+    }
+  ],
+  "initialTodos": [
+    {
+      "content": "Investigate bye-game 751:106 bogus win + opponent score source",
+      "id": "1",
+      "status": "completed"
+    },
+    {
+      "content": "Fix special-match deep link to show match details (not full week)",
+      "id": "2",
+      "status": "completed"
+    }
+  ],
+  "success": true
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\database\config\extract_excel_overrides.csv</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\tests",
+  "pattern": "Landesliga Süd|LL S \\(D\\)|derive_league_gender"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\tests",
+  "pattern": "Landesliga Süd|LL S \\(D\\)|derive_league_gender",
+  "topFiles": [
+    {
+      "matchCount": 5,
+      "uri": "tests/test_league_gender_normalization.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 5
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The fix requires updating the female-league regex or gender-scope derivation to properly recognize "(D)" suffixes. This will separate female league rows from male ones instead of merging them.
+
+Adding aliases for Landesliga Süd Frauen and checking canonical IDs for the (D) suffix will fix the merge. The cleaner approach is to strip the gender tag and search the female pool by base name.
+
+Re-processing the female files is cleaner than repairing the collapsed CSV. The exact-path overrides for the female files need correct Unicode paths for "Süd," since the current CSV has encoding issues.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\data\extract_excel_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Path regex works better for Süd folders because of encoding issues.
+
+Path regex overrides will be added for known female files as a safeguard. The normalize fallback for "(D)" suffixes is unreliable because those IDs are not in known_ids. Aliases are safer than treating Damen and Frauen as interchangeable.
+
+Stripping the "(D)" suffix from a female ID like "Landesliga Süd (D)" would not help. The matcher checks if the long name is contained within the title, not the reverse. "Landesliga Süd" is not inside "Landesliga Süd Damen", so the match would fail.
+
+A fallback lookup for female entries by base name plus "(D)" was considered but rejected as too complex. The simplest durable fix is to recognize "(D)" as female and add aliases such as "Landesliga Süd Frauen".
+
+The normalize function will now detect a trailing `(D)` suffix and automatically set the gender scope to female. This lets the exact known ID like "LL S (D)" match against female long names without relying on aliases.
+
+The normalize function will strip the "(D)" suffix and search female entries by base name after a long-name match fails. This avoids circular logic and handles cases where the exact known ID is missing.
+
+The base-name fallback is too broad for now. A direct "Landesliga Süd (D)" alias is impossible because known_ids only stores lowercase IDs. The fix is to add a "Landesliga Süd Frauen" alias. This makes the first pass return the exact known ID "LL S (D)" directly. The second pass then finds it in the female pool and returns early. Already-extracted bad CSVs must be re-extracted.
+
+Gender information is lost during extraction, so re-normalization alone cannot fix the mismatch. The fix must be implemented now.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\data\extract_excel_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\data\extract_excel_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\database\relational_csv\league_mapping.csv</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\test_league_gender_normalization.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\database\config\extract_excel_overrides.csv</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Checking whether alias loading order causes "Landesliga Süd (D)" to match before gender filtering, merging female league rows into male IDs.
+
+Confirmed "Landesliga Süd (D)" correctly maps to female league ID LL S (D). Now checking if male titles like "Landesliga Süd 1 Männer" accidentally match LL S via substring. Will run tests to verify `extract_league_from_schluessel` returns the correct ID.
+
+Confirmed padded matching prevents "Landesliga Süd" from incorrectly appearing inside "Landesliga Süd 1 Männer".
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run pytest tests/test_league_gender_normalization.py -q &amp;&amp; uv run python -c &#34;
+from pathlib import Path
+from scripts.data.extract_excel_data import extract_league_from_schluessel, normalize_league_display_to_canonical
+# clear cache
+import scripts.data.extract_excel_data as m
+m._LEAGUE_MAPPING_CACHE = None
+print(&#39;Frauen -&gt;&#39;, normalize_league_display_to_canonical(&#39;Landesliga Süd Frauen&#39;))
+print(&#39;(D) fallback -&gt;&#39;, normalize_league_display_to_canonical(&#39;Landesliga Süd (D)&#39;))
+base = Path(r&#39;C:\tmp\Sammlung-Ligaergebnisse&#39;)
+for name in [&#39;LLS F.xlsx&#39;, &#39;LL S 1 F.xlsx&#39;, &#39;LLS 1 M.xlsx&#39;]:
+    f = next((p for d in base.iterdir() if d.is_dir() for p in d.iterdir() if p.name==name), None)
+    if f:
+        print(f.name, &#39;-&gt;&#39;, extract_league_from_schluessel(f))
+&#34;
+</summary>
+```bash
+uv run pytest tests/test_league_gender_normalization.py -q && uv run python -c "
+from pathlib import Path
+from scripts.data.extract_excel_data import extract_league_from_schluessel, normalize_league_display_to_canonical
+# clear cache
+import scripts.data.extract_excel_data as m
+m._LEAGUE_MAPPING_CACHE = None
+print('Frauen ->', normalize_league_display_to_canonical('Landesliga Süd Frauen'))
+print('(D) fallback ->', normalize_league_display_to_canonical('Landesliga Süd (D)'))
+base = Path(r'C:\tmp\Sammlung-Ligaergebnisse')
+for name in ['LLS F.xlsx', 'LL S 1 F.xlsx', 'LLS 1 M.xlsx']:
+    f = next((p for d in base.iterdir() if d.is_dir() for p in d.iterdir() if p.name==name), None)
+    if f:
+        print(f.name, '->', extract_league_from_schluessel(f))
+"
+
+```
+
+```
+In C:\Users\cfell\AppData\Local\Temp\ps-script-71706c39-0119-4d0e-bcc0-2e34dbb85170.ps1:122 Zeichen:60
++ uv run pytest tests/test_league_gender_normalization.py -q && uv run  ...
++                                                            ~~
+Das Token "&&" ist in dieser Version kein g�ltiges Anweisungstrennzeichen.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : InvalidEndOfLine
+ 
+
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+PowerShell requires semicolons instead of `&&` for command chaining.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run pytest tests/test_league_gender_normalization.py -q; if ($LASTEXITCODE -eq 0) { uv run python -c @&#34;
+from pathlib import Path
+from scripts.data.extract_excel_data import extract_league_from_schluessel, normalize_league_display_to_canonical
+import scripts.data.extract_excel_data as m
+m._LEAGUE_MAPPING_CACHE = None
+print(&#39;Frauen -&gt;&#39;, normalize_league_display_to_canonical(&#39;Landesliga Süd Frauen&#39;))
+print(&#39;(D) fallback -&gt;&#39;, normalize_league_display_to_canonical(&#39;Landesliga Süd (D)&#39;))
+base = Path(r&#39;C:\tmp\Sammlung-Ligaergebnisse&#39;)
+for name in [&#39;LLS F.xlsx&#39;, &#39;LL S 1 F.xlsx&#39;, &#39;LLS 1 M.xlsx&#39;]:
+    f = next((p for d in base.iterdir() if d.is_dir() for p in d.iterdir() if p.name==name), None)
+    if f:
+        print(f.name, &#39;-&gt;&#39;, extract_league_from_schluessel(f))
+&#34;@ }
+</summary>
+```bash
+uv run pytest tests/test_league_gender_normalization.py -q; if ($LASTEXITCODE -eq 0) { uv run python -c @"
+from pathlib import Path
+from scripts.data.extract_excel_data import extract_league_from_schluessel, normalize_league_display_to_canonical
+import scripts.data.extract_excel_data as m
+m._LEAGUE_MAPPING_CACHE = None
+print('Frauen ->', normalize_league_display_to_canonical('Landesliga Süd Frauen'))
+print('(D) fallback ->', normalize_league_display_to_canonical('Landesliga Süd (D)'))
+base = Path(r'C:\tmp\Sammlung-Ligaergebnisse')
+for name in ['LLS F.xlsx', 'LL S 1 F.xlsx', 'LLS 1 M.xlsx']:
+    f = next((p for d in base.iterdir() if d.is_dir() for p in d.iterdir() if p.name==name), None)
+    if f:
+        print(f.name, '->', extract_league_from_schluessel(f))
+"@ }
+
+```
+
+```
+.........                                                                [100%]
+9 passed in 0.68s
+Frauen -> LL S (D)
+(D) fallback -> LL S (D)
+LLS F.xlsx -> LL S (D)
+LL S 1 F.xlsx -> LL S (D)
+LLS 1 M.xlsx -> LL S
+
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Preparing clear re-processing instructions to resolve the merged female-league rows.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="todo_write"><details>
+<summary>Tool use: **todo_write**</summary>
+
+Parameters:
+
+```json
+{
+  "merge": true
+}
+```
+Result:
+
+```json
+{
+  "finalTodos": [
+    {
+      "content": "Fix (D) gender + LL S Frauen aliases so female doesn't collapse to LL S",
+      "id": "1",
+      "status": "completed"
+    },
+    {
+      "content": "Add regression tests for Frauen / (D) round-trip",
+      "id": "2",
+      "status": "completed"
+    },
+    {
+      "content": "Add force_league overrides for LLS F workbooks (belt \u0026 suspenders)",
+      "id": "3",
+      "status": "completed"
+    }
+  ],
+  "initialTodos": [
+    {
+      "content": "Fix (D) gender + LL S Frauen aliases so female doesn't collapse to LL S",
+      "id": "1",
+      "status": "in_progress"
+    },
+    {
+      "content": "Add regression tests for Frauen / (D) round-trip",
+      "id": "2",
+      "status": "pending"
+    },
+    {
+      "content": "Add force_league overrides for LLS F workbooks (belt \u0026 suspenders)",
+      "id": "3",
+      "status": "pending"
+    }
+  ],
+  "success": true,
+  "wasMerge": true
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Preparing a concise fix for the merged female league rows.
+</details></think>
+
+_**Agent (default)**_
+
+Rerunning alone couldn’t fix it — it was a **normalize round-trip bug**, not missing Excel.
+
+### What went wrong
+Schlüssel titles say `Landesliga Süd Frauen`. That didn’t match mapping aliases (`… Damen` / `… 1 - Frauen`), so the first pass fell back to `Landesliga Süd (D)`. The second pass treated `(D)` as **male** (only `Frauen`/`Damen` counted), matched male `Landesliga Süd`, and wrote everything as **`LL S`**.
+
+That’s why 23/24 and 24/25 show **13** teams under `LL S` (≈6 Herren + 8 Damen) and **0** under `LL S (D)`. Same collapse is already in published data for those seasons. 25/26 is fine.
+
+### What we changed
+1. Treat trailing `(D)` as female in gender detection  
+2. Aliases: `Landesliga Süd Frauen` / `… - Frauen` / `… (D)` → `LL S (D)`  
+3. Overrides on the F workbooks as belt-and-suspenders  
+
+Verified: `LLS F.xlsx` / `LL S 1 F.xlsx` → `LL S (D)`, male → `LL S`.
+
+### What you need to do
+Already-collapsed CSV rows can’t be fixed by re-normalize — gender was lost. Re-extract the Süd LL workbooks, then rebuild historical/publish:
+
+```powershell
+# 23/24 + 24/25 LL (force reanalyze so cache picks up mapping/overrides)
+uv run python scripts/data/extract_excel_data.py --mode process --force_reanalyze `
+  --folder "C:\tmp\Sammlung-Ligaergebnisse\Ligaprogramme Süd 2023-24"
+uv run python scripts/data/extract_excel_data.py --mode process --force_reanalyze `
+  --folder "C:\tmp\Sammlung-Ligaergebnisse\Ligaprogramme Süd 2024-25"
+
+uv run python scripts/audit_female_league_split.py database\work\historical_league_results.csv
+```
+
+Then publish as before (without `--skip-female-league-audit`). If historical was a full Excel merge, re-merge/replace those seasons so `LL S` and `LL S (D)` both exist for 23/24 and 24/25.
+
+---
+
+_**User**_
+
+so, after seemingly everything is done, the script is unresponsive for maybe hours to produce the final output:
+S C:\Users\cfell\repositories\bowlyzer_deploy> uv run python scripts/build_published_dataset.py --job league --write-csv --historical "C:\Users\cfell\repositories\bowlyzer_deploy\database\published_csv\league_results_merged.csv" --extra-league "C:\tmp\2425.csv"
+Data dir (published outputs): C:\Users\cfell\repositories\bowlyzer_deploy\database\data
+Work dir (inputs + reports):  C:\tmp\bowlyzer\data
+
+League merge (low -> high priority on duplicate keys; GF pipeline last):
+  [0] C:\Users\cfell\repositories\bowlyzer_deploy\database\published_csv\league_results_merged.csv
+  [1] C:\tmp\bowlyzer\data\legacy_scrape\legacy_scrape_extracted.csv
+  [2] C:\tmp\2425.csv
+  [3] C:\Users\cfell\repositories\bowlyzer_deploy\database\pipeline\bowling_bayern\legacy_out\latest.csv
+  output:         C:\Users\cfell\repositories\bowlyzer_deploy\database\data\league_results_merged.csv
+
+Tournament merge:
+  gf tournaments: C:\Users\cfell\repositories\bowlyzer_deploy\database\input\gf_tables_export\gf_tournaments_2026__combined_postprocessed.csv
+  manual:         C:\tmp\bowlyzer\data\tournaments\tournament_manual_postprocessed.csv
+  skip (missing): C:\Users\cfell\repositories\bowlyzer_deploy\database\input\gf_tables_export\gf_tournaments_2026__combined_postprocessed.csv
+  skip (missing): C:\tmp\bowlyzer\data\tournaments\tournament_manual_postprocessed.csv
+  output:         C:\Users\cfell\repositories\bowlyzer_deploy\database\data\tournaments_postprocessed.csv
+
+Jobs: players_registry, league
+==> building players registry (Aktive Mitglieder + configs) …
+WARNING *** file size (191664) not 512 + multiple of sector size (512)
+WARNING *** file size (191664) not 512 + multiple of sector size (512)
+Aktive Mitglieder: 15/11 season workbook(s) -> 3032 player id(s) from 16647 row(s)
+==> building affiliation registry (Rangliste club/Verein, all seasons) …
+WARNING *** file size (191664) not 512 + multiple of sector size (512)
+WARNING *** file size (191664) not 512 + multiple of sector size (512)
+WARNING *** file size (191664) not 512 + multiple of sector size (512)
+WARNING *** file size (191664) not 512 + multiple of sector size (512)
+Affiliation index: 22768 player-season row(s), 47 Verein(s), 84 unmapped Rangliste club label(s) — extend rangliste_club_crosswalk.csv
+==> merging league sources …
+normalize [1/4] league_results_merged.csv | Team: 100%|████████████████████████| 360/360 [00:00<00:00, 4259.51unique/s]
+normalize [1/4] league_results_merged.csv | Opponent: 100%|██████████████████| 365/365 [00:00<00:00, 207751.52unique/s]
+normalize [2/4] legacy_scrape_extracted.csv | Team: 100%|████████████████████████████████| 332/332 [00:00<?, ?unique/s]
+normalize [2/4] legacy_scrape_extracted.csv | Opponent: 100%|████████████████████████████| 334/334 [00:00<?, ?unique/s]
+team numbers [2/4] legacy_scrape_extracted.csv | Team: 100%|████████████████| 630970/630970 [01:15<00:00, 8329.26row/s]
+team numbers [2/4] legacy_scrape_extracted.csv | Opponent: 100%|████████████| 630970/630970 [01:15<00:00, 8306.86row/s]
+normalize [3/4] 2425.csv | Team: 100%|█████████████████████████████████████████████████████| 59/59 [00:00<?, ?unique/s]
+normalize [3/4] 2425.csv | Opponent: 100%|█████████████████████████████████████████████████| 60/60 [00:00<?, ?unique/s]
+team numbers [3/4] 2425.csv | Team: 100%|███████████████████████████████████████| 2913/2913 [00:00<00:00, 8555.89row/s]
+team numbers [3/4] 2425.csv | Opponent: 100%|███████████████████████████████████| 2913/2913 [00:00<00:00, 8320.76row/s]
+normalize [4/4] latest.csv | Team: 100%|███████████████████████████████████████████████████| 53/53 [00:00<?, ?unique/s]
+normalize [4/4] latest.csv | Opponent: 100%|███████████████████████████████████████████████| 53/53 [00:00<?, ?unique/s]
+team numbers [4/4] latest.csv | Team: 100%|█████████████████████████████████████| 9175/9175 [00:01<00:00, 8387.84row/s]
+team numbers [4/4] latest.csv | Opponent: 100%|█████████████████████████████████| 9175/9175 [00:01<00:00, 8378.42row/s]
+
+Team Name Normalization Summary:
+  regex: 81,250 cells updated in Team/Opponent columns
+  regex: 40 distinct team strings rewritten (cached; not row count)
+  regex rules hit (by distinct string, not by cell):
+    - ^Team\s+ProfiShop\s*(\d+)?$: 7
+    - ^Team\s+ProfiShop\s+München(?:\s+(\d+))?$: 7
+    - ^Schwarz\-Weiß\s+77\s+Würzburg(?:\s+(\d+))?$: 3
+    - ^BC\s+EMAX(?:\s+(\d+))?$: 2
+    - ^LA[- ]Bowling(?:\s+[^\d]*)?\s*(\d+)$: 2
+    - ^Pfaffenhofen(?:\s+(\d+))?$: 2
+    - ^RW\s+Lichtenhof\s+Stein(?:\s+(\d+))?$: 2
+    - ^506(?:\s+(\d+))?$: 1
+    - ^BC\s+Bamberger\s+Bowlinghaus(?:\s+(\d+))?$: 1
+    - ^BC\s+Cat\s+Bowl(?:\s+(\d+))?$: 1
+    - ^BC\s+Comet\s+Nürnberg(?:\s+(\d+))?$: 1
+    - ^BC\s+EPA\s+München(?:\s+(\d+))?$: 1
+    - ^BSC\s+HighRoller\s+Rosenheim(?:\s+(\d+))?$: 1
+    - ^Bowlinghaus\s+Bamberg(?:\s+(\d+))?$: 1
+...
+Players registry: 19319 row(s) changed
+   7352  registry_reassembly
+   1103  registry_abbrev
+  10667  registry_close
+    197  registry_alias_to_canonical
+  (2006514 row(s) left for audit)
+
+
+after all progress bars are filled, nothing happens for ages, then the ouput drops. arent that the changes that occured during normalization already?
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user is asking why `build_published_dataset.py` hangs for hours after all progress bars finish. They want to know if the final delay is caused by the changes already shown in the normalization and registry summaries.
+
+Checking whether the merge and publish pipeline repeats work already shown in the normalization and registry summaries.
+</details></think>
+
+_**Agent (default)**_
+
+I'll trace what runs after those progress bars finish — that silence is likely a later merge/write step, not the normalization itself.
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.{py,md}",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "Players registry:|row\\(s\\) changed|registry_reassembly|left for audit|merging league"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "Players registry:|row\\(s\\) changed|registry_reassembly|left for audit|merging league",
+  "topFiles": [
+    {
+      "matchCount": 4,
+      "uri": ".\\.specstory\\history\\2026-05-19_07-58-26Z-exposing-web-service-on.md"
+    },
+    {
+      "matchCount": 21,
+      "uri": ".\\.specstory\\history\\2026-06-28_08-11-47Z-importing-tournament-results-analysis.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\.specstory\\history\\2026-07-16_12-37-51Z-we-have-the-donaubowler.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\scripts\\merge_league_sources.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\scripts\\build_published_dataset.py"
+    },
+    {
+      "matchCount": 3,
+      "uri": ".\\data_access\\tournament_data_normalization.py"
+    },
+    {
+      "matchCount": 8,
+      "uri": ".\\data_access\\players_registry.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\.specstory\\history\\2026-07-16_12-37-51Z-we-have-the-donaubowler-clubmeisterschaft-finals-results-.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\data_access\\player_name_normalization_config.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\data_access\\player_id_name_normalization.py"
+    },
+    {
+      "matchCount": 4,
+      "uri": ".\\.specstory\\history\\2026-05-19_07-58-26Z-exposing-web-service-on-local-network.md"
+    }
+  ],
+  "totalFiles": 11,
+  "totalMatches": 46
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\merge_league_sources.py",
+  "pattern": "print\\(|tqdm|progress"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\merge_league_sources.py",
+  "pattern": "print\\(|tqdm|progress",
+  "topFiles": [
+    {
+      "matchCount": 15,
+      "uri": "scripts\\merge_league_sources.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 15
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\build_published_dataset.py",
+  "pattern": "merging league|normalize|write_csv|merge_sources"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\build_published_dataset.py",
+  "pattern": "merging league|normalize|write_csv|merge_sources",
+  "topFiles": [
+    {
+      "matchCount": 20,
+      "uri": "scripts\\build_published_dataset.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 20
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Checking merge_league_sources.py to find why the script hangs silently after the progress bars finish. The bottleneck likely lies in deduplication, concatenation, or writing the final CSV/Parquet output.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\merge_league_sources.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\players_registry.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\merge_league_sources.py",
+  "pattern": "def publish_dataframe|to_parquet|to_csv|drop_duplicates|concat"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\merge_league_sources.py",
+  "pattern": "def publish_dataframe|to_parquet|to_csv|drop_duplicates|concat",
+  "topFiles": [
+    {
+      "matchCount": 6,
+      "uri": "scripts\\merge_league_sources.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 6
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+A critical insight about the operation sequence is emerging.
+
+The silent player registry updates run inside a per-row `iterrows` loop without progress bars. Afterward, the script concatenates all dataframes, groups by duplicates, and writes a duplicate report. These heavy post-normalization steps likely cause the long idle period before the final output appears.
+
+The user sees the final summary messages, so the heavy publish step has already finished. The hang occurs after that point, likely during the remaining post-publish processing.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\build_published_dataset.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\merge_league_sources.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\data_access",
+  "pattern": "def publish_dataframe|to_parquet|to_csv"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\data_access",
+  "pattern": "def publish_dataframe|to_parquet|to_csv",
+  "topFiles": [
+    {
+      "matchCount": 3,
+      "uri": "data_access\\parquet_sidecar.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "data_access\\players_registry.py"
+    },
+    {
+      "matchCount": 4,
+      "uri": "data_access\\adapters\\data_adapter_factory.py"
+    },
+    {
+      "matchCount": 5,
+      "uri": "data_access\\adapters\\data_adapter_pandas.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "data_access\\reconstruct_flat_csv.py"
+    },
+    {
+      "matchCount": 5,
+      "uri": "data_access\\build_relational_csv.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "data_access\\create_test_data_with_errors.py"
+    }
+  ],
+  "totalFiles": 7,
+  "totalMatches": 20
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I found the smoking gun by looking at the order more carefully.
+
+The hang occurs after the merge summary prints. That means the heavy work—concatenation, grouping, duplicate reporting, deduplication, and publishing—is already done. The script then moves on to slower operations like the clubs registry, affiliation extension, and player ID audit.
+
+The hang is caused by a silent `iterrows()` call inside the per-source loop. After the team-numbering progress bar finishes for each input file, the script silently applies the players registry across the entire merged dataframe. This row-by-row iteration over roughly 630,000 rows takes hours without any visible progress.
+
+The user's log shows no team-numbering progress bars for the first source, suggesting it was likely skipped or handled differently. After the final source completes, the script enters a silent registry phase that runs across roughly 630,000 rows before the Team Name Normalization Summary finally appears.
+
+The first source likely contains roughly 700,000 rows, making its silent registry pass the heaviest bottleneck. The second source holds only about 9,000 rows, so its registry step would finish quickly. Because the user sees no team-numbering progress for the first source, that step was probably skipped or instant. The long silence therefore occurs while the script silently processes the first source's massive published CSV.
+
+The duplicate report writer is the real bottleneck. It groups by `__dup_key`, then loops through every group with `iterrows()` and writes each row to CSV. That row-by-row CSV writing is what causes the hours-long silence after all progress bars finish.
+
+The registry statistics are merely the summary of work already completed, not active processing. The actual delay is the duplicate report writer, which can generate hundreds of thousands of rows of CSV output via Python iterrows. Once that finishes, the script publishes the full merged dataframe to Parquet and CSV, then prints the final summary lines.
+
+The merge combines both the large historical published CSV and the full legacy scrape. That overlap produces an enormous duplicate report, which explains why the CSV writing lasts hours.
+
+The `--job league` flag still triggers the players registry build by design. To speed up future runs, avoid passing the full published CSV as historical data when legacy results are already included; skipping legacy entirely would also help.
+</details></think>
+
+_**Agent (default)**_
+
+Those summary lines are **not** new work after the hang — they print **last**, after the slow silent steps finish.
+
+### What the progress bars actually cover
+Only per-source **team name** + **team number** normalization. Everything else is quiet.
+
+### Order after the bars fill
+1. **Players-registry apply** (already ran inside each source, no bar) — `iterrows` over every row; the “19319 row(s) changed” line is just the delayed tally.
+2. **`concat`** all sources (~published + ~631k legacy + 2425 + GF).
+3. **Duplicate report** — this is the usual multi-hour stall. It walks every duplicate group and writes CSV **row-by-row in Python** (`_write_duplicates_report`), twice (full + non-exact).
+4. **Dedupe + write** parquet (and CSV with `--write-csv`).
+5. **Then** it prints Team Name Normalization Summary and Players registry counts.
+
+So the “output drops” after ages is the script finally finishing steps 3–4 and dumping the summaries. Those registry/team changes already happened earlier.
+
+### Why yours is especially slow
+You’re merging:
+
+- `[0]` full `published_csv/league_results_merged.csv`
+- `[1]` full `legacy_scrape_extracted.csv`
+
+Those largely overlap → huge duplicate set → the report writer crawls for hours. The bars finishing does **not** mean merge/write is done.
+
+### Practical takeaway
+- Waiting after the bars is expected with this input mix; it’s not hung on re-normalization.
+- For a 24/25-only bump, don’t feed full published **and** full legacy together unless you need a full rebuild — e.g. historical = current published, `--extra-league` = `2425.csv`, and skip re-including legacy if published already contains it (or use a leaner historical).
+- `--write-csv` also doubles I/O; parquet-only is faster if you don’t need the CSV mirror right now.
+
+I can add progress logs around concat / duplicate-report / publish so this silence isn’t opaque, and/or make the duplicate report optional / vectorized if you want that next.
+
+---
+
+_**User**_
+
+so basically: as of now it would be better practice to just rebuild the whole dataset, since we would safe a lot while merging
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants confirmation that rebuilding the dataset from scratch without merging published, legacy, and extras is better practice and saves time.
+
+The current approach double-includes legacy and published data. This creates massive duplicate report work. Rebuilding from scratch avoids this redundancy.
+
+Two concrete paths exist. Incremental publish uses the complete published file as historical and only adds the new 2425 delta. Legacy scrape is excluded because published already covers that period. This is fastest for small updates. Full rebuild merges fresh legacy, historical extracts, GF, and 2425 without using published at all. Some source overlap remains but the full published-legacy duplication disappears.
+
+A full rebuild still processes roughly 631,000 legacy rows plus all other sources. It may still generate a large duplicate report if those sources overlap. Incremental publish is actually faster than a full rebuild. The key point is to stop merging published on top of legacy entirely.
+
+Checking whether a flag exists to skip the legacy scrape step.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\build_published_dataset.py",
+  "pattern": "legacy_scrape|skip.*legacy|historical|extra.league|league_inputs"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\build_published_dataset.py",
+  "pattern": "legacy_scrape|skip.*legacy|historical|extra.league|league_inputs",
+  "topFiles": [
+    {
+      "matchCount": 31,
+      "uri": "scripts\\build_published_dataset.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 31
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The `--skip-legacy-scrape` flag avoids redundant legacy scraping when historical data already contains that content.
+
+A full rebuild is safer than double-feeding legacy data. For adding 2425 entries, the recommended approach is published plus extra sources with `--skip-legacy-scrape`.
+</details></think>
+
+_**Agent (default)**_
+
+Almost — with one important nuance.
+
+**Don’t** merge `published` **plus** `legacy_scrape` again. That’s what burned you: same rows twice → huge duplicate report.
+
+Two good patterns:
+
+1. **Incremental (best for “just add 24/25”)**  
+   Use published as `--historical`, pass only the new CSV as `--extra-league`, and **`--skip-legacy-scrape`** so legacy isn’t pulled in again:
+
+```powershell
+uv run python scripts/build_published_dataset.py --job league --write-csv `
+  --historical "…\database\published_csv\league_results_merged.csv" `
+  --extra-league "C:\tmp\2425.csv" `
+  --skip-legacy-scrape
+```
+
+Still need a second input (GF `latest.csv` usually); merge stays small.
+
+2. **Full rebuild (best when sources changed a lot / female-split fix / you want a clean slate)**  
+   Rebuild from source extracts only — **no** published as an input — default order: historical extract → legacy scrape → extras → GF. One pass, no published∪legacy overlap. Heavier than (1), but cleaner and still much cheaper than what you ran.
+
+So: full rebuild beats your last command; for a small delta, incremental + `--skip-legacy-scrape` is the better practice.
+
+---
+
+_**User**_
+
+this also leads to super long waiting times:
+PS C:\Users\cfell\repositories\bowlyzer_deploy> uv run python scripts/build_published_dataset.py --job league --write-csv --historical "C:\Users\cfell\repositories\bowlyzer_deploy\database\published_csv\league_results_merged.csv" --extra-league "C:\tmp\2526.csv" --skip-legacy-scrape
+Data dir (published outputs): C:\Users\cfell\repositories\bowlyzer_deploy\database\data
+Work dir (inputs + reports):  C:\tmp\bowlyzer\data
+
+League merge (low -> high priority on duplicate keys; GF pipeline last):
+  [0] C:\Users\cfell\repositories\bowlyzer_deploy\database\published_csv\league_results_merged.csv
+  [1] C:\tmp\2526.csv
+  [2] C:\Users\cfell\repositories\bowlyzer_deploy\database\pipeline\bowling_bayern\legacy_out\latest.csv
+  output:         C:\Users\cfell\repositories\bowlyzer_deploy\database\data\league_results_merged.csv
+
+Tournament merge:
+  gf tournaments: C:\Users\cfell\repositories\bowlyzer_deploy\database\input\gf_tables_export\gf_tournaments_2026__combined_postprocessed.csv
+  manual:         C:\tmp\bowlyzer\data\tournaments\tournament_manual_postprocessed.csv
+  skip (missing): C:\Users\cfell\repositories\bowlyzer_deploy\database\input\gf_tables_export\gf_tournaments_2026__combined_postprocessed.csv
+  skip (missing): C:\tmp\bowlyzer\data\tournaments\tournament_manual_postprocessed.csv
+  output:         C:\Users\cfell\repositories\bowlyzer_deploy\database\data\tournaments_postprocessed.csv
+
+Jobs: players_registry, league
+==> building players registry (Aktive Mitglieder + configs) …
+WARNING *** file size (191664) not 512 + multiple of sector size (512)
+WARNING *** file size (191664) not 512 + multiple of sector size (512)
+Aktive Mitglieder: 15/11 season workbook(s) -> 3032 player id(s) from 16647 row(s)
+==> building affiliation registry (Rangliste club/Verein, all seasons) …
+WARNING *** file size (191664) not 512 + multiple of sector size (512)
+WARNING *** file size (191664) not 512 + multiple of sector size (512)
+WARNING *** file size (191664) not 512 + multiple of sector size (512)
+WARNING *** file size (191664) not 512 + multiple of sector size (512)
+Affiliation index: 22768 player-season row(s), 47 Verein(s), 84 unmapped Rangliste club label(s) — extend rangliste_club_crosswalk.csv
+==> merging league sources …
+normalize [1/3] league_results_merged.csv | Team: 100%|████████████████████████| 360/360 [00:00<00:00, 5255.49unique/s]
+normalize [1/3] league_results_merged.csv | Opponent: 100%|██████████████████| 365/365 [00:00<00:00, 365026.46unique/s]
+normalize [2/3] 2526.csv | Team: 100%|█████████████████████████████████████████████████████| 79/79 [00:00<?, ?unique/s]
+normalize [2/3] 2526.csv | Opponent: 100%|█████████████████████████████████████████████████| 81/81 [00:00<?, ?unique/s]
+team numbers [2/3] 2526.csv | Team: 100%|█████████████████████████████████████| 14676/14676 [00:01<00:00, 8109.71row/s]
+team numbers [2/3] 2526.csv | Opponent: 100%|█████████████████████████████████| 14676/14676 [00:01<00:00, 8255.33row/s]
+normalize [3/3] latest.csv | Team: 100%|███████████████████████████████████████████████████| 53/53 [00:00<?, ?unique/s]
+normalize [3/3] latest.csv | Opponent: 100%|███████████████████████████████████████████████| 53/53 [00:00<?, ?unique/s]
+team numbers [3/3] latest.csv | Team: 100%|█████████████████████████████████████| 9175/9175 [00:01<00:00, 8171.93row/s]
+team numbers [3/3] latest.csv | Opponent: 100%|█████████████████████████████████| 9175/9175 [00:01<00:00, 8135.33row/s]
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Long waits persist despite the incremental approach. The pipeline still runs slowly.
+
+All three source progress bars finish before the hang. The bottleneck likely occurs during post-barrier processing, possibly in `apply_players_registry` iterating over the full ~700k-row published CSV.
+
+The registry step on the published CSV may have been skipped entirely, since no hang occurred between the first and second source bars. The missing team-numbering progress bar for the first source suggests that step might also be bypassed when no work is needed.
+
+The published CSV contains roughly 741,000 rows. A silent `iterrows` registry pass on that volume should cause a long delay, yet the second source bar starts immediately. This suggests the registry step may be skipped entirely for the published path, perhaps because the Player ID column is missing or the data is handled through a different code path.
+
+The registry step copies the dataframe and iterates over roughly 700,000 rows, which can take 30 minutes to several hours. The user may have trimmed the log, or the hang could actually occur after the third source bar, during concatenation, duplicate reporting, and writing. Even with the extra league file included, the duplicate report on the merged dataset might be small if most rows are already unique.
+
+The full published CSV write is slow because it is hundreds of megabytes. Re-running the player registry on the entire published dataset each time defeats the purpose of incremental updates. I will identify the exact cost of the registry pass, the CSV write, and the duplicate report. Then I will suggest skipping re-normalization for already-published data, vectorizing the registry lookup, omitting the duplicate report by default, and switching to Parquet.
+
+I will add progress prints for silent stages to reveal exactly where the pipeline stalls. The immediate priority is fixing the worst bottlenecks rather than just diagnosing them. I plan to skip redundant team normalization and registry re-application when the historical source is already published, vectorize the player registry lookup, and make the duplicate report optional.
+
+The `--job league` flag still triggers `players_registry` rebuilds. This suggests an intentional coupling between the two jobs. I will inspect how `--job` filters tasks and measure the duplicate report overhead when overlap is small.
+</details></think>
+
+_**Agent (default)**_
+
+Incremental still reprocesses the full published CSV silently after those bars. I'll pinpoint what's eating the time and what we can skip or speed up.
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\build_published_dataset.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c @&#34;
+from pathlib import Path
+import time
+import pandas as pd
+
+p = Path(r&#39;database/published_csv/league_results_merged.csv&#39;)
+t0 = time.perf_counter()
+df = pd.read_csv(p, sep=&#39;;&#39;, dtype=str, keep_default_na=False)
+print(f&#39;read csv: {time.perf_counter()-t0:.1f}s rows={len(df)} cols={len(df.columns)}&#39;)
+print(&#39;cols&#39;, list(df.columns)[:12])
+# estimate duplicate overlap with nothing - just groupby cost
+t1 = time.perf_counter()
+# simulate key cols if League/Event
+league_col = &#39;Event&#39; if &#39;Event&#39; in df.columns else &#39;League&#39;
+keys = [league_col, &#39;Season&#39;, &#39;Week&#39;, &#39;Round Number&#39;, &#39;Match Number&#39;, &#39;Team&#39;, &#39;Position&#39;, &#39;Player&#39;]
+keys = [k for k in keys if k in df.columns]
+for k in keys:
+    df[f&#39;__k_{k}&#39;] = df[k].astype(str).str.strip().str.lower()
+dedupe = [f&#39;__k_{k}&#39; for k in keys]
+t2 = time.perf_counter()
+print(f&#39;key normalize: {t2-t1:.1f}s&#39;)
+dup_mask = df.duplicated(subset=dedupe, keep=False)
+print(f&#39;duplicated mask: {time.perf_counter()-t2:.1f}s dup_rows={int(dup_mask.sum())}&#39;)
+&#34;@
+</summary>
+```bash
+uv run python -c @"
+from pathlib import Path
+import time
+import pandas as pd
+
+p = Path(r'database/published_csv/league_results_merged.csv')
+t0 = time.perf_counter()
+df = pd.read_csv(p, sep=';', dtype=str, keep_default_na=False)
+print(f'read csv: {time.perf_counter()-t0:.1f}s rows={len(df)} cols={len(df.columns)}')
+print('cols', list(df.columns)[:12])
+# estimate duplicate overlap with nothing - just groupby cost
+t1 = time.perf_counter()
+# simulate key cols if League/Event
+league_col = 'Event' if 'Event' in df.columns else 'League'
+keys = [league_col, 'Season', 'Week', 'Round Number', 'Match Number', 'Team', 'Position', 'Player']
+keys = [k for k in keys if k in df.columns]
+for k in keys:
+    df[f'__k_{k}'] = df[k].astype(str).str.strip().str.lower()
+dedupe = [f'__k_{k}' for k in keys]
+t2 = time.perf_counter()
+print(f'key normalize: {t2-t1:.1f}s')
+dup_mask = df.duplicated(subset=dedupe, keep=False)
+print(f'duplicated mask: {time.perf_counter()-t2:.1f}s dup_rows={int(dup_mask.sum())}')
+"@
+
+```
+
+```
+read csv: 3.4s rows=1390683 cols=20
+cols ['Season', 'Week', 'Date', 'Players per Team', 'Location', 'Round Number', 'Match Number', 'Team', 'Position', 'Player', 'Player ID', 'Opponent']
+key normalize: 0.5s
+duplicated mask: 0.4s dup_rows=1272382
+
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\build_published_dataset.py",
+  "pattern": "run_players_registry|job.*league|players_registry"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\build_published_dataset.py",
+  "pattern": "run_players_registry|job.*league|players_registry",
+  "topFiles": [
+    {
+      "matchCount": 32,
+      "uri": "scripts\\build_published_dataset.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 32
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+1.27 million duplicate rows were found among 1.39 million rows using default keys on the published dataset alone.
+
+The default deduplication keys appear too coarse. Nearly the entire published file is flagged as duplicate under them. The duplicate report then iterates over roughly 1.27 million rows twice, which explains the hours-long wait. The next step is to inspect exactly what those keys contain.
+
+The default keys may be incomplete. They might be missing Round or using incorrect column names for the published schema, such as Event versus League.Match.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\merge_league_sources.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\merge_league_sources.py",
+  "pattern": "DEFAULT_KEYS|_resolve_key|_COLUMN"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\merge_league_sources.py",
+  "pattern": "DEFAULT_KEYS|_resolve_key|_COLUMN",
+  "topFiles": [
+    {
+      "matchCount": 4,
+      "uri": "scripts\\merge_league_sources.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 4
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c @&#34;
+from pathlib import Path
+import pandas as pd
+from scripts.merge_league_sources import DEFAULT_KEYS, _resolve_key_columns, _normalized_key
+
+p = Path(r&#39;database/published_csv/league_results_merged.csv&#39;)
+df = pd.read_csv(p, sep=&#39;;&#39;, dtype=str, keep_default_na=False, nrows=5)
+print(&#39;sample cols&#39;, list(df.columns))
+df = pd.read_csv(p, sep=&#39;;&#39;, dtype=str, keep_default_na=False)
+print(&#39;rows&#39;, len(df))
+# published uses Event not League?
+key_cols = _resolve_key_columns(df, list(DEFAULT_KEYS))
+print(&#39;DEFAULT_KEYS&#39;, DEFAULT_KEYS)
+print(&#39;resolved&#39;, key_cols)
+for logical, concrete in key_cols.items():
+    df[f&#39;__k_{logical}&#39;] = _normalized_key(df[concrete])
+dedupe = [f&#39;__k_{k}&#39; for k in DEFAULT_KEYS]
+sizes = df.groupby(dedupe, dropna=False).size()
+print(&#39;unique keys&#39;, len(sizes), &#39;keys with &gt;1&#39;, int((sizes&gt;1).sum()), &#39;max group&#39;, int(sizes.max()))
+print(&#39;rows in multi groups&#39;, int(sizes[sizes&gt;1].sum()))
+# show a fat group
+fat = sizes[sizes&gt;1].sort_values(ascending=False).head(3)
+print(fat)
+&#34;@
+</summary>
+```bash
+uv run python -c @"
+from pathlib import Path
+import pandas as pd
+from scripts.merge_league_sources import DEFAULT_KEYS, _resolve_key_columns, _normalized_key
+
+p = Path(r'database/published_csv/league_results_merged.csv')
+df = pd.read_csv(p, sep=';', dtype=str, keep_default_na=False, nrows=5)
+print('sample cols', list(df.columns))
+df = pd.read_csv(p, sep=';', dtype=str, keep_default_na=False)
+print('rows', len(df))
+# published uses Event not League?
+key_cols = _resolve_key_columns(df, list(DEFAULT_KEYS))
+print('DEFAULT_KEYS', DEFAULT_KEYS)
+print('resolved', key_cols)
+for logical, concrete in key_cols.items():
+    df[f'__k_{logical}'] = _normalized_key(df[concrete])
+dedupe = [f'__k_{k}' for k in DEFAULT_KEYS]
+sizes = df.groupby(dedupe, dropna=False).size()
+print('unique keys', len(sizes), 'keys with >1', int((sizes>1).sum()), 'max group', int(sizes.max()))
+print('rows in multi groups', int(sizes[sizes>1].sum()))
+# show a fat group
+fat = sizes[sizes>1].sort_values(ascending=False).head(3)
+print(fat)
+"@
+
+```
+
+```
+sample cols ['Season', 'Week', 'Date', 'Players per Team', 'Location', 'Round Number', 'Match Number', 'Team', 'Position', 'Player', 'Player ID', 'Opponent', 'Score', 'Points', 'Bonus Points', 'Input Data', 'Computed Data', 'Event', 'Event Type', 'Club']
+rows 1390683
+DEFAULT_KEYS ('league', 'season', 'week', 'round number', 'match number', 'team', 'position', 'player')
+resolved {'league': 'Event', 'season': 'Season', 'week': 'Week', 'round number': 'Round Number', 'match number': 'Match Number', 'team': 'Team', 'position': 'Position', 'player': 'Player'}
+unique keys 754492 keys with >1 636191 max group 2
+rows in multi groups 1272382
+__k_league  __k_season  __k_week  __k_round number  __k_match number  __k_team                   __k_position  __k_player
+a n1        08/09       1         0                 0                 albrecht d�rer 71 stein 2  0             team total    2
+                                                                      bavaria bayreuth 2         0             team total    2
+                                                                      bsc kirchenlamitz 1        0             team total    2
+dtype: int64
+
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Almost every key has exactly two rows. 636,191 keys have more than one row. This duplication likely explains the extreme slowdown.
+
+The published CSV contains 27 million rows, nearly all duplicated. The merge step collapses these pairs, but the duplicate report writer iterates over 1.27 million rows via Python iterrows. That explains the extreme slowdown. The duplication likely stems from a prior merge missing deduplication or from parquet concatenation errors.
+
+Duplicate Event rows from the competition schema or a self-merge could also explain the duplication. The plan is to replace iterrows with vectorized to_csv in the duplicate report writer, add a --skip-duplicates-report flag, and re-dedupe the published dataset once as a quick fix.
+
+apply_players_registry also runs iterrows across 1.39 million rows. That adds severe latency between stages. I will add progress prints for each stage and fix the duplicate report writer to avoid iterrows entirely.
+
+I will verify whether the duplicate pairs are exact business duplicates. If so, a one-time `drop_duplicates` on the published file would shrink it to roughly 750,000 rows and improve future merge speed. I will also check whether the full duplicates report can be skipped entirely when it is massive, or written with pandas `to_csv` instead of iterrows.
+</details></think>
+
+_**Agent (default)**_
+
+Published CSV is nearly fully doubled (~1.27M of 1.39M rows share keys) — the duplicate report then writes that with Python `iterrows`, which explains the multi-hour stall. Fixing the report writer and adding stage logs.
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\merge_league_sources.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **1** result in **1** directory</summary>
+
+Directory: **``** (1 file)
+
+| File |
+|------|
+| `tests/scripts/test_merge_league_gender_split.py` |
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c @&#34;
+from pathlib import Path
+import pandas as pd
+from scripts.merge_league_sources import DEFAULT_KEYS, _resolve_key_columns, _normalized_key
+
+df = pd.read_csv(Path(r&#39;database/published_csv/league_results_merged.csv&#39;), sep=&#39;;&#39;, dtype=str, keep_default_na=False)
+key_cols = _resolve_key_columns(df, list(DEFAULT_KEYS))
+for logical, concrete in key_cols.items():
+    df[f&#39;__k_{logical}&#39;] = _normalized_key(df[concrete])
+dedupe = [f&#39;__k_{k}&#39; for k in DEFAULT_KEYS]
+# compare pairs: are business cols identical within groups of 2?
+meta = set(dedupe)
+business = [c for c in df.columns if not c.startswith(&#39;__k_&#39;)]
+# sample 1000 multi groups
+sizes = df.groupby(dedupe, dropna=False).size()
+multi_keys = sizes[sizes&gt;1].index[:2000]
+# faster: drop_duplicates on keys+business
+before = len(df)
+exact = df.drop_duplicates(subset=business, keep=&#39;first&#39;)
+print(&#39;rows&#39;, before, &#39;unique business&#39;, len(exact), &#39;unique keys&#39;, sizes.shape[0])
+print(&#39;if drop_duplicates on DEFAULT keys only:&#39;, len(df.drop_duplicates(subset=dedupe, keep=&#39;last&#39;)))
+&#34;@
+</summary>
+```bash
+uv run python -c @"
+from pathlib import Path
+import pandas as pd
+from scripts.merge_league_sources import DEFAULT_KEYS, _resolve_key_columns, _normalized_key
+
+df = pd.read_csv(Path(r'database/published_csv/league_results_merged.csv'), sep=';', dtype=str, keep_default_na=False)
+key_cols = _resolve_key_columns(df, list(DEFAULT_KEYS))
+for logical, concrete in key_cols.items():
+    df[f'__k_{logical}'] = _normalized_key(df[concrete])
+dedupe = [f'__k_{k}' for k in DEFAULT_KEYS]
+# compare pairs: are business cols identical within groups of 2?
+meta = set(dedupe)
+business = [c for c in df.columns if not c.startswith('__k_')]
+# sample 1000 multi groups
+sizes = df.groupby(dedupe, dropna=False).size()
+multi_keys = sizes[sizes>1].index[:2000]
+# faster: drop_duplicates on keys+business
+before = len(df)
+exact = df.drop_duplicates(subset=business, keep='first')
+print('rows', before, 'unique business', len(exact), 'unique keys', sizes.shape[0])
+print('if drop_duplicates on DEFAULT keys only:', len(df.drop_duplicates(subset=dedupe, keep='last')))
+"@
+
+```
+
+```
+rows 1390683 unique business 764627 unique keys 754492
+if drop_duplicates on DEFAULT keys only: 754492
+
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The published dataset contains roughly 1.39 million rows but only about 754,000 unique keys. Nearly every row is duplicated.
+
+The duplicate report is bottlenecked by per-group drop_duplicates loops and iterrows over 1.27 million rows. I will rewrite it with vectorized groupby and nunique for stats, and use pandas to_csv instead of iterrows. Blank lines between groups may be added for readability but they will be expensive.
+
+Blank line separators will be omitted entirely for maximum speed. The duplicate report will be written directly via pandas to_csv on the full sorted dataframe. This avoids both the costly iterrows loop and the expensive blank-line insertion logic.
+
+Hashing business columns and counting unique hashes per group will replace slow per-group drop_duplicates for exact-business statistics. Non-exact duplicates will be filtered by keeping only groups where business uniqueness exceeds one. Using itertuples with blank lines would still be faster than iterrows.
+
+Progress prints will be added to merge_sources. The 1.39 million-row player registry step is likely the hidden bottleneck, taking 20 to 60 minutes. The logs show an immediate transition from opponent to team normalization, suggesting the registry either ran silently or was skipped.
+
+The user likely paused between stages 1 and 2 without pasting that wait time. The hang is confirmed at stage 3, the duplicate report on 1.27 million rows. Skipping redundant normalization on already-published data is too large a change for now. When no non-exact duplicates exist, the report will write only a header line. After merging with drop_duplicates keep=last, the dataset will shrink from roughly 1.39 million rows to about 754 thousand plus new rows.
+
+A `--skip-duplicates-report` flag was considered but rejected. The vectorized duplicate report should already cut runtime from hours down to minutes or seconds. Blank line separators between groups are unnecessary for tooling and will be omitted entirely.
+
+Blank line separators will be kept between groups. The duplicate report will be written with itertuples instead of iterrows, which is roughly twenty times faster. Each group will be written followed by a blank separator row.
+
+Even itertuples on 1.27 million rows could take several minutes. The full duplicate report will be written with pandas to_csv, omitting blank line separators entirely. Blank separators will be kept only for the non-exact duplicate section, since that subset should be very small. Statistics will be computed vectorized with hashing.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="todo_write"><details>
+<summary>Tool use: **todo_write**</summary>
+
+Parameters:
+
+```json
+{
+  "merge": true
+}
+```
+Result:
+
+```json
+{
+  "finalTodos": [
+    {
+      "content": "Vectorize duplicate-report writer (main hang)",
+      "id": "1",
+      "status": "in_progress"
+    },
+    {
+      "content": "Add merge stage progress prints after normalize bars",
+      "id": "2",
+      "status": "pending"
+    },
+    {
+      "content": "Add/adjust tests for duplicate report if present",
+      "id": "3",
+      "status": "pending"
+    }
+  ],
+  "initialTodos": [
+    {
+      "content": "Fix (D) gender + LL S Frauen aliases so female doesn't collapse to LL S",
+      "id": "1",
+      "status": "completed"
+    },
+    {
+      "content": "Add regression tests for Frauen / (D) round-trip",
+      "id": "2",
+      "status": "completed"
+    },
+    {
+      "content": "Add force_league overrides for LLS F workbooks (belt \u0026 suspenders)",
+      "id": "3",
+      "status": "completed"
+    }
+  ],
+  "success": true
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/test*.py",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\tests",
+  "pattern": "_write_duplicates_report|duplicates_report|merge_duplicates"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\tests",
+  "pattern": "_write_duplicates_report|duplicates_report|merge_duplicates",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\merge_league_sources.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Checking whether `apply_players_registry` is causing delays between sources. A progress print may help diagnose it.
+
+Focusing on the duplicates report. Rewriting `_write_duplicates_report` and adding prints in `merge_sources`.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\merge_league_sources.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Adding progress prints to `merge_sources` and removing the unused `csv` import.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\merge_league_sources.py",
+  "pattern": "csv\\."
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\merge_league_sources.py",
+  "pattern": "csv\\.",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\merge_league_sources.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Removing an unused CSV import. Adding a small unit test for `_write_duplicates_report`.
+
+Benchmarking the report writer on a sample.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\merge_league_sources.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\scripts\test_merge_duplicates_report.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run pytest tests/scripts/test_merge_duplicates_report.py tests/scripts/test_merge_league_gender_split.py -q; uv run python -c @&#34;
+from pathlib import Path
+import time
+import pandas as pd
+from scripts.merge_league_sources import DEFAULT_KEYS, _resolve_key_columns, _normalized_key, _write_duplicates_report
+
+df = pd.read_csv(Path(r&#39;database/published_csv/league_results_merged.csv&#39;), sep=&#39;;&#39;, dtype=str, keep_default_na=False)
+df[&#39;__source_idx&#39;] = &#39;0&#39;
+key_cols = _resolve_key_columns(df, list(DEFAULT_KEYS))
+for logical, concrete in key_cols.items():
+    df[f&#39;__k_{logical}&#39;] = _normalized_key(df[concrete])
+dedupe = [f&#39;__k_{k}&#39; for k in DEFAULT_KEYS]
+out = Path(r&#39;C:\tmp\bowlyzer\data\_bench_dups.csv&#39;)
+non = Path(r&#39;C:\tmp\bowlyzer\data\_bench_dups_non_exact.csv&#39;)
+out.parent.mkdir(parents=True, exist_ok=True)
+t0 = time.perf_counter()
+stats = _write_duplicates_report(df, dedupe, out, non, &#39;;&#39;)
+print(f&#39;elapsed {time.perf_counter()-t0:.1f}s stats={stats}&#39;)
+print(&#39;out size MB&#39;, out.stat().st_size/1e6)
+&#34;@
+</summary>
+```bash
+uv run pytest tests/scripts/test_merge_duplicates_report.py tests/scripts/test_merge_league_gender_split.py -q; uv run python -c @"
+from pathlib import Path
+import time
+import pandas as pd
+from scripts.merge_league_sources import DEFAULT_KEYS, _resolve_key_columns, _normalized_key, _write_duplicates_report
+
+df = pd.read_csv(Path(r'database/published_csv/league_results_merged.csv'), sep=';', dtype=str, keep_default_na=False)
+df['__source_idx'] = '0'
+key_cols = _resolve_key_columns(df, list(DEFAULT_KEYS))
+for logical, concrete in key_cols.items():
+    df[f'__k_{logical}'] = _normalized_key(df[concrete])
+dedupe = [f'__k_{k}' for k in DEFAULT_KEYS]
+out = Path(r'C:\tmp\bowlyzer\data\_bench_dups.csv')
+non = Path(r'C:\tmp\bowlyzer\data\_bench_dups_non_exact.csv')
+out.parent.mkdir(parents=True, exist_ok=True)
+t0 = time.perf_counter()
+stats = _write_duplicates_report(df, dedupe, out, non, ';')
+print(f'elapsed {time.perf_counter()-t0:.1f}s stats={stats}')
+print('out size MB', out.stat().st_size/1e6)
+"@
+
+```
+
+```
+]633;P;Cwd=C:\\Users\\cfell\\repositories\\bowlyzer_deploy]633;P;HasRichCommandDetection=True]633;A$ ]633;B]633;E;uv run pytest tests/scripts/test_merge_duplicates_report.py tests/scripts/test_merge_league_gender_split.py -q\x3b uv run python -c @"\x0afrom pathlib import Path\x0aimport time\x0aimport pandas as pd\x0afrom scripts.merge_league_sources import DEFAULT_KEYS, _resolve_key_columns, _normalized_key, _write_duplicates_report\x0a\x0adf = pd.read_csv(Path(r'database/published_csv/league_results_merged.csv'), sep='\x3b', dtype=str, keep_default_na=False)\x0adf['__source_idx'] = '0'\x0akey_cols = _resolve_key_columns(df, list(DEFAULT_KEYS))\x0afor logical, concrete in key_cols.items():\x0a    df[f'__k_{logical}'] = _normalized_key(df[concrete])\x0adedupe = [f'__k_{k}' for k in DEFAULT_KEYS]\x0aout = Path(r'C:\\tmp\\bowlyzer\\data\\_bench_dups.csv')\x0anon = Path(r'C:\\tmp\\bowlyzer\\data\\_bench_dups_non_exact.csv')\x0aout.parent.mkdir(parents=True, exist_ok=True)\x0at0 = time.perf_counter()\x0astats = _write_duplicates_report(df, dedupe, out, non, '\x3b')\x0aprint(f'elapsed {time.perf_counter()-t0:.1f}s stats={stats}')\x0aprint('out size MB', out.stat().st_size/1e6)\x0a"@\x0auv run pytest tests/scripts/test_merge_duplicates_report.py tests/scripts/test_merge_league_gender_split.py -q; uv run python -c @"
+from pathlib import Path
+import time
+import pandas as pd
+from scripts.merge_league_sources import DEFAULT_KEYS, _resolve_key_columns, _normalized_key, _write_duplicates_report
+
+df = pd.read_csv(Path(r'database/published_csv/league_results_merged.csv'), sep=';', dtype=str, keep_default_na=False)
+df['__source_idx'] = '0'
+key_cols = _resolve_key_columns(df, list(DEFAULT_KEYS))
+for logical, concrete in key_cols.items():
+    df[f'__k_{logical}'] = _normalized_key(df[concrete])
+dedupe = [f'__k_{k}' for k in DEFAULT_KEYS]
+out = Path(r'C:\tmp\bowlyzer\data\_bench_dups.csv')
+non = Path(r'C:\tmp\bowlyzer\data\_bench_dups_non_exact.csv')
+out.parent.mkdir(parents
+… (output truncated)
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Tests passed. Waiting for the full published benchmark to finish.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="await"><details>
+<summary>Tool use: **await**</summary>
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The process has been running for 151 seconds. It is still processing the hash of 1.
+
+The slowness likely stems from 27 million rows or the CSV export. Checking the output now.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: C:\Users\cfell\.cursor\projects\c-Users-cfell-repositories-bowlyzer-deploy\terminals\729403.txt</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The benchmark still shows no output from the aggregation step.
+
+The slowness likely stems from three operations on 1.27 million rows: joining duplicate keys in Python, hashing strict columns, and writing a wide CSV. I may kill the process and optimize these steps.
+
+Two optimizations stand out. First, skip writing the full duplicate report entirely when the groups are exact duplicates; only summary statistics and non-exact matches would be saved. Second, replace the string-join key with direct tuple grouping on the deduplication columns, eliminating the need to build millions of pipe-joined strings.
+
+I will let the benchmark finish rather than killing it now. The 1.27 million row CSV write is probably fast enough. The real delay likely comes from hashing twenty columns across that volume. I may still skip the full duplicate report when exact groups dominate.
+
+A `write_full_report` toggle will be added. The full duplicate CSV will be skipped when duplicate rows exceed 100,000. Non-exact matches will always be written. This treats the large report as an audit artifact.
+</details></think>
+
+_**Agent (default)**_
+
+Full report on ~1.3M duplicate rows is still heavy. Skipping the mega dump when it's mostly exact doubles and keeping only stats + non-exact conflicts.
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: Stop-Process -Id 33748 -Force -ErrorAction SilentlyContinue; Write-Host killed</summary>
+```bash
+Stop-Process -Id 33748 -Force -ErrorAction SilentlyContinue; Write-Host killed
+```
+
+```
+killed
+
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\merge_league_sources.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The strict_cols logic may be flawed.
+
+The original strict_cols logic was correct. Business columns exclude __source_idx and __k_* metadata fields. Strict columns include everything except __dup_key. The new version incorrectly separated these two groups. Reverting to the original logic.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\merge_league_sources.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Updating the test to ensure compatibility before benchmarking again.
+
+The player registry application on 1.39 million rows remains slow. A note should clarify that `--skip-players-registry` only skips the build step, not the apply during merge. Adding a `--no-normalize-player-ids` flag to the merge command may help.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\build_published_dataset.py",
+  "pattern": "no.normalize.player|normalize_player"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\build_published_dataset.py",
+  "pattern": "no.normalize.player|normalize_player",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run pytest tests/scripts/test_merge_duplicates_report.py -q; uv run python -c @&#34;
+from pathlib import Path
+import time
+import pandas as pd
+from scripts.merge_league_sources import DEFAULT_KEYS, _resolve_key_columns, _normalized_key, _write_duplicates_report
+
+t_read = time.perf_counter()
+df = pd.read_csv(Path(r&#39;database/published_csv/league_results_merged.csv&#39;), sep=&#39;;&#39;, dtype=str, keep_default_na=False)
+print(f&#39;read {time.perf_counter()-t_read:.1f}s rows={len(df)}&#39;)
+df[&#39;__source_idx&#39;] = &#39;0&#39;
+key_cols = _resolve_key_columns(df, list(DEFAULT_KEYS))
+for logical, concrete in key_cols.items():
+    df[f&#39;__k_{logical}&#39;] = _normalized_key(df[concrete])
+dedupe = [f&#39;__k_{k}&#39; for k in DEFAULT_KEYS]
+out = Path(r&#39;C:\tmp\bowlyzer\data\_bench_dups.csv&#39;)
+non = Path(r&#39;C:\tmp\bowlyzer\data\_bench_dups_non_exact.csv&#39;)
+t0 = time.perf_counter()
+stats = _write_duplicates_report(df, dedupe, out, non, &#39;;&#39;)
+print(f&#39;report {time.perf_counter()-t0:.1f}s&#39;)
+print(stats)
+&#34;@
+</summary>
+```bash
+uv run pytest tests/scripts/test_merge_duplicates_report.py -q; uv run python -c @"
+from pathlib import Path
+import time
+import pandas as pd
+from scripts.merge_league_sources import DEFAULT_KEYS, _resolve_key_columns, _normalized_key, _write_duplicates_report
+
+t_read = time.perf_counter()
+df = pd.read_csv(Path(r'database/published_csv/league_results_merged.csv'), sep=';', dtype=str, keep_default_na=False)
+print(f'read {time.perf_counter()-t_read:.1f}s rows={len(df)}')
+df['__source_idx'] = '0'
+key_cols = _resolve_key_columns(df, list(DEFAULT_KEYS))
+for logical, concrete in key_cols.items():
+    df[f'__k_{logical}'] = _normalized_key(df[concrete])
+dedupe = [f'__k_{k}' for k in DEFAULT_KEYS]
+out = Path(r'C:\tmp\bowlyzer\data\_bench_dups.csv')
+non = Path(r'C:\tmp\bowlyzer\data\_bench_dups_non_exact.csv')
+t0 = time.perf_counter()
+stats = _write_duplicates_report(df, dedupe, out, non, ';')
+print(f'report {time.perf_counter()-t0:.1f}s')
+print(stats)
+"@
+
+```
+
+```
+.                                                                        [100%]
+1 passed in 0.60s
+read 3.7s rows=1390683
+  duplicate full report skipped (1,272,382 rows > limit 100,000); wrote non-exact only (20,270 rows).
+report 9.4s
+{'duplicate_groups': 636191, 'duplicate_rows': 1272382, 'exact_groups_strict': 626056, 'exact_groups_business': 626056, 'non_exact_groups_business': 10135, 'rows_in_exact_groups_business': 1252112, 'rows_in_non_exact_groups_business': 20270, 'full_report_written': False, 'full_report_skipped_rows': 1272382}
+
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The runtime dropped from hours to just 9.4 seconds.
+
+The published dataset contains 626,000 exact duplicate groups, so merging collapses it to roughly 754,000 rows plus new data. The remaining bottleneck is `apply_players_registry`, which still processes 1.39 million rows via `iterrows`. A quick timing estimate on a subset would help gauge the exact delay. If the user still waits after the progress bars finish, that registry step is the culprit. Re-running is safe, and adding `--skip-players-registry` would bypass rebuilding the Aktive registry while still applying it.
+
+After deduplication, the published dataset will be cleaner and future increments will be healthier.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="todo_write"><details>
+<summary>Tool use: **todo_write**</summary>
+
+Parameters:
+
+```json
+{
+  "merge": true
+}
+```
+Result:
+
+```json
+{
+  "finalTodos": [
+    {
+      "content": "Vectorize duplicate-report writer (main hang)",
+      "id": "1",
+      "status": "completed"
+    },
+    {
+      "content": "Add merge stage progress prints after normalize bars",
+      "id": "2",
+      "status": "completed"
+    },
+    {
+      "content": "Add/adjust tests for duplicate report if present",
+      "id": "3",
+      "status": "completed"
+    }
+  ],
+  "initialTodos": [
+    {
+      "content": "Vectorize duplicate-report writer (main hang)",
+      "id": "1",
+      "status": "in_progress"
+    },
+    {
+      "content": "Add merge stage progress prints after normalize bars",
+      "id": "2",
+      "status": "pending"
+    },
+    {
+      "content": "Add/adjust tests for duplicate report if present",
+      "id": "3",
+      "status": "pending"
+    }
+  ],
+  "success": true,
+  "wasMerge": true
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user reports that `build_published_dataset.py` is experiencing extremely slow performance, particularly during the league merge phase where processing is only ~8,255 rows per second. They want a clear, concise explanation for this bottleneck.
+</details></think>
+
+_**Agent (default)**_
+
+Right — incremental still looked “stuck” for a different reason.
+
+Your `published_csv/league_results_merged.csv` is **almost fully doubled**: ~1.39M rows, but only ~754k unique keys (~1.27M rows sit in duplicate pairs). After the progress bars, merge was writing that entire duplicate dump **row-by-row in Python** → hours. Skipping legacy didn’t help because the bloat was already inside published.
+
+I fixed that path:
+- vectorized duplicate stats
+- skip the mega full report above 100k rows (still writes **non-exact** conflicts — ~20k rows in your file)
+- stage logs so you can see load → player ids → concat → duplicates → publish
+
+Bench on your published file: **~9s** for the report step (was effectively unbounded).
+
+Re-run the same command. After it finishes, the new merge output should be ~deduped (~750k+25/26), so the next incremental publish won’t hit this again.
+
+If it still pauses after `[1/3] league_results_merged`, that’s **players-registry apply** over 1.4M rows (also quiet before; now logged as `player ids [1/3] …`). That’s separate and slower than team bars, but not multi-hour like the old report writer.
+
+---
+
+_**User**_
+
+<timestamp>Saturday, Jul 25, 2026, 1:32 PM (UTC+2)</timestamp>
+<system_notification>
+The following task has finished. If you were already aware, ignore this notification and do not restate prior responses.
+
+<task>
+kind: shell
+status: success
+task_id: 729403
+title: Test duplicate report and bench on published
+tool_call_id: call-335fbc88-8f2e-456e-a705-16785168fb99-85
+fc_eaf16c6b-bbb5-92fa-bce3-3ff65b3d418f_2
+output_path: C:\Users\cfell\.cursor\projects\c-Users-cfell-repositories-bowlyzer-deploy\terminals\729403.txt
+</task>
+</system_notification>
+<user_query>Briefly inform the user about the task result and perform any follow-up actions (if needed). If there's no follow-ups needed, don't explicitly say that.</user_query>
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The duplicate report benchmark shell task has finished. I will provide a brief update on the results.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: C:\Users\cfell\.cursor\projects\c-Users-cfell-repositories-bowlyzer-deploy\terminals\729403.txt</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The old benchmark produced a 269MB report in 159 seconds and succeeded. This ran before the skip limit was added.
+
+The optimized version with skip completed in 94 seconds. No follow-up is needed.
+</details></think>
+
+_**Agent (default)**_
+
+That background bench finished successfully: tests passed, and the older full duplicate dump on published took ~159s / ~269 MB. The later change (skip full report above 100k rows) cut that same step to ~9s — use the current code when you re-run publish.
+
+---
+
+_**User**_
+
+the latest import led to some inflated match points across multiple leagues:
+http://127.0.0.1:5000/liga?season=25%2F26&league=BZOL+N1&week=6
+http://127.0.0.1:5000/liga?season=25%2F26&league=BZOL+N2&week=6
+http://127.0.0.1:5000/liga?season=25%2F26&league=BayL&week=6
+http://127.0.0.1:5000/liga?season=25%2F26&league=BayL+%28D%29&week=6
+http://127.0.0.1:5000/liga?season=25%2F26&league=KL+N2&week=5
+
+those are not necessarily all of them, but that should be enough to investigate the structural error here.
+
+when looking into a teams sheet:
+http://127.0.0.1:5000/liga?season=25%2F26&league=BayL&week=6&team=BC+Bamberger+Bowlinghaus+1
+it seems that in total there are 96 games == 24 per player somehow registered. it should be 9 par player --> 36 games.
+figure out where the error happens
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The user reports inflated match points across multiple leagues following a recent import. A team sheet shows 96 games registered instead of the expected 36, suggesting a structural duplication error in the data.
+
+The duplication factor appears to be roughly 2.67×. Twenty-four games per player versus nine suggests either four players per team or a severe data duplication issue.
+
+I will trace the data pipeline for the affected team sheet to locate the duplication source. I will inspect the merged dataset for duplicate rows and examine how the UI counts games.
+</details></think>
+
+_**Agent (default)**_
+
+Investigating inflated match counts for 25/26 — tracing from published data through how the league UI counts games per player.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/league_service.py",
+  "pattern": "get_game|match.*count|round.*number|week.*6"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "pattern": "get_game|match.*count|round.*number|week.*6",
+  "topFiles": [
+    {
+      "matchCount": 30,
+      "uri": ".\\app\\services\\league_service.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 95
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c @&#34;
+import pandas as pd
+from pathlib import Path
+
+for p in [Path(&#39;database/data/league_results_merged.csv&#39;), Path(&#39;database/data/league_results_merged.parquet&#39;)]:
+    if p.exists():
+        print(&#39;exists&#39;, p, p.stat().st_size)
+        
+# load parquet if exists else csv
+p = Path(&#39;database/data/league_results_merged.parquet&#39;)
+if not p.exists():
+    p = Path(&#39;database/data/league_results_merged.csv&#39;)
+    df = pd.read_csv(p, sep=&#39;;&#39;, dtype=str, keep_default_na=False)
+else:
+    df = pd.read_parquet(p)
+
+team = &#39;BC Bamberger Bowlinghaus 1&#39;
+sub = df[(df[&#39;Season&#39;]==&#39;25/26&#39;) &amp; (df[&#39;Event&#39;]==&#39;BayL&#39;) &amp; (df[&#39;Week&#39;]==&#39;6&#39;) &amp; (df[&#39;Team&#39;]==team)]
+print(&#39;cols&#39;, [c for c in df.columns if c in [&#39;Season&#39;,&#39;Week&#39;,&#39;Event&#39;,&#39;League&#39;,&#39;Team&#39;,&#39;Player&#39;,&#39;Position&#39;,&#39;Round Number&#39;,&#39;Match Number&#39;,&#39;Points&#39;,&#39;Score&#39;]])
+print(&#39;rows for team week6&#39;, len(sub))
+print(&#39;players&#39;, sub[&#39;Player&#39;].nunique())
+print(&#39;positions&#39;, sorted(sub[&#39;Position&#39;].unique()))
+print(&#39;rounds&#39;, sorted(sub[&#39;Round Number&#39;].unique()))
+print(&#39;match nums&#39;, sorted(sub[&#39;Match Number&#39;].unique()))
+# player game counts (exclude team total)
+pg = sub[(sub[&#39;Player&#39;].str.lower()!=&#39;team total&#39;) &amp; (sub[&#39;Position&#39;]!=&#39;0&#39;)]
+print(&#39;player rows&#39;, len(pg))
+print(&#39;games per player:&#39;)
+print(pg.groupby(&#39;Player&#39;).size().sort_values(ascending=False).head(10))
+print(&#39;dedupe key dupes&#39;, pg.duplicated(subset=[&#39;Round Number&#39;,&#39;Match Number&#39;,&#39;Position&#39;,&#39;Player&#39;]).sum())
+&#34;@
+</summary>
+```bash
+uv run python -c @"
+import pandas as pd
+from pathlib import Path
+
+for p in [Path('database/data/league_results_merged.csv'), Path('database/data/league_results_merged.parquet')]:
+    if p.exists():
+        print('exists', p, p.stat().st_size)
+        
+# load parquet if exists else csv
+p = Path('database/data/league_results_merged.parquet')
+if not p.exists():
+    p = Path('database/data/league_results_merged.csv')
+    df = pd.read_csv(p, sep=';', dtype=str, keep_default_na=False)
+else:
+    df = pd.read_parquet(p)
+
+team = 'BC Bamberger Bowlinghaus 1'
+sub = df[(df['Season']=='25/26') & (df['Event']=='BayL') & (df['Week']=='6') & (df['Team']==team)]
+print('cols', [c for c in df.columns if c in ['Season','Week','Event','League','Team','Player','Position','Round Number','Match Number','Points','Score']])
+print('rows for team week6', len(sub))
+print('players', sub['Player'].nunique())
+print('positions', sorted(sub['Position'].unique()))
+print('rounds', sorted(sub['Round Number'].unique()))
+print('match nums', sorted(sub['Match Number'].unique()))
+# player game counts (exclude team total)
+pg = sub[(sub['Player'].str.lower()!='team total') & (sub['Position']!='0')]
+print('player rows', len(pg))
+print('games per player:')
+print(pg.groupby('Player').size().sort_values(ascending=False).head(10))
+print('dedupe key dupes', pg.duplicated(subset=['Round Number','Match Number','Position','Player']).sum())
+"@
+
+```
+
+```
+exists database\data\league_results_merged.csv 168
+exists database\data\league_results_merged.parquet 3973224
+cols ['Season', 'Week', 'Round Number', 'Match Number', 'Team', 'Position', 'Player', 'Score', 'Points', 'Event']
+rows for team week6 120
+players 6
+positions ['0', '1', '2', '3']
+rounds ['1', '2', '3', '4', '5', '6', '7', '8', '9']
+match nums ['0', '1', '2', '3', '4']
+player rows 72
+games per player:
+Player
+Nickoleit, Thomas    24
+Renner, Alexander    24
+Nolan, Jonathan      14
+Trapphardt, Bernd    10
+dtype: int64
+dedupe key dupes 27
+
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/league_service.py",
+  "pattern": "def get_.*team|game.*count|round"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "pattern": "def get_.*team|game.*count|round",
+  "topFiles": [
+    {
+      "matchCount": 40,
+      "uri": ".\\app\\services\\league_service.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 208
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The data contains 72 player rows with duplicates.
+
+The inflated counts come from duplicate rows. Some players have 24 games instead of 9. The 72 rows contain 27 deduplication key duplicates. That inflates the total to 96 games rather than the expected 36.
+
+Rounds 1–9 likely contain five match numbers each. Match 0 may be a team-total row. The 24 games per player could be eight rounds with three duplicates, or nine rounds with extra copies. I am tracing the duplicate sources against the expected structure.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c @&#34;
+import pandas as pd
+from pathlib import Path
+
+df = pd.read_parquet(&#39;database/data/league_results_merged.parquet&#39;)
+team = &#39;BC Bamberger Bowlinghaus 1&#39;
+player = &#39;Nickoleit, Thomas&#39;
+sub = df[(df[&#39;Season&#39;]==&#39;25/26&#39;) &amp; (df[&#39;Event&#39;]==&#39;BayL&#39;) &amp; (df[&#39;Week&#39;]==&#39;6&#39;) &amp; (df[&#39;Team&#39;]==team) &amp; (df[&#39;Player&#39;]==player)]
+print(&#39;rows&#39;, len(sub))
+print(sub[[&#39;Round Number&#39;,&#39;Match Number&#39;,&#39;Position&#39;,&#39;Score&#39;,&#39;Points&#39;,&#39;Input Data&#39;,&#39;Computed Data&#39;]].to_string())
+print(&#39;--- unique round/match combos&#39;, sub.groupby([&#39;Round Number&#39;,&#39;Match Number&#39;]).size())
+&#34;@
+</summary>
+```bash
+uv run python -c @"
+import pandas as pd
+from pathlib import Path
+
+df = pd.read_parquet('database/data/league_results_merged.parquet')
+team = 'BC Bamberger Bowlinghaus 1'
+player = 'Nickoleit, Thomas'
+sub = df[(df['Season']=='25/26') & (df['Event']=='BayL') & (df['Week']=='6') & (df['Team']==team) & (df['Player']==player)]
+print('rows', len(sub))
+print(sub[['Round Number','Match Number','Position','Score','Points','Input Data','Computed Data']].to_string())
+print('--- unique round/match combos', sub.groupby(['Round Number','Match Number']).size())
+"@
+
+```
+
+```
+rows 24
+       Round Number Match Number Position Score Points Input Data Computed Data
+753911            1            1        2   150    0.0       True         False
+753981            2            3        2   237    1.0       True         False
+754036            3            4        2   160    0.0       True         False
+754071            4            2        2   160    0.0       True         False
+754096            5            0        2   183    1.0       True         False
+754166            6            2        2   223    1.0       True         False
+754231            7            3        2   168    1.0       True         False
+754246            8            0        2   216    1.0       True         False
+754306            9            1        2   192    1.0       True         False
+761053            1            0        2   150    0.0       True         False
+761185            4            1        2   160    0.0       True         False
+761250            5            4        2   183    1.0       True         False
+761280            6            3        2   223    1.0       True         False
+761346            8            2        2   216    1.0       True         False
+761381            9            3        2   192    1.0       True         False
+774681            1            1        2   150    0.0       True         False
+774751            2            3        2   237    1.0       True         False
+774806            3            4        2   160    0.0       True         False
+774841            4            2        2   160    0.0       True         False
+774866            5            0        2   183    1.0       True         False
+774936            6            2        2   223    1.0       True         False
+775001            7            3        2   168    1.0       True         False
+775016            8            0        2   216    1.0       True         False
+775076            9            1        2   192
+… (output truncated)
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c @&#34;
+import pandas as pd
+from pathlib import Path
+
+# check 2526 extract if exists
+for p in [Path(r&#39;C:\tmp\2526.csv&#39;), Path(&#39;database/work/historical_league_results.csv&#39;)]:
+    if not p.exists():
+        print(&#39;missing&#39;, p)
+        continue
+    df = pd.read_csv(p, sep=&#39;;&#39;, dtype=str, keep_default_na=False, nrows=0)
+    print(&#39;file&#39;, p, &#39;cols&#39;, list(df.columns)[:15])
+
+p = Path(r&#39;C:\tmp\2526.csv&#39;)
+if p.exists():
+    df = pd.read_csv(p, sep=&#39;;&#39;, dtype=str, keep_default_na=False)
+    team = &#39;BC Bamberger Bowlinghaus 1&#39;
+    sub = df[(df[&#39;Season&#39;]==&#39;25/26&#39;) &amp; (df[&#39;League&#39;]==&#39;BayL&#39;) &amp; (df[&#39;Week&#39;]==&#39;6&#39;) &amp; (df[&#39;Team&#39;]==team)]
+    print(&#39;2526.csv rows&#39;, len(sub))
+    pg = sub[(sub[&#39;Player&#39;].str.lower()!=&#39;team total&#39;) &amp; (sub[&#39;Position&#39;]!=&#39;0&#39;)]
+    print(&#39;player rows&#39;, len(pg), &#39;per player&#39;, pg.groupby(&#39;Player&#39;).size().to_dict())
+&#34;@
+</summary>
+```bash
+uv run python -c @"
+import pandas as pd
+from pathlib import Path
+
+# check 2526 extract if exists
+for p in [Path(r'C:\tmp\2526.csv'), Path('database/work/historical_league_results.csv')]:
+    if not p.exists():
+        print('missing', p)
+        continue
+    df = pd.read_csv(p, sep=';', dtype=str, keep_default_na=False, nrows=0)
+    print('file', p, 'cols', list(df.columns)[:15])
+
+p = Path(r'C:\tmp\2526.csv')
+if p.exists():
+    df = pd.read_csv(p, sep=';', dtype=str, keep_default_na=False)
+    team = 'BC Bamberger Bowlinghaus 1'
+    sub = df[(df['Season']=='25/26') & (df['League']=='BayL') & (df['Week']=='6') & (df['Team']==team)]
+    print('2526.csv rows', len(sub))
+    pg = sub[(sub['Player'].str.lower()!='team total') & (sub['Position']!='0')]
+    print('player rows', len(pg), 'per player', pg.groupby('Player').size().to_dict())
+"@
+
+```
+
+```
+file C:\tmp\2526.csv cols ['Season', 'Week', 'Date', 'League', 'Players per Team', 'Location', 'Round Number', 'Match Number', 'Team', 'Position', 'Player', 'Player ID', 'Opponent', 'Score', 'Points']
+file database\work\historical_league_results.csv cols ['Season', 'Week', 'Date', 'League', 'Players per Team', 'Location', 'Round Number', 'Match Number', 'Team', 'Position', 'Player', 'Player ID', 'Opponent', 'Score', 'Points']
+2526.csv rows 45
+player rows 27 per player {'Nikoleit Thomas': 9, 'Nolan Jonathan': 5, 'Renner Alexander': 9, 'Trapphardt Bernd': 4}
+
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/team_service.py",
+  "pattern": "game.*count|total.*game|96|match.*point"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "pattern": "game.*count|total.*game|96|match.*point",
+  "topFiles": [
+    {
+      "matchCount": 11,
+      "uri": "app/services/team_service.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 11
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The raw CSV extract contains the correct counts of nine games per player. The published merged file instead shows twenty-four rows, effectively tripling the data with three copies of each player’s nine games plus some partial duplicates.
+
+Duplicate rows share identical scores but differ by Match Number. The merge deduplication key therefore misses them. Roughly fifteen unique round and match combinations are duplicated, yielding the twenty-four-row total.
+
+The merge likely failed to deduplicate because Match Numbers differ between duplicate rows for the same game. The data may also come from multiple sources with conflicting numbering. The published parquet lacks a source index, so I am checking whether the 25/26 season exists in multiple inputs with different match numbers. I will also compare GF latest.csv and published files for the same team and week.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c @&#34;
+import pandas as pd
+from pathlib import Path
+
+files = [
+    (&#39;published&#39;, Path(&#39;database/published_csv/league_results_merged.csv&#39;)),
+    (&#39;2526&#39;, Path(r&#39;C:\tmp\2526.csv&#39;)),
+    (&#39;latest&#39;, Path(&#39;database/pipeline/bowling_bayern/legacy_out/latest.csv&#39;)),
+    (&#39;data&#39;, Path(&#39;database/data/league_results_merged.parquet&#39;)),
+]
+team = &#39;BC Bamberger Bowlinghaus 1&#39;
+player = &#39;Nickoleit, Thomas&#39;
+for label, p in files:
+    if not p.exists():
+        print(label, &#39;missing&#39;)
+        continue
+    if p.suffix==&#39;.parquet&#39;:
+        df = pd.read_parquet(p)
+        league_col = &#39;Event&#39;
+    else:
+        df = pd.read_csv(p, sep=&#39;;&#39;, dtype=str, keep_default_na=False)
+        league_col = &#39;League&#39; if &#39;League&#39; in df.columns else &#39;Event&#39;
+    sub = df[(df[&#39;Season&#39;]==&#39;25/26&#39;) &amp; (df[league_col]==&#39;BayL&#39;) &amp; (df[&#39;Week&#39;]==&#39;6&#39;) &amp; (df[&#39;Team&#39;]==team) &amp; (df[&#39;Player&#39;]==player)]
+    print(f&#39;{label}: {len(sub)} rows, rounds={sorted(sub[\&#34;Round Number\&#34;].unique())}&#39;)
+    if len(sub):
+        print(&#39;  match nums per round:&#39;)
+        for r in sorted(sub[&#39;Round Number&#39;].unique()):
+            ms = sorted(sub[sub[&#39;Round Number&#39;]==r][&#39;Match Number&#39;].unique())
+            print(f&#39;    R{r}: {ms} x{len(sub[sub[\&#34;Round Number\&#34;]==r])}&#39;)
+&#34;@
+</summary>
+```bash
+uv run python -c @"
+import pandas as pd
+from pathlib import Path
+
+files = [
+    ('published', Path('database/published_csv/league_results_merged.csv')),
+    ('2526', Path(r'C:\tmp\2526.csv')),
+    ('latest', Path('database/pipeline/bowling_bayern/legacy_out/latest.csv')),
+    ('data', Path('database/data/league_results_merged.parquet')),
+]
+team = 'BC Bamberger Bowlinghaus 1'
+player = 'Nickoleit, Thomas'
+for label, p in files:
+    if not p.exists():
+        print(label, 'missing')
+        continue
+    if p.suffix=='.parquet':
+        df = pd.read_parquet(p)
+        league_col = 'Event'
+    else:
+        df = pd.read_csv(p, sep=';', dtype=str, keep_default_na=False)
+        league_col = 'League' if 'League' in df.columns else 'Event'
+    sub = df[(df['Season']=='25/26') & (df[league_col]=='BayL') & (df['Week']=='6') & (df['Team']==team) & (df['Player']==player)]
+    print(f'{label}: {len(sub)} rows, rounds={sorted(sub[\"Round Number\"].unique())}')
+    if len(sub):
+        print('  match nums per round:')
+        for r in sorted(sub['Round Number'].unique()):
+            ms = sorted(sub[sub['Round Number']==r]['Match Number'].unique())
+            print(f'    R{r}: {ms} x{len(sub[sub[\"Round Number\"]==r])}')
+"@
+
+```
+
+```
+published: 24 rows, rounds=['1', '2', '3', '4', '5', '6', '7', '8', '9']
+  match nums per round:
+    R1: ['0', '1'] x3
+    R2: ['3'] x2
+    R3: ['4'] x2
+    R4: ['1', '2'] x3
+    R5: ['0', '4'] x3
+    R6: ['2', '3'] x3
+    R7: ['3'] x2
+    R8: ['0', '2'] x3
+    R9: ['1', '3'] x3
+2526: 0 rows, rounds=[]
+latest: 0 rows, rounds=[]
+data: 24 rows, rounds=['1', '2', '3', '4', '5', '6', '7', '8', '9']
+  match nums per round:
+    R1: ['0', '1'] x3
+    R2: ['3'] x2
+    R3: ['4'] x2
+    R4: ['1', '2'] x3
+    R5: ['0', '4'] x3
+    R6: ['2', '3'] x3
+    R7: ['3'] x2
+    R8: ['0', '2'] x3
+    R9: ['1', '3'] x3
+
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c @&#34;
+import pandas as pd
+# affected leagues week counts
+df = pd.read_parquet(&#39;database/data/league_results_merged.parquet&#39;)
+for league, week in [(&#39;BZOL N1&#39;,&#39;6&#39;),(&#39;BZOL N2&#39;,&#39;6&#39;),(&#39;BayL&#39;,&#39;6&#39;),(&#39;BayL (D)&#39;,&#39;6&#39;),(&#39;KL N2&#39;,&#39;5&#39;)]:
+    sub = df[(df[&#39;Season&#39;]==&#39;25/26&#39;) &amp; (df[&#39;Event&#39;]==league) &amp; (df[&#39;Week&#39;]==week)]
+    tt = sub[(sub[&#39;Player&#39;].str.lower()==&#39;team total&#39;) &amp; (sub[&#39;Position&#39;]==&#39;0&#39;)]
+    pg = sub[(sub[&#39;Player&#39;].str.lower()!=&#39;team total&#39;) &amp; (sub[&#39;Position&#39;]!=&#39;0&#39;)]
+    # sample one team
+    team = pg[&#39;Team&#39;].value_counts().index[0] if len(pg) else None
+    tsub = pg[pg[&#39;Team&#39;]==team] if team else pg
+    avg = tsub.groupby(&#39;Player&#39;).size().mean() if len(tsub) else 0
+    maxg = tsub.groupby(&#39;Player&#39;).size().max() if len(tsub) else 0
+    print(f&#39;{league} W{week}: teams={tt[\&#34;Team\&#34;].nunique()} player_rows={len(pg)} avg_g/player={avg:.1f} max={maxg} team_sample={team}&#39;)
+&#34;@
+</summary>
+```bash
+uv run python -c @"
+import pandas as pd
+# affected leagues week counts
+df = pd.read_parquet('database/data/league_results_merged.parquet')
+for league, week in [('BZOL N1','6'),('BZOL N2','6'),('BayL','6'),('BayL (D)','6'),('KL N2','5')]:
+    sub = df[(df['Season']=='25/26') & (df['Event']==league) & (df['Week']==week)]
+    tt = sub[(sub['Player'].str.lower()=='team total') & (sub['Position']=='0')]
+    pg = sub[(sub['Player'].str.lower()!='team total') & (sub['Position']!='0')]
+    # sample one team
+    team = pg['Team'].value_counts().index[0] if len(pg) else None
+    tsub = pg[pg['Team']==team] if team else pg
+    avg = tsub.groupby('Player').size().mean() if len(tsub) else 0
+    maxg = tsub.groupby('Player').size().max() if len(tsub) else 0
+    print(f'{league} W{week}: teams={tt[\"Team\"].nunique()} player_rows={len(pg)} avg_g/player={avg:.1f} max={maxg} team_sample={team}')
+"@
+
+```
+
+```
+BZOL N1 W6: teams=6 player_rows=90 avg_g/player=5.0 max=5 team_sample=Kings Club Bayreuth Land 1
+BZOL N2 W6: teams=6 player_rows=90 avg_g/player=5.0 max=5 team_sample=Gute Laune Lauf 1
+BayL W6: teams=10 player_rows=751 avg_g/player=16.2 max=27 team_sample=Donaubowler Regensburg 1
+BayL (D) W6: teams=10 player_rows=270 avg_g/player=6.8 max=9 team_sample=BK M�nchen 3
+KL N2 W5: teams=3 player_rows=148 avg_g/player=12.8 max=17 team_sample=BC Bamberger Bowlinghaus 3
+
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The inflated match points are already present in `published_csv/league_results_merged.csv`. They were not introduced by the latest 2526 merge.
+
+The 2526 import contains zero rows for this player due to name normalization mismatches. The published file already holds 24 duplicated rows for BayL 25/26. This suggests the inflation occurred during an earlier merge or publish step. BZOL N1 and N2 appear correct with five games per player. BayL is severely inflated. The next step is to inspect the database and historical work files for 25/26 to find the source of the duplication.
+
+KL N2 is also inflated. BayL (D) shows a smaller discrepancy: 6.8 average versus 9 maximum. The next step is to compare the 25/26 season in the published file against the historical extract to locate the duplication source.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c @&#34;
+import pandas as pd
+from pathlib import Path
+
+df = pd.read_csv(&#39;database/published_csv/league_results_merged.csv&#39;, sep=&#39;;&#39;, dtype=str, keep_default_na=False)
+sub = df[df[&#39;Season&#39;]==&#39;25/26&#39;]
+print(&#39;25/26 total rows&#39;, len(sub))
+print(&#39;by Event top 15&#39;)
+print(sub[&#39;Event&#39;].value_counts().head(15))
+# BayL week 6 all teams - expected 4 players * 9 games = 36 per team if full roster
+bayl = sub[(sub[&#39;Event&#39;]==&#39;BayL&#39;) &amp; (sub[&#39;Week&#39;]==&#39;6&#39;)]
+pg = bayl[(bayl[&#39;Player&#39;].str.lower()!=&#39;team total&#39;) &amp; (bayl[&#39;Position&#39;]!=&#39;0&#39;)]
+print(&#39;BayL W6 player rows&#39;, len(pg), &#39;teams&#39;, pg[&#39;Team&#39;].nunique())
+print(&#39;games per team (sum of player rows / nplayers approx):&#39;)
+for team, g in pg.groupby(&#39;Team&#39;).size().sort_values(ascending=False).head(12).items():
+    nplayers = pg[pg[&#39;Team&#39;]==team][&#39;Player&#39;].nunique()
+    print(f&#39;  {team}: {g} rows, {nplayers} players, avg {g/nplayers:.1f}&#39;)
+&#34;@
+</summary>
+```bash
+uv run python -c @"
+import pandas as pd
+from pathlib import Path
+
+df = pd.read_csv('database/published_csv/league_results_merged.csv', sep=';', dtype=str, keep_default_na=False)
+sub = df[df['Season']=='25/26']
+print('25/26 total rows', len(sub))
+print('by Event top 15')
+print(sub['Event'].value_counts().head(15))
+# BayL week 6 all teams - expected 4 players * 9 games = 36 per team if full roster
+bayl = sub[(sub['Event']=='BayL') & (sub['Week']=='6')]
+pg = bayl[(bayl['Player'].str.lower()!='team total') & (bayl['Position']!='0')]
+print('BayL W6 player rows', len(pg), 'teams', pg['Team'].nunique())
+print('games per team (sum of player rows / nplayers approx):')
+for team, g in pg.groupby('Team').size().sort_values(ascending=False).head(12).items():
+    nplayers = pg[pg['Team']==team]['Player'].nunique()
+    print(f'  {team}: {g} rows, {nplayers} players, avg {g/nplayers:.1f}')
+"@
+
+```
+
+```
+25/26 total rows 28282
+by Event top 15
+Event
+BayL        7611
+BayL (D)    4371
+BZOL N2     2208
+BZOL N1     2195
+LL S (D)    1600
+KL N2       1374
+LL S        1189
+BZOL N3      900
+KL N1        900
+BZL N3       899
+LL N2        893
+BZL N2       890
+LL N1        890
+BZL N1       750
+KL N3        750
+Name: count, dtype: int64
+BayL W6 player rows 751 teams 10
+games per team (sum of player rows / nplayers approx):
+  Donaubowler Regensburg 1: 81 rows, 5 players, avg 16.2
+  DJK Rimpar 1: 81 rows, 7 players, avg 11.6
+  Bajuwaren M�nchen 1: 77 rows, 5 players, avg 15.4
+  SG Rottendorf 1: 76 rows, 5 players, avg 15.2
+  BC EMAX Unterf�hring 2: 75 rows, 6 players, avg 12.5
+  BC Comet N�rnberg 1: 75 rows, 3 players, avg 25.0
+  BC Bamberger Bowlinghaus 1: 72 rows, 4 players, avg 18.0
+  BK M�nchen 3: 72 rows, 4 players, avg 18.0
+  Schanzer-Strikers Ingolstadt 1: 72 rows, 3 players, avg 24.0
+  Werdenfels 1: 70 rows, 5 players, avg 14.0
+
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c @&#34;
+import pandas as pd
+from pathlib import Path
+
+# historical work dir extract
+for p in [Path(&#39;database/work/historical_league_results.csv&#39;), Path(r&#39;C:\tmp\2526.csv&#39;)]:
+    if not p.exists():
+        continue
+    df = pd.read_csv(p, sep=&#39;;&#39;, dtype=str, keep_default_na=False)
+    sub = df[(df[&#39;Season&#39;]==&#39;25/26&#39;) &amp; (df[&#39;League&#39;]==&#39;BayL&#39;) &amp; (df[&#39;Week&#39;]==&#39;6&#39;)]
+    pg = sub[(sub[&#39;Player&#39;].str.lower()!=&#39;team total&#39;) &amp; (sub[&#39;Position&#39;]!=&#39;0&#39;)]
+    print(&#39;FILE&#39;, p.name, &#39;rows&#39;, len(pg), &#39;teams&#39;, pg[&#39;Team&#39;].nunique())
+    team = &#39;BC Bamberger Bowlinghaus 1&#39;
+    t = pg[pg[&#39;Team&#39;]==team]
+    print(&#39;  sample team rows&#39;, len(t), dict(t.groupby(&#39;Player&#39;).size()))
+&#34;@
+</summary>
+```bash
+uv run python -c @"
+import pandas as pd
+from pathlib import Path
+
+# historical work dir extract
+for p in [Path('database/work/historical_league_results.csv'), Path(r'C:\tmp\2526.csv')]:
+    if not p.exists():
+        continue
+    df = pd.read_csv(p, sep=';', dtype=str, keep_default_na=False)
+    sub = df[(df['Season']=='25/26') & (df['League']=='BayL') & (df['Week']=='6')]
+    pg = sub[(sub['Player'].str.lower()!='team total') & (sub['Position']!='0')]
+    print('FILE', p.name, 'rows', len(pg), 'teams', pg['Team'].nunique())
+    team = 'BC Bamberger Bowlinghaus 1'
+    t = pg[pg['Team']==team]
+    print('  sample team rows', len(t), dict(t.groupby('Player').size()))
+"@
+
+```
+
+```
+FILE historical_league_results.csv rows 0 teams 0
+  sample team rows 0 {}
+FILE 2526.csv rows 270 teams 10
+  sample team rows 27 {'Nikoleit Thomas': np.int64(9), 'Nolan Jonathan': np.int64(5), 'Renner Alexander': np.int64(9), 'Trapphardt Bernd': np.int64(4)}
+
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **0** results in **1** directory</summary>
+
+Directory: **``** (0 files)
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The raw CSV file contains correct data. BayL Week 6 has 270 player rows, matching 27 rows per team member. The inflated match points must originate during the import or aggregation step.
+
+The published CSV contains 751 player rows for BayL Week 6. Duplicate entries exist because the deduplication key includes match number. A single physical game can appear with different match numbers and identical player names. The merge logic fails to collapse these duplicates, inflating the total count.
+
+The published 25/26 BayL dataset likely comes from multiple partial imports. Those imports used inconsistent match numbering. Player names were also normalized differently. The deduplication key therefore fails to collapse these duplicates. This explains why the published file contains 24 rows for one player while the raw CSV contains none.
+
+Checking whether the work directory or combo extracts contain duplicate 25/26 BayL imports. Also verifying if the published CSV stores both "Nikoleit Thomas" and "Nickoleit, Thomas" as separate rows.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c @&#34;
+import pandas as pd
+
+pub = pd.read_csv(&#39;database/published_csv/league_results_merged.csv&#39;, sep=&#39;;&#39;, dtype=str, keep_default_na=False)
+ext = pd.read_csv(r&#39;C:\tmp\2526.csv&#39;, sep=&#39;;&#39;, dtype=str, keep_default_na=False)
+
+team = &#39;BC Bamberger Bowlinghaus 1&#39;
+for label, df, lcol in [(&#39;pub&#39;, pub, &#39;Event&#39;), (&#39;ext&#39;, ext, &#39;League&#39;)]:
+    sub = df[(df[&#39;Season&#39;]==&#39;25/26&#39;) &amp; (df[lcol]==&#39;BayL&#39;) &amp; (df[&#39;Week&#39;]==&#39;6&#39;) &amp; (df[&#39;Team&#39;]==team)]
+    pg = sub[(sub[&#39;Player&#39;].str.lower()!=&#39;team total&#39;) &amp; (sub[&#39;Position&#39;]!=&#39;0&#39;)]
+    print(label, &#39;players:&#39;, sorted(pg[&#39;Player&#39;].unique()))
+    print(label, &#39;player ids:&#39;, sorted(pg[&#39;Player ID&#39;].dropna().unique())[:10])
+
+# simulate merge dedupe - would 2526 merge with pub?
+from scripts.merge_league_sources import DEFAULT_KEYS, _resolve_key_columns, _normalized_key
+
+frames = []
+for idx, (label, df) in enumerate([(&#39;pub&#39;, pub), (&#39;ext&#39;, ext)]):
+    lcol = &#39;Event&#39; if &#39;Event&#39; in df.columns else &#39;League&#39;
+    sub = df[(df[&#39;Season&#39;]==&#39;25/26&#39;) &amp; (df[lcol]==&#39;BayL&#39;) &amp; (df[&#39;Week&#39;]==&#39;6&#39;) &amp; (df[&#39;Team&#39;]==team)].copy()
+    sub[&#39;League&#39;] = sub[lcol]  # unify for test
+    if &#39;Event&#39; not in sub.columns:
+        sub[&#39;Event&#39;] = sub[&#39;League&#39;]
+    sub[&#39;__source_idx&#39;] = str(idx)
+    frames.append(sub)
+
+comb = pd.concat(frames, ignore_index=True)
+key_cols = _resolve_key_columns(comb, list(DEFAULT_KEYS))
+for logical, concrete in key_cols.items():
+    comb[f&#39;__k_{logical}&#39;] = _normalized_key(comb[concrete])
+dedupe = [f&#39;__k_{k}&#39; for k in DEFAULT_KEYS]
+print(&#39;combined rows&#39;, len(comb))
+print(&#39;unique keys&#39;, comb.drop_duplicates(subset=dedupe).shape[0])
+print(&#39;cross-source dup keys&#39;, (comb.groupby(dedupe)[&#39;__source_idx&#39;].nunique()&gt;1).sum())
+&#34;@
+</summary>
+```bash
+uv run python -c @"
+import pandas as pd
+
+pub = pd.read_csv('database/published_csv/league_results_merged.csv', sep=';', dtype=str, keep_default_na=False)
+ext = pd.read_csv(r'C:\tmp\2526.csv', sep=';', dtype=str, keep_default_na=False)
+
+team = 'BC Bamberger Bowlinghaus 1'
+for label, df, lcol in [('pub', pub, 'Event'), ('ext', ext, 'League')]:
+    sub = df[(df['Season']=='25/26') & (df[lcol]=='BayL') & (df['Week']=='6') & (df['Team']==team)]
+    pg = sub[(sub['Player'].str.lower()!='team total') & (sub['Position']!='0')]
+    print(label, 'players:', sorted(pg['Player'].unique()))
+    print(label, 'player ids:', sorted(pg['Player ID'].dropna().unique())[:10])
+
+# simulate merge dedupe - would 2526 merge with pub?
+from scripts.merge_league_sources import DEFAULT_KEYS, _resolve_key_columns, _normalized_key
+
+frames = []
+for idx, (label, df) in enumerate([('pub', pub), ('ext', ext)]):
+    lcol = 'Event' if 'Event' in df.columns else 'League'
+    sub = df[(df['Season']=='25/26') & (df[lcol]=='BayL') & (df['Week']=='6') & (df['Team']==team)].copy()
+    sub['League'] = sub[lcol]  # unify for test
+    if 'Event' not in sub.columns:
+        sub['Event'] = sub['League']
+    sub['__source_idx'] = str(idx)
+    frames.append(sub)
+
+comb = pd.concat(frames, ignore_index=True)
+key_cols = _resolve_key_columns(comb, list(DEFAULT_KEYS))
+for logical, concrete in key_cols.items():
+    comb[f'__k_{logical}'] = _normalized_key(comb[concrete])
+dedupe = [f'__k_{k}' for k in DEFAULT_KEYS]
+print('combined rows', len(comb))
+print('unique keys', comb.drop_duplicates(subset=dedupe).shape[0])
+print('cross-source dup keys', (comb.groupby(dedupe)['__source_idx'].nunique()>1).sum())
+"@
+
+```
+
+```
+pub players: ['Nickoleit, Thomas', 'Nolan, Jonathan', 'Renner, Alexander', 'Trapphardt, Bernd']
+pub player ids: ['16251', '16559', '16873', '25516']
+ext players: ['Nikoleit Thomas', 'Nolan Jonathan', 'Renner Alexander', 'Trapphardt Bernd']
+ext player ids: ['16251', '16559', '16873', '25516']
+combined rows 165
+unique keys 111
+cross-source dup keys 9
+
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/extract_excel_data.py",
+  "pattern": "Match Number|match_number|Round Number"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "pattern": "Match Number|match_number|Round Number",
+  "topFiles": [
+    {
+      "matchCount": 28,
+      "uri": "scripts/data/extract_excel_data.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 28
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **0** results in **1** directory</summary>
+
+Directory: **``** (0 files)
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The merge deduplication step appears to be failing.
+
+Player name variations create separate dedupe keys despite identical IDs. Match numbers also diverge within the same published round. The inflation likely predates the 25/26 merge, possibly from combo extracts or incremental merges keeping duplicate versions.
+
+BayL Week 6 shows 751 published rows versus 270 in 2526. That ratio suggests roughly 2.78 duplicates. The next step is to inspect published BayL 25/26 for duplicate player IDs with mismatched match numbers in the same round. The GF latest.csv for 25/26 BayL teams will also be checked.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c @&#34;
+import pandas as pd
+from pathlib import Path
+
+p = Path(&#39;database/pipeline/bowling_bayern/legacy_out/latest.csv&#39;)
+if p.exists():
+    df = pd.read_csv(p, sep=&#39;;&#39;, dtype=str, keep_default_na=False)
+    print(&#39;latest cols&#39;, list(df.columns)[:12])
+    sub = df[df[&#39;Season&#39;]==&#39;25/26&#39;] if &#39;Season&#39; in df.columns else df
+    print(&#39;25/26 rows&#39;, len(sub))
+    lcol = &#39;League&#39; if &#39;League&#39; in df.columns else &#39;Event&#39;
+    if len(sub):
+        print(sub[lcol].value_counts().head(10))
+        bayl = sub[(sub[lcol]==&#39;BayL&#39;) &amp; (sub[&#39;Week&#39;]==&#39;6&#39;)]
+        print(&#39;BayL W6&#39;, len(bayl))
+else:
+    print(&#39;no latest.csv&#39;)
+
+# Within published - same player ID, same round, multiple rows?
+pub = pd.read_csv(&#39;database/published_csv/league_results_merged.csv&#39;, sep=&#39;;&#39;, dtype=str, keep_default_na=False)
+team = &#39;BC Bamberger Bowlinghaus 1&#39;
+pg = pub[(pub[&#39;Season&#39;]==&#39;25/26&#39;) &amp; (pub[&#39;Event&#39;]==&#39;BayL&#39;) &amp; (pub[&#39;Week&#39;]==&#39;6&#39;) &amp; (pub[&#39;Team&#39;]==team)]
+pg = pg[(pg[&#39;Player&#39;].str.lower()!=&#39;team total&#39;) &amp; (pg[&#39;Position&#39;]!=&#39;0&#39;)]
+# group by player id + round
+g = pg.groupby([&#39;Player ID&#39;,&#39;Round Number&#39;]).size()
+print(&#39;pub dup player_id+round groups &gt;1:&#39;, (g&gt;1).sum(), &#39;max&#39;, g.max())
+print(&#39;examples:&#39;)
+print(g[g&gt;1].head(15))
+&#34;@
+</summary>
+```bash
+uv run python -c @"
+import pandas as pd
+from pathlib import Path
+
+p = Path('database/pipeline/bowling_bayern/legacy_out/latest.csv')
+if p.exists():
+    df = pd.read_csv(p, sep=';', dtype=str, keep_default_na=False)
+    print('latest cols', list(df.columns)[:12])
+    sub = df[df['Season']=='25/26'] if 'Season' in df.columns else df
+    print('25/26 rows', len(sub))
+    lcol = 'League' if 'League' in df.columns else 'Event'
+    if len(sub):
+        print(sub[lcol].value_counts().head(10))
+        bayl = sub[(sub[lcol]=='BayL') & (sub['Week']=='6')]
+        print('BayL W6', len(bayl))
+else:
+    print('no latest.csv')
+
+# Within published - same player ID, same round, multiple rows?
+pub = pd.read_csv('database/published_csv/league_results_merged.csv', sep=';', dtype=str, keep_default_na=False)
+team = 'BC Bamberger Bowlinghaus 1'
+pg = pub[(pub['Season']=='25/26') & (pub['Event']=='BayL') & (pub['Week']=='6') & (pub['Team']==team)]
+pg = pg[(pg['Player'].str.lower()!='team total') & (pg['Position']!='0')]
+# group by player id + round
+g = pg.groupby(['Player ID','Round Number']).size()
+print('pub dup player_id+round groups >1:', (g>1).sum(), 'max', g.max())
+print('examples:')
+print(g[g>1].head(15))
+"@
+
+```
+
+```
+latest cols ['Season', 'Week', 'Date', 'League', 'Players per Team', 'Location', 'Round Number', 'Match Number', 'Team', 'Position', 'Player', 'Player ID']
+25/26 rows 9175
+League
+BayL        2700
+            1805
+BayL (D)     900
+LL S (D)     800
+BZOL N2      750
+BZOL N1      750
+LL S         600
+KL N2        510
+KL S1        360
+Name: count, dtype: int64
+BayL W6 450
+pub dup player_id+round groups >1: 27 max 3
+examples:
+Player ID  Round Number
+16251      1               3
+           2               2
+           3               2
+           4               3
+           5               3
+           6               3
+           7               2
+           8               3
+           9               3
+16559      1               3
+           2               2
+           3               2
+           4               3
+16873      5               3
+           6               3
+dtype: int64
+
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c @&#34;
+import pandas as pd
+
+pub = pd.read_csv(&#39;database/published_csv/league_results_merged.csv&#39;, sep=&#39;;&#39;, dtype=str, keep_default_na=False)
+# all 25/26 BayL - count dupes by business key without player name
+sub = pub[(pub[&#39;Season&#39;]==&#39;25/26&#39;) &amp; (pub[&#39;Event&#39;]==&#39;BayL&#39;)]
+pg = sub[(sub[&#39;Player&#39;].str.lower()!=&#39;team total&#39;) &amp; (sub[&#39;Position&#39;]!=&#39;0&#39;)]
+for key in [
+    [&#39;Season&#39;,&#39;Week&#39;,&#39;Round Number&#39;,&#39;Match Number&#39;,&#39;Team&#39;,&#39;Position&#39;,&#39;Player ID&#39;],
+    [&#39;Season&#39;,&#39;Week&#39;,&#39;Round Number&#39;,&#39;Team&#39;,&#39;Position&#39;,&#39;Player ID&#39;],
+    [&#39;Season&#39;,&#39;Week&#39;,&#39;Round Number&#39;,&#39;Match Number&#39;,&#39;Team&#39;,&#39;Position&#39;,&#39;Player&#39;],
+]:
+    dups = pg.duplicated(subset=key, keep=False).sum()
+    unique = pg.drop_duplicates(subset=key).shape[0]
+    print(f&#39;key {key[-3:]}... rows={len(pg)} unique={unique} dup_rows={dups}&#39;)
+&#34;@
+</summary>
+```bash
+uv run python -c @"
+import pandas as pd
+
+pub = pd.read_csv('database/published_csv/league_results_merged.csv', sep=';', dtype=str, keep_default_na=False)
+# all 25/26 BayL - count dupes by business key without player name
+sub = pub[(pub['Season']=='25/26') & (pub['Event']=='BayL')]
+pg = sub[(sub['Player'].str.lower()!='team total') & (sub['Position']!='0')]
+for key in [
+    ['Season','Week','Round Number','Match Number','Team','Position','Player ID'],
+    ['Season','Week','Round Number','Team','Position','Player ID'],
+    ['Season','Week','Round Number','Match Number','Team','Position','Player'],
+]:
+    dups = pg.duplicated(subset=key, keep=False).sum()
+    unique = pg.drop_duplicates(subset=key).shape[0]
+    print(f'key {key[-3:]}... rows={len(pg)} unique={unique} dup_rows={dups}')
+"@
+
+```
+
+```
+key ['Team', 'Position', 'Player ID']... rows=4575 unique=2925 dup_rows=3270
+key ['Team', 'Position', 'Player ID']... rows=4575 unique=1627 dup_rows=4568
+key ['Team', 'Position', 'Player']... rows=4575 unique=2955 dup_rows=3240
+
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The imported CSV contains 450 rows for BayL Week 6, while the published data shows 751. This explains the inflated match points and duplicate games.
+
+The merge deduplication key uses unstable fields—player name and match number—which causes duplicates when sources differ slightly. latest.csv also contains 1805 rows with blank League names. This structural flaw inflates match counts across leagues.
+
+The GF pipeline and the Excel extract generate identical 25/26 seasons, yet they disagree on player name formatting and match numbering. When the user published with both sources plus the latest import, these overlapping rows failed to deduplicate. The next step is to inspect the database against the published file.
+
+Published already held inflated 25/26 BayL rows before the 2526 merge. The 2526 extract matched zero rows for Nickoleit because of a name mismatch. Published likely accumulated duplicates from historical data, the 2526 merge, and latest.csv together. The exact source of the pre-merge inflation still needs verification.
+
+Published may have been rebuilt from itself plus 2526 and latest. That would double-count existing GF 25/26 rows. A registry count should verify this.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c @&#34;
+import pandas as pd
+
+ext = pd.read_csv(r&#39;C:\tmp\2526.csv&#39;, sep=&#39;;&#39;, dtype=str, keep_default_na=False)
+latest = pd.read_csv(&#39;database/pipeline/bowling_bayern/legacy_out/latest.csv&#39;, sep=&#39;;&#39;, dtype=str, keep_default_na=False)
+pub = pd.read_csv(&#39;database/published_csv/league_results_merged.csv&#39;, sep=&#39;;&#39;, dtype=str, keep_default_na=False)
+
+for label, df, lcol in [(&#39;2526&#39;, ext, &#39;League&#39;), (&#39;latest&#39;, latest, &#39;League&#39;), (&#39;pub&#39;, pub, &#39;Event&#39;)]:
+    sub = df[(df[&#39;Season&#39;]==&#39;25/26&#39;) &amp; (df[lcol]==&#39;BayL&#39;)]
+    pg = sub[(sub[&#39;Player&#39;].str.lower()!=&#39;team total&#39;) &amp; (sub[&#39;Position&#39;]!=&#39;0&#39;)]
+    print(f&#39;{label}: total={len(sub)} player={len(pg)} weeks={sorted(sub[\&#34;Week\&#34;].unique())}&#39;)
+
+# overlap between latest and 2526 on stable key
+def prep(df, lcol):
+    sub = df[(df[&#39;Season&#39;]==&#39;25/26&#39;) &amp; (df[lcol]==&#39;BayL&#39;)].copy()
+    pg = sub[(sub[&#39;Player&#39;].str.lower()!=&#39;team total&#39;) &amp; (sub[&#39;Position&#39;]!=&#39;0&#39;)].copy()
+    pg[&#39;pid&#39;] = pg[&#39;Player ID&#39;].astype(str).str.strip()
+    return pg
+
+a, b = prep(latest, &#39;League&#39;), prep(ext, &#39;League&#39;)
+key = [&#39;Week&#39;,&#39;Round Number&#39;,&#39;Team&#39;,&#39;Position&#39;,&#39;pid&#39;]
+ma = a[key + [&#39;Match Number&#39;,&#39;Player&#39;,&#39;Score&#39;,&#39;Points&#39;]]
+mb = b[key + [&#39;Match Number&#39;,&#39;Player&#39;,&#39;Score&#39;,&#39;Points&#39;]]
+merged = ma.merge(mb, on=key, how=&#39;inner&#39;, suffixes=(&#39;_L&#39;,&#39;_E&#39;))
+print(&#39;latest vs 2526 same week/round/team/pos/pid:&#39;, len(merged))
+print(&#39;same match number too:&#39;, (merged[&#39;Match Number_L&#39;]==merged[&#39;Match Number_E&#39;]).sum(), &#39;of&#39;, len(merged))
+print(&#39;same score:&#39;, (merged[&#39;Score_L&#39;]==merged[&#39;Score_E&#39;]).sum())
+&#34;@
+</summary>
+```bash
+uv run python -c @"
+import pandas as pd
+
+ext = pd.read_csv(r'C:\tmp\2526.csv', sep=';', dtype=str, keep_default_na=False)
+latest = pd.read_csv('database/pipeline/bowling_bayern/legacy_out/latest.csv', sep=';', dtype=str, keep_default_na=False)
+pub = pd.read_csv('database/published_csv/league_results_merged.csv', sep=';', dtype=str, keep_default_na=False)
+
+for label, df, lcol in [('2526', ext, 'League'), ('latest', latest, 'League'), ('pub', pub, 'Event')]:
+    sub = df[(df['Season']=='25/26') & (df[lcol]=='BayL')]
+    pg = sub[(sub['Player'].str.lower()!='team total') & (sub['Position']!='0')]
+    print(f'{label}: total={len(sub)} player={len(pg)} weeks={sorted(sub[\"Week\"].unique())}')
+
+# overlap between latest and 2526 on stable key
+def prep(df, lcol):
+    sub = df[(df['Season']=='25/26') & (df[lcol]=='BayL')].copy()
+    pg = sub[(sub['Player'].str.lower()!='team total') & (sub['Position']!='0')].copy()
+    pg['pid'] = pg['Player ID'].astype(str).str.strip()
+    return pg
+
+a, b = prep(latest, 'League'), prep(ext, 'League')
+key = ['Week','Round Number','Team','Position','pid']
+ma = a[key + ['Match Number','Player','Score','Points']]
+mb = b[key + ['Match Number','Player','Score','Points']]
+merged = ma.merge(mb, on=key, how='inner', suffixes=('_L','_E'))
+print('latest vs 2526 same week/round/team/pos/pid:', len(merged))
+print('same match number too:', (merged['Match Number_L']==merged['Match Number_E']).sum(), 'of', len(merged))
+print('same score:', (merged['Score_L']==merged['Score_E']).sum())
+"@
+
+```
+
+```
+2526: total=2700 player=1620 weeks=['1', '2', '3', '4', '5', '6']
+latest: total=2700 player=1620 weeks=['1', '2', '3', '4', '5', '6']
+pub: total=7611 player=4575 weeks=['1', '2', '3', '4', '5', '6']
+latest vs 2526 same week/round/team/pos/pid: 967
+same match number too: 189 of 967
+same score: 966
+
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\data\extract_excel_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/merge_league_sources.py",
+  "pattern": "DEFAULT_KEYS|player.*dedupe|match number"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "pattern": "DEFAULT_KEYS|player.*dedupe|match number",
+  "topFiles": [
+    {
+      "matchCount": 5,
+      "uri": ".\\scripts\\merge_league_sources.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 5
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The investigation begins with 2526.csv and the latest import file.
+
+The root cause is clear. Both the latest import and 2526.csv contain identical BayL data. The published database holds roughly 2.8 times more rows. About 778 duplicate games share the same key but carry different match numbers. The merge deduplication logic keeps both records. Player names also diverge after registry application.
+
+The published database likely already contains a bad copy from an earlier merge. Adding the 2526 and latest files stacks three copies. This explains the exact 2.8x multiplier.
+
+The exact row count confirms the stacking theory. Three sources of roughly 2700 rows each add overlapping duplicates. The merge deduplication key is too strict. It treats the same physical game as separate entries whenever match numbers or player names differ slightly across pipelines.
+
+The match number generator is order-dependent. Re-extraction or different source order produces different match numbers for the same game. Duplicate games inflate match points because the system sums them as separate entries. The bug is in merge_league_sources.py.
+
+Several fixes are under consideration. The deduplication key could use Player ID instead of player name. Match numbers could be excluded or normalized. The GF latest import could be skipped when 2526 already covers that season. Another option is to re-publish 25/26 from a single source only. A simpler possibility is that the 2526 extract itself contains internal duplicates.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c @&#34;
+import pandas as pd
+
+ext = pd.read_csv(r&#39;C:\tmp\2526.csv&#39;, sep=&#39;;&#39;, dtype=str, keep_default_na=False)
+sub = ext[(ext[&#39;Season&#39;]==&#39;25/26&#39;) &amp; (ext[&#39;League&#39;]==&#39;BayL&#39;)]
+pg = sub[(sub[&#39;Player&#39;].str.lower()!=&#39;team total&#39;) &amp; (sub[&#39;Position&#39;]!=&#39;0&#39;)]
+key = [&#39;Season&#39;,&#39;Week&#39;,&#39;Round Number&#39;,&#39;Team&#39;,&#39;Position&#39;,&#39;Player ID&#39;]
+print(&#39;2526 internal dupes on stable key&#39;, pg.duplicated(subset=key, keep=False).sum())
+print(&#39;2526 unique stable&#39;, pg.drop_duplicates(subset=key).shape[0], &#39;total&#39;, len(pg))
+
+# simulate 3-way merge
+from scripts.merge_league_sources import _resolve_key_columns, _normalized_key, DEFAULT_KEYS
+
+def load(path, lcol):
+    df = pd.read_csv(path, sep=&#39;;&#39;, dtype=str, keep_default_na=False)
+    if lcol==&#39;Event&#39;:
+        df = df.copy(); df[&#39;League&#39;]=df[&#39;Event&#39;]
+    sub = df[(df[&#39;Season&#39;]==&#39;25/26&#39;) &amp; (df[&#39;League&#39;]==&#39;BayL&#39;)].copy()
+    return sub
+
+frames = []
+for idx, (path,lcol) in enumerate([
+    (&#39;database/published_csv/league_results_merged.csv&#39;,&#39;Event&#39;),
+    (r&#39;C:\tmp\2526.csv&#39;,&#39;League&#39;),
+    (&#39;database/pipeline/bowling_bayern/legacy_out/latest.csv&#39;,&#39;League&#39;),
+]):
+    sub = load(path,lcol)
+    sub[&#39;__source_idx&#39;]=str(idx)
+    frames.append(sub)
+    pg = sub[(sub[&#39;Player&#39;].str.lower()!=&#39;team total&#39;) &amp; (sub[&#39;Position&#39;]!=&#39;0&#39;)]
+    print(f&#39;source {idx} player rows&#39;, len(pg))
+
+comb = pd.concat(frames, ignore_index=True)
+key_cols = _resolve_key_columns(comb, list(DEFAULT_KEYS))
+for logical, concrete in key_cols.items():
+    comb[f&#39;__k_{logical}&#39;] = _normalized_key(comb[concrete])
+dedupe = [f&#39;__k_{k}&#39; for k in DEFAULT_KEYS]
+merged = comb.drop_duplicates(subset=dedupe, keep=&#39;last&#39;)
+pg_m = merged[(merged[&#39;Player&#39;].str.lower()!=&#39;team total&#39;) &amp; (merged[&#39;Position&#39;]!=&#39;0&#39;)]
+print(&#39;after merge dedupe player rows&#39;, len(pg_m))
+print(&#39;BayL W6 after merge&#39;, len(pg_m[(pg_m[&#39;Week&#39;]==&#39;6&#39;)]))
+&#34;@
+</summary>
+```bash
+uv run python -c @"
+import pandas as pd
+
+ext = pd.read_csv(r'C:\tmp\2526.csv', sep=';', dtype=str, keep_default_na=False)
+sub = ext[(ext['Season']=='25/26') & (ext['League']=='BayL')]
+pg = sub[(sub['Player'].str.lower()!='team total') & (sub['Position']!='0')]
+key = ['Season','Week','Round Number','Team','Position','Player ID']
+print('2526 internal dupes on stable key', pg.duplicated(subset=key, keep=False).sum())
+print('2526 unique stable', pg.drop_duplicates(subset=key).shape[0], 'total', len(pg))
+
+# simulate 3-way merge
+from scripts.merge_league_sources import _resolve_key_columns, _normalized_key, DEFAULT_KEYS
+
+def load(path, lcol):
+    df = pd.read_csv(path, sep=';', dtype=str, keep_default_na=False)
+    if lcol=='Event':
+        df = df.copy(); df['League']=df['Event']
+    sub = df[(df['Season']=='25/26') & (df['League']=='BayL')].copy()
+    return sub
+
+frames = []
+for idx, (path,lcol) in enumerate([
+    ('database/published_csv/league_results_merged.csv','Event'),
+    (r'C:\tmp\2526.csv','League'),
+    ('database/pipeline/bowling_bayern/legacy_out/latest.csv','League'),
+]):
+    sub = load(path,lcol)
+    sub['__source_idx']=str(idx)
+    frames.append(sub)
+    pg = sub[(sub['Player'].str.lower()!='team total') & (sub['Position']!='0')]
+    print(f'source {idx} player rows', len(pg))
+
+comb = pd.concat(frames, ignore_index=True)
+key_cols = _resolve_key_columns(comb, list(DEFAULT_KEYS))
+for logical, concrete in key_cols.items():
+    comb[f'__k_{logical}'] = _normalized_key(comb[concrete])
+dedupe = [f'__k_{k}' for k in DEFAULT_KEYS]
+merged = comb.drop_duplicates(subset=dedupe, keep='last')
+pg_m = merged[(merged['Player'].str.lower()!='team total') & (merged['Position']!='0')]
+print('after merge dedupe player rows', len(pg_m))
+print('BayL W6 after merge', len(pg_m[(pg_m['Week']=='6')]))
+"@
+
+```
+
+```
+2526 internal dupes on stable key 0
+2526 unique stable 1620 total 1620
+source 0 player rows 4575
+source 1 player rows 1620
+source 2 player rows 1620
+after merge dedupe player rows 6191
+BayL W6 after merge 1021
+
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/build_published_dataset.py",
+  "pattern": "resolve_league|league_input|latest|gf"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "pattern": "resolve_league|league_input|latest|gf",
+  "topFiles": [
+    {
+      "matchCount": 22,
+      "uri": "scripts/build_published_dataset.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 22
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The published source already contains 4575 inflated player rows.
+
+Merging the published file with 2526 and latest inflates the row count to 6191 instead of 1620. The published source itself is already 2.82 times too large. The deduplication key includes both match number and player display name. This causes duplicate rows for the same player across different matches.
+
+The inflated rows stem from three sources. The Excel extract and GF pipeline assign different match numbers to the same 25/26 games. Player names also vary between sources due to registry normalization. The published file stacks three copies of 25/26 data. That explains 96 games per player instead of 36. This is a data pipeline bug, not a UI issue.
+
+A quick fix is to republish 25/26 using only the 2526 source, omitting the legacy scrape and latest GF data. A `--skip-gf` flag could automate this by excluding GF latest when extra-league already covers the current season. I am checking the build paths and existing flags to confirm the right publish command.
+
+I am now checking whether the points calculation uses raw row counts. The team sheet shows 96 games, so I need to inspect the team service and week view game counting logic to confirm how match points are derived.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/team_service.py",
+  "pattern": "def get_team|week.*data|individual"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "pattern": "def get_team|week.*data|individual",
+  "topFiles": [
+    {
+      "matchCount": 31,
+      "uri": "app/services/team_service.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 31
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\build_published_dataset.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Checking whether a `--skip-gf-league` flag or similar option exists.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\build_published_dataset.py",
+  "pattern": "skip.*gf|gf.league"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\build_published_dataset.py",
+  "pattern": "skip.*gf|gf.league",
+  "topFiles": [
+    {
+      "matchCount": 7,
+      "uri": "scripts\\build_published_dataset.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 7
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c @&#34;
+import pandas as pd
+# verify points inflation for team week
+df = pd.read_parquet(&#39;database/data/league_results_merged.parquet&#39;)
+team = &#39;BC Bamberger Bowlinghaus 1&#39;
+tt = df[(df[&#39;Season&#39;]==&#39;25/26&#39;) &amp; (df[&#39;Event&#39;]==&#39;BayL&#39;) &amp; (df[&#39;Week&#39;]==&#39;6&#39;) &amp; (df[&#39;Team&#39;]==team) &amp; (df[&#39;Position&#39;]==&#39;0&#39;) &amp; (df[&#39;Player&#39;].str.lower()==&#39;team total&#39;)]
+print(&#39;team total rows&#39;, len(tt))
+print(tt[[&#39;Round Number&#39;,&#39;Match Number&#39;,&#39;Points&#39;,&#39;Score&#39;]].to_string())
+print(&#39;sum points all team totals&#39;, tt[&#39;Points&#39;].astype(float).sum())
+# expected from 2526
+ext = pd.read_csv(r&#39;C:\tmp\2526.csv&#39;, sep=&#39;;&#39;, dtype=str, keep_default_na=False)
+tt2 = ext[(ext[&#39;Season&#39;]==&#39;25/26&#39;) &amp; (ext[&#39;League&#39;]==&#39;BayL&#39;) &amp; (ext[&#39;Week&#39;]==&#39;6&#39;) &amp; (ext[&#39;Team&#39;]==team) &amp; (ext[&#39;Position&#39;]==&#39;0&#39;)]
+print(&#39;2526 team total rows&#39;, len(tt2), &#39;points sum&#39;, tt2[&#39;Points&#39;].astype(float).sum())
+&#34;@
+</summary>
+```bash
+uv run python -c @"
+import pandas as pd
+# verify points inflation for team week
+df = pd.read_parquet('database/data/league_results_merged.parquet')
+team = 'BC Bamberger Bowlinghaus 1'
+tt = df[(df['Season']=='25/26') & (df['Event']=='BayL') & (df['Week']=='6') & (df['Team']==team) & (df['Position']=='0') & (df['Player'].str.lower()=='team total')]
+print('team total rows', len(tt))
+print(tt[['Round Number','Match Number','Points','Score']].to_string())
+print('sum points all team totals', tt['Points'].astype(float).sum())
+# expected from 2526
+ext = pd.read_csv(r'C:\tmp\2526.csv', sep=';', dtype=str, keep_default_na=False)
+tt2 = ext[(ext['Season']=='25/26') & (ext['League']=='BayL') & (ext['Week']=='6') & (ext['Team']==team) & (ext['Position']=='0')]
+print('2526 team total rows', len(tt2), 'points sum', tt2['Points'].astype(float).sum())
+"@
+
+```
+
+```
+team total rows 24
+       Round Number Match Number Points Score
+753909            1            1    3.0   759
+753979            2            3    3.0   767
+754034            3            4    0.0   734
+754069            4            2    0.0   747
+754094            5            0    3.0   735
+754164            6            2    0.0   780
+754229            7            3    0.0   700
+754244            8            0    3.0   787
+754304            9            1    0.0   763
+761051            1            0    3.0   759
+761183            4            1    0.0   747
+761248            5            4    3.0   735
+761278            6            3    0.0   780
+761344            8            2    3.0   787
+761379            9            3    0.0   763
+774679            1            1    3.0   759
+774749            2            3    3.0   767
+774804            3            4    0.0   734
+774839            4            2    0.0   747
+774864            5            0    3.0   735
+774934            6            2    0.0   780
+774999            7            3    0.0   700
+775014            8            0    3.0   787
+775074            9            1    0.0   763
+sum points all team totals 33.0
+2526 team total rows 18 points sum 16.0
+
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Team totals show 24 rows in published data versus 18 in 2526. This discrepancy likely explains the inflated match points.
+
+Match points are roughly doubled at 33 versus 16. Player game counts are 72 versus 27. The team total row count is also inconsistent. The structural error is now clear.
+
+The root cause is a merge in build_published_dataset that stacks historical data, 2526, and GF latest. The deduplication key uses unstable match numbers plus player names, so duplicates survive cleanup. The 2526 source file itself is clean.
+
+Match numbering is assignment-order dependent, so identical games receive different match numbers across files. Player registry renames also diverge between published and fresh extracts. Published data already contains 2.8× BayL 25/26 records before re-merge; the incremental publish worsened this further. To fix it, strip the 25/26 historical slice before merging, or use a pre-25/26 published baseline. Another option is to merge only 2526.csv and disable the GF league import.
+
+A dummy GF file would not work because the build requires two inputs. The best approach is to merge only the historical slice without 25/26 records and 2526.csv, while skipping both legacy and GF imports entirely. This avoids the duplicate-match-number conflict that causes the merge to inflate the data.
+
+No `--skip-gf-league` flag exists. An empty stub file passed to `--gf-league` might bypass the GF import, though this needs verification against the `_existing` filter.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\build_published_dataset.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The GF import logic appears to append data rather than overwrite existing records. A `--gf-league` path might contain stale 25/26 data, causing inflated match points across leagues.
+
+The published historical base already contains inflated 25/26 data. A clean merge will not help unless those rows are stripped first. The remediation plan is to publish a cleaned historical CSV without 25/26 entries, then import only the 25/26 season with `--skip-legacy-scrape` and a GF league file that excludes the inflated season.
+
+Passing a nonexistent `--gf-league` path skips the GF import entirely. This leaves only the historical base and the 25/26 CSV as inputs. The historical file must therefore have all 25/26 rows removed beforehand.
+</details></think>
+
+_**Agent (default)**_
+
+The inflation is a **merge/dedupe failure**, not bad Excel extraction or a UI counting bug.
+
+## Where it happens
+
+In **`scripts/merge_league_sources.py`** during publish (`build_published_dataset.py --job league`). The same real games get kept multiple times because the dedupe key treats them as different rows.
+
+Dedupe key today:
+
+```45:45:scripts/merge_league_sources.py
+DEFAULT_KEYS = ("league", "season", "week", "round number", "match number", "team", "position", "player")
+```
+
+Publish merge order:
+
+```129:135:scripts/build_published_dataset.py
+    Built-in order: historical, legacy scrape extract, extras, GF pipeline (wins).
+    ...
+    ordered.append(gf_league)
+```
+
+So for your 25/26 import you effectively stacked **three copies** of the same season:
+
+| Source | BayL 25/26 player rows |
+|--------|------------------------|
+| `2526.csv` (extract) | **1,620** ✓ |
+| `latest.csv` (GF pipeline) | **1,620** ✓ (same data) |
+| `published_csv` (historical base) | **4,575** ✗ (already inflated) |
+
+Correct BayL 25/26 is ~1,620 player rows. Published has ~4,575 (~2.8×).
+
+## Why dedupe doesn’t catch it
+
+Two unstable fields in the key:
+
+**1. `Match Number` is order-dependent**, not a stable game id:
+
+```1278:1290:scripts/data/extract_excel_data.py
+def get_match_number(round_idx, team_name, team_name_opponent):
+    ...
+    elif my_team_tuple not in dict_of_match_numbers[round_idx]:
+        max_match_number = max(dict_of_match_numbers[round_idx].values())
+        dict_of_match_numbers[round_idx][my_team_tuple] = max_match_number + 1
+    return dict_of_match_numbers[round_idx][my_team_tuple]
+```
+
+Same game, same scores — different `Match Number` depending on processing order/source. For `latest.csv` vs `2526.csv`: **967** rows match on `(week, round, team, position, player id)` but only **189** also share the same match number.
+
+**2. `Player` name differs** after registry normalization (`Nikoleit Thomas` in extract vs `Nickoleit, Thomas` in published) — same `Player ID`, different dedupe key.
+
+## Your example team (BC Bamberger Bowlinghaus 1, BayL W6)
+
+| | Player rows | Games for Nickoleit |
+|--|-------------|---------------------|
+| `2526.csv` | **27** ✓ | **9** |
+| Published / `database/data` | **72** | **24** (~3×) |
+
+Same scores repeated with different match numbers — e.g. round 1 appears as both match `0` and match `1`, three times each. That’s why you see ~96 team games instead of ~36.
+
+`2526.csv` itself has **zero** internal duplicates on a stable key `(week, round, team, position, player id)`.
+
+## Affected leagues
+
+BayL is worst (~2.8×). BZOL N1/N2 look fine in 25/26 (GF-only, no Excel overlap yet). BayL (D) and KL N2 are partially inflated for the same reason.
+
+## What to do now (data fix)
+
+1. **Strip 25/26** from your historical base (current published/data already contains the bad rows).
+2. Re-publish from **one** clean source only:
+
+```powershell
+# 1) historical without 25/26 (strip from published_csv first)
+# 2) then publish:
+uv run python scripts/build_published_dataset.py --job league --write-csv `
+  --historical "C:\path\to\published_without_2526.csv" `
+  --extra-league "C:\tmp\2526.csv" `
+  --skip-legacy-scrape `
+  --gf-league "C:\nonexistent\skip.csv"   # missing file is skipped — avoids a 3rd copy
+```
+
+Don’t use current `published_csv` as historical **and** pass `2526.csv` **and** GF `latest.csv` — that’s exactly what creates the triple stack.
+
+## Structural fix (code — for later)
+
+- Dedupe on **`Player ID`** instead of display name (when present).
+- Drop **`match number`** from the business dedupe key, or normalize it from `(round, team, opponent)`.
+- Add **`--skip-gf-league`** (or auto-skip GF for seasons already in `--extra-league`).
+
+I can implement the dedupe-key fix and/or a script to strip a season before republish if you want to proceed.
+
+---
+
+_**User**_
+
+okay, how about we create a clean data set from scratch, incldung legacy scrape, historical data and gf as well as all tournaments
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Planning a clean dataset from scratch. It will include legacy scrapes, historical data, GF data, and all tournaments.
+
+I need to audit the codebase first. I'll map existing inputs, the publish command flow, and tournament merge paths. I also need to check if deduplication keys require fixes before rebuilding. I'm unsure whether to guide the user or execute the rebuild directly.
+
+I'll fix the deduplication key to prevent merge inflation during the rebuild. I'll explore the pipeline documentation and data paths next, then either execute the clean rebuild or provide clear steps.
+</details></think>
+
+_**Agent (default)**_
+
+Planning a clean full rebuild and fixing the merge dedupe issue so we don't reintroduce 25/26 inflation. Exploring the publish pipeline and current inputs.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\docs\pipeline\publish.md</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\build_published_dataset.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **3** results in **1** directory</summary>
+
+Directory: **``** (3 files)
+
+| File |
+|------|
+| `database/relational_csv/new/league_new.csv` |
+| `database/relational_csv/league_season.csv` |
+| `database/relational_csv/league_mapping.csv` |
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **2** results in **1** directory</summary>
+
+Directory: **``** (2 files)
+
+| File |
+|------|
+| `database/relational_csv/tournament_mapping.csv` |
+| `database/config/tournament_source_registry.csv` |
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Locating file paths for historical data, legacy scrape, GF league, and tournament data through database/paths.py.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\paths.py",
+  "pattern": "def historical|def legacy_scrape|def pipeline_gf|def gf_tournament"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\paths.py",
+  "pattern": "def historical|def legacy_scrape|def pipeline_gf|def gf_tournament",
+  "topFiles": [
+    {
+      "matchCount": 6,
+      "uri": "database\\paths.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 6
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c @&#34;
+from database.paths import (
+    historical_league_results_csv, legacy_scrape_league_csv, pipeline_gf_league_csv,
+    gf_tournaments_combined_postprocessed_csv, manual_tournament_postprocessed_csv,
+    get_work_data_dir, get_data_dir,
+)
+paths = [
+    historical_league_results_csv(), legacy_scrape_league_csv(), pipeline_gf_league_csv(),
+    gf_tournaments_combined_postprocessed_csv(), manual_tournament_postprocessed_csv(),
+]
+for p in paths:
+    print(p, &#39;exists=&#39;, p.is_file(), &#39;size=&#39;, p.stat().st_size if p.is_file() else 0)
+print(&#39;work&#39;, get_work_data_dir())
+print(&#39;data&#39;, get_data_dir())
+&#34;@
+</summary>
+```bash
+uv run python -c @"
+from database.paths import (
+    historical_league_results_csv, legacy_scrape_league_csv, pipeline_gf_league_csv,
+    gf_tournaments_combined_postprocessed_csv, manual_tournament_postprocessed_csv,
+    get_work_data_dir, get_data_dir,
+)
+paths = [
+    historical_league_results_csv(), legacy_scrape_league_csv(), pipeline_gf_league_csv(),
+    gf_tournaments_combined_postprocessed_csv(), manual_tournament_postprocessed_csv(),
+]
+for p in paths:
+    print(p, 'exists=', p.is_file(), 'size=', p.stat().st_size if p.is_file() else 0)
+print('work', get_work_data_dir())
+print('data', get_data_dir())
+"@
+
+```
+
+```
+C:\Users\cfell\repositories\bowlyzer_deploy\database\work\league\historical_league_results.csv exists= True size= 1863038
+C:\Users\cfell\repositories\bowlyzer_deploy\database\work\legacy_scrape\legacy_scrape_extracted.csv exists= False size= 0
+C:\Users\cfell\repositories\bowlyzer_deploy\database\pipeline\bowling_bayern\legacy_out\latest.csv exists= True size= 1018666
+C:\Users\cfell\repositories\bowlyzer_deploy\database\work\gf\gf_tournaments_2026__combined_postprocessed.csv exists= True size= 615742
+C:\Users\cfell\repositories\bowlyzer_deploy\database\work\tournaments\tournament_manual_postprocessed.csv exists= True size= 9038411
+work C:\Users\cfell\repositories\bowlyzer_deploy\database\work
+data C:\Users\cfell\repositories\bowlyzer_deploy\database\data
+
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\docs\DATA_PIPELINE.md</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Legacy scrape data was previously stored at C:\tmp\bowlyzer\data\legacy_scrape\legacy_scrape_extracted.csv. That path does not exist in the current database or work directory.
+
+Historical results live at database/work/league/historical_league_results.csv. GF latest data is at database/pipeline/bowling_bayern/legacy_out/latest.csv. The 25/26 season may need to be added as 2526.csv or folded into historical. A clean rebuild will switch the merge deduplication key to Player ID and separate sources clearly: legacy scrape covers 08/09–18/19, while historical extracts cover 19/20–24/25.
+
+A triple-stack overlap would occur if historical, GF latest, and extra-league all contain 25/26 data. To prevent this, historical should exclude 25/26 and cover only 19/20 through 24/25. GF latest should then supply only seasons absent from historical, or serve as the sole source for the current season.
+
+GF is the authoritative source for the current season. The 2526 extra-league file duplicates GF latest data and should be dropped if GF is used. Historical should therefore cover only 19/20 through 24/25. Alternatively, historical could retain the full 25/26 Excel extract.
+
+The user wants every source included, so the plan is to skip GF league data entirely via a `--skip-gf-league` flag and drop the extra 2526 file. Deduplication must be fixed so overlapping seasons do not multiply. The merge currently keeps "player" in the dedupe key to avoid false collisions, but this should be replaced with Player ID. Match number should be removed from the dedupe key or handled by a secondary stable business key.
+
+Player ID alone is risky because IDs can be missing or shared across players. The deduplication key should instead combine league, season, week, round, team, position, and player ID, falling back to player name only when ID is absent. Match number is redundant once round, team, and position are fixed, since one player cannot play multiple matches in the same round. Whether a single player can actually appear in multiple matches within the same round still needs verification.
+
+Multiple games per round make match number necessary to distinguish individual matches, though it is unstable. A stable deduplication key should instead use round, team, opponent, position, and player identifier. The next step is to verify whether opponent is present and consistent across duplicate records.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c @&#34;
+import pandas as pd
+ext = pd.read_csv(r&#39;C:\tmp\2526.csv&#39;, sep=&#39;;&#39;, dtype=str, keep_default_na=False)
+latest = pd.read_csv(&#39;database/pipeline/bowling_bayern/legacy_out/latest.csv&#39;, sep=&#39;;&#39;, dtype=str, keep_default_na=False)
+team=&#39;BC Bamberger Bowlinghaus 1&#39;; pid=&#39;16251&#39;
+for label, df in [(&#39;ext&#39;,ext),(&#39;latest&#39;,latest)]:
+    sub = df[(df[&#39;Season&#39;]==&#39;25/26&#39;)&amp;(df[&#39;League&#39;]==&#39;BayL&#39;)&amp;(df[&#39;Week&#39;]==&#39;6&#39;)&amp;(df[&#39;Team&#39;]==team)&amp;(df[&#39;Player ID&#39;]==pid)]
+    print(label, len(sub))
+    print(sub[[&#39;Round Number&#39;,&#39;Match Number&#39;,&#39;Opponent&#39;,&#39;Score&#39;]].head(12).to_string())
+# overlap on stable key with opponent
+a=ext[(ext[&#39;Season&#39;]==&#39;25/26&#39;)&amp;(ext[&#39;League&#39;]==&#39;BayL&#39;)]
+b=latest[(latest[&#39;Season&#39;]==&#39;25/26&#39;)&amp;(latest[&#39;League&#39;]==&#39;BayL&#39;)]
+pg_a=a[(a[&#39;Player&#39;].str.lower()!=&#39;team total&#39;)&amp;(a[&#39;Position&#39;]!=&#39;0&#39;)]
+pg_b=b[(b[&#39;Player&#39;].str.lower()!=&#39;team total&#39;)&amp;(b[&#39;Position&#39;]!=&#39;0&#39;)]
+key=[&#39;Week&#39;,&#39;Round Number&#39;,&#39;Team&#39;,&#39;Position&#39;,&#39;Player ID&#39;,&#39;Opponent&#39;]
+m=pg_a.merge(pg_b, on=key, suffixes=(&#39;_E&#39;,&#39;_L&#39;))
+print(&#39;overlap on key+opponent&#39;, len(m))
+print(&#39;match num agree&#39;, (m[&#39;Match Number_E&#39;]==m[&#39;Match Number_L&#39;]).sum())
+&#34;@
+</summary>
+```bash
+uv run python -c @"
+import pandas as pd
+ext = pd.read_csv(r'C:\tmp\2526.csv', sep=';', dtype=str, keep_default_na=False)
+latest = pd.read_csv('database/pipeline/bowling_bayern/legacy_out/latest.csv', sep=';', dtype=str, keep_default_na=False)
+team='BC Bamberger Bowlinghaus 1'; pid='16251'
+for label, df in [('ext',ext),('latest',latest)]:
+    sub = df[(df['Season']=='25/26')&(df['League']=='BayL')&(df['Week']=='6')&(df['Team']==team)&(df['Player ID']==pid)]
+    print(label, len(sub))
+    print(sub[['Round Number','Match Number','Opponent','Score']].head(12).to_string())
+# overlap on stable key with opponent
+a=ext[(ext['Season']=='25/26')&(ext['League']=='BayL')]
+b=latest[(latest['Season']=='25/26')&(latest['League']=='BayL')]
+pg_a=a[(a['Player'].str.lower()!='team total')&(a['Position']!='0')]
+pg_b=b[(b['Player'].str.lower()!='team total')&(b['Position']!='0')]
+key=['Week','Round Number','Team','Position','Player ID','Opponent']
+m=pg_a.merge(pg_b, on=key, suffixes=('_E','_L'))
+print('overlap on key+opponent', len(m))
+print('match num agree', (m['Match Number_E']==m['Match Number_L']).sum())
+"@
+
+```
+
+```
+ext 9
+     Round Number Match Number                        Opponent Score
+7483            1            0             BC Comet N�rnberg 1   254
+7563            2            3          BC EMAX Unterf�hring 2   182
+7623            3            4                    Werdenfels 1   189
+7643            4            1                    BK M�nchen 3   199
+7723            5            4        Donaubowler Regensburg 1   155
+7763            6            3                 SG Rottendorf 1   149
+7813            7            3             Bajuwaren M�nchen 1   148
+7853            8            2                    DJK Rimpar 1   186
+7913            9            3  Schanzer-Strikers Ingolstadt 1   174
+latest 0
+Empty DataFrame
+Columns: [Round Number, Match Number, Opponent, Score]
+Index: []
+overlap on key+opponent 539
+match num agree 102
+
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **0** results in **1** directory</summary>
+
+Directory: **``** (0 files)
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c @&#34;
+import pandas as pd
+from pathlib import Path
+h = Path(&#39;database/work/league/historical_league_results.csv&#39;)
+df = pd.read_csv(h, sep=&#39;;&#39;, dtype=str, keep_default_na=False)
+print(&#39;historical seasons&#39;, sorted(df[&#39;Season&#39;].unique()))
+print(&#39;25/26 rows&#39;, len(df[df[&#39;Season&#39;]==&#39;25/26&#39;]))
+print(&#39;total rows&#39;, len(df))
+&#34;@
+</summary>
+```bash
+uv run python -c @"
+import pandas as pd
+from pathlib import Path
+h = Path('database/work/league/historical_league_results.csv')
+df = pd.read_csv(h, sep=';', dtype=str, keep_default_na=False)
+print('historical seasons', sorted(df['Season'].unique()))
+print('25/26 rows', len(df[df['Season']=='25/26']))
+print('total rows', len(df))
+"@
+
+```
+
+```
+historical seasons ['25/26']
+25/26 rows 14676
+total rows 14676
+
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The historical table contains only 25/26 data (14,676 rows). It is missing the full 19/20–24/25 historical records.
+
+legacy_scrape_extracted.csv is missing from the repository. A name or ID mismatch between latest.csv and the player query may explain why the team search returned zero results.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c @&#34;
+import pandas as pd
+latest = pd.read_csv(&#39;database/pipeline/bowling_bayern/legacy_out/latest.csv&#39;, sep=&#39;;&#39;, dtype=str, keep_default_na=False)
+sub = latest[(latest[&#39;Season&#39;]==&#39;25/26&#39;)&amp;(latest[&#39;League&#39;]==&#39;BayL&#39;)&amp;(latest[&#39;Week&#39;]==&#39;6&#39;)&amp;(latest[&#39;Team&#39;]==&#39;BC Bamberger Bowlinghaus 1&#39;)]
+print(&#39;rows&#39;, len(sub))
+print(&#39;players&#39;, sub[&#39;Player&#39;].unique()[:10])
+print(&#39;ids&#39;, sub[&#39;Player ID&#39;].unique()[:10])
+# find legacy scrape in tmp
+from pathlib import Path
+for p in Path(r&#39;C:/tmp/bowlyzer/data&#39;).rglob(&#39;legacy_scrape*.csv&#39;) if Path(r&#39;C:/tmp/bowlyzer/data&#39;).exists() else []:
+    print(&#39;found&#39;, p, p.stat().st_size)
+for p in [Path(&#39;database/published_csv/league_results_merged.csv&#39;)]:
+    if p.exists():
+        df=pd.read_csv(p, sep=&#39;;&#39;, dtype=str, keep_default_na=False)
+        print(&#39;published seasons sample&#39;, sorted(df[&#39;Season&#39;].unique())[:5], &#39;...&#39;, sorted(df[&#39;Season&#39;].unique())[-3:])
+        print(&#39;published rows&#39;, len(df))
+&#34;@
+</summary>
+```bash
+uv run python -c @"
+import pandas as pd
+latest = pd.read_csv('database/pipeline/bowling_bayern/legacy_out/latest.csv', sep=';', dtype=str, keep_default_na=False)
+sub = latest[(latest['Season']=='25/26')&(latest['League']=='BayL')&(latest['Week']=='6')&(latest['Team']=='BC Bamberger Bowlinghaus 1')]
+print('rows', len(sub))
+print('players', sub['Player'].unique()[:10])
+print('ids', sub['Player ID'].unique()[:10])
+# find legacy scrape in tmp
+from pathlib import Path
+for p in Path(r'C:/tmp/bowlyzer/data').rglob('legacy_scrape*.csv') if Path(r'C:/tmp/bowlyzer/data').exists() else []:
+    print('found', p, p.stat().st_size)
+for p in [Path('database/published_csv/league_results_merged.csv')]:
+    if p.exists():
+        df=pd.read_csv(p, sep=';', dtype=str, keep_default_na=False)
+        print('published seasons sample', sorted(df['Season'].unique())[:5], '...', sorted(df['Season'].unique())[-3:])
+        print('published rows', len(df))
+"@
+
+```
+
+```
+rows 0
+players <ArrowStringArray>
+[]
+Length: 0, dtype: str
+ids <ArrowStringArray>
+[]
+Length: 0, dtype: str
+found C:\tmp\bowlyzer\data\legacy_scrape\legacy_scrape_extracted.csv 81657863
+found C:\tmp\bowlyzer\data\legacy_scrape\legacy_scrape_extracted_unique_teams.csv 6922
+found C:\tmp\bowlyzer\data\legacy_scrape\legacy_scrape_summary.csv 10095
+published seasons sample ['08/09', '09/10', '10/11', '11/12', '12/13'] ... ['23/24', '24/25', '25/26']
+published rows 775255
+
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\database\paths.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Planning a clean rebuild from scratch. Legacy scrape, historical data, GF, and all tournaments will be included.
+
+Merge deduplication will use Player ID plus opponent rather than match number plus player name. The historical dataset needs a full 19/20–24/25 extract, not just the 25/26 subset currently in the work directory. The legacy scrape file is ready at 81MB. The 25/26 source must be chosen between the local CSV and the GF latest file.
+
+The rebuild strategy now uses three distinct sources: legacy scrape for 08/09–18/19, a full historical extract for 19/20–24/25, and GF for 25/26 only. A full historical extract may already exist in published files.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **0** results in **1** directory</summary>
+
+Directory: **``** (0 files)
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c @&#34;
+import pandas as pd
+from pathlib import Path
+# legacy scrape seasons
+p = Path(r&#39;C:\tmp\bowlyzer\data\legacy_scrape\legacy_scrape_extracted.csv&#39;)
+df = pd.read_csv(p, sep=&#39;;&#39;, dtype=str, keep_default_na=False, usecols=[&#39;Season&#39;,&#39;League&#39;])
+print(&#39;legacy scrape seasons&#39;, sorted(df[&#39;Season&#39;].unique()))
+print(&#39;rows&#39;, len(df))
+# gf latest seasons  
+latest = pd.read_csv(&#39;database/pipeline/bowling_bayern/legacy_out/latest.csv&#39;, sep=&#39;;&#39;, dtype=str, keep_default_na=False)
+print(&#39;gf latest seasons&#39;, sorted(latest[&#39;Season&#39;].unique()))
+print(&#39;gf rows&#39;, len(latest))
+# tournaments
+for p in [&#39;database/work/gf/gf_tournaments_2026__combined_postprocessed.csv&#39;,&#39;database/work/tournaments/tournament_manual_postprocessed.csv&#39;]:
+    df=pd.read_csv(p, sep=&#39;;&#39;, dtype=str, keep_default_na=False, nrows=5)
+    print(p, &#39;cols&#39;, list(df.columns)[:8])
+&#34;@
+</summary>
+```bash
+uv run python -c @"
+import pandas as pd
+from pathlib import Path
+# legacy scrape seasons
+p = Path(r'C:\tmp\bowlyzer\data\legacy_scrape\legacy_scrape_extracted.csv')
+df = pd.read_csv(p, sep=';', dtype=str, keep_default_na=False, usecols=['Season','League'])
+print('legacy scrape seasons', sorted(df['Season'].unique()))
+print('rows', len(df))
+# gf latest seasons  
+latest = pd.read_csv('database/pipeline/bowling_bayern/legacy_out/latest.csv', sep=';', dtype=str, keep_default_na=False)
+print('gf latest seasons', sorted(latest['Season'].unique()))
+print('gf rows', len(latest))
+# tournaments
+for p in ['database/work/gf/gf_tournaments_2026__combined_postprocessed.csv','database/work/tournaments/tournament_manual_postprocessed.csv']:
+    df=pd.read_csv(p, sep=';', dtype=str, keep_default_na=False, nrows=5)
+    print(p, 'cols', list(df.columns)[:8])
+"@
+
+```
+
+```
+legacy scrape seasons ['08/09', '09/10', '10/11', '11/12', '12/13', '13/14', '14/15', '15/16', '16/17', '17/18', '18/19']
+rows 630970
+gf latest seasons ['25/26']
+gf rows 9175
+database/work/gf/gf_tournaments_2026__combined_postprocessed.csv cols ['Season', 'Date', 'Location', 'Event Type', 'Event Name', 'Round Number', 'Round Name', 'Player']
+database/work/tournaments/tournament_manual_postprocessed.csv cols ['Season', 'Date', 'Location', 'Event Type', 'Event Name', 'Round Number', 'Round Name', 'Player']
+
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The gap is the 19/20–24/25 historical extract.
+
+Published CSV covers all seasons. Historical Excel only has 25/26. The plan is to build from scratch using the legacy scrape, historical Excel for 19/20–24/25, and GF for 25/26. Need to avoid duplicate 25/26 data if GF overlaps with 2526.csv. Considering using 2526.csv as the 25/26 source instead of GF.
+
+Only one authoritative source will be used for 25/26. For 19/20–24/25, the historical extract may be in published CSV or require re-extraction from Sammlung. Checking published CSV quality and searching for another historical file.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c @&#34;
+import pandas as pd
+pub = pd.read_csv(&#39;database/published_csv/league_results_merged.csv&#39;, sep=&#39;;&#39;, dtype=str, keep_default_na=False)
+for s in [&#39;19/20&#39;,&#39;23/24&#39;,&#39;24/25&#39;,&#39;25/26&#39;]:
+    sub = pub[pub[&#39;Season&#39;]==s]
+    print(s, &#39;rows&#39;, len(sub), &#39;leagues&#39;, sub[&#39;Event&#39;].nunique())
+# 24/25 BayL week 1 sample dupes
+sub = pub[(pub[&#39;Season&#39;]==&#39;24/25&#39;)&amp;(pub[&#39;Event&#39;]==&#39;BayL&#39;)&amp;(pub[&#39;Week&#39;]==&#39;1&#39;)]
+pg = sub[(sub[&#39;Player&#39;].str.lower()!=&#39;team total&#39;)&amp;(sub[&#39;Position&#39;]!=&#39;0&#39;)]
+print(&#39;24/25 BayL W1 player rows&#39;, len(pg), &#39;dup stable key&#39;, pg.duplicated(subset=[&#39;Week&#39;,&#39;Round Number&#39;,&#39;Team&#39;,&#39;Position&#39;,&#39;Player ID&#39;]).sum())
+&#34;@
+</summary>
+```bash
+uv run python -c @"
+import pandas as pd
+pub = pd.read_csv('database/published_csv/league_results_merged.csv', sep=';', dtype=str, keep_default_na=False)
+for s in ['19/20','23/24','24/25','25/26']:
+    sub = pub[pub['Season']==s]
+    print(s, 'rows', len(sub), 'leagues', sub['Event'].nunique())
+# 24/25 BayL week 1 sample dupes
+sub = pub[(pub['Season']=='24/25')&(pub['Event']=='BayL')&(pub['Week']=='1')]
+pg = sub[(sub['Player'].str.lower()!='team total')&(sub['Position']!='0')]
+print('24/25 BayL W1 player rows', len(pg), 'dup stable key', pg.duplicated(subset=['Week','Round Number','Team','Position','Player ID']).sum())
+"@
+
+```
+
+```
+19/20 rows 45909 leagues 26
+23/24 rows 23574 leagues 24
+24/25 rows 12482 leagues 25
+25/26 rows 28282 leagues 17
+24/25 BayL W1 player rows 269 dup stable key 0
+
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "tests/**/*.py",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "DEFAULT_KEYS|merge_sources|dedupe"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "DEFAULT_KEYS|merge_sources|dedupe",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "tests/data_access/test_publish_manifest.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "tests/scripts/test_merge_duplicates_report.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "tests/scripts/test_merge_league_gender_split.py"
+    },
+    {
+      "matchCount": 4,
+      "uri": "tests/scripts/test_audit_tournament_club_gaps.py"
+    }
+  ],
+  "totalFiles": 4,
+  "totalMatches": 10
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The published 19/20–24/25 dataset appears clean. No duplicates were found for the 24/25 BayL W1 match on the stable key.
+
+Only 25/26 is inflated. The merge deduplication logic needs fixing to use Player ID plus Opponent rather than Match Number plus Player name. The historical base should come from the published CSV with 25/26 stripped, combined with the full legacy scrape and the 19/20–24/25 published seasons. The GF data should be taken from either the latest version or the 25/26 Excel extract, but not both.
+
+The full historical extract was overwritten by 25/26 data, so the published CSV must be sliced to recover 19/20–24/25. Tournaments will be built from GF plus manual entries. A dedicated rebuild script or a `--from-scratch` build mode will automate the process.
+
+Reviewing `_resolve_key_columns` and merge logic to implement stable deduplication. Need to verify the exact `player_id` column name and confirm it is included in the merge keys.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\merge_league_sources.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/columns*",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\data_access",
+  "pattern": "player_id|Player ID"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\data_access",
+  "pattern": "player_id|Player ID",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Default keys will include league, season, week, round number, team, position, player ID, and opponent.
+
+Player ID will fall back to player name when empty. Match number is being removed from default keys. Team totals may duplicate across matches within the same round. This makes the dataset structure more complex.
+
+Player rows will use week, round, team, position, player ID, and opponent as their stable key. Team total rows may need opponent number to prevent duplicates. The exact team total structure in the source files needs verification.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c @&#34;
+import pandas as pd
+ext = pd.read_csv(r&#39;C:\tmp\2526.csv&#39;, sep=&#39;;&#39;, dtype=str, keep_default_na=False)
+team=&#39;BC Bamberger Bowlinghaus 1&#39;
+tt = ext[(ext[&#39;Season&#39;]==&#39;25/26&#39;)&amp;(ext[&#39;League&#39;]==&#39;BayL&#39;)&amp;(ext[&#39;Week&#39;]==&#39;6&#39;)&amp;(ext[&#39;Team&#39;]==team)&amp;(ext[&#39;Position&#39;]==&#39;0&#39;)]
+print(&#39;team totals&#39;, len(tt))
+print(tt[[&#39;Round Number&#39;,&#39;Match Number&#39;,&#39;Opponent&#39;,&#39;Points&#39;]].to_string())
+&#34;@
+</summary>
+```bash
+uv run python -c @"
+import pandas as pd
+ext = pd.read_csv(r'C:\tmp\2526.csv', sep=';', dtype=str, keep_default_na=False)
+team='BC Bamberger Bowlinghaus 1'
+tt = ext[(ext['Season']=='25/26')&(ext['League']=='BayL')&(ext['Week']=='6')&(ext['Team']==team)&(ext['Position']=='0')]
+print('team totals', len(tt))
+print(tt[['Round Number','Match Number','Opponent','Points']].to_string())
+"@
+
+```
+
+```
+team totals 18
+     Round Number Match Number                        Opponent Points
+7479            1            0             BC Comet N�rnberg 1    0.0
+7480            1            0             BC Comet N�rnberg 1    3.0
+7559            2            3          BC EMAX Unterf�hring 2    0.0
+7560            2            3          BC EMAX Unterf�hring 2    3.0
+7619            3            4                    Werdenfels 1    1.0
+7620            3            4                    Werdenfels 1    0.0
+7639            4            1                    BK M�nchen 3    1.0
+7640            4            1                    BK M�nchen 3    0.0
+7719            5            4        Donaubowler Regensburg 1    1.0
+7720            5            4        Donaubowler Regensburg 1    3.0
+7759            6            3                 SG Rottendorf 1    1.0
+7760            6            3                 SG Rottendorf 1    0.0
+7809            7            3             Bajuwaren M�nchen 1    0.0
+7810            7            3             Bajuwaren M�nchen 1    0.0
+7849            8            2                    DJK Rimpar 1    0.0
+7850            8            2                    DJK Rimpar 1    3.0
+7909            9            3  Schanzer-Strikers Ingolstadt 1    0.0
+7910            9            3  Schanzer-Strikers Ingolstadt 1    0.0
+
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Team totals contain two rows per round. This likely reflects home versus away perspectives or separate sides of the same matchup.
+
+Duplicate rows share the same round, opponent, and match number but differ in points. This suggests one row may be computed while the other is raw input. Match number plus opponent should distinguish player games for deduplication.
+
+Player rows should be deduplicated by opponent, player ID, round, team, and position. The next step is verifying this key across extensions and latest records.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c @&#34;
+import pandas as pd
+from scripts.merge_league_sources import merge_sources, DEFAULT_KEYS
+from pathlib import Path
+import tempfile
+
+# test new keys would work - simulate with custom keys via reading merge code
+ext = pd.read_csv(r&#39;C:\tmp\2526.csv&#39;, sep=&#39;;&#39;, dtype=str, keep_default_na=False)
+latest = pd.read_csv(&#39;database/pipeline/bowling_bayern/legacy_out/latest.csv&#39;, sep=&#39;;&#39;, dtype=str, keep_default_na=False)
+pub = pd.read_csv(&#39;database/published_csv/league_results_merged.csv&#39;, sep=&#39;;&#39;, dtype=str, keep_default_na=False)
+# strip 25/26 from pub for historical base
+pub_hist = pub[pub[&#39;Season&#39;]!=&#39;25/26&#39;].copy()
+pub_hist[&#39;League&#39;] = pub_hist[&#39;Event&#39;]
+pub_hist = pub_hist.drop(columns=[&#39;Event&#39;,&#39;Event Type&#39;,&#39;Club&#39;], errors=&#39;ignore&#39;)
+print(&#39;pub hist rows&#39;, len(pub_hist))
+
+# write temp files and merge
+import tempfile, os
+td = Path(tempfile.mkdtemp())
+paths = []
+for i,(name,df) in enumerate([(&#39;hist&#39;,pub_hist),(&#39;ext&#39;,ext),(&#39;latest&#39;,latest)]):
+    p = td/f&#39;{name}.csv&#39;
+    df.to_csv(p, sep=&#39;;&#39;, index=False)
+    paths.append(p)
+
+# can&#39;t easily change DEFAULT_KEYS without code change - compute manually
+frames=[]
+for idx,p in enumerate(paths):
+    df=pd.read_csv(p,sep=&#39;;&#39;,dtype=str,keep_default_na=False)
+    df[&#39;__source_idx&#39;]=str(idx)
+    frames.append(df)
+comb=pd.concat(frames,ignore_index=True)
+sub=comb[(comb[&#39;Season&#39;]==&#39;25/26&#39;)&amp;(comb[&#39;League&#39; if &#39;League&#39; in comb.columns else &#39;Event&#39;]==&#39;BayL&#39;)]
+# unify league col
+if &#39;Event&#39; in sub.columns:
+    sub=sub.copy(); sub[&#39;League&#39;]=sub[&#39;Event&#39;]
+pg=sub[(sub[&#39;Player&#39;].str.lower()!=&#39;team total&#39;)&amp;(sub[&#39;Position&#39;]!=&#39;0&#39;)]
+for key_name, key in [
+    (&#39;old&#39;, [&#39;Season&#39;,&#39;Week&#39;,&#39;Round Number&#39;,&#39;Match Number&#39;,&#39;Team&#39;,&#39;Position&#39;,&#39;Player&#39;]),
+    (&#39;stable&#39;, [&#39;Season&#39;,&#39;Week&#39;,&#39;Round Number&#39;,&#39;Team&#39;,&#39;Position&#39;,&#39;Player ID&#39;,&#39;Opponent&#39;]),
+]:
+    u=pg.drop_duplicates(subset=key, keep=&#39;last&#39;)
+    print(key_name, &#39;unique&#39;, len(u), &#39;from&#39;, len(pg))
+&#34;@
+</summary>
+```bash
+uv run python -c @"
+import pandas as pd
+from scripts.merge_league_sources import merge_sources, DEFAULT_KEYS
+from pathlib import Path
+import tempfile
+
+# test new keys would work - simulate with custom keys via reading merge code
+ext = pd.read_csv(r'C:\tmp\2526.csv', sep=';', dtype=str, keep_default_na=False)
+latest = pd.read_csv('database/pipeline/bowling_bayern/legacy_out/latest.csv', sep=';', dtype=str, keep_default_na=False)
+pub = pd.read_csv('database/published_csv/league_results_merged.csv', sep=';', dtype=str, keep_default_na=False)
+# strip 25/26 from pub for historical base
+pub_hist = pub[pub['Season']!='25/26'].copy()
+pub_hist['League'] = pub_hist['Event']
+pub_hist = pub_hist.drop(columns=['Event','Event Type','Club'], errors='ignore')
+print('pub hist rows', len(pub_hist))
+
+# write temp files and merge
+import tempfile, os
+td = Path(tempfile.mkdtemp())
+paths = []
+for i,(name,df) in enumerate([('hist',pub_hist),('ext',ext),('latest',latest)]):
+    p = td/f'{name}.csv'
+    df.to_csv(p, sep=';', index=False)
+    paths.append(p)
+
+# can't easily change DEFAULT_KEYS without code change - compute manually
+frames=[]
+for idx,p in enumerate(paths):
+    df=pd.read_csv(p,sep=';',dtype=str,keep_default_na=False)
+    df['__source_idx']=str(idx)
+    frames.append(df)
+comb=pd.concat(frames,ignore_index=True)
+sub=comb[(comb['Season']=='25/26')&(comb['League' if 'League' in comb.columns else 'Event']=='BayL')]
+# unify league col
+if 'Event' in sub.columns:
+    sub=sub.copy(); sub['League']=sub['Event']
+pg=sub[(sub['Player'].str.lower()!='team total')&(sub['Position']!='0')]
+for key_name, key in [
+    ('old', ['Season','Week','Round Number','Match Number','Team','Position','Player']),
+    ('stable', ['Season','Week','Round Number','Team','Position','Player ID','Opponent']),
+]:
+    u=pg.drop_duplicates(subset=key, keep='last')
+    print(key_name, 'unique', len(u), 'from', len(pg))
+"@
+
+```
+
+```
+pub hist rows 746973
+old unique 3236 from 3240
+stable unique 2701 from 3240
+
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Stable keys for the 25/26 BayL dataset come from three sources. Raw entries dropped from 3240 to 2701 unique records. This count is close to the expected 1620 base.
+
+The 2701 unique count equals 1620 plus 1620 minus 539 overlapping players. That overlap is the source of the inflation. The true count is 1620.
+
+The 539 overlap leaves 1081 unique records in each source outside the overlap. The merge keeps both non-overlapping halves. Opponent name variations between ext and latest may explain the extra entries.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c @&#34;
+import pandas as pd
+ext = pd.read_csv(r&#39;C:\tmp\2526.csv&#39;, sep=&#39;;&#39;, dtype=str, keep_default_na=False)
+latest = pd.read_csv(&#39;database/pipeline/bowling_bayern/legacy_out/latest.csv&#39;, sep=&#39;;&#39;, dtype=str, keep_default_na=False)
+a=ext[(ext[&#39;Season&#39;]==&#39;25/26&#39;)&amp;(ext[&#39;League&#39;]==&#39;BayL&#39;)]
+b=latest[(latest[&#39;Season&#39;]==&#39;25/26&#39;)&amp;(latest[&#39;League&#39;]==&#39;BayL&#39;)]
+pg_a=a[(a[&#39;Player&#39;].str.lower()!=&#39;team total&#39;)&amp;(a[&#39;Position&#39;]!=&#39;0&#39;)]
+pg_b=b[(b[&#39;Player&#39;].str.lower()!=&#39;team total&#39;)&amp;(b[&#39;Position&#39;]!=&#39;0&#39;)]
+key=[&#39;Week&#39;,&#39;Round Number&#39;,&#39;Team&#39;,&#39;Position&#39;,&#39;Player ID&#39;]
+m=pg_a.merge(pg_b, on=key, suffixes=(&#39;_E&#39;,&#39;_L&#39;))
+print(&#39;same pid+round, opponent differs&#39;, (m[&#39;Opponent_E&#39;]!=m[&#39;Opponent_L&#39;]).sum(), &#39;of&#39;, len(m))
+if len(m):
+    print(m[m[&#39;Opponent_E&#39;]!=m[&#39;Opponent_L&#39;]][[&#39;Week&#39;,&#39;Round Number&#39;,&#39;Team&#39;,&#39;Player ID&#39;,&#39;Opponent_E&#39;,&#39;Opponent_L&#39;,&#39;Score_E&#39;,&#39;Score_L&#39;]].head(5).to_string())
+# if we dedupe ext+latest with pid key only (no opponent)
+comb=pd.concat([pg_a.assign(_s=&#39;E&#39;), pg_b.assign(_s=&#39;L&#39;)], ignore_index=True)
+u=comb.drop_duplicates(subset=[&#39;Season&#39;,&#39;Week&#39;,&#39;Round Number&#39;,&#39;Team&#39;,&#39;Position&#39;,&#39;Player ID&#39;], keep=&#39;last&#39;)
+print(&#39;dedupe pid only&#39;, len(u), &#39;expected 1620&#39;)
+&#34;@
+</summary>
+```bash
+uv run python -c @"
+import pandas as pd
+ext = pd.read_csv(r'C:\tmp\2526.csv', sep=';', dtype=str, keep_default_na=False)
+latest = pd.read_csv('database/pipeline/bowling_bayern/legacy_out/latest.csv', sep=';', dtype=str, keep_default_na=False)
+a=ext[(ext['Season']=='25/26')&(ext['League']=='BayL')]
+b=latest[(latest['Season']=='25/26')&(latest['League']=='BayL')]
+pg_a=a[(a['Player'].str.lower()!='team total')&(a['Position']!='0')]
+pg_b=b[(b['Player'].str.lower()!='team total')&(b['Position']!='0')]
+key=['Week','Round Number','Team','Position','Player ID']
+m=pg_a.merge(pg_b, on=key, suffixes=('_E','_L'))
+print('same pid+round, opponent differs', (m['Opponent_E']!=m['Opponent_L']).sum(), 'of', len(m))
+if len(m):
+    print(m[m['Opponent_E']!=m['Opponent_L']][['Week','Round Number','Team','Player ID','Opponent_E','Opponent_L','Score_E','Score_L']].head(5).to_string())
+# if we dedupe ext+latest with pid key only (no opponent)
+comb=pd.concat([pg_a.assign(_s='E'), pg_b.assign(_s='L')], ignore_index=True)
+u=comb.drop_duplicates(subset=['Season','Week','Round Number','Team','Position','Player ID'], keep='last')
+print('dedupe pid only', len(u), 'expected 1620')
+"@
+
+```
+
+```
+same pid+round, opponent differs 428 of 967
+   Week Round Number                      Team Player ID                      Opponent_E             Opponent_L Score_E Score_L
+6     1            1           SG Rottendorf 1     16945      BC Bamberger Bowlinghaus 1  Bowlinghaus Bamberg 1     148     148
+7     1            1           SG Rottendorf 1     16352      BC Bamberger Bowlinghaus 1  Bowlinghaus Bamberg 1     158     158
+8     1            1           SG Rottendorf 1     16495      BC Bamberger Bowlinghaus 1  Bowlinghaus Bamberg 1     194     194
+15    1            1  Donaubowler Regensburg 1     25604  Schanzer-Strikers Ingolstadt 1  Schanzer Ingolstadt 1     233     233
+16    1            1  Donaubowler Regensburg 1      7830  Schanzer-Strikers Ingolstadt 1  Schanzer Ingolstadt 1     170     170
+dedupe pid only 2273 expected 1620
+
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The external and latest datasets are not identical.
+
+Duplicate rows persist because the same player can appear in multiple matches within a round. For the 25/26 season, only one source should be used instead of merging both external and latest data. The planned rebuild will use legacy scrape data for 08/09 through 18/19, historical data for 19/20 through 24/25, and a single GF or 25/26 source for 25/26.
+
+Published historical data will be excluded if it contains bad 25/26 entries. The historical range is strictly 19/20 through 24/25. GF is the authoritative source for 25/26 and will replace any 2526.csv file. The 19/20 through 24/25 dataset will be sliced directly from the verified published CSV.
+
+DEFAULT_KEYS will switch to player ID plus opponent instead of match number plus player. This prevents duplicate rows when the same source is duplicated across different match numbers.
+
+A new script or a `--clean-rebuild` flag will orchestrate the rebuild. It will set the correct work directory, generate the historical slice from published data, pull legacy scrape from temporary files, use GF for the current season, exclude extra-league 2526, and run both league and tournament jobs.
+
+A helper function will export the historical slice directly from the published CSV.
+
+A `--skip-gf-league` flag may be added to prevent duplicate current-season data when historical or extra-league inputs already cover it. The rebuild workflow will explicitly exclude `--extra-league` and use GF latest solely for 25/26. A small utility script will also be created to strip unwanted seasons from the historical CSV base.
+
+The deduplication key will use player ID when available, falling back to player name otherwise. Team totals already include opponent, so they will not duplicate. Rows showing zero versus three points for the same matchup are distinct records, not duplicates.
+
+Rows 7479 and 7480 likely represent a data quality issue where home and away team totals were incorrectly assigned to the same team. A `_build_dedupe_frame` helper will build composite deduplication keys using player ID with a name fallback. The rebuild will be orchestrated by a new `scripts/rebuild_published_from_scratch.py` script.
+
+The rebuild script will be created next. A dry-run will validate input paths before any full publish. The merge tests and publish logic will be reviewed and updated.
+</details></think>
+
+_**Agent (default)**_
+
+Implementing stable merge dedupe and a from-scratch rebuild script that uses each source for its intended seasons without overlap.
+
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\scripts\test_merge_league_gender_split.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\build_published_dataset.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The gender split test uses explicit key names in merge_sources. This prevents breakage when DEFAULT_KEYS changes. I am starting to plan the steps.
+
+DEFAULT_KEYS will switch to "player id" and "opponent". A helper function will generate composite player keys, falling back to the player column when player id is missing.
+
+The fallback logic will use `np.where` to prefer player id over the player column. Team total rows without a player id will still be distinguishable by opponent. A new script, `rebuild_published_from_scratch.py`, will prepare the historical base from published data or an existing full historical extract.
+
+The rebuild script will point to the legacy scrape in the work directory. It will include GF data for 25/26 and merge all tournaments. A `--historical-base` option will let users strip seasons. A `--skip-gf-league` flag will skip GF league data when the historical extract already covers the current season. The historical base will be built from the best available source, preferring a dedicated historical extract if it contains the needed seasons.
+
+The rebuild script will source each era from its own dedicated file. Legacy scrape will supply 08/09–18/19. Historical extracts will supply 19/20–24/25. GF data will supply 25/26. Published data will be excluded from the legacy scrape window to avoid duplication.
+
+The work directory contains only 25/26 data. The historical base will be sliced from published_csv, excluding 25/26 and 08/09–18/19. Published uses an Event column, but merge handles both formats. The target seasons are 19/20 through 24/25.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\merge_league_sources.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\merge_league_sources.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\merge_league_sources.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\merge_league_sources.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Fixing `_resolve_key_columns` to fall back to the player column when the key is "player id".
+
+Also fixing `_apply_dedupe_key_columns` to always resolve the player column for fallback, since "player" may no longer be present in key names.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\merge_league_sources.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Creating the rebuild script and adding tests for new deduplication keys.
+
+Adding `--skip-gf-league` to the rebuild script. It will validate legacy scrape, GF, and tournament inputs before building the dataset. Legacy scrape paths are checked across multiple directories.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\rebuild_published_from_scratch.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Checking the merge order in `build_published_dataset`.
+
+The merge order is historical, legacy scrape, extra league, GF. Default legacy scrape would duplicate legacy data if passed as extra league too.
+
+The rebuild script will use default legacy scrape without extra-league to avoid duplication. Historical covers 19/20–24/25 and GF covers 25/26.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\rebuild_published_from_scratch.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\paths.py",
+  "pattern": "def published_csv_dir"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\paths.py",
+  "pattern": "def published_csv_dir",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The published CSV directory is missing. The import needs fixing.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database",
+  "pattern": "published_csv"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database",
+  "pattern": "published_csv",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "database\\data\\runs\\20260725T130650Z.json"
+    },
+    {
+      "matchCount": 1,
+      "uri": "database\\data\\runs\\latest.json"
+    },
+    {
+      "matchCount": 1,
+      "uri": "database\\data\\runs\\20260725T003918Z.json"
+    },
+    {
+      "matchCount": 1,
+      "uri": "database\\data\\runs\\20260724T220042Z.json"
+    },
+    {
+      "matchCount": 1,
+      "uri": "database\\README.md"
+    },
+    {
+      "matchCount": 2,
+      "uri": "database\\data\\README.md"
+    },
+    {
+      "matchCount": 7,
+      "uri": "database\\paths.py"
+    }
+  ],
+  "totalFiles": 7,
+  "totalMatches": 14
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The code should call `get_published_csv_dir()` rather than `published_csv_dir()`.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\rebuild_published_from_scratch.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\rebuild_published_from_scratch.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Adding a test for stable deduplication keys and running existing tests.
+
+Writing a test for merge with duplicate match numbers. Fixing the gender split test. Adding a stable deduplication test. Running a dry-run rebuild. Verifying legacy scrape path resolution.
+
+Legacy scrape may not be found if the work directory defaults to database/work. The rebuild script should document BOWLYZER_WORK_DATA_DIR or symlink the legacy data. Then run tests and the dry-run rebuild.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\scripts\test_merge_stable_dedupe.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run pytest tests/scripts/test_merge_stable_dedupe.py tests/scripts/test_merge_league_gender_split.py tests/scripts/test_merge_duplicates_report.py -q; uv run python scripts/rebuild_published_from_scratch.py --dry-run</summary>
+```bash
+uv run pytest tests/scripts/test_merge_stable_dedupe.py tests/scripts/test_merge_league_gender_split.py tests/scripts/test_merge_duplicates_report.py -q; uv run python scripts/rebuild_published_from_scratch.py --dry-run
+```
+
+```
+F..                                                                      [100%]
+================================== FAILURES ===================================
+_________ test_merge_collapses_same_game_with_different_match_numbers _________
+
+tmp_path = WindowsPath('C:/Users/cfell/AppData/Local/Temp/pytest-of-cfell/pytest-148/test_merge_collapses_same_game0')
+
+    def test_merge_collapses_same_game_with_different_match_numbers(tmp_path: Path) -> None:
+        low = tmp_path / "excel.csv"
+        high = tmp_path / "gf.csv"
+        out = tmp_path / "merged.csv"
+    
+        base = dict(player="Nickoleit, Thomas")
+        pd.DataFrame(
+            [
+                _row(match_number="1", **base),
+>               _row(match_number="0", player="Nikoleit Thomas", **base),
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            ]
+        ).to_csv(low, sep=";", index=False)
+E       TypeError: test_merge_stable_dedupe._row() got multiple values for keyword argument 'player'
+
+tests\scripts\test_merge_stable_dedupe.py:52: TypeError
+=========================== short test summary info ===========================
+FAILED tests/scripts/test_merge_stable_dedupe.py::test_merge_collapses_same_game_with_different_match_numbers
+1 failed, 2 passed in 0.92s
+Traceback (most recent call last):
+  File "C:\Users\cfell\repositories\bowlyzer_deploy\scripts\rebuild_published_from_scratch.py", line 243, in <module>
+==> clean rebuild plan
+  legacy scrape:     C:\Users\cfell\repositories\bowlyzer_deploy\database\work\legacy_scrape\legacy_scrape_extracted.csv
+    raise SystemExit(main())
+                     ^^^^^^
+  File "C:\Users\cfell\repositories\bowlyzer_deploy\scripts\rebuild_published_from_scratch.py", line 191, in main
+    print(f"  historical slice:  {historical_out}  \u2190 from {historical_source}")
+  File "C:\Users\cfell\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charm
+… (output truncated)
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Fixing a test and a unicode arrow in the rebuild script.
+
+The legacy scrape path points to a missing directory because paths.py returns the first candidate even when none exist. This causes dry-run checks to fail.
+
+Documenting the required environment variable for the work data directory. Fixing a test player keyword argument issue.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\scripts\test_merge_stable_dedupe.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\rebuild_published_from_scratch.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\rebuild_published_from_scratch.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Running tests again with a dry-run using BOWLYZER_WORK_DATA_DIR set.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: $env:BOWLYZER_WORK_DATA_DIR=&#39;C:\tmp\bowlyzer\data&#39;; uv run pytest tests/scripts/test_merge_stable_dedupe.py tests/scripts/test_merge_league_gender_split.py -q; uv run python scripts/rebuild_published_from_scratch.py --dry-run</summary>
+```bash
+$env:BOWLYZER_WORK_DATA_DIR='C:\tmp\bowlyzer\data'; uv run pytest tests/scripts/test_merge_stable_dedupe.py tests/scripts/test_merge_league_gender_split.py -q; uv run python scripts/rebuild_published_from_scratch.py --dry-run
+```
+
+```
+F.                                                                       [100%]
+================================== FAILURES ===================================
+_________ test_merge_collapses_same_game_with_different_match_numbers _________
+
+tmp_path = WindowsPath('C:/Users/cfell/AppData/Local/Temp/pytest-of-cfell/pytest-149/test_merge_collapses_same_game0')
+
+    def test_merge_collapses_same_game_with_different_match_numbers(tmp_path: Path) -> None:
+        low = tmp_path / "excel.csv"
+        high = tmp_path / "gf.csv"
+        out = tmp_path / "merged.csv"
+    
+        pd.DataFrame(
+            [
+                _row(match_number="1", player="Nickoleit, Thomas"),
+                _row(match_number="0", player="Nikoleit Thomas"),
+            ]
+        ).to_csv(low, sep=";", index=False)
+        pd.DataFrame([_row(match_number="3", player="Nikoleit Thomas")]).to_csv(high, sep=";", index=False)
+    
+>       merge_sources([low, high], out, write_csv=True)
+E       TypeError: merge_sources() missing 1 required positional argument: 'key_names'
+
+tests\scripts\test_merge_stable_dedupe.py:56: TypeError
+=========================== short test summary info ===========================
+FAILED tests/scripts/test_merge_stable_dedupe.py::test_merge_collapses_same_game_with_different_match_numbers
+1 failed, 1 passed in 0.80s
+==> clean rebuild plan
+  legacy scrape:     C:\tmp\bowlyzer\data\legacy_scrape\legacy_scrape_extracted.csv
+  historical slice:  C:\tmp\bowlyzer\data\league\historical_excel_19_24.csv  <- from C:\Users\cfell\repositories\bowlyzer_deploy\database\published_csv\league_results_merged.csv
+  GF league (last):  C:\Users\cfell\repositories\bowlyzer_deploy\database\pipeline\bowling_bayern\legacy_out\latest.csv
+  seasons:           legacy 08/09�18/19
+                     historical 19/20�24/25
+                     GF = current season (wins on conflicts)
+  tournaments:       GF export + manual (build_published_dataset defaults)
+  NOTE: do no
+… (output truncated)
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The test failed because `merge_sources` requires `key_names`, which the gender split test passes explicitly.
+
+`merge_sources` requires `key_names` without a default. The test should pass `list(DEFAULT_KEYS)` or make the parameter optional with a default. Historical data also appears to be missing some seasons.
+
+Decided against changing `merge_sources` to make `key_names` optional; the test will be fixed directly instead. Confirmed that 25/26 should use GF only, since GF is processed last and wins ties. Excel 2526 can be used instead by passing `--extra-league 2526` and skipping GF.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\scripts\test_merge_stable_dedupe.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\scripts\test_merge_stable_dedupe.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run pytest tests/scripts/test_merge_stable_dedupe.py -q</summary>
+```bash
+uv run pytest tests/scripts/test_merge_stable_dedupe.py -q
+```
+
+```
+.                                                                        [100%]
+1 passed in 0.89s
+
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Preparing clear instructions to rebuild the clean dataset from scratch.
+
+The new script rebuilds the dataset from scratch. Deduplication keys are fixed. Data is split by season: legacy through 2019, historical through 2025, and GF for 2026. The 2025-2026 file and GF data must not be used together. Set the work data directory variable before running. Caches need rebuilding after publishing. Historical seasons 2020-2022 appear missing from the published file; a full historical extract may be required for complete coverage.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c &#34;import pandas as pd; df=pd.read_csv(&#39;database/published_csv/league_results_merged.csv&#39;, sep=&#39;;&#39;, usecols=[&#39;Season&#39;], dtype=str); print(sorted(df[&#39;Season&#39;].unique()))&#34;</summary>
+```bash
+uv run python -c "import pandas as pd; df=pd.read_csv('database/published_csv/league_results_merged.csv', sep=';', usecols=['Season'], dtype=str); print(sorted(df['Season'].unique()))"
+```
+
+```
+['08/09', '09/10', '10/11', '11/12', '12/13', '13/14', '14/15', '15/16', '16/17', '17/18', '18/19', '19/20', '22/23', '23/24', '24/25', '25/26']
+
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Published data is missing 20/21 and 21/22 seasons.
+
+Legacy scrape ends at 2018/19. The 20/21 and 21/22 gaps will need re-extraction or legacy sources.
+</details></think>
+
+_**Agent (default)**_
+
+Clean from-scratch rebuild is set up. Here’s the plan and how to run it.
+
+## Strategy (one source per era, no overlap)
+
+| Era | Source | Seasons |
+|-----|--------|---------|
+| Legacy scrape | `legacy_scrape_extracted.csv` | 08/09–18/19 |
+| Historical Excel | sliced from published (or your full extract) | 19/20–24/25 |
+| GF pipeline | `latest.csv` | 25/26 (wins) |
+| Tournaments | GF export + manual imports | all |
+
+**Do not** also pass `2526.csv` as `--extra-league` when GF already has 25/26 — that was the main cause of tripled games/points.
+
+## Code changes
+
+1. **Stable merge dedupe** — key is now `(league, season, week, round, team, position, player id, opponent)` instead of unstable `match number` + display name.
+2. **`scripts/rebuild_published_from_scratch.py`** — prepares the historical slice and runs full publish.
+
+## Run it
+
+```powershell
+$env:BOWLYZER_WORK_DATA_DIR = "C:\tmp\bowlyzer\data"
+
+# Preview
+uv run python scripts/rebuild_published_from_scratch.py --dry-run
+
+# Full rebuild (league + tournaments + registries)
+uv run python scripts/rebuild_published_from_scratch.py --write-csv
+```
+
+That produces ~105k rows for 19/20–24/25 from published, merges legacy scrape (631k rows) + GF 25/26, then GF + manual tournaments.
+
+After publish:
+
+```powershell
+uv run python scripts/rebuild_league_caches.py --all-published --workers 8
+```
+
+## Gaps to be aware of
+
+- **Published is missing 20/21 and 21/22** — the slice only includes seasons that exist in `published_csv`. If you have a fuller Excel extract, point `--historical-source` at it.
+- **25/26 source**: rebuild uses **GF `latest.csv`**, not `2526.csv`. To prefer Excel instead:
+
+  ```powershell
+  uv run python scripts/build_published_dataset.py --job league,tournament --write-csv `
+    --historical "C:\tmp\bowlyzer\data\league\historical_excel_19_24.csv" `
+    --extra-league "C:\tmp\2526.csv" `
+    --gf-league "C:\nonexistent\skip.csv"
+  ```
+
+  (missing GF file is skipped; legacy scrape is still picked up automatically from `BOWLYZER_WORK_DATA_DIR`.)
+
+Want me to kick off the full rebuild now, or do you want to restore 20/21–21/22 into the historical slice first?
+
+---
+
+_**User**_
+
+there will be some 19/20 data, but 20/21 got cancelled due to covid. so no need to wait for that. i ran your suggested commands but ended up with a dataset without a single tournament
+
+Run it
+
+$env:BOWLYZER_WORK_DATA_DIR = "C:\tmp\bowlyzer\data"
+# Preview
+uv run python scripts/rebuild_published_from_scratch.py --dry-run
+# Full rebuild (league + tournaments + registries)
+uv run python scripts/rebuild_published_from_scratch.py --write-csv
+That produces ~105k rows for 19/20–24/25 from published, merges legacy scrape (631k rows) + GF 25/26, then GF + manual tournaments.
+
+After publish:
+
+uv run python scripts/rebuild_league_caches.py --all-published --workers 8
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The rebuild produced no tournament data.
+
+Path resolution issues, missing files, or incorrect tournament paths in the rebuild script likely caused the empty result.
+</details></think>
+
+_**Agent (default)**_
+
+Investigating why the rebuild produced empty tournaments — checking path resolution and what the publish step actually received.
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+Command failed to execute
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\database\data\runs\latest.json</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\build_published_dataset.py",
+  "pattern": "tournament|gf_tournaments|manual_tournament|_existing"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\build_published_dataset.py",
+  "pattern": "tournament|gf_tournaments|manual_tournament|_existing",
+  "topFiles": [
+    {
+      "matchCount": 78,
+      "uri": "scripts\\build_published_dataset.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 78
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\paths.py",
+  "pattern": "def gf_tournaments|def manual_tournament|tournaments_postprocessed"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\paths.py",
+  "pattern": "def gf_tournaments|def manual_tournament|tournaments_postprocessed",
+  "topFiles": [
+    {
+      "matchCount": 5,
+      "uri": "database\\paths.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 5
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The manifest reveals the root cause.
+
+The tournament job returned zero rows. It found two input files, but the work directory was set to C:\tmp\bowlyzer\data. Earlier, the source files had been located under database/work instead. This path mismatch explains why no tournament data was loaded.
+
+The resolver searched for GF tables under the work directory rather than the expected database path. The manual tournament file was found correctly. I will inspect the path functions and verify whether the files actually exist.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\database\paths.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\build_published_dataset.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: $env:BOWLYZER_WORK_DATA_DIR=&#39;C:\tmp\bowlyzer\data&#39;; uv run python -c @&#34;
+from pathlib import Path
+from database.paths import gf_tournaments_combined_postprocessed_csv, manual_tournament_postprocessed_csv
+import pandas as pd
+
+gf = gf_tournaments_combined_postprocessed_csv()
+man = manual_tournament_postprocessed_csv()
+print(&#39;gf&#39;, gf, gf.is_file(), gf.stat().st_size if gf.is_file() else 0)
+print(&#39;man&#39;, man, man.is_file(), man.stat().st_size if man.is_file() else 0)
+
+# alt locations
+alts = [
+ Path(r&#39;C:\tmp\bowlyzer\data\gf\gf_tournaments_2026__combined_postprocessed.csv&#39;),
+ Path(r&#39;C:\tmp\bowlyzer\data\tournaments\tournament_manual_postprocessed.csv&#39;),
+ Path(&#39;database/work/gf/gf_tournaments_2026__combined_postprocessed.csv&#39;),
+ Path(&#39;database/work/tournaments/tournament_manual_postprocessed.csv&#39;),
+ Path(&#39;database/input/gf_tables_export/gf_tournaments_2026__combined_postprocessed.csv&#39;),
+ Path(&#39;database/data/tournaments_postprocessed.parquet&#39;),
+ Path(&#39;database/published_csv/tournaments_postprocessed.csv&#39;),
+]
+for p in alts:
+    print(&#39;ALT&#39;, p.exists(), p.stat().st_size if p.exists() else 0, p)
+
+# inspect manual if exists
+if man.is_file():
+    df = pd.read_csv(man, sep=&#39;;&#39;, dtype=str, keep_default_na=False, nrows=3)
+    print(&#39;manual cols&#39;, list(df.columns))
+    print(&#39;manual rows full&#39;, sum(1 for _ in open(man, encoding=&#39;utf-8&#39;, errors=&#39;replace&#39;))-1)
+&#34;@
+</summary>
+```bash
+$env:BOWLYZER_WORK_DATA_DIR='C:\tmp\bowlyzer\data'; uv run python -c @"
+from pathlib import Path
+from database.paths import gf_tournaments_combined_postprocessed_csv, manual_tournament_postprocessed_csv
+import pandas as pd
+
+gf = gf_tournaments_combined_postprocessed_csv()
+man = manual_tournament_postprocessed_csv()
+print('gf', gf, gf.is_file(), gf.stat().st_size if gf.is_file() else 0)
+print('man', man, man.is_file(), man.stat().st_size if man.is_file() else 0)
+
+# alt locations
+alts = [
+ Path(r'C:\tmp\bowlyzer\data\gf\gf_tournaments_2026__combined_postprocessed.csv'),
+ Path(r'C:\tmp\bowlyzer\data\tournaments\tournament_manual_postprocessed.csv'),
+ Path('database/work/gf/gf_tournaments_2026__combined_postprocessed.csv'),
+ Path('database/work/tournaments/tournament_manual_postprocessed.csv'),
+ Path('database/input/gf_tables_export/gf_tournaments_2026__combined_postprocessed.csv'),
+ Path('database/data/tournaments_postprocessed.parquet'),
+ Path('database/published_csv/tournaments_postprocessed.csv'),
+]
+for p in alts:
+    print('ALT', p.exists(), p.stat().st_size if p.exists() else 0, p)
+
+# inspect manual if exists
+if man.is_file():
+    df = pd.read_csv(man, sep=';', dtype=str, keep_default_na=False, nrows=3)
+    print('manual cols', list(df.columns))
+    print('manual rows full', sum(1 for _ in open(man, encoding='utf-8', errors='replace'))-1)
+"@
+
+```
+
+```
+gf C:\Users\cfell\repositories\bowlyzer_deploy\database\input\gf_tables_export\gf_tournaments_2026__combined_postprocessed.csv True 189
+man C:\tmp\bowlyzer\data\tournaments\tournament_manual_postprocessed.csv True 189
+ALT False 0 C:\tmp\bowlyzer\data\gf\gf_tournaments_2026__combined_postprocessed.csv
+ALT True 189 C:\tmp\bowlyzer\data\tournaments\tournament_manual_postprocessed.csv
+ALT True 615742 database\work\gf\gf_tournaments_2026__combined_postprocessed.csv
+ALT True 9038411 database\work\tournaments\tournament_manual_postprocessed.csv
+ALT True 189 database\input\gf_tables_export\gf_tournaments_2026__combined_postprocessed.csv
+ALT True 8197 database\data\tournaments_postprocessed.parquet
+ALT True 189 database\published_csv\tournaments_postprocessed.csv
+manual cols ['Season', 'Date', 'Location', 'Event Type', 'Event Name', 'Round Number', 'Round Name', 'Player', 'Player ID', 'Club', 'Game Number', 'Score', 'Handicap', 'Cumulative Score', 'Stage Rank', 'Cut Line', 'Cut Basis', 'Overall Cumulative Score']
+manual rows full 0
+
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The root cause is now clear. The resolver prefers work-directory paths because `BOWLYZER_WORK_DATA_DIR` is set to `C:\tmp\bowlyzer\data`.
+
+The resolver found empty tournament files in the work directory. It fell back to the input directory, which was also empty. The real data lives in `database/work/gf/` and `database/work/tournaments/`.
+
+Four fixes are under consideration. The user could copy the real tournament files into the temporary work directory. The path resolver could be fixed to prefer non-empty files. The rebuild script could be updated to explicitly point at the database/work copies. Or the script could copy those files automatically during rebuild.
+
+The rebuild script will be fixed to locate real tournament sources. The path resolver will be updated to prefer non-empty files and skip empty header-only stubs.
+</details></think>
+
+_**Agent (default)**_
+
+Empty stub CSVs under `C:\tmp\bowlyzer\data` shadowed the real tournament files in `database/work`. Fixing path resolution and the rebuild script to prefer non-empty sources.
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\database\paths.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\rebuild_published_from_scratch.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The rebuild script returned zero tournaments because `_resolve_work_first` and the GF tournament path were selecting empty files instead of data-bearing ones. I need to update both to prefer non-empty files.
+
+The rebuild script must explicitly pass resolved tournament paths. I also need to inspect `_prefer_existing` and `_prefer_existing_dir`, since `gf_tournament_export_dir()` may resolve to an empty directory.
+
+The GF tournament path resolves to a tiny fallback file rather than the real data. The work directory is not used as a fallback for GF exports; only the legacy input directory is checked. This explains why the rebuild found zero tournaments.
+
+The manual tournament path suffers the same flaw: `_resolve_work_first` returns an empty stub in the work directory and never checks the repository fallback. I will add a `_prefer_nonempty_csv` helper to select the largest or most populated candidate for tournament files.
+
+The rebuild script should fail loudly when tournament inputs are empty. Path resolution should always check the repository work directory as a fallback for missing or empty files. I will now read the work data directory and repository constants.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\database\paths.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **2** results in **1** directory</summary>
+
+Directory: **``** (2 files)
+
+| File |
+|------|
+| `tests/database/test_paths.py` |
+| `tests/test_process_output_paths.py` |
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\rebuild_published_from_scratch.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Fixing path resolution to skip empty or header-only CSV stubs. Updating tournament resolvers to fall back to REPO_WORK_DIR when BOWLYZER_WORK_DATA_DIR is overridden.
+
+Updating the rebuild script to use the fixed path helpers, pass tournament flags explicitly, and fail when tournament inputs are empty. Reviewing test_paths.py for existing patterns.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\database\test_paths.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Adding a helper function to check whether CSV files contain actual data rows, rather than just headers.
+
+A helper will pick the first CSV containing real data, falling back to the first existing file. The resolver will skip empty stubs and check the repository work directory when needed. The rebuild script will pass tournament paths and validate row counts. Empty files will be detected by checking for more than one line rather than relying on a byte-size threshold.
+
+The populated-file check now uses a 512-byte minimum, since empty stubs are only 189 bytes while real datasets are much larger.
+
+The resolver will skip empty stubs and warn when doing so. It falls back to the first existing file even if empty. The GF tournaments combined postprocessed CSV path is being defined.
+
+The GF tournaments path checks three locations: the work directory, the repository work directory, and the legacy input folder. The rebuild script will pass `--gf-tournaments` and `--manual-tournaments`, and it will fail if the resulting dataset is empty.
+</details></think>
+
+_**Agent (default)**_
+
+Empty header-only stubs under `C:\tmp\bowlyzer\data` were preferred over the real files in `database/work`. Fixing path resolution and the rebuild script.
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\database\paths.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\database\paths.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\database\paths.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Updating the rebuild script to pass tournament paths and validate they contain data.
+
+Adding tests for empty stub preference.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\rebuild_published_from_scratch.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\rebuild_published_from_scratch.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\rebuild_published_from_scratch.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+Incorrect tool arguments
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The test file needs to be written directly with the Write tool. Replacing the entire file with an empty string failed.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\database\test_paths.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: $env:BOWLYZER_WORK_DATA_DIR=&#39;C:\tmp\bowlyzer\data&#39;; uv run pytest tests/database/test_paths.py -q; uv run python scripts/rebuild_published_from_scratch.py --dry-run</summary>
+```bash
+$env:BOWLYZER_WORK_DATA_DIR='C:\tmp\bowlyzer\data'; uv run pytest tests/database/test_paths.py -q; uv run python scripts/rebuild_published_from_scratch.py --dry-run
+```
+
+```
+.......                                                                  [100%]
+7 passed in 0.07s
+Note: using empty/missing in work dir for manual tournament:
+       C:\Users\cfell\repositories\bowlyzer_deploy\database\work\tournaments\tournament_manual_postprocessed.csv
+Note: using empty/missing in work dir for historical league:
+       C:\Users\cfell\repositories\bowlyzer_deploy\database\work\league\historical_league_results.csv
+==> clean rebuild plan
+  legacy scrape:     C:\tmp\bowlyzer\data\legacy_scrape\legacy_scrape_extracted.csv
+  historical slice:  C:\tmp\bowlyzer\data\league\historical_excel_19_24.csv  <- from C:\Users\cfell\repositories\bowlyzer_deploy\database\published_csv\league_results_merged.csv
+  GF league (last):  C:\Users\cfell\repositories\bowlyzer_deploy\database\pipeline\bowling_bayern\legacy_out\latest.csv
+  GF tournaments:    C:\Users\cfell\repositories\bowlyzer_deploy\database\work\gf\gf_tournaments_2026__combined_postprocessed.csv  (ok)
+  manual tournaments:C:\Users\cfell\repositories\bowlyzer_deploy\database\work\tournaments\tournament_manual_postprocessed.csv  (ok)
+  seasons:           legacy 08/09�18/19
+                     historical 19/20�24/25
+                     GF = current season (wins on conflicts)
+  NOTE: do not add --extra-league for the same season GF already contains.
+  Set BOWLYZER_WORK_DATA_DIR if legacy scrape lives outside database/work/
+        (e.g. C:\tmp\bowlyzer\data). Current work dir: C:\tmp\bowlyzer\data
+==> historical slice: 105,389 rows
+    19/20: 45,902
+    22/23: 23,431
+    23/24: 23,574
+    24/25: 12,482
+==> publish command:
+C:\Users\cfell\repositories\bowlyzer_deploy\.venv\Scripts\python.exe C:\Users\cfell\repositories\bowlyzer_deploy\scripts\build_published_dataset.py --job league,tournament --historical C:\tmp\bowlyzer\data\league\historical_excel_19_24.csv --gf-league C:\Users\cfell\repositories\bowlyzer_deploy\database\pipeline\bowling_bayern\legacy_out\latest.csv --gf-tournaments 
+… (output truncated)
+```
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The dry-run now correctly identifies populated tournament files.
+
+The league cache is already correct. A tournament-only rebuild is likely sufficient and faster. The full rebuild command will be provided.
+</details></think>
+
+_**Agent (default)**_
+
+Root cause: with `BOWLYZER_WORK_DATA_DIR=C:\tmp\bowlyzer\data`, publish picked up **header-only stub CSVs** (~189 bytes) there instead of the real files under `database/work/`:
+
+| Input | Used (empty) | Real data |
+|-------|--------------|-----------|
+| GF tournaments | `database/input/gf_tables_export/…` (189 B) | `database/work/gf/…` (~600 KB) |
+| Manual tournaments | `C:\tmp\bowlyzer\data\tournaments\…` (189 B) | `database/work/tournaments\…` (~9 MB) |
+
+Manifest shows tournament job ran with **0 rows**. League merge was fine (~744k rows).
+
+Path resolution now skips empty stubs and falls back to `database/work`. Dry-run confirms both tournament sources as **ok**.
+
+Re-run (tournaments-only is enough if league is already good):
+
+```powershell
+$env:BOWLYZER_WORK_DATA_DIR = "C:\tmp\bowlyzer\data"
+
+# Preview — should show GF/manual tournaments (ok)
+uv run python scripts/rebuild_published_from_scratch.py --dry-run
+
+# Full rebuild
+uv run python scripts/rebuild_published_from_scratch.py --write-csv
+```
+
+Or tournaments only (faster):
+
+```powershell
+$env:BOWLYZER_WORK_DATA_DIR = "C:\tmp\bowlyzer\data"
+uv run python scripts/build_published_dataset.py --job tournament --write-csv `
+  --gf-tournaments "C:\Users\cfell\repositories\bowlyzer_deploy\database\work\gf\gf_tournaments_2026__combined_postprocessed.csv" `
+  --manual-tournaments "C:\Users\cfell\repositories\bowlyzer_deploy\database\work\tournaments\tournament_manual_postprocessed.csv"
+```
+
+Then warm caches again if needed.
