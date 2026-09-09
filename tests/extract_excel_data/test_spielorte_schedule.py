@@ -37,13 +37,13 @@ def test_parse_spielorte_schedule_with_year() -> None:
 def test_parse_spielorte_schedule_without_year_uses_season() -> None:
     df = pd.DataFrame(
         [
-            [1, "12.10./13.10.", "Unterführing Dreambowl Palace", None, "Bamberg Bowlinghaus"],
+            [1, "12.10./13.10.", "Unterföhring Dreambowl Palace", None, "Bamberg Bowlinghaus"],
             [2, "01.02./02.02.", "Regensburg Super Bowl", None, "Bayreuth Blu Bowl"],
         ]
     )
     schedule = parse_spielorte_schedule(df, SEASON_24)
     assert schedule[1]["date"] == "2024-10-13"
-    assert schedule[1]["location"] == "Unterführing Dreambowl Palace"
+    assert schedule[1]["location"] == "Unterföhring Dreambowl Palace"
     assert schedule[2]["date"] == "2025-02-02"
     # Column 4 catalog must not become the venue.
     assert "Bamberg" not in (schedule[1]["location"] or "")

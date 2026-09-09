@@ -157,6 +157,8 @@ uv run python scripts/build_published_dataset.py --write-csv
 
 **Process** mode always re-runs analyze first. Use `--analysis-output` to save a semicolon CSV with columns such as `file`, `league`, `season`, `available_weeks`, `number_of_teams`, `eligible_for_processing`, `issues`, `data_format`. That is the input to `analyze_missing_league_weeks.py` (via the JSON log, not this CSV directly).
 
+Post-2022 workbooks store the match-day calendar on sheet `Spielorte` (week, date, venue in columns A–C). Process mode reads that table for `Date` / `Location` instead of guessing from Erfassung cell offsets. Aliases are folded through `database/relational_csv/venue_mapping.csv` during `normalize_extracted_dataframe`.
+
 ---
 
 ## 1b. Data quality and oddity discovery (not Excel parsers)

@@ -19,7 +19,7 @@ def test_compact_key_folds_hyphens_and_neu_prefix() -> None:
 def test_canonicalize_known_aliases() -> None:
     lookup = build_venue_alias_lookup()
     assert canonicalize_venue_label("Isar München", lookup) == "München Isar Bowling"
-    assert canonicalize_venue_label("Dream-Bowl", lookup) == "Unterführing Dreambowl Palace"
+    assert canonicalize_venue_label("Dream-Bowl", lookup) == "Unterföhring Dreambowl Palace"
     assert canonicalize_venue_label("Regensburg Superbowl", lookup) == "Regensburg Super Bowl"
     assert canonicalize_venue_label("Max Brunnthal", lookup) == "Brunnthal Max Munich"
     assert canonicalize_venue_label("Nürnberg Westbowl", lookup) == "Nürnberg West Bowling"
