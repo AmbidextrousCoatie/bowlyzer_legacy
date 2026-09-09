@@ -21,6 +21,7 @@ _API_PATH_PREFIXES = (
     "/player/",
     "/team/",
     "/tournament/",
+    "/pipeline/",
     "/switch-database",
     "/get-data-sources-info",
     "/home/",

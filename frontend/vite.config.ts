@@ -27,6 +27,7 @@ const DEV_API_PROXY_PATHS = [
   "/player",
   "/team",
   "/tournament",
+  "/pipeline",
   "/switch-database",
   "/get-data-sources-info",
   "/home",

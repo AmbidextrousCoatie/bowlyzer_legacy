@@ -1,6 +1,6 @@
 /**
  * Thin fetch wrapper. The Vite dev server proxies /league, /player, /team,
- * /tournament to Flask (default http://127.0.0.1:5000; see vite.config.ts), so these calls work
+ * /tournament, /pipeline to Flask (default http://127.0.0.1:5000; see vite.config.ts), so these calls work
  * unchanged in dev. In production, Flask serves the built SPA from
  * `frontend/dist` on the same origin, so relative API paths still work.
  */
@@ -93,6 +93,7 @@ function isBackendApiPath(path: string): boolean {
     p.startsWith("/team/") ||
     p.startsWith("/player/") ||
     p.startsWith("/tournament/") ||
+    p.startsWith("/pipeline/") ||
     p.startsWith("/home/") ||
     p === "/get-data-sources-info" ||
     p === "/switch-database"

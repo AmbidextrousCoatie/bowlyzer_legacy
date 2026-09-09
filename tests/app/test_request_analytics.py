@@ -55,6 +55,7 @@ def test_normalize_query_params_sorted():
 
 def test_is_logged_api_path():
     assert is_logged_api_path("/league/get_available_seasons")
+    assert is_logged_api_path("/pipeline/status")
     assert not is_logged_api_path("/liga")
     assert not is_logged_api_path("/assets/app.js")
 
