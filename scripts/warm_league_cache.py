@@ -191,17 +191,17 @@ def _season_league_jobs(
     league: str,
     week_cache: WeekCache,
 ) -> List[Tuple[str, Dict[str, str], Callable[[], Any]]]:
+    from app.cache.cache_warmup import season_timetable_payload
+
     dbq = {"database": database}
     jobs: List[Tuple[str, Dict[str, str], Callable[[], Any]]] = []
 
     q_st = {**dbq, "league": league, "season": season}
-    jobs.append(
-        (
-            "get_season_timetable",
-            q_st,
-            lambda: ls.get_season_timetable(league=league, season=season),
-        )
-    )
+
+    def _timetable_builder(lg: str = league, s: str = season) -> Any:
+        return season_timetable_payload(ls, lg, s)
+
+    jobs.append(("get_season_timetable", q_st, _timetable_builder))
     jobs.append(
         (
             "get_league_history",

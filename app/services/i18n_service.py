@@ -127,6 +127,35 @@ class I18nService:
             "ui.league.averages_over_time": {"en": "League Averages Over Time", "de": "Liga-Durchschnitte über die Zeit"},
             "ui.league.points_to_win": {"en": "League Points to Win", "de": "Liga-Punkte zum Sieg"},
             "ui.league.season_overview.title": {"en": "League Season Overview", "de": "Liga-Saisonübersicht"},
+            "ui.league.spielplan_hint": {
+                "en": "One row per league; color is the venue. Same column means the same day.",
+                "de": "Eine Zeile je Liga, die Farbe ist die Halle. Gleiche Spalte = gleicher Tag.",
+            },
+            "ui.league.spielplan_tooltip_leagues": {
+                "en": "Leagues on this day",
+                "de": "Ligen an diesem Tag",
+            },
+            "ui.league.spielplan_empty": {
+                "en": "No match dates for this selection.",
+                "de": "Keine Termine für diese Auswahl.",
+            },
+            "ui.league.spielplan_partial_error": {
+                "en": "Some leagues could not be loaded.",
+                "de": "Einige Ligen konnten nicht geladen werden.",
+            },
+            "ui.league.spielplan_undated": {"en": "No date", "de": "Ohne Datum"},
+            "ui.league.spielplan_day_meta": {
+                "en": "{leagues} leagues · {venues} venues",
+                "de": "{leagues} Ligen · {venues} Orte",
+            },
+            "ui.league.spielplan_unknown_venue": {"en": "Unknown venue", "de": "Ort unbekannt"},
+            "ui.league.spielplan_shared": {"en": "{n} leagues", "de": "{n} Ligen"},
+            "ui.league.spielplan_expand": {"en": "Show schedule", "de": "Spielplan einblenden"},
+            "ui.league.spielplan_collapse": {"en": "Hide schedule", "de": "Spielplan ausblenden"},
+            "ui.league.region_all": {"en": "All", "de": "Alle"},
+            "ui.league.region_north": {"en": "North region", "de": "Norbereich"},
+            "ui.league.region_south": {"en": "South region", "de": "Südbereich"},
+            "ui.league.filter_level": {"en": "Show all {name} leagues", "de": "Alle {name}-Ligen anzeigen"},
 
             # Namespaced: League Comparison / Heatmap / Team-vs-Team
             "ui.league_comparison.title": {"en": "League Comparison", "de": "Liga-Vergleich"},
@@ -260,6 +289,10 @@ class I18nService:
                 "en": "Player highlights for this club — league games, all seasons.",
                 "de": "Spieler-Highlights für diesen Club — Liga-Spiele, alle Saisons.",
             },
+            "ui.team.club_legends_hint_season": {
+                "en": "Player highlights for this club — league games in {season}.",
+                "de": "Spieler-Highlights für diesen Club — Liga-Spiele in der Saison {season}.",
+            },
             "ui.team.club_legends_loading": {
                 "en": "Loading club legends…",
                 "de": "Club-Legenden werden geladen…",
@@ -346,6 +379,10 @@ class I18nService:
             "ui.team.club_player_results_hint": {
                 "en": "League games while at this club — one row per player.",
                 "de": "Liga-Spiele in dieser Club-Zugehörigkeit — eine Zeile pro Spieler.",
+            },
+            "ui.team.club_player_results_hint_season": {
+                "en": "League games at this club in {season} — one row per player.",
+                "de": "Liga-Spiele in dieser Club-Zugehörigkeit in der Saison {season} — eine Zeile pro Spieler.",
             },
             "ui.team.club_player_group": {"en": "Player", "de": "Spieler"},
             "ui.team.club_alltime_group": {"en": "All time", "de": "Gesamt"},

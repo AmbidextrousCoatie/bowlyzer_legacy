@@ -437,6 +437,17 @@
   text-underline-offset: 2px;
 }
 
+.ds-tabulator.has-liga-averages-navigation .tabulator-row .tabulator-cell,
+.ds-tabulator.has-liga-tvt-navigation .tabulator-row .tabulator-cell {
+  cursor: pointer;
+}
+
+.ds-tabulator.has-liga-averages-navigation .tabulator-row .tabulator-cell:hover,
+.ds-tabulator.has-liga-tvt-navigation .tabulator-row .tabulator-cell:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 /* Player Saisonstatistik — whole competition row links to Liga / Turnier */
 .ds-tabulator.has-event-row-navigation .tabulator-row.tab-event-nav .tabulator-cell {
   cursor: pointer;

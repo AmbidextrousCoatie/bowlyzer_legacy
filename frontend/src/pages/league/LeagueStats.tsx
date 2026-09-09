@@ -18,6 +18,8 @@ import {
   leagueSeasonFilterLabel,
   resolveLeagueApiSeason,
 } from "../../lib/leagueSeason";
+import { isLeagueRegion, leagueInRegionScope, getLeagueLevel } from "../../lib/leagueLevel";
+import { parseLeagueLevelParam, parseLeagueSelectValue } from "../../lib/leagueSelect";
 import { leaguesForSeason } from "../../lib/myClub";
 import { normalizeUnicodeLabel, teamsForClub } from "../../lib/teamUtils";
 import { GameOverview, GameTeamDetails } from "./blocks/GameBlocks";
@@ -25,6 +27,7 @@ import { LeagueOverview } from "./blocks/LeagueOverview";
 import { LeagueSeasonOverview } from "./blocks/LeagueSeasonOverview";
 import { Matchday } from "./blocks/Matchday";
 import { SeasonLeagueStandings } from "./blocks/SeasonLeagueStandings";
+import { SeasonSpielplan } from "./blocks/SeasonSpielplan";
 import { TeamDetails } from "./blocks/TeamDetails";
 import { TeamPerformance } from "./blocks/TeamPerformance";
 import { LeagueFilterBar } from "./LeagueFilterBar";
@@ -37,6 +40,8 @@ export function LeagueStats() {
   const [searchParams, setSearchParams] = useSearchParams();
   const season = searchParams.get("season") ?? LEAGUE_SEASON_LATEST;
   const league = searchParams.get("league") ?? "";
+  const division = searchParams.get("division") ?? "";
+  const level = parseLeagueLevelParam(searchParams.get("level") ?? "");
   const week = searchParams.get("week") ?? "";
   const team = searchParams.get("team") ?? "";
   const round = searchParams.get("round") ?? "";
@@ -83,6 +88,18 @@ export function LeagueStats() {
     );
   }, [leaguesQuery.data, myClubActive, participation, season, resolvedSeason]);
 
+  const region = isLeagueRegion(division) ? division : "";
+  const scopedLeagues = useMemo(() => {
+    let list = filteredLeagues;
+    if (region) {
+      list = list.filter((item) => leagueInRegionScope(item.value, region));
+    }
+    if (level != null) {
+      list = list.filter((item) => getLeagueLevel(item.value) === level);
+    }
+    return list;
+  }, [filteredLeagues, region, level]);
+
   const filteredTeams = useMemo(() => {
     const all = teamsQuery.data ?? [];
     if (!myClubActive || !resolvedClub) return all;
@@ -120,6 +137,29 @@ export function LeagueStats() {
         next.delete("round");
         changed = true;
       }
+    } else {
+      const allowedList = leaguesForSeason(
+        participation,
+        isLeagueAllSeasons(season) ? null : resolvedSeason,
+      );
+      if (allowedList) {
+        if (region && !allowedList.some((id) => leagueInRegionScope(id, region))) {
+          next.delete("division");
+          changed = true;
+        }
+        const divisionAfter = next.get("division") ?? "";
+        const regionAfter = isLeagueRegion(divisionAfter) ? divisionAfter : "";
+        if (
+          level != null &&
+          !allowedList.some((id) => {
+            if (getLeagueLevel(id) !== level) return false;
+            return !regionAfter || leagueInRegionScope(id, regionAfter);
+          })
+        ) {
+          next.delete("level");
+          changed = true;
+        }
+      }
     }
 
     if (team && resolvedClub) {
@@ -142,6 +182,8 @@ export function LeagueStats() {
     participation,
     season,
     league,
+    region,
+    level,
     team,
     resolvedSeason,
     resolvedClub,
@@ -151,6 +193,45 @@ export function LeagueStats() {
     setSearchParams,
   ]);
 
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    let changed = false;
+    const rawLevel = searchParams.get("level");
+
+    if (league) {
+      if (division) {
+        next.delete("division");
+        changed = true;
+      }
+      if (rawLevel) {
+        next.delete("level");
+        changed = true;
+      }
+    } else {
+      if (division && !isLeagueRegion(division)) {
+        next.delete("division");
+        changed = true;
+      }
+      if (rawLevel && level == null) {
+        next.delete("level");
+        changed = true;
+      }
+      if (
+        level != null &&
+        filteredLeagues.length > 0 &&
+        !filteredLeagues.some((item) => {
+          if (getLeagueLevel(item.value) !== level) return false;
+          return !region || leagueInRegionScope(item.value, region);
+        })
+      ) {
+        next.delete("level");
+        changed = true;
+      }
+    }
+
+    if (changed) setSearchParams(next, { replace: true });
+  }, [division, league, level, region, filteredLeagues, searchParams, setSearchParams]);
+
   function setParam(key: string, value: string, drop: string[] = []) {
     const next = new URLSearchParams(searchParams);
     if (value === "") next.delete(key);
@@ -158,6 +239,27 @@ export function LeagueStats() {
       next.set("season", value);
     } else next.set(key, key === "season" ? seasonForUrlQuery(value) : value);
     drop.forEach((k) => next.delete(k));
+    setSearchParams(next, { replace: false });
+  }
+
+  function onLeagueSelect(value: string) {
+    const parsed = parseLeagueSelectValue(value);
+    const next = new URLSearchParams(searchParams);
+    next.delete("league");
+    for (const key of ["week", "team", "round"]) next.delete(key);
+    if (parsed.league) {
+      next.set("league", parsed.league);
+      next.delete("division");
+      next.delete("level");
+    } else if (parsed.division) {
+      next.set("division", parsed.division);
+      next.delete("level");
+    } else if (parsed.level != null) {
+      next.set("level", String(parsed.level));
+    } else {
+      next.delete("division");
+      next.delete("level");
+    }
     setSearchParams(next, { replace: false });
   }
 
@@ -173,9 +275,11 @@ export function LeagueStats() {
 
   const seasonHeading = leagueSeasonFilterLabel(season, t);
   const allowedLeaguesForStandings = useMemo(() => {
+    if (league) return null;
+    if (region || level != null) return scopedLeagues.map((item) => item.value);
     if (!myClubActive || !participation || !resolvedSeason) return null;
     return leaguesForSeason(participation, resolvedSeason);
-  }, [myClubActive, participation, resolvedSeason]);
+  }, [league, region, level, scopedLeagues, myClubActive, participation, resolvedSeason]);
 
   return (
     <div className="mx-auto max-w-[1280px] px-4 pt-8 pb-24 max-lg:landscape:pt-2 lg:px-8 lg:pt-12">
@@ -216,6 +320,8 @@ export function LeagueStats() {
         seasons={seasonList}
         seasonsLoading={seasonsQuery.isPending || (myClubActive && participationLoading)}
         league={league}
+        division={region}
+        level={level}
         leagues={filteredLeagues}
         leaguesLoading={leaguesQuery.isPending || (myClubActive && participationLoading)}
         week={week}
@@ -228,7 +334,7 @@ export function LeagueStats() {
         rounds={roundsQuery.data ?? []}
         roundsLoading={roundsQuery.isPending}
         onSeasonChange={(v) => setParam("season", v, ["league", "week", "team", "round"])}
-        onLeagueChange={(v) => setParam("league", v, ["week", "team", "round"])}
+        onLeagueChange={onLeagueSelect}
         onWeekChange={(v) => setParam("week", v, ["round"])}
         onTeamChange={(v) => setParam("team", v, ["round"])}
         onRoundChange={(v) => setParam("round", v)}
@@ -237,10 +343,18 @@ export function LeagueStats() {
 
       <div className="mt-6 space-y-12 lg:mt-10">
         {showSeasonStandings && resolvedSeason && (
-          <SeasonLeagueStandings
-            season={resolvedSeason}
-            allowedLeagues={allowedLeaguesForStandings}
-          />
+          <>
+            <SeasonSpielplan
+              season={resolvedSeason}
+              leagues={scopedLeagues}
+              leaguesLoading={leaguesQuery.isPending || (myClubActive && participationLoading)}
+            />
+            <SeasonLeagueStandings
+              season={resolvedSeason}
+              allowedLeagues={allowedLeaguesForStandings}
+              levelFilter={level}
+            />
+          </>
         )}
         {showLeagueOverview && <LeagueOverview league={league} />}
         {showLeagueSeasonOverview && resolvedSeason && (

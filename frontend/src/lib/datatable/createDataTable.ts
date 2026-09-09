@@ -26,7 +26,9 @@ import {
 } from "../color-utils";
 import {
   groupIndexFromCellElement,
+  resolveAveragesCellNavPath,
   resolveLeagueCellNavPath,
+  resolveTeamVsTeamCellNavPath,
   type LeagueNavContext,
 } from "../leagueNavigation";
 import {
@@ -41,6 +43,7 @@ import type {
   ColumnDef,
   DataTableOptions,
   FlatColumnInfo,
+  LeagueTableNavigation,
   TableData,
 } from "./types";
 
@@ -119,6 +122,13 @@ function applyColumnGroupFreeze(
 function appendColumnCssClass(def: ColumnDefinition, className: string): void {
   const existing = typeof def.cssClass === "string" ? def.cssClass.trim() : "";
   def.cssClass = existing ? `${existing} ${className}` : className;
+}
+
+function ligaCellNavigationClass(kind: LeagueTableNavigation["kind"] | undefined): string | null {
+  if (!kind) return "has-league-cell-navigation";
+  if (kind === "averages") return "has-liga-averages-navigation";
+  if (kind === "teamVsTeam") return "has-liga-tvt-navigation";
+  return "has-league-cell-navigation";
 }
 
 function hasSemanticSeparator(rowMeta: RowObject["__rowMeta"]): boolean {
@@ -687,7 +697,9 @@ export function createDataTable(
       tournamentCutRowStyling ? "is-tournament-cut-rows" : null,
       freezeColumnGroupCount > 0 ? "has-frozen-column-groups" : null,
       rawOptions.resizableColumns === false ? "is-no-column-resize" : null,
-      rawOptions.leagueNavigation ? "has-league-cell-navigation" : null,
+      rawOptions.leagueNavigation
+        ? ligaCellNavigationClass(rawOptions.leagueNavigation.kind)
+        : null,
     ]
       .filter(Boolean)
       .join(" "),
@@ -762,19 +774,40 @@ export function createDataTable(
   const tabulator = new Tabulator(container, tabulatorOptions);
 
   const leagueNavigation = rawOptions.leagueNavigation;
+  const navClass = leagueNavigation ? ligaCellNavigationClass(leagueNavigation.kind) : null;
+  if (navClass) {
+    container.classList.add("ds-tabulator", navClass);
+  }
   if (leagueNavigation) {
     const navCtx: LeagueNavContext = {
       season: leagueNavigation.season,
       league: leagueNavigation.league,
       defaultWeek: leagueNavigation.defaultWeek,
+      week: leagueNavigation.week,
+      sourceQuery: leagueNavigation.sourceQuery,
     };
+    const kind = leagueNavigation.kind ?? "standings";
     tabulator.on("cellClick", (_e, cell) => {
       const field = cell.getField();
-      if (!field) return;
-      const groupIndex = groupIndexFromCellElement(cell.getElement());
       const rowData = cell.getRow().getData() as RowObject;
       const team = typeof rowData.team === "string" ? rowData.team : null;
-      const path = resolveLeagueCellNavPath(field, groupIndex, team, data.columns, navCtx);
+      let path: string | null = null;
+      if (kind === "averages") {
+        path = resolveAveragesCellNavPath(team, navCtx);
+      } else if (kind === "teamVsTeam") {
+        if (!field) return;
+        path = resolveTeamVsTeamCellNavPath(
+          field,
+          team,
+          cell.getValue(),
+          data.metadata,
+          navCtx,
+        );
+      } else {
+        if (!field) return;
+        const groupIndex = groupIndexFromCellElement(cell.getElement());
+        path = resolveLeagueCellNavPath(field, groupIndex, team, data.columns, navCtx);
+      }
       if (path) leagueNavigation.onNavigate(path);
     });
   }

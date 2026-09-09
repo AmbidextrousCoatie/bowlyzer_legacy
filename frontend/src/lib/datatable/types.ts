@@ -78,6 +78,12 @@ export type LeagueTableNavigation = {
   league: string;
   /** Latest week for ranking-column / default week links. */
   defaultWeek: number | string;
+  /** Currently selected Spieltag; ranking / averages keep it when set. */
+  week?: string | number | null;
+  /** Current `/liga` query so drill-down links keep `database`, `myClub`, etc. */
+  sourceQuery?: string;
+  /** How cell clicks map to liga filters. Default: standings column-group drill-down. */
+  kind?: "standings" | "teamVsTeam" | "averages";
   onNavigate: (path: string) => void;
 };
 

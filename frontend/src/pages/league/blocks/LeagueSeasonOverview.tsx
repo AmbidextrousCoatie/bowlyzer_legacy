@@ -1,11 +1,16 @@
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { seedTeamColorsFromTablePayload } from "../../../lib/color-utils";
 import {
   buildWeekLabels,
   lineChartOption,
   scatterMultiAxisOption,
 } from "../../../lib/charts/options";
-import type { DataTableOptions } from "../../../lib/datatable/types";
+import { DataTable } from "../../../lib/datatable/DataTable";
+import type { DataTableHandle } from "../../../lib/datatable/createDataTable";
+import type { DataTableOptions, TableData } from "../../../lib/datatable/types";
+import { useAppLink } from "../../../hooks/useAppLink";
+import { useLigaTableNavigation } from "../../../hooks/useLigaTableNavigation";
 import {
   useIndividualAverages,
   useLeagueHistory,
@@ -15,6 +20,7 @@ import {
   useTeamVsTeamComparison,
 } from "../../../hooks/useLeague";
 import { useTranslations } from "../../../hooks/useTranslations";
+import { formatTimetableTable } from "../../../lib/seasonSpielplan";
 import { rankedTeamTableOptions, teamVsTeamTableOptions } from "../leagueTableOptions";
 import { ChartFrame, DataTableSection, Section } from "./leagueBlockUi";
 import { TeamVsTeamMatrix } from "./TeamVsTeamMatrix";
@@ -31,11 +37,18 @@ type Props = {
  * averages.
  */
 export function LeagueSeasonOverview({ season, league }: Props) {
-  const { t } = useTranslations();
+  const { t, language } = useTranslations();
   const weekLabel = t("week", "Spieltag");
+  const standingsNav = useLigaTableNavigation(season, league);
+  const teamVsTeamNav = useLigaTableNavigation(season, league, { kind: "teamVsTeam" });
+  const averagesNav = useLigaTableNavigation(season, league, { kind: "averages" });
 
   const standings = useLeagueHistory(season, league);
   const timetable = useSeasonTimetable(season, league);
+  const timetableTable = useMemo(
+    () => formatTimetableTable(timetable.data, language === "en" ? "en" : "de"),
+    [timetable.data, language],
+  );
   const teamPositions = useTeamPositions(season, league);
   const teamPoints = useTeamPoints(season, league);
   const teamVsTeam = useTeamVsTeamComparison(season, league);
@@ -87,8 +100,9 @@ export function LeagueSeasonOverview({ season, league }: Props) {
       seedTeamColorsFromTable: true,
       disableTeamColorUpdate: true,
       teamColorLeague: league,
+      leagueNavigation: standingsNav,
     }),
-    [league],
+    [league, standingsNav],
   );
 
   const basicTableOptions = useMemo<DataTableOptions>(
@@ -101,8 +115,20 @@ export function LeagueSeasonOverview({ season, league }: Props) {
   );
 
   const teamVsTeamOptions = useMemo(
-    () => ({ ...teamVsTeamTableOptions, teamColorLeague: league }),
-    [league],
+    () => ({
+      ...teamVsTeamTableOptions,
+      teamColorLeague: league,
+      leagueNavigation: teamVsTeamNav,
+    }),
+    [league, teamVsTeamNav],
+  );
+
+  const averagesTableOptions = useMemo<DataTableOptions>(
+    () => ({
+      ...basicTableOptions,
+      leagueNavigation: averagesNav,
+    }),
+    [basicTableOptions, averagesNav],
   );
 
   return (
@@ -118,7 +144,13 @@ export function LeagueSeasonOverview({ season, league }: Props) {
       {/* 2 · Timetable + Position chart */}
       <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
         <Section eyebrow={t("season_timetable", "Spielplan")} title={t("schedule", "Termine")}>
-          <DataTableSection query={timetable} options={basicTableOptions} />
+          <TermineTable
+            query={timetable}
+            table={timetableTable}
+            season={season}
+            league={league}
+            options={basicTableOptions}
+          />
         </Section>
         <Section
           eyebrow={t("position_in_season_progress", "Tabellenposition")}
@@ -172,8 +204,55 @@ export function LeagueSeasonOverview({ season, league }: Props) {
         eyebrow={t("individual_averages", "Einzelschnitte")}
         title={t("best_individual_averages", "Beste Spieler-Schnitte")}
       >
-        <DataTableSection query={individualAverages} options={basicTableOptions} />
+        <DataTableSection query={individualAverages} options={averagesTableOptions} />
       </Section>
     </div>
   );
+}
+
+function TermineTable({
+  query,
+  table,
+  season,
+  league,
+  options,
+}: {
+  query: { isPending: boolean; isError: boolean; error: Error | null };
+  table: TableData | undefined;
+  season: string;
+  league: string;
+  options: DataTableOptions;
+}) {
+  const navigate = useNavigate();
+  const linkTo = useAppLink();
+  const onReady = useCallback(
+    (handle: DataTableHandle) => {
+      handle.tabulator.on("cellClick", (_event, cell) => {
+        const row = cell.getData() as { week?: number | string };
+        const week = row.week;
+        if (week == null || week === "") return;
+        void navigate(linkTo("/liga", { season, league, week }));
+      });
+    },
+    [league, linkTo, navigate, season],
+  );
+
+  if (query.isPending) {
+    return <div className="h-48 rounded-sm border border-border bg-surface-subtle" />;
+  }
+  if (query.isError) {
+    return (
+      <div className="rounded-sm border border-danger-fg/40 bg-surface p-6 text-small text-danger-fg">
+        {query.error?.message ?? "Fehler beim Laden"}
+      </div>
+    );
+  }
+  if (!table?.columns || !table?.data?.length) {
+    return (
+      <div className="rounded-sm border border-dashed border-border p-6 text-small text-muted">
+        Keine Daten vorhanden.
+      </div>
+    );
+  }
+  return <DataTable data={table} options={options} onReady={onReady} className="cursor-pointer" />;
 }

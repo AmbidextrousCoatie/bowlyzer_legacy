@@ -1,6 +1,11 @@
 """Cache warmup helpers."""
 
-from app.cache.cache_warmup import seasons_for_warmup, warm_myclub_spieler_for_club
+from app.cache.cache_warmup import (
+    iter_liga_season_overview_jobs,
+    season_timetable_payload,
+    seasons_for_warmup,
+    warm_myclub_spieler_for_club,
+)
 from app.utils.league_player_sources import resolve_player_database_id
 
 
@@ -69,3 +74,47 @@ def test_warm_myclub_spieler_for_club_endpoints(monkeypatch):
     assert warmed[0][1]["club"] == "Donaubowler Regensburg"
     assert warmed[2][1]["season"] == "all"
     assert warmed[3][1]["limit"] == "10"
+
+
+def test_season_timetable_payload_uses_to_dict():
+    class _Table:
+        def to_dict(self):
+            return {"columns": [], "data": [[1, "2011-09-18", "Brunnthal"]]}
+
+    class _Ls:
+        def get_season_timetable(self, *, league, season):
+            assert league == "A N1"
+            assert season == "11/12"
+            return _Table()
+
+    assert season_timetable_payload(_Ls(), "A N1", "11/12") == {
+        "columns": [],
+        "data": [[1, "2011-09-18", "Brunnthal"]],
+    }
+
+
+def test_iter_liga_season_overview_jobs_is_per_season_then_league():
+    class _Ls:
+        def get_leagues(self, *, season):
+            return {"11/12": ["BayL", "A N1"], "12/13": ["BayL"]}[season]
+
+        def get_season_league_standings(self, *, season, division):
+            return {"season": season, "division": division}
+
+        def get_season_timetable(self, *, league, season):
+            class _Table:
+                def to_dict(self):
+                    return {"league": league, "season": season}
+
+            return _Table()
+
+    jobs = iter_liga_season_overview_jobs(_Ls(), "db_real_merged", ["11/12", "12/13"])
+    endpoints = [(endpoint, query.get("season"), query.get("league")) for endpoint, query, _build in jobs]
+    assert endpoints == [
+        ("get_season_league_standings", "11/12", None),
+        ("get_season_timetable", "11/12", "BayL"),
+        ("get_season_timetable", "11/12", "A N1"),
+        ("get_season_league_standings", "12/13", None),
+        ("get_season_timetable", "12/13", "BayL"),
+    ]
+    assert jobs[2][2]() == {"league": "A N1", "season": "11/12"}

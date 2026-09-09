@@ -2,6 +2,7 @@ import { useQueries, useQuery } from "@tanstack/react-query";
 import { buildUrl, fetchJson } from "../lib/api";
 import type { ClubMatrixSeasonCell } from "../lib/clubMatrixCell";
 import type { TableData } from "../lib/datatable/types";
+import { coerceTimetableTable } from "../lib/seasonSpielplan";
 
 export type Season = string;
 
@@ -85,9 +86,22 @@ export function useLeagueHistory(season: string | null, league: string | null) {
 export function useSeasonTimetable(season: string | null, league: string | null) {
   return useQuery({
     queryKey: ["league", "timetable", season, league],
-    queryFn: () =>
-      fetchJson<TableData>(buildUrl("/league/get_season_timetable", { season, league })),
+    queryFn: () => fetchJson<unknown>(buildUrl("/league/get_season_timetable", { season, league })),
+    select: coerceTimetableTable,
     enabled: !!season && !!league,
+  });
+}
+
+/** Parallel Termine fetches for every league in the season (or Mein Club) view. */
+export function useSeasonTimetables(season: string | null, leagues: string[], enabled = true) {
+  return useQueries({
+    queries: leagues.map((league) => ({
+      queryKey: ["league", "timetable", season, league] as const,
+      queryFn: () =>
+        fetchJson<unknown>(buildUrl("/league/get_season_timetable", { season, league })),
+      select: coerceTimetableTable,
+      enabled: enabled && !!season && !!league,
+    })),
   });
 }
 
@@ -399,17 +413,30 @@ export type ClubPlayerResultsPayload = {
   table: TableData;
 };
 
-export function useClubPlayerResults(club: string | null, options?: { enabled?: boolean }) {
+function scopedClubSeason(season?: string | null): string | undefined {
+  const value = (season ?? "").trim();
+  if (!value || value === "all" || value === "latest") return undefined;
+  return value;
+}
+
+export function useClubPlayerResults(
+  club: string | null,
+  options?: { enabled?: boolean; season?: string | null },
+) {
   const database =
     typeof window !== "undefined"
       ? new URLSearchParams(window.location.search).get("database")
       : null;
   const enabled = options?.enabled ?? true;
+  const season = scopedClubSeason(options?.season);
   return useQuery({
-    queryKey: ["league", "club-player-results", database ?? "", club ?? ""],
+    queryKey: ["league", "club-player-results", database ?? "", club ?? "", season ?? "all"],
     queryFn: () =>
       fetchJson<ClubPlayerResultsPayload>(
-        buildUrl("/league/get_club_player_results", { club: club || undefined }),
+        buildUrl("/league/get_club_player_results", {
+          club: club || undefined,
+          season,
+        }),
       ),
     staleTime: DIAGNOSIS_LIST_STALE_MS,
     enabled: enabled && Boolean(club),
@@ -466,17 +493,21 @@ export function useClubRankings(options?: { enabled?: boolean }) {
   });
 }
 
-export function useClubLegends(club: string | null, options?: { enabled?: boolean }) {
+export function useClubLegends(
+  club: string | null,
+  options?: { enabled?: boolean; season?: string | null },
+) {
   const database =
     typeof window !== "undefined"
       ? new URLSearchParams(window.location.search).get("database")
       : null;
   const enabled = options?.enabled ?? true;
+  const season = scopedClubSeason(options?.season);
   return useQuery({
-    queryKey: ["league", "club-legends", database ?? "", club ?? ""],
+    queryKey: ["league", "club-legends", database ?? "", club ?? "", season ?? "all"],
     queryFn: () =>
       fetchJson<ClubLegendsPayload>(
-        buildUrl("/league/get_club_legends", { club: club || undefined }),
+        buildUrl("/league/get_club_legends", { club: club || undefined, season }),
       ),
     select: normalizeClubLegendsPayload,
     staleTime: DIAGNOSIS_LIST_STALE_MS,
@@ -624,27 +655,21 @@ function useLeagueAggregationQuery<T>(
   return useQuery({
     queryKey: ["league", endpoint, league, extraParams?.debug ?? ""],
     queryFn: () =>
-      fetchJson<T>(
-        buildUrl(`/league/${endpoint}`, { league: league!, ...extraParams }),
-      ),
+      fetchJson<T>(buildUrl(`/league/${endpoint}`, { league: league!, ...extraParams })),
     enabled: !!league,
   });
 }
 
 export function useLeagueAveragesHistory(league: string | null) {
-  return useLeagueAggregationQuery<LeagueHistoryChart>(
-    "get_league_averages_history",
-    league,
-    { debug: "false" },
-  );
+  return useLeagueAggregationQuery<LeagueHistoryChart>("get_league_averages_history", league, {
+    debug: "false",
+  });
 }
 
 export function usePointsToWinHistory(league: string | null) {
-  return useLeagueAggregationQuery<LeagueHistoryChart>(
-    "get_points_to_win_history",
-    league,
-    { debug: "false" },
-  );
+  return useLeagueAggregationQuery<LeagueHistoryChart>("get_points_to_win_history", league, {
+    debug: "false",
+  });
 }
 
 export function useTopTeamPerformances(league: string | null) {

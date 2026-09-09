@@ -1,7 +1,7 @@
 """
 Warm the heaviest disk-backed API caches after data load.
 
-Focused on Liga season overview (per-season standings), Spieler player search catalog,
+Focused on Liga season overview (per-season standings and Spielplan timetables), Spieler player search catalog,
 and all-players lifetime stats (per season + merged career).
 
 Club-filtered Spieler (``/spieler?myClub=…``) is warmed via sharded jobs in
@@ -72,6 +72,45 @@ def _warm_one(
         return "skip-empty"
     league_cache_put(endpoint, database, query, payload)
     return "built"
+
+
+def season_timetable_payload(league_service: Any, league: str, season: str) -> Any:
+    """Same JSON shape as ``/league/get_season_timetable`` (TableData.to_dict)."""
+    data = league_service.get_season_timetable(league=league, season=season)
+    return data.to_dict() if hasattr(data, "to_dict") else data
+
+
+def iter_liga_season_overview_jobs(
+    league_service: Any,
+    league_database: str,
+    seasons: List[str],
+) -> List[tuple[str, Dict[str, str], Callable[[], Any]]]:
+    """
+    Liga season-only page: standings once per season, Spielplan timetable per league.
+    """
+    dbq = {"database": league_database}
+    jobs: List[tuple[str, Dict[str, str], Callable[[], Any]]] = []
+    for season in seasons:
+        jobs.append(
+            (
+                "get_season_league_standings",
+                {**dbq, "season": season},
+                lambda s=season: league_service.get_season_league_standings(
+                    season=s, division=None
+                ),
+            )
+        )
+        for league in league_service.get_leagues(season=season):
+            jobs.append(
+                (
+                    "get_season_timetable",
+                    {**dbq, "league": league, "season": season},
+                    lambda lg=league, s=season: season_timetable_payload(
+                        league_service, lg, s
+                    ),
+                )
+            )
+    return jobs
 
 
 def warm_all_players_lifetime_caches(
@@ -413,7 +452,13 @@ def warm_essential_caches(
     player_service = PlayerService(database=player_database)
 
     seasons = seasons_for_warmup(league_service.get_seasons())
-    log(f"Cache warmup: {len(seasons)} season(s) for standings.")
+    overview_jobs = iter_liga_season_overview_jobs(
+        league_service, league_database, seasons
+    )
+    log(
+        f"Cache warmup: {len(seasons)} season(s) for standings and Spielplan "
+        f"({len(overview_jobs)} job(s))."
+    )
 
     def _tally(status: str) -> None:
         if status == "built":
@@ -446,15 +491,15 @@ def warm_essential_caches(
         _tally(status)
         log(f"  [{lang.value}] team_get_teams -> {status}")
 
-        for season in seasons:
-            query = {**dbq, "season": season}
-
-            def _standings_build(s: str = season) -> Any:
-                return league_service.get_season_league_standings(season=s, division=None)
-
-            status = _warm_one("get_season_league_standings", league_database, query, _standings_build)
+        for endpoint, query, build in overview_jobs:
+            status = _warm_one(endpoint, league_database, query, build)
             _tally(status)
-            log(f"  [{lang.value}] get_season_league_standings season={season!r} -> {status}")
+            extra = ""
+            if "season" in query:
+                extra = f" season={query['season']!r}"
+            if "league" in query:
+                extra += f" league={query['league']!r}"
+            log(f"  [{lang.value}] {endpoint}{extra} -> {status}")
 
     for lang in langs:
         i18n_service.set_language(lang)

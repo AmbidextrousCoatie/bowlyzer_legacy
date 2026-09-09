@@ -1,14 +1,24 @@
-import { useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { ChevronDown, Menu } from "lucide-react";
 import { BottomSheet } from "../../components/BottomSheet";
 import { useMobileNav } from "../../context/MobileNavContext";
 import { LEAGUE_SEASON_ALL, LEAGUE_SEASON_LATEST } from "../../lib/leagueSeason";
+import {
+  groupLeaguesByLevel,
+  leaguesForRegionSelect,
+  leagueLevelSelectValue,
+  leagueSelectDisplayLabel,
+  leagueSelectValue,
+  regionHasLeagues,
+} from "../../lib/leagueSelect";
 
 export type LeagueFilterBarProps = {
   season: string;
   seasons: string[];
   seasonsLoading: boolean;
   league: string;
+  division: string;
+  level: number | null;
   leagues: { short_name: string; long_name: string; value: string }[];
   leaguesLoading: boolean;
   week: string;
@@ -277,6 +287,8 @@ function CompactSeasonLeagueFields(
     | "seasons"
     | "seasonsLoading"
     | "league"
+    | "division"
+    | "level"
     | "leagues"
     | "leaguesLoading"
     | "onSeasonChange"
@@ -304,20 +316,18 @@ function CompactSeasonLeagueFields(
           </option>
         ))}
       </SelectControl>
-      <SelectControl
-        value={props.league}
+      <LeagueSelect
+        value={leagueSelectValue(props.league, props.division, props.level)}
         onChange={props.onLeagueChange}
         disabled={props.leaguesLoading}
         ariaLabel={t("league", "Liga")}
         className={selectClass}
-      >
-        <option value="">{t("league_all", "Alle Ligen")}</option>
-        {props.leagues.map((l) => (
-          <option key={l.value} value={l.value}>
-            {l.long_name || l.short_name}
-          </option>
-        ))}
-      </SelectControl>
+        menuAlign="right"
+        league={props.league}
+        division={props.division}
+        leagues={props.leagues}
+        t={t}
+      />
     </>
   );
 }
@@ -327,6 +337,8 @@ function SeasonLeagueFields({
   seasons,
   seasonsLoading,
   league,
+  division,
+  level,
   leagues,
   leaguesLoading,
   onSeasonChange,
@@ -339,6 +351,8 @@ function SeasonLeagueFields({
   | "seasons"
   | "seasonsLoading"
   | "league"
+  | "division"
+  | "level"
   | "leagues"
   | "leaguesLoading"
   | "onSeasonChange"
@@ -365,20 +379,17 @@ function SeasonLeagueFields({
         </SelectControl>
       </FilterField>
       <FilterField label={t("league", "Liga")}>
-        <SelectControl
-          value={league}
+        <LeagueSelect
+          value={leagueSelectValue(league, division, level)}
           onChange={onLeagueChange}
           disabled={leaguesLoading}
           ariaLabel={t("league", "Liga")}
           className={selectClassName}
-        >
-          <option value="">{t("league_all", "Alle Ligen")}</option>
-          {leagues.map((l) => (
-            <option key={l.value} value={l.value}>
-              {l.long_name || l.short_name}
-            </option>
-          ))}
-        </SelectControl>
+          league={league}
+          division={division}
+          leagues={leagues}
+          t={t}
+        />
       </FilterField>
     </>
   );
@@ -398,12 +409,171 @@ function buildDrillDownSummary(props: LeagueFilterBarProps, t: LeagueFilterBarPr
   return parts.join(" · ");
 }
 
+function LeagueSelect({
+  value,
+  onChange,
+  disabled,
+  ariaLabel,
+  className,
+  menuAlign = "left",
+  league,
+  division,
+  leagues,
+  t,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  disabled?: boolean;
+  ariaLabel: string;
+  className: string;
+  menuAlign?: "left" | "right";
+} & Pick<LeagueFilterBarProps, "league" | "division" | "leagues" | "t">) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const listboxId = useId();
+  const groups = useMemo(
+    () => groupLeaguesByLevel(leaguesForRegionSelect(leagues, league, division)),
+    [leagues, league, division],
+  );
+  const showNorth = regionHasLeagues(leagues, "north");
+  const showSouth = regionHasLeagues(leagues, "south");
+  const label = leagueSelectDisplayLabel(value, leagues, t);
+
+  useEffect(() => {
+    if (!open) return;
+    function onClickOutside(e: MouseEvent) {
+      if (!containerRef.current?.contains(e.target as Node)) setOpen(false);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onClickOutside);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  function choose(next: string) {
+    onChange(next);
+    setOpen(false);
+  }
+
+  const itemClass = (selected: boolean, extra = "") =>
+    `${extra} flex w-full px-2.5 py-1.5 text-left hover:bg-surface-subtle focus-visible:bg-surface-subtle focus-visible:outline-none ${
+      selected ? "text-accent" : extra.includes("text-muted") ? "" : "text-foreground"
+    }`;
+
+  return (
+    <div ref={containerRef} className="relative min-w-0">
+      <button
+        type="button"
+        aria-label={ariaLabel}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-controls={listboxId}
+        disabled={disabled}
+        onClick={() => setOpen((v) => !v)}
+        className={
+          "flex items-center justify-between gap-1 text-left rounded-sm border border-border bg-surface px-2.5 text-foreground hover:border-border-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:opacity-60 " +
+          className
+        }
+      >
+        <span className="min-w-0 truncate">{label}</span>
+        <ChevronDown size={14} strokeWidth={1.75} aria-hidden className="shrink-0 text-muted" />
+      </button>
+      {open && (
+        <div
+          id={listboxId}
+          role="listbox"
+          aria-label={ariaLabel}
+          className={
+            (menuAlign === "right" ? "right-0 " : "left-0 ") +
+            "absolute z-30 mt-1 max-h-[min(24rem,70vh)] min-w-[max(100%,14rem)] overflow-auto rounded-sm border border-border bg-surface py-1 shadow-2"
+          }
+        >
+          <button
+            type="button"
+            role="option"
+            aria-selected={value === ""}
+            className={itemClass(value === "")}
+            onClick={() => choose("")}
+          >
+            {t("ui.league.region_all", "Alle")}
+          </button>
+          {showNorth && (
+            <button
+              type="button"
+              role="option"
+              aria-selected={value === "north"}
+              className={itemClass(value === "north")}
+              onClick={() => choose("north")}
+            >
+              {t("ui.league.region_north", "Norbereich")}
+            </button>
+          )}
+          {showSouth && (
+            <button
+              type="button"
+              role="option"
+              aria-selected={value === "south"}
+              className={itemClass(value === "south")}
+              onClick={() => choose("south")}
+            >
+              {t("ui.league.region_south", "Südbereich")}
+            </button>
+          )}
+          {groups.map((group) => {
+            const headerValue = leagueLevelSelectValue(group.level);
+            const headerSelected = value === headerValue;
+            return (
+              <div key={group.level} className="mt-1 border-t border-border pt-1">
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={headerSelected}
+                  aria-label={t("ui.league.filter_level", "Alle {name}-Ligen anzeigen").replace(
+                    "{name}",
+                    group.label,
+                  )}
+                  className={itemClass(
+                    headerSelected,
+                    headerSelected
+                      ? "text-label uppercase tracking-wide "
+                      : "text-label uppercase tracking-wide text-muted hover:text-accent ",
+                  )}
+                  onClick={() => choose(headerValue)}
+                >
+                  {group.label}
+                </button>
+                {group.leagues.map((item) => (
+                  <button
+                    key={item.value}
+                    type="button"
+                    role="option"
+                    aria-selected={value === item.value}
+                    className={itemClass(value === item.value, "pl-5 ")}
+                    onClick={() => choose(item.value)}
+                  >
+                    {item.long_name || item.short_name}
+                  </button>
+                ))}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function FilterField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <label className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-1.5">
       <span className="text-label uppercase text-muted">{label}</span>
       {children}
-    </label>
+    </div>
   );
 }
 

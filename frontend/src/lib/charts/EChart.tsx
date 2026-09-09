@@ -6,6 +6,7 @@ type EChartProps = {
   option: EChartsOption;
   height?: number | string;
   className?: string;
+  onPointClick?: (data: unknown) => void;
 };
 
 /**
@@ -13,16 +14,21 @@ type EChartProps = {
  * given `option` via `setOption(..., true)`, observes container resizes, and
  * disposes the instance on unmount. Caller owns memoization of `option`.
  */
-export function EChart({ option, height = 300, className }: EChartProps) {
+export function EChart({ option, height = 300, className, onPointClick }: EChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<echarts.ECharts | null>(null);
+  const onPointClickRef = useRef(onPointClick);
+  onPointClickRef.current = onPointClick;
 
-  // Init / dispose
   useEffect(() => {
     if (!containerRef.current) return;
     chartRef.current = echarts.init(containerRef.current, null, {
       renderer: "canvas",
       devicePixelRatio: window.devicePixelRatio,
+    });
+    chartRef.current.on("click", (params) => {
+      if (params.data == null) return;
+      onPointClickRef.current?.(params.data);
     });
     return () => {
       chartRef.current?.dispose();
@@ -30,14 +36,12 @@ export function EChart({ option, height = 300, className }: EChartProps) {
     };
   }, []);
 
-  // Push option whenever it changes
   useEffect(() => {
     if (chartRef.current) {
       chartRef.current.setOption(option, true);
     }
   }, [option]);
 
-  // Resize on container changes
   useEffect(() => {
     if (!containerRef.current) return;
     const observer = new ResizeObserver(() => chartRef.current?.resize());

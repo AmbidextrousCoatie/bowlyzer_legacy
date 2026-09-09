@@ -1,4 +1,5 @@
 import { DataTable } from "../../../lib/datatable/DataTable";
+import { useLigaTableNavigation } from "../../../hooks/useLigaTableNavigation";
 import {
   useHonorScores,
   useIndividualAverages,
@@ -23,6 +24,9 @@ export function Matchday({ season, league, week }: Props) {
   const honor = useHonorScores(season, league, week);
   const teamVsTeam = useTeamVsTeamComparison(season, league, week);
   const individuals = useIndividualAverages(season, league, week);
+  const standingsNav = useLigaTableNavigation(season, league, { week });
+  const teamVsTeamNav = useLigaTableNavigation(season, league, { week, kind: "teamVsTeam" });
+  const averagesNav = useLigaTableNavigation(season, league, { week, kind: "averages" });
 
   return (
     <div className="space-y-12">
@@ -39,6 +43,7 @@ export function Matchday({ season, league, week }: Props) {
             options={{
               ...rankedTeamTableOptions,
               teamColorLeague: league,
+              leagueNavigation: standingsNav,
             }}
           />
           <HonorScoresPanel
@@ -46,7 +51,13 @@ export function Matchday({ season, league, week }: Props) {
             isPending={honor.isPending}
             isError={honor.isError}
             t={t}
-            navigation={{ season, league, defaultWeek: week }}
+            navigation={{
+              season,
+              league,
+              defaultWeek: week,
+              week,
+              sourceQuery: standingsNav.sourceQuery,
+            }}
           />
         </div>
       </section>
@@ -60,7 +71,11 @@ export function Matchday({ season, league, week }: Props) {
         </div>
         <TeamVsTeamMatrix
           query={teamVsTeam}
-          options={{ teamColorLeague: league, ...teamVsTeamTableOptions }}
+          options={{
+            teamColorLeague: league,
+            ...teamVsTeamTableOptions,
+            leagueNavigation: teamVsTeamNav,
+          }}
         />
       </section>
 
@@ -77,6 +92,7 @@ export function Matchday({ season, league, week }: Props) {
             disablePositionCircle: true,
             enableSpecialRowStyling: true,
             tooltips: true,
+            leagueNavigation: averagesNav,
           }}
         />
       </section>
