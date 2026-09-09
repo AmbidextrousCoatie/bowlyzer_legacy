@@ -3160,12 +3160,7 @@ def pre_2022_full_date(season_short: str, date_raw, excel_file: Path) -> str:
     date_info = complete_old_format_date_info(
         parse_old_format_date(date_raw), season_info
     )
-    if old_format_date_is_usable(date_info, season_info):
-        return combine_season_and_date(
-            season_info,
-            {"day": str(date_info["day"]).zfill(2), "month": str(date_info["month"]).zfill(2)},
-        )
-    return "could not extract date"
+    return format_iso_date(date_info) or ""
 
 
 def extract_pre_2022_file(
@@ -3959,6 +3954,15 @@ def process_eligible_combos(
             if not available_weeks:
                 continue
 
+            post_2022_schedule = {}
+            if data_format != "data_format_pre_2022":
+                schedule_season = None
+                if getattr(row, "season", None) and not _season_from_content_is_uncertain(row.season):
+                    schedule_season = season_label_to_season_info(row.season)
+                if schedule_season is None:
+                    schedule_season = infer_season_from_path(input_file)
+                post_2022_schedule = read_spielorte_schedule(input_file, schedule_season)
+
             for week in available_weeks:
                 global dict_of_match_numbers
                 dict_of_match_numbers = {}
@@ -3996,8 +4000,21 @@ def process_eligible_combos(
                     if merged_season is not None:
                         season_info = dict(merged_season)
                         with redirect_stdout(io.StringIO()):
-                            recomputed_date_info = extract_date_info(df)
+                            recomputed_date_info = extract_date_info(df, season_info)
                         full_date = combine_season_and_date(season_info, recomputed_date_info)
+
+                    week_sched = post_2022_schedule.get(int(week), {})
+                    location_override = week_sched.get("location")
+                    if week_sched.get("date"):
+                        full_date = week_sched["date"]
+                    if not location_override:
+                        header = extract_erfassung_header_fields(df)
+                        location_override = header.get("location")
+                        if not full_date and header.get("date_raw") is not None:
+                            full_date = combine_season_and_date(
+                                season_info,
+                                parse_old_format_date(header.get("date_raw")),
+                            )
 
                     with redirect_stdout(io.StringIO()):
                         csv_data = parse_teams(
@@ -4007,6 +4024,7 @@ def process_eligible_combos(
                             league_override=row.league,
                             week_override=week,
                             max_games_per_week=row.games_per_week,
+                            location_override=location_override,
                         )
                 if csv_data:
                     temp_df = pd.DataFrame(csv_data)
