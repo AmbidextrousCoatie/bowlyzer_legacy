@@ -6,6 +6,7 @@ import {
   AlertTriangle,
   CalendarRange,
   ClipboardCheck,
+  Compass,
   LayoutGrid,
   Palette,
   ChevronsLeft,
@@ -53,14 +54,18 @@ type NavGroupDef = {
   items: ReadonlyArray<NavItemDef>;
 };
 
-const SHOW_DIAGNOSIS = import.meta.env.DEV;
-
 const NAV_GROUPS: ReadonlyArray<NavGroupDef> = [
   {
     labelKey: "ui.nav.group_start",
     fallback: "Start",
     items: [
       { path: "/", labelKey: "ui.nav.home", fallback: "Übersicht", icon: HomeIcon },
+      {
+        path: "/einstieg",
+        labelKey: "ui.nav.einstieg",
+        fallback: "Einstieg",
+        icon: Compass,
+      },
       {
         path: "/warum-bowlyzer",
         labelKey: "ui.nav.why",
@@ -118,27 +123,23 @@ const NAV_GROUPS: ReadonlyArray<NavGroupDef> = [
       },
     ],
   },
-  ...(SHOW_DIAGNOSIS
-    ? ([
-        {
-          labelKey: "ui.nav.group_diagnosis",
-          fallback: "Diagnose",
-          items: [
-            { path: "/diagnose/design-system", fallback: "Designsystem", icon: Palette },
-            { path: "/diagnose/club-matrix", fallback: "Club-Matrix", icon: Building2 },
-            { path: "/diagnose/liga-wochen", fallback: "Liga-Übersicht", icon: CalendarRange },
-            {
-              path: "/diagnose/turnier-uebersicht",
-              fallback: "Turnier-Übersicht",
-              icon: LayoutGrid,
-            },
-            { path: "/diagnose/validierung", fallback: "Validierung", icon: ClipboardCheck },
-            { path: "/diagnose/daten-anomalien", fallback: "Anomalien", icon: AlertTriangle },
-            { path: "/diagnose/datenpipeline", fallback: "Datenpipeline", icon: Workflow },
-          ],
-        },
-      ] as const satisfies ReadonlyArray<NavGroupDef>)
-    : []),
+  {
+    labelKey: "ui.nav.group_diagnosis",
+    fallback: "Diagnose",
+    items: [
+      { path: "/diagnose/design-system", fallback: "Designsystem", icon: Palette },
+      { path: "/diagnose/club-matrix", fallback: "Club-Matrix", icon: Building2 },
+      { path: "/diagnose/liga-wochen", fallback: "Liga-Übersicht", icon: CalendarRange },
+      {
+        path: "/diagnose/turnier-uebersicht",
+        fallback: "Turnier-Übersicht",
+        icon: LayoutGrid,
+      },
+      { path: "/diagnose/validierung", fallback: "Validierung", icon: ClipboardCheck },
+      { path: "/diagnose/daten-anomalien", fallback: "Anomalien", icon: AlertTriangle },
+      { path: "/diagnose/datenpipeline", fallback: "Datenpipeline", icon: Workflow },
+    ],
+  },
 ];
 
 const LANG_LABEL: Record<AppLanguage, { flag: string; name: string }> = {
@@ -275,7 +276,7 @@ export function Sidebar() {
                     />
                   </li>
                 ))}
-                {SHOW_DIAGNOSIS && group.labelKey === "ui.nav.group_diagnosis" && (
+                {group.labelKey === "ui.nav.group_diagnosis" && (
                   <li className="mt-2 pt-2 border-t border-border">
                     <DatabaseSelector variant="sidebar" collapsed={collapsed && !mobileOpen} />
                   </li>
@@ -385,8 +386,7 @@ function NavRow({
       style={({ isActive }) => (isActive && topicKey ? topicTintStyle(topicKey) : undefined)}
     >
       {({ isActive }) => {
-        const accentColor =
-          isActive && topicKey ? homePaletteColorForTopic(topicKey) : undefined;
+        const accentColor = isActive && topicKey ? homePaletteColorForTopic(topicKey) : undefined;
         return (
           <>
             {isActive && (

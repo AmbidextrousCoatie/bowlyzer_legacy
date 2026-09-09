@@ -23,11 +23,15 @@ export function MyClubBanner() {
     <div
       role="status"
       aria-live="polite"
-      className="sticky top-0 z-20 border-b border-border backdrop-blur"
+      className="border-b border-border backdrop-blur"
       style={bannerStyle}
     >
       <div className="mx-auto flex max-w-[1280px] items-stretch gap-0 px-4 lg:px-8">
-        <span aria-hidden className="w-1 shrink-0 self-stretch" style={{ backgroundColor: myClubColor }} />
+        <span
+          aria-hidden
+          className="w-1 shrink-0 self-stretch"
+          style={{ backgroundColor: myClubColor }}
+        />
         <div className="flex min-w-0 flex-1 items-center gap-3 py-2.5 pl-3 pr-1">
           <span
             className="grid size-8 shrink-0 place-items-center rounded-sm border border-border bg-surface"

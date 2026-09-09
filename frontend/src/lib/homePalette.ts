@@ -68,6 +68,19 @@ export function homePaletteButtonStyleForTopic(topic: HomeTopicPaletteKey): CSSP
   return homePaletteButtonStyle(HOME_TOPIC_PALETTE[topic]);
 }
 
+/** Full-bleed tour / banner chrome — pastels are mixed darker so white type stays readable. */
+export function homePaletteBannerStyle(index: number): CSSProperties {
+  const color = homePaletteColor(index);
+  return {
+    backgroundColor: `color-mix(in srgb, ${color} 62%, #18181B 38%)`,
+    color: "#FFFFFF",
+  };
+}
+
+export function homePaletteBannerStyleForTopic(topic: HomeTopicPaletteKey): CSSProperties {
+  return homePaletteBannerStyle(HOME_TOPIC_PALETTE[topic]);
+}
+
 /** Tint band for results-page headers and topic-active nav rows. */
 export function topicTintStyle(topic: HomeTopicPaletteKey): CSSProperties {
   const color = homePaletteColorForTopic(topic);

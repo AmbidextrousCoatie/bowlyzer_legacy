@@ -1,15 +1,12 @@
-import { Link, useSearchParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useLatestEvents, useHomeStats, resolveHomeStats } from "../hooks/useHome";
 import { useAppLink } from "../hooks/useAppLink";
 import { useMyClub } from "../hooks/useMyClub";
-import { buildHomeExampleLinks } from "../lib/homeExamples";import { HOME_FOOTER, HOME_SECTIONS } from "../lib/homeContent";
+import { HOME_FOOTER, HOME_SECTIONS } from "../lib/homeContent";
 import { SITE_CONTACT } from "../lib/siteContact";
 import { HomeHero } from "../components/home/HomeHero";
 import { HomeHeroActions } from "../components/home/HomeHeroActions";
-import { HomeExplainerSections } from "../components/home/HomeExplainerSections";
-import { HomeEntityMap } from "../components/home/HomeEntityMap";
 import { HomeStatsOverview } from "../components/home/HomeStatsOverview";
-import { HomeLegacyBridge } from "../components/home/HomeLegacyBridge";
 import { HOME_BLOCK_STACK } from "../components/home/HomeSection";
 
 function formatCount(value: number | undefined): string {
@@ -47,20 +44,12 @@ export function Home() {
 
         <HomeHeroActions myClubActive={myClubActive} resolvedClub={resolvedClub} />
 
-        <HomeEntityMap />
-        <HomeExplainerSections />
-
-        <div className="grid gap-8 lg:grid-cols-2">
-          <ExampleList />
-          <LatestEventsList
-            loading={eventsQuery.isPending}
-            error={eventsQuery.isError}
-            events={eventsQuery.data ?? []}
-            database={stats?.database ?? "db_real_merged"}
-          />
-        </div>
-
-        <HomeLegacyBridge />
+        <LatestEventsList
+          loading={eventsQuery.isPending}
+          error={eventsQuery.isError}
+          events={eventsQuery.data ?? []}
+          database={stats?.database ?? "db_real_merged"}
+        />
       </div>
 
       <footer className="mt-10 space-y-2 border-t border-border pt-6 text-small text-muted">
@@ -76,11 +65,24 @@ export function Home() {
         </p>
         <p>{HOME_FOOTER.cheers}</p>
         <p>
-          <Link to={link("/impressum")} className="text-accent hover:text-accent-hover hover:underline">
+          <Link
+            to={link("/impressum")}
+            className="text-accent hover:text-accent-hover hover:underline"
+          >
             Impressum
           </Link>
           {" · "}
-          <Link to={link("/glossar")} className="text-accent hover:text-accent-hover hover:underline">
+          <Link
+            to={link("/einstieg")}
+            className="text-accent hover:text-accent-hover hover:underline"
+          >
+            Einstieg
+          </Link>
+          {" · "}
+          <Link
+            to={link("/glossar")}
+            className="text-accent hover:text-accent-hover hover:underline"
+          >
             Glossar
           </Link>
           {" · "}
@@ -96,30 +98,6 @@ export function Home() {
   );
 }
 
-function ExampleList() {
-  const [searchParams] = useSearchParams();
-  const examples = buildHomeExampleLinks(searchParams);
-
-  return (
-    <section className="rounded-sm border border-border bg-surface">
-      <header className="border-b border-border px-4 py-3 lg:px-5">
-        <h2 className="text-h3">{HOME_SECTIONS.examples}</h2>
-      </header>
-      <ul className="divide-y divide-border">
-        {examples.map((ex) => (
-          <li key={ex.label}>
-            <Link
-              to={ex.to}
-              className="block px-4 py-3 text-small text-accent hover:bg-surface-subtle hover:text-accent-hover lg:px-5"
-            >
-              {ex.label}
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
 function LatestEventsList({
   loading,
   error,
@@ -168,9 +146,7 @@ function LatestEventsList({
                     <span className="font-medium text-foreground">
                       {ev.Season} · {ev.League} · Spieltag {ev.Week}
                     </span>
-                    {ev.Date ? (
-                      <span className="mt-0.5 block text-muted">({ev.Date})</span>
-                    ) : null}
+                    {ev.Date ? <span className="mt-0.5 block text-muted">({ev.Date})</span> : null}
                   </Link>
                 </li>
               );

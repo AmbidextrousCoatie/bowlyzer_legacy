@@ -1,15 +1,3 @@
-import { buildUrl } from "./api";
-import type { HomeTopicPaletteKey } from "./homePalette";
-
-export type HomeExplainerBlock = {
-  id: string;
-  eyebrow: string;
-  title: string;
-  body: string;
-  bullets?: string[];
-  cta?: { label: string; to: string };
-};
-
 export const HOME_HERO = {
   eyebrow: "Bowl-A-Lyzer",
   headline: "Liga- und Turnierergebnisse aus Bayern — tagesaktuell und durchsuchbar.",
@@ -17,8 +5,10 @@ export const HOME_HERO = {
     "Die offiziellen Ergebnisse der Bayerischen Bowling Union — wie früher in der Ergebnisliste, aber jederzeit abrufbar und filterbar.",
   bbuUrl: "https://bowlingbayern.de",
   bbuLabel: "Bayerischen Bowling Union",
+  einstiegLabel: "Typische Einstiege",
   welcomeClub: (club: string) => `Willkommen — ${club}`,
-  welcomeClubSub: "Dein Club ist gesetzt. Hier findest du Liga, Turniere und Spieler auf einen Blick.",
+  welcomeClubSub:
+    "Dein Club ist gesetzt. Hier findest du Liga, Turniere und Spieler auf einen Blick.",
 } as const;
 
 export const HOME_QUICK_START = {
@@ -35,11 +25,9 @@ export const HOME_QUICK_START = {
   glossaryCta: "Glossar",
   glossaryDescription: "falls einzelne Begriffe unklar sind",
   glossaryButton: "Zum Glossar",
-} as const;
-
-export const HOME_LEGACY_BRIDGE = {
-  title: "Von der Ergebnisliste zum Live-Archiv",
-  body: "Ihr findet hier viele Liga- und Turnier-Ergebnisse aus den letzen 3 Jahrzehnten. Euer Mehrwert: jederzeit abrufbar — nach Spieler, Club, Spieltag und Tunier filterbar.",
+  einstiegCta: "Typische Einstiege",
+  einstiegDescription: "Spieler, Club, Liga und Turnier an konkreten, festgehaltenen Beispielen.",
+  einstiegButton: "Zu den Einstiegen",
 } as const;
 
 export const HOME_FOOTER = {
@@ -64,7 +52,13 @@ export const HOME_HISTORY = {
       text: "Das Archiv reicht zurück bis etwa 2006 und wächst mit jeder Saison.",
     },
   ],
-  statsIntro: (games: string, seasons: string, years: string, tournaments: string, players: string) =>
+  statsIntro: (
+    games: string,
+    seasons: string,
+    years: string,
+    tournaments: string,
+    players: string,
+  ) =>
     `Aktuell: ${games} Spiele · ${seasons} Liga-Saisons · ${years} Jahre · ${tournaments} Turniere · ${players} Spieler.`,
 } as const;
 
@@ -73,6 +67,7 @@ export const WHY_BOWLYZER = {
   title: "Warum Bowl-A-Lyzer?",
   intro:
     "Bowl-A-Lyzer ist aus der Praxis des bayerischen Ligabetriebs entstanden: Ergebnislisten waren da, aber schwer auffindbar, vergleichbar und historisch nachvollziehbar.",
+  einstiegCta: "Typische Einstiege ausprobieren",
   motivation: {
     title: "Motivation",
     paragraphs: [
@@ -109,110 +104,11 @@ export const WHY_BOWLYZER = {
   },
 } as const;
 
-export type HomeEntityStep = {
-  label: string;
-  description: string;
-  to: string;
-  paletteKey: HomeTopicPaletteKey;
-};
-
-export type HomeEntityGroup = {
-  id: string;
-  eyebrow: string;
-  title: string;
-  steps: HomeEntityStep[];
-};
-
-export const HOME_ENTITY_MAP = {
-  groups: [
-    {
-      id: "stats",
-      eyebrow: "Akteure & Rekorde",
-      title: "Spieler, Clubs und besondere Leistungen",
-      steps: [
-        {
-          label: "Spieler",
-          description: "Karriereseite für Einzelspieler mit Ergebnissen, Statistiken und Rekorden",
-          to: "/spieler",
-          paletteKey: "player",
-        },
-        {
-          label: "Club",
-          description: "Club-Historie mit Ergebnissen, Statistiken und Rekorden",
-          to: "/club",
-          paletteKey: "club",
-        },
-        {
-          label: "Club 300",
-          description: "Alle erfassten perfekten 300er Spiele — die höchste Einzelleistung im Bowling",
-          to: "/club-300",
-          paletteKey: "club300",
-        },
-      ] satisfies HomeEntityStep[],
-    },
-    {
-      id: "events",
-      eyebrow: "Wettbewerbe & Ergebnisse",
-      title: "Liga, Turniere und Pokal — Saison für Saison",
-      steps: [
-        {
-          label: "Liga",
-          description: "Über mehrere Spieltage ausgetragener Wettbewerb mit Auf- und Abstieg in verschiedene Spielklassen",
-          to: "/liga",
-          paletteKey: "league",
-        },
-        {
-          label: "Turniere",
-          description: "Meisterschaften, Einzel, Doppel, Mixed und Trio Wettbewerbe",
-          to: "/turnier",
-          paletteKey: "tournament",
-        },
-        {
-          label: "Clubpokal",
-          description: "Verteilt ausgetragener K.-o.-Wettbewerb für Clubmannschaften mit abschließendem Turnier",
-          to: "/clubpokal",
-          paletteKey: "clubpokal",
-        },
-      ] satisfies HomeEntityStep[],
-    },
-  ] satisfies HomeEntityGroup[],
-  footnote: "",
-} as const;
-
 export const CLUBPOKAL_PLACEHOLDER = {
   title: "Clubpokal",
   headline: "Demnächst verfügbar",
   body: "Die Clubpokal-Ansicht mit Runden, Paarungen und Ergebnissen ist in Arbeit.",
 } as const;
-
-export const HOME_EXPLAINERS: HomeExplainerBlock[] = [
-  {
-    id: "league",
-    eyebrow: "Liga",
-    title: "Ligaspiel in 60 Sekunden",
-    body: "In der Saison treten Mannschaften wöchentlich in ihrer Liga gegeneinander an. Die Tabelle zeigt Platzierungen und Punkte.",
-    bullets: [
-      "Saison wählen (z. B. 25/26)",
-      "Liga wählen (z. B. Bayernliga)",
-      "Spieltag öffnen für Einzelergebnisse",
-      "Tabelle = Abschlusstabelle nach jedem Spieltag",
-    ],
-    cta: { label: "Zur Liga-Übersicht", to: buildUrl("/liga", { season: "latest" }) },
-  },
-  {
-    id: "tournament",
-    eyebrow: "Turnier",
-    title: "Turniere in 60 Sekunden",
-    body: "Meisterschaften laufen oft über mehrere Runden — Qualifikation, K.-o.-Phase, Finale. Die Gesamtwertung fasst alle Runden zusammen.",
-    bullets: [
-      "Saison und Turnier wählen",
-      "Runde für Runden-Ergebnisse",
-      "Gesamtstand für die Meisterschaftswertung",
-      "ℹ-Symbol erklärt Turnierformat und Handicap-Regeln",
-    ],
-    cta: { label: "Zu den Turnieren", to: "/turnier" },
-  },
-];
 
 export const HOME_SECTIONS = {
   statsEyebrow: "Umfang",
@@ -221,7 +117,6 @@ export const HOME_SECTIONS = {
   previewHint: "Auszug aus der Bayernliga — wie in der gewohnten Ergebnisliste.",
   club300: "Club 300",
   club300Teaser: "Perfekte 300er — die höchste Einzelleistung im Bowling.",
-  examples: "Direkt zu Beispiel-Ansichten",
   latestEvents: "Letzte Events",
   latestEventsAnchor: "latest-events",
 } as const;
@@ -238,7 +133,8 @@ export const GLOSSARY_ENTRIES = [
   },
   {
     term: "Netto Ergebnis",
-    definition: "Wert mit Handicap — für faire Vergleiche zwischen Spielern unterschiedlicher Stärke.",
+    definition:
+      "Wert mit Handicap — für faire Vergleiche zwischen Spielern unterschiedlicher Stärke.",
   },
   {
     term: "Club",
@@ -247,7 +143,8 @@ export const GLOSSARY_ENTRIES = [
   },
   {
     term: "Spieler",
-    definition: "Ein Spieler muss zwingend einem Verein angehören und für manche Wettbewerbe auch einem Club. Ein Spieler kann zu jedem Zeitpunkt für einen Verein und Club aktiv sein. Wettbwerbe auf Vereinsebene sind z.B. die Landesmeisterschaften und der Ligabetrieb wird von Clkubmitgliedern bestritten. Darüber hinaus kann eine Spieler auch individuell an offen Turnieren teilnehmen.",
+    definition:
+      "Ein Spieler muss zwingend einem Verein angehören und für manche Wettbewerbe auch einem Club. Ein Spieler kann zu jedem Zeitpunkt für einen Verein und Club aktiv sein. Wettbwerbe auf Vereinsebene sind z.B. die Landesmeisterschaften und der Ligabetrieb wird von Clkubmitgliedern bestritten. Darüber hinaus kann eine Spieler auch individuell an offen Turnieren teilnehmen.",
   },
   {
     term: "Team / Mannschaft",
@@ -265,7 +162,8 @@ export const GLOSSARY_ENTRIES = [
   },
   {
     term: "Liga",
-    definition: "Eine Liga besteht aus mehreren Teams die je nach Spielklasse aus unterschiedlich größen Gebieten stammen. Über ein Sportjahr hinweg werden über mehrere Spieltage verteilt die Platzierungen ausgespielt, wobei es am Saisonende ein Auf- und Abstiegs-System gibt.",
+    definition:
+      "Eine Liga besteht aus mehreren Teams die je nach Spielklasse aus unterschiedlich größen Gebieten stammen. Über ein Sportjahr hinweg werden über mehrere Spieltage verteilt die Platzierungen ausgespielt, wobei es am Saisonende ein Auf- und Abstiegs-System gibt.",
   },
   {
     term: "Spieltag",
@@ -274,7 +172,8 @@ export const GLOSSARY_ENTRIES = [
   },
   {
     term: "Pokal",
-    definition: "Der Clubpokal ist ein K.O. Format, bei dem über den Zeitraum mehrerer Monaten in der Regel 5 Pokalrunden ausgetragen werden. Das Los bestimmt über Spiel-Paarungen und Heimrecht. Der Pokalsieger wird in einem abschließenden Turnier ermittelt, in dem in der Regel die verbleibenden 10 Teams aus Nord- und Südbereich gegeneinander antreten.",
+    definition:
+      "Der Clubpokal ist ein K.O. Format, bei dem über den Zeitraum mehrerer Monaten in der Regel 5 Pokalrunden ausgetragen werden. Das Los bestimmt über Spiel-Paarungen und Heimrecht. Der Pokalsieger wird in einem abschließenden Turnier ermittelt, in dem in der Regel die verbleibenden 10 Teams aus Nord- und Südbereich gegeneinander antreten.",
   },
   {
     term: "Turnier",
@@ -283,6 +182,7 @@ export const GLOSSARY_ENTRIES = [
   },
   {
     term: "Cutline",
-    definition: "Runden-Grenze in einem Turnier — wer darüber liegt, qualifiziert sich für die nächste Runde. So werden über den Verlauf des Turniers die besten Spieler ermittelt.",
+    definition:
+      "Runden-Grenze in einem Turnier — wer darüber liegt, qualifiziert sich für die nächste Runde. So werden über den Verlauf des Turniers die besten Spieler ermittelt.",
   },
 ] as const;

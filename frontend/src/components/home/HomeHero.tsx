@@ -14,9 +14,7 @@ export function HomeHero({ myClubActive, resolvedClub }: HomeHeroProps) {
     <header>
       <p className="text-label uppercase text-muted mb-2">{HOME_HERO.eyebrow}</p>
       <h1 className="text-h2 md:text-h1 text-foreground mb-4 max-w-[72ch] leading-snug">
-        {myClubActive && resolvedClub
-          ? HOME_HERO.welcomeClub(resolvedClub)
-          : HOME_HERO.headline}
+        {myClubActive && resolvedClub ? HOME_HERO.welcomeClub(resolvedClub) : HOME_HERO.headline}
       </h1>
       <p className="text-body text-muted max-w-[72ch] leading-relaxed">
         {myClubActive && resolvedClub ? HOME_HERO.welcomeClubSub : HOME_HERO.subcopy}
@@ -31,6 +29,13 @@ export function HomeHero({ myClubActive, resolvedClub }: HomeHeroProps) {
         >
           {HOME_HERO.bbuLabel}
         </a>
+        {" · "}
+        <Link
+          to={link("/einstieg")}
+          className="text-accent hover:text-accent-hover hover:underline"
+        >
+          {HOME_HERO.einstiegLabel}
+        </Link>
         {" · "}
         <Link
           to={link("/warum-bowlyzer")}

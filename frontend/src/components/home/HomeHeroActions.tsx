@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import type { CSSProperties, ReactNode } from "react";
 import { ClubSearch } from "../ClubSearch";
 import { ButtonLink } from "../Button";
@@ -132,6 +132,17 @@ export function HomeHeroActions({ myClubActive, resolvedClub }: HomeHeroActionsP
           </ButtonLink>
         </HeroActionCard>
       </div>
+      <p className="mt-4 text-small text-muted max-w-[72ch] leading-relaxed">
+        Lieber erst schauen?{" "}
+        <Link
+          to={link("/einstieg")}
+          className="font-medium text-accent hover:text-accent-hover hover:underline"
+        >
+          {HOME_QUICK_START.einstiegCta}
+        </Link>
+        {" — "}
+        {HOME_QUICK_START.einstiegDescription}
+      </p>
     </HomeSection>
   );
 }

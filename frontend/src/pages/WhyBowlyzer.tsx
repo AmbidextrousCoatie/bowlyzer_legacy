@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import type { ReactNode } from "react";
 import { useHomeStats, resolveHomeStats } from "../hooks/useHome";
+import { useAppLink } from "../hooks/useAppLink";
 import { HOME_HISTORY, WHY_BOWLYZER } from "../lib/homeContent";
 import { SITE_CONTACT } from "../lib/siteContact";
 
@@ -12,6 +13,7 @@ function formatCount(value: number | undefined): string {
 export function WhyBowlyzer() {
   const statsQuery = useHomeStats();
   const stats = resolveHomeStats(statsQuery.data);
+  const link = useAppLink();
 
   const games = formatCount(stats?.games);
   const leagueSeasons = formatCount(stats?.league_seasons);
@@ -25,6 +27,14 @@ export function WhyBowlyzer() {
         <p className="text-label uppercase text-muted mb-2">{WHY_BOWLYZER.eyebrow}</p>
         <h1 className="text-h1 mb-4">{WHY_BOWLYZER.title}</h1>
         <p className="text-body text-muted leading-relaxed">{WHY_BOWLYZER.intro}</p>
+        <p className="mt-4 text-body">
+          <Link
+            to={link("/einstieg")}
+            className="text-accent hover:text-accent-hover hover:underline"
+          >
+            {WHY_BOWLYZER.einstiegCta}
+          </Link>
+        </p>
       </header>
 
       <div className="space-y-10">
@@ -36,7 +46,10 @@ export function WhyBowlyzer() {
           ))}
         </ContentSection>
 
-        <section className="rounded-sm bg-accent-tint px-5 py-8 lg:px-8" aria-labelledby="why-history-title">
+        <section
+          className="rounded-sm bg-accent-tint px-5 py-8 lg:px-8"
+          aria-labelledby="why-history-title"
+        >
           <p className="text-label uppercase text-muted mb-2">{HOME_HISTORY.eyebrow}</p>
           <h2 id="why-history-title" className="text-h2 mb-6">
             {HOME_HISTORY.title}
@@ -106,8 +119,15 @@ export function WhyBowlyzer() {
       </div>
 
       <p className="mt-10 text-small text-muted">
-        <Link to="/" className="text-accent hover:text-accent-hover hover:underline">
+        <Link to={link("/")} className="text-accent hover:text-accent-hover hover:underline">
           Zurück zur Übersicht
+        </Link>
+        {" · "}
+        <Link
+          to={link("/einstieg")}
+          className="text-accent hover:text-accent-hover hover:underline"
+        >
+          Einstieg
         </Link>
       </p>
     </div>
