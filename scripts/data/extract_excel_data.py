@@ -989,10 +989,13 @@ def compute_team_name_normalization_fingerprint() -> str:
 
 
 # Gender tokens in sheet titles — flexible on dashes / whitespace (pre-2022 Ligabericht).
+# Also treat canonical ``(D)`` suffix as female so fallback labels like
+# ``Landesliga Süd (D)`` do not rematch the male pool on a second normalize pass.
 _LEAGUE_GENDER_FEMALE_RE = re.compile(
     r"(?:^|[\s\-–—/]+)(?:frauen|damen)(?:[\s\-–—/]+|$)",
     re.IGNORECASE,
 )
+_LEAGUE_GENDER_FEMALE_D_SUFFIX_RE = re.compile(r"\(D\)\s*$", re.IGNORECASE)
 _LEAGUE_GENDER_MALE_RE = re.compile(
     r"(?:^|[\s\-–—/]+)(?:herren|männer|maenner)(?:[\s\-–—/]+|$)",
     re.IGNORECASE,
@@ -1010,11 +1013,11 @@ def _normalize_league_match_text(value: str) -> str:
 
 
 def _derive_league_gender_scope(raw: str) -> str:
-    """Damen/Frauen → female; Herren/Männer or no gender marker → male."""
+    """Damen/Frauen/(D) → female; Herren/Männer or no gender marker → male."""
     text = normalize_optional_text(raw)
     if not text:
         return "male"
-    if _LEAGUE_GENDER_FEMALE_RE.search(text):
+    if _LEAGUE_GENDER_FEMALE_RE.search(text) or _LEAGUE_GENDER_FEMALE_D_SUFFIX_RE.search(text):
         return "female"
     return "male"
 

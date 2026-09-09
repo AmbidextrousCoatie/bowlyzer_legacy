@@ -1,0 +1,174 @@
+{
+  "manifest_format_version": 1,
+  "data_schema_version": 2,
+  "run_id": "20260725T003918Z",
+  "published_at": "2026-07-25T00:39:18.934505+00:00",
+  "forced": false,
+  "blocking_audit_ids": [],
+  "deferred_audit_ids": [
+    "player_id_name"
+  ],
+  "jobs_run": [
+    "players_registry",
+    "league"
+  ],
+  "paths": {
+    "data_dir": "C:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\data",
+    "work_dir": "C:\\tmp\\bowlyzer\\data"
+  },
+  "artifacts": [
+    {
+      "job": "league_merge",
+      "stream": "league",
+      "source_id": "db_real_merged",
+      "deprecated": false,
+      "logical_path": "C:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\data\\league_results_merged.csv",
+      "parquet_path": "C:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\data\\league_results_merged.parquet",
+      "row_count": 1390683,
+      "columns": [
+        "Season",
+        "Week",
+        "Date",
+        "Players per Team",
+        "Location",
+        "Round Number",
+        "Match Number",
+        "Team",
+        "Position",
+        "Player",
+        "Player ID",
+        "Opponent",
+        "Score",
+        "Points",
+        "Bonus Points",
+        "Input Data",
+        "Computed Data",
+        "Event",
+        "Event Type",
+        "Club"
+      ],
+      "columns_hash": "e977cb887df8a0c3",
+      "schema_version": 2,
+      "format_era_breakdown": null,
+      "input_sources": [
+        {
+          "path": "C:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\published_csv\\league_results_merged.csv",
+          "priority": 0,
+          "input_rows": 1382801,
+          "unique_rows_after_dedupe": 754167
+        },
+        {
+          "path": "C:\\tmp\\bowlyzer\\data\\legacy_scrape\\legacy_scrape_extracted.csv",
+          "priority": 1,
+          "input_rows": 630970,
+          "unique_rows_after_dedupe": 626254
+        },
+        {
+          "path": "C:\\tmp\\2425.csv",
+          "priority": 2,
+          "input_rows": 2913,
+          "unique_rows_after_dedupe": 2905
+        },
+        {
+          "path": "C:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\pipeline\\bowling_bayern\\legacy_out\\latest.csv",
+          "priority": 3,
+          "input_rows": 9175,
+          "unique_rows_after_dedupe": 7499
+        }
+      ],
+      "size_bytes": 7090326
+    },
+    {
+      "job": "players_registry",
+      "stream": "player",
+      "source_id": "players_registry",
+      "deprecated": false,
+      "logical_path": "C:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\data\\players_registry.csv",
+      "parquet_path": "C:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\data\\players_registry.parquet",
+      "row_count": 3041,
+      "columns": [
+        "player_id",
+        "player_id_legacy",
+        "player_id_pass",
+        "canonical_name",
+        "source",
+        "updated_at",
+        "aliases"
+      ],
+      "columns_hash": "2c8761caf07643a7",
+      "schema_version": 2,
+      "format_era_breakdown": null,
+      "input_sources": [
+        {
+          "path": "database/config/player_id_name_normalization.json",
+          "priority": 0,
+          "input_rows": null,
+          "unique_rows_after_dedupe": null
+        },
+        {
+          "path": "database/config/player_name_normalization.json",
+          "priority": 1,
+          "input_rows": null,
+          "unique_rows_after_dedupe": null
+        }
+      ],
+      "size_bytes": 92114
+    }
+  ],
+  "audits": {
+    "female_league_split": {
+      "status": "ok"
+    },
+    "player_id_name": {
+      "status": "deferred",
+      "report": "C:\\tmp\\bowlyzer\\data\\player_id_name_conflicts.csv",
+      "detail_rows": 10,
+      "deferred_until": "players_registry"
+    },
+    "league_standings": {
+      "status": "red",
+      "report": "C:\\tmp\\bowlyzer\\data\\league_standings_validation.csv",
+      "evaluated": 62,
+      "counts": {
+        "perfect": 1,
+        "corrected": 0,
+        "green": 1,
+        "yellow": 52,
+        "red": 9,
+        "skipped": 335,
+        "week_incomplete": 59
+      }
+    }
+  },
+  "normalization": {
+    "team_name_normalization_applied": true,
+    "player_id_name_normalization_applied": false,
+    "player_id_name_normalization_fingerprint": "eb74c4e2c837",
+    "player_name_normalization_applied": false,
+    "player_name_normalization_fingerprint": ""
+  },
+  "merge": {
+    "league_dedupe_keys": [
+      "league",
+      "season",
+      "week",
+      "round number",
+      "match number",
+      "team",
+      "position",
+      "player"
+    ],
+    "league_merge_conflicts": {
+      "keys_with_cross_source_conflict": 142,
+      "keys_with_duplicates_any": 633480,
+      "rows_deduped": 635176,
+      "duplicate_groups_reported": 633480,
+      "duplicate_rows_reported": 1268656,
+      "exact_duplicate_groups_strict": 619017,
+      "exact_duplicate_groups_business": 619017,
+      "non_exact_duplicate_groups_business": 14463,
+      "rows_in_exact_duplicate_groups_business": 1238034,
+      "rows_in_non_exact_duplicate_groups_business": 30622
+    }
+  }
+}

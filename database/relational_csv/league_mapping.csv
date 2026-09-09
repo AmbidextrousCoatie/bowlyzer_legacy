@@ -6,8 +6,8 @@ LL N1,Landesliga Nord,4,north,male,
 LL N2,Landesliga Nord 2,4,north,male,
 LL N (D),Landesliga Nord Damen,4,north,female,Landesliga Nord - Frauen
 LL S,Landesliga Süd,4,south,male,
-LL S (D),Landesliga Süd Damen,4,south,female,Landesliga Süd 1 - Frauen
-LL S (D),Landesliga Süd 1 Damen,4,south,female,Landesliga Süd 1 - Frauen
+LL S (D),Landesliga Süd Damen,4,south,female,Landesliga Süd 1 - Frauen|Landesliga Süd Frauen|Landesliga Süd - Frauen|Landesliga Süd (D)
+LL S (D),Landesliga Süd 1 Damen,4,south,female,Landesliga Süd 1 - Frauen|Landesliga Süd Frauen|Landesliga Süd - Frauen|Landesliga Süd (D)
 BZOL N1,Bezirksoberliga Nord 1,5,north,male,
 BZOL N2,Bezirksoberliga Nord 2,5,north,male,
 BZOL N3,Bezirksoberliga Nord 3,5,north,male,

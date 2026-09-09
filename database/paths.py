@@ -86,6 +86,31 @@ def _prefer_existing_dir(primary: Path, fallback: Path) -> Path:
     return primary
 
 
+def _csv_looks_populated(path: Path, *, min_bytes: int = 512) -> bool:
+    """True when path exists and is larger than a header-only stub CSV."""
+    try:
+        return path.is_file() and path.stat().st_size >= min_bytes
+    except OSError:
+        return False
+
+
+def _prefer_populated_csv(*candidates: Path) -> Path:
+    """
+    Prefer the first CSV that looks populated.
+
+    Empty/header-only stubs in an overridden ``BOWLYZER_WORK_DATA_DIR`` must not
+    shadow real copies under ``database/work`` or legacy input paths.
+    """
+    paths = [Path(p) for p in candidates]
+    for path in paths:
+        if _csv_looks_populated(path):
+            return path.resolve()
+    for path in paths:
+        if path.is_file():
+            return path.resolve()
+    return paths[0].resolve() if paths else Path()
+
+
 def logical_dataset_csv(stem: str) -> Path:
     """Logical CSV path used by config and runtime (file may live in published_csv/)."""
     return get_data_dir() / f"{stem}.csv"
@@ -137,23 +162,31 @@ def _resolve_work_first(
     """
     Prefer work dir for pipeline inputs.
 
-    Falls back to ``repo_fallback`` only when the work copy is missing (logs a note).
+    When ``BOWLYZER_WORK_DATA_DIR`` is overridden, also consider ``database/work``.
+    Empty/header-only stubs are skipped in favor of a populated fallback.
     """
     import sys
 
     work = get_work_data_dir() / relative_path
-    if work.is_file():
-        return work
-    fallback = repo_fallback
-    if fallback and fallback.is_file():
+    candidates: list[Path] = [work]
+    try:
+        if get_work_data_dir().resolve() != REPO_WORK_DIR.resolve():
+            candidates.append(REPO_WORK_DIR / relative_path)
+    except OSError:
+        candidates.append(REPO_WORK_DIR / relative_path)
+    if repo_fallback is not None:
+        candidates.append(repo_fallback)
+
+    chosen = _prefer_populated_csv(*candidates)
+    if chosen != work.resolve() and chosen.is_file():
         name = label or relative_path
+        reason = "empty/missing in work dir" if not _csv_looks_populated(work) else "fallback"
         print(
-            f"Note: using repo fallback for {name} (not in work dir {get_work_data_dir()}):\n"
-            f"       {fallback}",
+            f"Note: using {reason} for {name}:\n"
+            f"       {chosen}",
             file=sys.stderr,
         )
-        return fallback
-    return work
+    return chosen
 
 
 def legacy_scrape_dir() -> Path:
@@ -256,11 +289,28 @@ def pipeline_gf_league_csv() -> Path:
 
 def gf_tournament_export_dir() -> Path:
     primary = get_work_data_dir() / "gf"
+    if get_work_data_dir().resolve() != REPO_WORK_DIR.resolve():
+        repo_work_gf = REPO_WORK_DIR / "gf"
+        if (not primary.is_dir()) and repo_work_gf.is_dir():
+            return repo_work_gf
+        # Prefer the dir that actually holds a populated combined CSV.
+        name = "gf_tournaments_2026__combined_postprocessed.csv"
+        chosen = _prefer_populated_csv(
+            primary / name,
+            repo_work_gf / name,
+            _LEGACY_INPUT_DIR / "gf_tables_export" / name,
+        )
+        return chosen.parent
     return _prefer_existing_dir(primary, _LEGACY_INPUT_DIR / "gf_tables_export")
 
 
 def gf_tournaments_combined_postprocessed_csv() -> Path:
-    return gf_tournament_export_dir() / "gf_tournaments_2026__combined_postprocessed.csv"
+    name = "gf_tournaments_2026__combined_postprocessed.csv"
+    return _prefer_populated_csv(
+        get_work_data_dir() / "gf" / name,
+        REPO_WORK_DIR / "gf" / name,
+        _LEGACY_INPUT_DIR / "gf_tables_export" / name,
+    )
 
 
 def manual_tournament_postprocessed_csv() -> Path:

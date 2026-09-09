@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import csv
 from pathlib import Path
 import sys
 from typing import Dict, Iterable, List
@@ -39,11 +38,18 @@ from scripts.data.extract_excel_data import (
 
 DEFAULT_OUT = get_data_dir() / "league_results_merged.csv"
 CSV_SEP = ";"
-# TODO(cfell): Current legacy rows include "Team Total" lines reusing Position==0.
-# Keep "player" in the dedupe key for now to avoid false collisions. Later we should
-# model team totals explicitly (separate row type / stable synthetic key) and remove
-# this workaround.
-DEFAULT_KEYS = ("league", "season", "week", "round number", "match number", "team", "position", "player")
+# Stable dedupe: ``match number`` is assignment-order dependent across extracts; ``player``
+# display names vary after registry normalization. Prefer ``player id`` + ``opponent``.
+DEFAULT_KEYS = (
+    "league",
+    "season",
+    "week",
+    "round number",
+    "team",
+    "position",
+    "player id",
+    "opponent",
+)
 
 
 def _resolve_key_columns(df: pd.DataFrame, keys: List[str]) -> Dict[str, str]:
@@ -70,6 +76,8 @@ def _resolve_key_columns(df: pd.DataFrame, keys: List[str]) -> Dict[str, str]:
         "team": ("team", "team name"),
         "position": ("position",),
         "player": ("player", "player name"),
+        "player id": ("player id", "player_id", "edv", "edv-nr"),
+        "opponent": ("opponent", "opponent team", "gegner"),
     }
     out: Dict[str, str] = {}
     for key in keys:
@@ -82,20 +90,66 @@ def _normalized_key(series: pd.Series) -> pd.Series:
     return series.fillna("").astype(str).str.strip().str.lower()
 
 
+def _apply_dedupe_key_columns(combined: pd.DataFrame, key_cols: Dict[str, str]) -> List[str]:
+    """
+    Materialize ``__k_*`` columns for dedupe.
+
+    ``player id`` falls back to ``player`` when the id cell is empty (legacy rows).
+    """
+    normalized = {str(col).strip().lower(): str(col) for col in combined.columns}
+    player_col = key_cols.get("player")
+    if not player_col:
+        for candidate in ("player", "player name"):
+            player_col = normalized.get(candidate)
+            if player_col:
+                break
+
+    dedupe_cols: List[str] = []
+    for logical, concrete in key_cols.items():
+        if logical == "player":
+            continue
+        if logical == "player id":
+            pid_series = _normalized_key(combined[concrete])
+            if player_col:
+                pid_series = pid_series.mask(
+                    pid_series.eq(""),
+                    _normalized_key(combined[player_col]),
+                )
+            combined["__k_player id"] = pid_series
+            dedupe_cols.append("__k_player id")
+            continue
+        col_name = f"__k_{logical}"
+        combined[col_name] = _normalized_key(combined[concrete])
+        dedupe_cols.append(col_name)
+    return dedupe_cols
+
+
 def _write_duplicates_report(
     combined: pd.DataFrame,
     dedupe_cols: List[str],
     out_path: Path,
     non_exact_out_path: Path,
     sep: str,
+    *,
+    full_report_row_limit: int = 100_000,
 ) -> Dict[str, int]:
+    """
+    Write duplicate-key audit CSVs.
+
+    Previously this used per-group ``iterrows`` CSV writing, which could take hours when
+    inputs already contained near-complete key duplication (e.g. a published file that
+    was merged with itself). Stats are vectorized; the full dump is skipped when it would
+    exceed ``full_report_row_limit`` (non-exact conflicts are always written).
+    """
     dup_mask = combined.duplicated(subset=dedupe_cols, keep=False)
     dup_df = combined.loc[dup_mask].copy()
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    non_exact_out_path.parent.mkdir(parents=True, exist_ok=True)
+
     if dup_df.empty:
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-        with out_path.open("w", encoding="utf-8", newline="") as f:
-            writer = csv.writer(f, delimiter=sep)
-            writer.writerow([*combined.columns])
+        header = list(combined.columns)
+        pd.DataFrame(columns=header).to_csv(out_path, sep=sep, index=False)
+        pd.DataFrame(columns=header).to_csv(non_exact_out_path, sep=sep, index=False)
         return {
             "duplicate_groups": 0,
             "duplicate_rows": 0,
@@ -104,72 +158,74 @@ def _write_duplicates_report(
             "non_exact_groups_business": 0,
             "rows_in_exact_groups_business": 0,
             "rows_in_non_exact_groups_business": 0,
+            "full_report_written": True,
+            "full_report_skipped_rows": 0,
         }
 
-    dup_df["__dup_key"] = dup_df[dedupe_cols].astype(str).agg("|".join, axis=1)
-    dup_df = dup_df.sort_values(by=["__dup_key", "__source_idx"], ascending=[True, True])
-    dup_groups = int(dup_df["__dup_key"].nunique())
+    sort_cols = list(dedupe_cols)
+    if "__source_idx" in dup_df.columns:
+        sort_cols = sort_cols + ["__source_idx"]
+    dup_df = dup_df.sort_values(by=sort_cols, ascending=True, kind="mergesort")
+
+    dup_groups = int(dup_df.groupby(dedupe_cols, dropna=False, sort=False).ngroups)
     dup_rows = int(len(dup_df))
 
     # Group-level exactness stats:
     # - strict: all columns must match (including metadata columns).
     # - business: ignore merge metadata (__source_idx + __k_* columns).
     metadata_cols = {"__source_idx"} | {c for c in dup_df.columns if c.startswith("__k_")}
-    strict_cols = [c for c in dup_df.columns if c != "__dup_key"]
+    strict_cols = list(dup_df.columns)
     business_cols = [c for c in strict_cols if c not in metadata_cols]
 
-    exact_groups_strict = 0
-    exact_groups_business = 0
-    rows_in_exact_groups_business = 0
-    rows_in_nonexact_groups_business = 0
-    for _, group in dup_df.groupby("__dup_key", sort=False):
-        strict_unique = group[strict_cols].drop_duplicates().shape[0]
-        business_unique = group[business_cols].drop_duplicates().shape[0]
-        if strict_unique == 1:
-            exact_groups_strict += 1
-        if business_unique == 1:
-            exact_groups_business += 1
-            rows_in_exact_groups_business += int(len(group))
-        else:
-            rows_in_nonexact_groups_business += int(len(group))
+    strict_hash = pd.util.hash_pandas_object(dup_df[strict_cols], index=False)
+    business_hash = pd.util.hash_pandas_object(dup_df[business_cols], index=False)
+    hashed = dup_df[dedupe_cols].copy()
+    hashed["__strict_hash"] = strict_hash
+    hashed["__biz_hash"] = business_hash
+    grouped = hashed.groupby(dedupe_cols, dropna=False, sort=False)
+    strict_nunique = grouped["__strict_hash"].nunique()
+    business_nunique = grouped["__biz_hash"].nunique()
+    group_sizes = grouped.size()
 
-    output_columns = [c for c in dup_df.columns if c != "__dup_key"]
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    with out_path.open("w", encoding="utf-8", newline="") as f:
-        writer = csv.writer(f, delimiter=sep)
-        writer.writerow(output_columns)
-        first_group = True
-        for _, group in dup_df.groupby("__dup_key", sort=False):
-            if not first_group:
-                writer.writerow([])
-            first_group = False
-            for _, row in group.iterrows():
-                writer.writerow([row.get(col, "") for col in output_columns])
+    exact_groups_strict = int((strict_nunique == 1).sum())
+    exact_business_mask = business_nunique == 1
+    exact_groups_business = int(exact_business_mask.sum())
+    rows_in_exact_groups_business = int(group_sizes[exact_business_mask].sum())
+    rows_in_nonexact_groups_business = int(group_sizes[~exact_business_mask].sum())
+    non_exact_groups_business = int((~exact_business_mask).sum())
 
-    # Write only non-exact duplicate groups (business columns differ).
-    non_exact_out_path.parent.mkdir(parents=True, exist_ok=True)
-    with non_exact_out_path.open("w", encoding="utf-8", newline="") as f:
-        writer = csv.writer(f, delimiter=sep)
-        writer.writerow(output_columns)
-        first_group = True
-        for _, group in dup_df.groupby("__dup_key", sort=False):
-            business_unique = group[business_cols].drop_duplicates().shape[0]
-            if business_unique <= 1:
-                continue
-            if not first_group:
-                writer.writerow([])
-            first_group = False
-            for _, row in group.iterrows():
-                writer.writerow([row.get(col, "") for col in output_columns])
+    non_exact_key_frame = business_nunique[~exact_business_mask].reset_index()[dedupe_cols]
+    if not non_exact_key_frame.empty:
+        non_exact_df = dup_df.merge(non_exact_key_frame, on=dedupe_cols, how="inner")
+        non_exact_df.to_csv(non_exact_out_path, sep=sep, index=False)
+    else:
+        pd.DataFrame(columns=list(dup_df.columns)).to_csv(non_exact_out_path, sep=sep, index=False)
+
+    full_report_written = dup_rows <= full_report_row_limit
+    if full_report_written:
+        dup_df.to_csv(out_path, sep=sep, index=False)
+        skipped_rows = 0
+    else:
+        # Header-only placeholder so callers still find a file; details are in stats / non-exact.
+        pd.DataFrame(columns=list(dup_df.columns)).to_csv(out_path, sep=sep, index=False)
+        skipped_rows = dup_rows
+        print(
+            f"  duplicate full report skipped ({dup_rows:,} rows > limit "
+            f"{full_report_row_limit:,}); wrote non-exact only "
+            f"({rows_in_nonexact_groups_business:,} rows).",
+            flush=True,
+        )
 
     return {
         "duplicate_groups": dup_groups,
         "duplicate_rows": dup_rows,
-        "exact_groups_strict": int(exact_groups_strict),
-        "exact_groups_business": int(exact_groups_business),
-        "non_exact_groups_business": int(dup_groups - exact_groups_business),
-        "rows_in_exact_groups_business": int(rows_in_exact_groups_business),
-        "rows_in_non_exact_groups_business": int(rows_in_nonexact_groups_business),
+        "exact_groups_strict": exact_groups_strict,
+        "exact_groups_business": exact_groups_business,
+        "non_exact_groups_business": non_exact_groups_business,
+        "rows_in_exact_groups_business": rows_in_exact_groups_business,
+        "rows_in_non_exact_groups_business": rows_in_nonexact_groups_business,
+        "full_report_written": full_report_written,
+        "full_report_skipped_rows": skipped_rows,
     }
 
 
@@ -200,9 +256,10 @@ def merge_sources(
     registry_stats: Dict[str, int] = {}
     legacy_id_remapped = 0
     for idx, path in enumerate(input_paths):
+        source_label = path.name
+        print(f"  load [{idx + 1}/{len(input_paths)}] {source_label} …", flush=True)
         df = pd.read_csv(path, sep=sep, dtype=str, keep_default_na=False)
         if normalize_team_names and not df.empty:
-            source_label = path.name
             df = normalize_extracted_dataframe(
                 df,
                 show_progress=show_progress,
@@ -215,6 +272,11 @@ def merge_sources(
                 progress_desc=f"team numbers [{idx + 1}/{len(input_paths)}] {source_label}",
             )
         if normalize_player_ids and not df.empty:
+            print(
+                f"  player ids [{idx + 1}/{len(input_paths)}] {source_label} "
+                f"({len(df):,} rows) …",
+                flush=True,
+            )
             df, legacy_stats = apply_legacy_player_id_remapping(df)
             legacy_id_remapped += int(legacy_stats.get("legacy_id_remapped") or 0)
             if player_id_rules:
@@ -235,13 +297,11 @@ def merge_sources(
             }
         )
 
+    print(f"  concat {len(frames)} sources ({sum(len(f) for f in frames):,} rows) …", flush=True)
     combined = pd.concat(frames, ignore_index=True, sort=False)
     key_cols = _resolve_key_columns(combined, key_names)
 
-    for logical_name, concrete_column in key_cols.items():
-        combined[f"__k_{logical_name}"] = _normalized_key(combined[concrete_column])
-
-    dedupe_cols = [f"__k_{k}" for k in key_names]
+    dedupe_cols = _apply_dedupe_key_columns(combined, key_cols)
     grouped_any = combined.groupby(dedupe_cols, dropna=False).size()
     duplicate_keys_any = int((grouped_any > 1).sum())
     grouped_cross_source = combined.groupby(dedupe_cols, dropna=False)["__source_idx"].nunique()
@@ -250,6 +310,11 @@ def merge_sources(
     non_exact_duplicates_out_path = non_exact_duplicates_out_path or merge_duplicates_non_exact_report_csv(
         out_path
     )
+    print(
+        f"  duplicate report ({duplicate_keys_any:,} multi-row keys, "
+        f"{conflict_keys:,} cross-source) …",
+        flush=True,
+    )
     duplicates_stats = _write_duplicates_report(
         combined=combined,
         dedupe_cols=dedupe_cols,
@@ -257,15 +322,28 @@ def merge_sources(
         non_exact_out_path=non_exact_duplicates_out_path,
         sep=sep,
     )
+    print(
+        f"  duplicate report done: {duplicates_stats['duplicate_rows']:,} rows in "
+        f"{duplicates_stats['duplicate_groups']:,} groups "
+        f"({duplicates_stats['non_exact_groups_business']:,} non-exact business)",
+        flush=True,
+    )
 
+    print("  dedupe + competition schema …", flush=True)
     merged = combined.drop_duplicates(subset=dedupe_cols, keep="last")
     merged = merged.drop(columns=dedupe_cols + ["__source_idx"])
     merged = apply_league_competition_schema_v2(merged)
 
     from data_access.parquet_sidecar import publish_dataframe
 
+    print(
+        f"  publish {len(merged):,} rows "
+        f"({'parquet+csv' if write_csv else 'parquet'}) …",
+        flush=True,
+    )
     published = publish_dataframe(merged, out_path, write_csv=write_csv, sep=sep)
     parquet_path = published["parquet"]
+    print("  publish done.", flush=True)
 
     per_source_unique: List[Dict] = []
     for idx in range(len(input_paths)):

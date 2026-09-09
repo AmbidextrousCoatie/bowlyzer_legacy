@@ -35,6 +35,21 @@ def test_gender_scope_from_title():
     assert m._derive_league_gender_scope("Bayernliga") == "male"
     assert m._derive_league_gender_scope("Bayernliga - Herren") == "male"
     assert m._derive_league_gender_scope("Bezirksliga Nord 4 - Männer") == "male"
+    assert m._derive_league_gender_scope("Landesliga Süd (D)") == "female"
+    assert m._derive_league_gender_scope("LL S (D)") == "female"
+
+
+def test_landesliga_sued_frauen_maps_to_female_id():
+    """Schlüssel titles use Frauen; must not collapse to male LL S on re-normalize."""
+    assert m.normalize_league_display_to_canonical("Landesliga Süd Frauen") == "LL S (D)"
+    assert m.normalize_league_display_to_canonical("Landesliga Süd - Frauen") == "LL S (D)"
+    # Fallback label from a first pass must stay female on the second pass.
+    assert m.normalize_league_display_to_canonical("Landesliga Süd (D)") == "LL S (D)"
+
+
+def test_landesliga_sued_maenner_maps_to_male_id():
+    assert m.normalize_league_display_to_canonical("Landesliga Süd 1 Männer") == "LL S"
+    assert m.normalize_league_display_to_canonical("Landesliga Süd") == "LL S"
 
 
 def test_long_name_match_tolerates_dashes_and_spaces():

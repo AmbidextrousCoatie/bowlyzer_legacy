@@ -4,4 +4,7 @@ exact_path,C:\tmp\Sammlung-Ligaergebnisse\Ligaprogramme Nord 2023-24\BYL Frauen.
 exact_path,C:\tmp\Sammlung-Ligaergebnisse\Liga 2022-23\BZL N1 M.xlsx,,BZL N1,,false,,Normalize to canonical league ID
 exact_path,C:\tmp\Sammlung-Ligaergebnisse\Liga 2022-23\KRL N1 M + LL N F.xlsx,,KL N1,,false,,"Normalize mixed workbook label to canonical league ID; This league season is rather special, since it features both male and female teams in the same league. dunno how to handle this properly"
 exact_path,C:\tmp\Sammlung-Ligaergebnisse\Ligaprogramme Nord 2023-24\LL N1 Männer.xlsx,,LL N1,,false,,Normalize to canonical league ID
+path_regex,Ligaprogramme S.?d 2023-24[\\/]LLS F\.xlsx$,,LL S (D),,false,,Schlüssel title Landesliga Süd Frauen must stay LL S (D) (not collapse into LL S)
+path_regex,Ligaprogramme S.?d 2024-25[\\/]LL S 1 F\.xlsx$,,LL S (D),,false,,Schlüssel title Landesliga Süd Frauen must stay LL S (D) (not collapse into LL S)
+path_regex,Liga 2022-23[\\/]LLS F ?\.xlsx$,,LL S (D),,false,,Schlüssel title Landesliga Süd Frauen must stay LL S (D) (not collapse into LL S)
 data_format_pre_2022,data_format_pre_2022,,,,false,"1,2","Pre-2022 weeks 1-2: Ligabericht often still shows prior season (18/19); when folder path season differs, use path season"
