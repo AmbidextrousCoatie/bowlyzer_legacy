@@ -29,6 +29,7 @@ Config used by the main extractor (not CLI flags):
 |------|---------|
 | `database/config/extract_excel_overrides.csv` | Per-workbook fixes (`force_season`, `force_league`, `exclude_file`, …) |
 | `database/config/team_name_normalization.json` | Team name cleanup during extract/merge |
+| `database/relational_csv/venue_mapping.csv` | Location alias → canonical bowling center |
 | `database/config/team_number_overrides.csv` | Team number normalization |
 | `database/relational_csv/league_mapping.csv` | Display name → canonical league id |
 

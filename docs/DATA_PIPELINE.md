@@ -21,6 +21,7 @@ Supersedes the scrape-flag and hybrid-player guidance in older planning docs (`d
 ┌────────────────────────── NORMALIZE ─────────────────────────┐
 │  team_name_normalization.json  → team spelling + numbers      │
 │  club_mapping.csv              → alias → canonical Club       │
+│  venue_mapping.csv            → alias → canonical bowling center │
 │  players_registry              → EDV + Pass-Nr / legacy IDs   │
 │  affiliation_index             → player×season Club + Verein  │
 └──────────────────────────────┬───────────────────────────────┘
@@ -66,6 +67,7 @@ Hand-edited (repo, not regenerated blindly):
 | File | Role |
 |------|------|
 | `database/relational_csv/club_mapping.csv` | Durable alias → **canonical Club** |
+| `database/relational_csv/venue_mapping.csv` | Durable alias → **canonical bowling center** (`Location`) |
 | `database/config/team_name_normalization.json` | Regex team spelling / number fixes |
 | `database/relational_csv/rangliste_club_crosswalk.csv` | Rangliste club label → league Club (optional) |
 
