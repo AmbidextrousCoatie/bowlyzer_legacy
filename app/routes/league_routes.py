@@ -122,7 +122,9 @@ def get_club_legends():
                     "most_leagues_seen": [],
                 }
             database = request.args.get("database") or database_config.get_default_source()
-            return ClubLegendsService(league_database=database).get_club_legends(selected_club)
+            return ClubLegendsService(league_database=database).get_club_legends(
+                selected_club, season=_season_param()
+            )
 
         return _jsonify_cached_or_compute("get_club_legends", _build)
     except Exception as e:
@@ -145,7 +147,7 @@ def get_club_player_results():
                 return {"club": "", "table": {"columns": [], "data": []}}
             database = request.args.get("database") or database_config.get_default_source()
             return ClubPlayerResultsService(league_database=database).get_club_player_results_table(
-                selected_club
+                selected_club, season=_season_param()
             )
 
         return _jsonify_cached_or_compute("get_club_player_results", _build)
@@ -1294,8 +1296,9 @@ def get_season_timetable():
 
         league_service = get_league_service()
         data = league_service.get_season_timetable(league=league, season=season)
-        _league_json_cache_put("get_season_timetable", data)
-        return jsonify(data)
+        payload = data.to_dict() if hasattr(data, "to_dict") else data
+        _league_json_cache_put("get_season_timetable", payload)
+        return jsonify(payload)
         
     except Exception as e:
         print(f"Error in get_season_timetable: {str(e)}")
