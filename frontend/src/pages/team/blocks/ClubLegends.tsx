@@ -15,6 +15,7 @@ import { getPaletteColor } from "../../../lib/color-utils";
 
 type Props = {
   club: string;
+  season?: string | null;
   t: (key: string, fallback?: string) => string;
 };
 
@@ -28,8 +29,10 @@ type LegendCategory = {
   detail?: (entry: ClubLegendEntry) => string | undefined;
 };
 
-export function ClubLegends({ club, t }: Props) {
-  const legendsQuery = useClubLegends(club);
+export function ClubLegends({ club, season = null, t }: Props) {
+  const legendsQuery = useClubLegends(club, { season });
+  const seasonScoped = Boolean(season && season !== "all" && season !== "latest");
+  const minAvgGames = seasonScoped ? 6 : 12;
 
   const loading = legendsQuery.isPending;
   const error = legendsQuery.isError;
@@ -37,19 +40,23 @@ export function ClubLegends({ club, t }: Props) {
 
   const categories: LegendCategory[] = data
     ? [
-        {
-          id: "most_seasons",
-          titleKey: "ui.team.club_legends_most_seasons",
-          titleFallback: "Meiste Saisons",
-          icon: CalendarRange,
-          entries: data.most_seasons,
-          formatValue: (e) => String(e.value),
-          detail: (e) =>
-            t("ui.team.club_legends_seasons_count", "{n} Saisons").replace(
-              "{n}",
-              String(e.value),
-            ),
-        },
+        ...(!seasonScoped
+          ? [
+              {
+                id: "most_seasons",
+                titleKey: "ui.team.club_legends_most_seasons",
+                titleFallback: "Meiste Saisons",
+                icon: CalendarRange,
+                entries: data.most_seasons,
+                formatValue: (e: ClubLegendEntry) => String(e.value),
+                detail: (e: ClubLegendEntry) =>
+                  t("ui.team.club_legends_seasons_count", "{n} Saisons").replace(
+                    "{n}",
+                    String(e.value),
+                  ),
+              } satisfies LegendCategory,
+            ]
+          : []),
         {
           id: "most_games",
           titleKey: "ui.team.club_legends_most_games",
@@ -71,21 +78,28 @@ export function ClubLegends({ club, t }: Props) {
           formatValue: (e) => formatAvg(e.average ?? e.value),
           detail: (e) =>
             e.games != null
-              ? `${e.games} ${t("ui.player.games", "Spiele")} · min. 12`
+              ? `${e.games} ${t("ui.player.games", "Spiele")} · min. ${minAvgGames}`
               : undefined,
         },
-        {
-          id: "best_seasons",
-          titleKey: "ui.team.club_legends_best_seasons",
-          titleFallback: "Beste Saisons",
-          icon: Sparkles,
-          entries: data.best_seasons,
-          formatValue: (e) => formatAvg(e.average ?? e.value),
-          detail: (e) =>
-            [e.season, e.games != null ? `${e.games} ${t("ui.player.games", "Spiele")}` : null]
-              .filter(Boolean)
-              .join(" · "),
-        },
+        ...(!seasonScoped
+          ? [
+              {
+                id: "best_seasons",
+                titleKey: "ui.team.club_legends_best_seasons",
+                titleFallback: "Beste Saisons",
+                icon: Sparkles,
+                entries: data.best_seasons,
+                formatValue: (e: ClubLegendEntry) => formatAvg(e.average ?? e.value),
+                detail: (e: ClubLegendEntry) =>
+                  [
+                    e.season,
+                    e.games != null ? `${e.games} ${t("ui.player.games", "Spiele")}` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · "),
+              } satisfies LegendCategory,
+            ]
+          : []),
         {
           id: "most_teams",
           titleKey: "ui.team.club_legends_most_teams",
@@ -116,18 +130,19 @@ export function ClubLegends({ club, t }: Props) {
     <section className="rounded-sm border border-border bg-surface">
       <header className="border-b border-border px-4 py-3 lg:px-5">
         <div className="flex items-start gap-2.5">
-          <Award
-            className="mt-0.5 h-5 w-5 shrink-0 text-accent"
-            strokeWidth={1.75}
-            aria-hidden
-          />
+          <Award className="mt-0.5 h-5 w-5 shrink-0 text-accent" strokeWidth={1.75} aria-hidden />
           <div>
             <h2 className="text-h3">{t("ui.team.club_legends_heading", "Club-Legenden")}</h2>
             <p className="text-small text-muted mt-1">
-              {t(
-                "ui.team.club_legends_hint",
-                "Spieler-Highlights für diesen Club — Liga-Spiele, alle Saisons.",
-              )}
+              {seasonScoped
+                ? t(
+                    "ui.team.club_legends_hint_season",
+                    "Spieler-Highlights für diesen Club — Liga-Spiele in der Saison {season}.",
+                  ).replace("{season}", String(season))
+                : t(
+                    "ui.team.club_legends_hint",
+                    "Spieler-Highlights für diesen Club — Liga-Spiele, alle Saisons.",
+                  )}
             </p>
           </div>
         </div>
@@ -216,10 +231,7 @@ function LegendCategoryBlock({
                 {entry.player_name}
               </Link>
               {category.detail?.(entry) ? (
-                <p
-                  className="text-label text-muted mt-0.5 truncate"
-                  title={category.detail(entry)}
-                >
+                <p className="text-label text-muted mt-0.5 truncate" title={category.detail(entry)}>
                   {category.detail(entry)}
                 </p>
               ) : null}

@@ -177,6 +177,64 @@ def test_club_legends_uses_registry_canonical_name(monkeypatch):
     assert set(names) == {"Glasl, Hans-Jürgen"}
 
 
+def test_club_legends_filters_to_selected_season():
+    rows = []
+    for _ in range(15):
+        rows.append(
+            _league_row(
+                **{
+                    Columns.season: "2022/2023",
+                    Columns.player_name: "Alpha, A",
+                    Columns.player_id: "A",
+                    Columns.score: 250,
+                }
+            )
+        )
+    for _ in range(15):
+        rows.append(
+            _league_row(
+                **{
+                    Columns.season: "2023/2024",
+                    Columns.player_name: "Beta, B",
+                    Columns.player_id: "B",
+                    Columns.score: 180,
+                }
+            )
+        )
+
+    result = _service_with_df(rows).get_club_legends("Test Club", season="2023/2024")
+
+    assert result["most_seasons"] == []
+    assert result["best_seasons"] == []
+    games_names = [e["player_name"] for e in result["most_games"]]
+    assert games_names[0] == "Beta, B"
+    assert "Alpha, A" not in games_names
+    assert result["most_games"][0]["value"] == 15
+    avg_names = [e["player_name"] for e in result["highest_average"]]
+    assert avg_names[0] == "Beta, B"
+    assert "Alpha, A" not in avg_names
+
+
+def test_club_legends_season_all_keeps_alltime():
+    rows = []
+    for season in ("2022/2023", "2023/2024"):
+        for _ in range(8):
+            rows.append(
+                _league_row(
+                    **{
+                        Columns.season: season,
+                        Columns.player_name: "Alpha, A",
+                        Columns.player_id: "A",
+                        Columns.score: 180,
+                    }
+                )
+            )
+
+    result = _service_with_df(rows).get_club_legends("Test Club", season="all")
+    assert result["most_seasons"][0]["value"] == 2
+    assert result["most_games"][0]["value"] == 16
+
+
 def test_get_club_legends_route_returns_json():
     from app import create_app
 

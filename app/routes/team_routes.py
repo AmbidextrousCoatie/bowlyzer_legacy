@@ -3,6 +3,7 @@ from app.services.team_service import TeamService
 from app.config.database_config import database_config
 from app.cache.league_response_cache import league_cache_put, league_cache_try_get
 from app.utils.json_safe import json_safe
+from app.utils.season_query import normalize_season_query_value
 
 bp = Blueprint('team', __name__)
 
@@ -10,6 +11,18 @@ def get_team_service():
     """Helper function to get TeamService with database parameter"""
     database = request.args.get('database') or database_config.get_default_source()
     return TeamService(database=database)
+
+
+def _season_param(name: str = "season") -> str | None:
+    """Accept ``25-26`` on the wire (nginx-safe) and look up ``25/26`` in data."""
+    return normalize_season_query_value(request.args.get(name))
+
+
+def _season_scope(raw: str | None) -> str | None:
+    """None means all seasons; otherwise canonical ``YY/YY``."""
+    if not raw or raw.strip().lower() in {"all"}:
+        return None
+    return raw
 
 @bp.route('/team/get_teams')
 def get_teams():
@@ -56,7 +69,7 @@ def get_available_seasons():
 def get_available_weeks():
     try:
         team_name = request.args.get('team_name')
-        season = request.args.get('season')
+        season = _season_param()
 
         if not all([team_name, season]):
             return jsonify({'error': 'Missing required parameters'}), 400
@@ -98,16 +111,14 @@ def get_team_history():
 def get_special_matches():
     try:
         team_name = request.args.get('team_name')
-        season = request.args.get('season')  # Optional - if not provided, shows all seasons
-        
-    
-        
+        season = _season_scope(_season_param())
+
         if not team_name:
             return jsonify({'error': 'Missing team_name parameter'}), 400
         
         # Use unified method that handles both cases
         team_service = get_team_service()
-        special_matches = team_service.get_special_matches(team_name=team_name, season=season if season and season != '' else None)
+        special_matches = team_service.get_special_matches(team_name=team_name, season=season)
         
 
         return jsonify(json_safe(special_matches))
@@ -119,7 +130,7 @@ def get_special_matches():
 def get_clutch_analysis():
     try:
         team_name = request.args.get('team_name')
-        season = request.args.get('season')
+        season = _season_scope(_season_param())
         league_name = request.args.get('league_name')
         clutch_threshold = request.args.get('clutch_threshold', 10, type=int)
         
@@ -127,7 +138,7 @@ def get_clutch_analysis():
             return jsonify({'error': 'Missing team_name parameter'}), 400
         
         # If season is provided, derive league_name from team history
-        if season and season != '' and season != 'All':
+        if season:
             team_service = get_team_service()
             team_history = team_service.get_team_history(team_name)
             if season in team_history:
@@ -137,7 +148,7 @@ def get_clutch_analysis():
         clutch_data = team_service.get_clutch_performance(
             team_name=team_name, 
             league_name=league_name, 
-            season=season if season and season != '' else None,
+            season=season,
             clutch_threshold=clutch_threshold
         )
         
@@ -151,13 +162,13 @@ def get_clutch_analysis():
 def get_consistency_metrics():
     try:
         team_name = request.args.get('team_name')
-        season = request.args.get('season')  # Optional - if not provided, shows all seasons
+        season = _season_scope(_season_param())
         
         if not team_name:
             return jsonify({'error': 'Missing team_name parameter'}), 400
         
         # Determine scope based on parameters
-        if season and season != '':
+        if season:
             # Team + specific season - get league name from team history
             team_service = get_team_service()
             team_history = team_service.get_team_history(team_name)
@@ -180,13 +191,13 @@ def get_consistency_metrics():
 def get_margin_analysis():
     try:
         team_name = request.args.get('team_name')
-        season = request.args.get('season')  # Optional - if not provided, shows all seasons
+        season = _season_scope(_season_param())
         
         if not team_name:
             return jsonify({'error': 'Missing team_name parameter'}), 400
         
         # Determine scope based on parameters
-        if season and season != '':
+        if season:
             # Team + specific season - get league name from team history
             team_service = get_team_service()
             team_history = team_service.get_team_history(team_name)

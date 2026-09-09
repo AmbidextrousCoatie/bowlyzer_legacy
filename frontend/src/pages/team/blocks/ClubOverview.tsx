@@ -22,6 +22,7 @@ type Props = {
   teams: string[];
   matrixRows: ClubMatrixRow[];
   seasons: string[];
+  season?: string | null;
   matrixLoading?: boolean;
   matrixError?: boolean;
   leagueLongNames: Record<string, string>;
@@ -41,10 +42,12 @@ function latestSeasonWithLeague(
   return null;
 }
 
-function countDistinctLeagues(rows: ClubMatrixRow[]): number {
+function countDistinctLeagues(rows: ClubMatrixRow[], seasons: string[]): number {
+  const allowed = new Set(seasons);
   const leagues = new Set<string>();
   for (const row of rows) {
-    for (const cell of Object.values(row.seasons ?? {})) {
+    for (const [season, cell] of Object.entries(row.seasons ?? {})) {
+      if (!allowed.has(season)) continue;
       const { items } = normalizeClubMatrixCell(cell);
       for (const item of items) {
         if (item.league) leagues.add(item.league);
@@ -59,6 +62,7 @@ export function ClubOverview({
   teams,
   matrixRows,
   seasons,
+  season = null,
   matrixLoading = false,
   matrixError = false,
   leagueLongNames,
@@ -67,21 +71,18 @@ export function ClubOverview({
   const teamEntries = teams.map((fullName) => {
     const { teamNumber } = splitClubAndTeamNumber(fullName);
     const matrixRow = matrixRows.find(
-      (r) =>
-        r.team_number === teamNumber ||
-        (!teamNumber && r.team_number === "base"),
+      (r) => r.team_number === teamNumber || (!teamNumber && r.team_number === "base"),
     );
     const latest = matrixRow ? latestSeasonWithLeague(matrixRow, seasons) : null;
     const latestLeague = latest ? normalizeClubMatrixCell(latest.cell).label : null;
     const seasonCount = matrixRow
-      ? Object.values(matrixRow.seasons ?? {}).filter((c) => normalizeClubMatrixCell(c).label.trim())
-          .length
+      ? seasons.filter((s) => normalizeClubMatrixCell(matrixRow.seasons?.[s]).label.trim()).length
       : 0;
     const color = getClubTeamColor(fullName);
     return { fullName, latest, latestLeague, seasonCount, color };
   });
 
-  const distinctLeagues = countDistinctLeagues(matrixRows);
+  const distinctLeagues = countDistinctLeagues(matrixRows, seasons);
 
   return (
     <div className="space-y-8">
@@ -103,10 +104,7 @@ export function ClubOverview({
           </p>
         ) : matrixError ? (
           <p className="text-small text-muted p-4">
-            {t(
-              "ui.team.club_matrix_error",
-              "Platzierungsverlauf konnte nicht geladen werden.",
-            )}
+            {t("ui.team.club_matrix_error", "Platzierungsverlauf konnte nicht geladen werden.")}
           </p>
         ) : (
           <ClubPositionHistoryChart
@@ -118,7 +116,7 @@ export function ClubOverview({
         )}
       </section>
 
-      <ClubLegends club={club} t={t} />
+      <ClubLegends club={club} season={season} t={t} />
 
       <div className="grid gap-3 sm:grid-cols-3">
         <StatTile
@@ -171,7 +169,9 @@ export function ClubOverview({
                   </dd>
                 </div>
                 <div className="flex justify-between gap-2">
-                  <dt className="text-muted">{t("ui.team.seasons_with_data", "Saisons mit Daten")}</dt>
+                  <dt className="text-muted">
+                    {t("ui.team.seasons_with_data", "Saisons mit Daten")}
+                  </dt>
                   <dd className="font-mono tabular-nums">{seasonCount}</dd>
                 </div>
               </dl>
@@ -261,7 +261,7 @@ export function ClubOverview({
         </section>
       )}
 
-      <ClubPlayerResults club={club} t={t} />
+      <ClubPlayerResults club={club} season={season} t={t} />
     </div>
   );
 }

@@ -11,6 +11,7 @@ from app.services.league_service import LeagueService
 from app.services.player_service import PlayerService
 from app.utils.json_safe import to_json_float, to_json_int
 from app.utils.league_player_sources import resolve_player_database_id
+from app.utils.season_query import normalize_season_query_value
 from data_access.schema import Columns
 from data_access.score_utils import mean_scores
 from data_access.text_norm import normalize_unicode_label
@@ -30,6 +31,20 @@ def _split_club_from_team_label(text: str) -> str:
     if not match:
         return raw
     return str(match.group(1) or "").strip()
+
+
+def _normalized_season_label(value: Any) -> str:
+    raw = str(value or "").strip()
+    if not raw:
+        return ""
+    return normalize_season_query_value(raw) or raw.replace("-", "/")
+
+
+def _scope_season(season: Optional[str]) -> Optional[str]:
+    wanted = _normalized_season_label(season)
+    if not wanted or wanted in {"all", "latest"}:
+        return None
+    return wanted
 
 
 def _normalize_club_label(value: Any) -> str:
@@ -187,23 +202,31 @@ class ClubLegendsService:
         self._league_games = _league_game_rows(base if base is not None else pd.DataFrame())
         return self._league_games
 
-    def _club_frame(self, club: str) -> pd.DataFrame:
+    def _club_frame(self, club: str, season: Optional[str] = None) -> pd.DataFrame:
         df = self._league_games_dataframe()
         if df.empty or not club:
             return df.iloc[0:0]
         club_norm = normalize_unicode_label(club)
         clubs = _club_series(df)
-        return df.loc[clubs.eq(club_norm)].copy()
+        out = df.loc[clubs.eq(club_norm)].copy()
+        wanted = _scope_season(season)
+        if wanted and Columns.season in out.columns:
+            labels = out[Columns.season].map(_normalized_season_label)
+            out = out.loc[labels.eq(wanted)]
+        return out
 
-    def get_club_legends(self, club: str) -> Dict[str, Any]:
+    def get_club_legends(self, club: str, season: Optional[str] = None) -> Dict[str, Any]:
         clubs = self._league_service.get_available_clubs()
         resolved = self._league_service.resolve_club_name(club, clubs)
         if not resolved:
             return _empty_payload(str(club or "").strip())
 
-        df = self._club_frame(resolved)
+        df = self._club_frame(resolved, season)
         if df.empty or Columns.player_name not in df.columns or Columns.season not in df.columns:
             return _empty_payload(resolved)
+
+        season_scoped = _scope_season(season) is not None
+        min_avg_games = MIN_GAMES_SEASON_SPOTLIGHT if season_scoped else MIN_GAMES_ALLTIME_AVG
 
         keys, names = _player_keys(df)
         work = df.copy()
@@ -233,27 +256,29 @@ class ClubLegendsService:
         def display_for_group(g: pd.DataFrame) -> str:
             return _canonical_display_name(pid_for_group(g), g["_pname"], registry_lookup)
 
-        # --- most seasons ---
-        season_counts = (
-            work.groupby("_pk", sort=False)
-            .agg(
-                seasons=(Columns.season, "nunique"),
-                _pname=("_pname", lambda s: _display_name(s)),
+        # --- most seasons (all-time only; a single season is always 1) ---
+        most_seasons: List[Dict[str, Any]] = []
+        if not season_scoped:
+            season_counts = (
+                work.groupby("_pk", sort=False)
+                .agg(
+                    seasons=(Columns.season, "nunique"),
+                    _pname=("_pname", lambda s: _display_name(s)),
+                )
+                .reset_index()
             )
-            .reset_index()
-        )
-        season_counts = season_counts.sort_values(
-            by=["seasons", "_pname"],
-            ascending=[False, True],
-        ).head(TOP_N)
-        most_seasons = [
-            _legend_row(
-                player_id=pid_for_group(work.loc[work["_pk"].eq(row["_pk"])]),
-                player_name=display_for_group(work.loc[work["_pk"].eq(row["_pk"])]),
-                value=int(row["seasons"]),
-            )
-            for _, row in season_counts.iterrows()
-        ]
+            season_counts = season_counts.sort_values(
+                by=["seasons", "_pname"],
+                ascending=[False, True],
+            ).head(TOP_N)
+            most_seasons = [
+                _legend_row(
+                    player_id=pid_for_group(work.loc[work["_pk"].eq(row["_pk"])]),
+                    player_name=display_for_group(work.loc[work["_pk"].eq(row["_pk"])]),
+                    value=int(row["seasons"]),
+                )
+                for _, row in season_counts.iterrows()
+            ]
 
         # --- most games ---
         game_counts = (
@@ -289,7 +314,7 @@ class ClubLegendsService:
             )
             .reset_index()
         )
-        player_avgs = player_avgs.loc[player_avgs["games"] >= MIN_GAMES_ALLTIME_AVG]
+        player_avgs = player_avgs.loc[player_avgs["games"] >= min_avg_games]
         player_avgs = player_avgs.sort_values(
             by=["average", "games", "_pname"],
             ascending=[False, False, True],
@@ -305,32 +330,34 @@ class ClubLegendsService:
             for _, row in player_avgs.iterrows()
         ]
 
-        # --- best single seasons ---
-        season_avgs = (
-            work.groupby(["_pk", Columns.season], sort=False)
-            .agg(
-                average=(Columns.score, lambda s: mean_scores(s)),
-                games=(Columns.score, "size"),
-                _pname=("_pname", lambda s: _display_name(s)),
+        # --- best single seasons (all-time only; season view is highest_average) ---
+        best_seasons: List[Dict[str, Any]] = []
+        if not season_scoped:
+            season_avgs = (
+                work.groupby(["_pk", Columns.season], sort=False)
+                .agg(
+                    average=(Columns.score, lambda s: mean_scores(s)),
+                    games=(Columns.score, "size"),
+                    _pname=("_pname", lambda s: _display_name(s)),
+                )
+                .reset_index()
             )
-            .reset_index()
-        )
-        season_avgs = season_avgs.loc[season_avgs["games"] >= MIN_GAMES_SEASON_SPOTLIGHT]
-        season_avgs = season_avgs.sort_values(
-            by=["average", "games", Columns.season],
-            ascending=[False, False, False],
-        ).head(TOP_N)
-        best_seasons = [
-            _legend_row(
-                player_id=pid_for_group(work.loc[work["_pk"].eq(row["_pk"])]),
-                player_name=display_for_group(work.loc[work["_pk"].eq(row["_pk"])]),
-                value=to_json_float(row["average"]),
-                games=int(row["games"]),
-                average=to_json_float(row["average"]),
-                season=str(row[Columns.season]),
-            )
-            for _, row in season_avgs.iterrows()
-        ]
+            season_avgs = season_avgs.loc[season_avgs["games"] >= MIN_GAMES_SEASON_SPOTLIGHT]
+            season_avgs = season_avgs.sort_values(
+                by=["average", "games", Columns.season],
+                ascending=[False, False, False],
+            ).head(TOP_N)
+            best_seasons = [
+                _legend_row(
+                    player_id=pid_for_group(work.loc[work["_pk"].eq(row["_pk"])]),
+                    player_name=display_for_group(work.loc[work["_pk"].eq(row["_pk"])]),
+                    value=to_json_float(row["average"]),
+                    games=int(row["games"]),
+                    average=to_json_float(row["average"]),
+                    season=str(row[Columns.season]),
+                )
+                for _, row in season_avgs.iterrows()
+            ]
 
         # --- most teams represented (Mannschaften within the club) ---
         most_teams_represented: List[Dict[str, Any]] = []

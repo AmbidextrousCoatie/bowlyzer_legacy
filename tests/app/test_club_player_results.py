@@ -131,6 +131,56 @@ def test_club_player_results_inactive_alumni_accent():
     assert meta_by_name["Alumni, A"] == "#E86E56"
 
 
+def test_club_player_results_filters_to_selected_season():
+    rows = []
+    for season, score in (("2022/2023", 180), ("2023/2024", 220)):
+        for _ in range(4):
+            rows.append(
+                _league_row(
+                    **{
+                        Columns.season: season,
+                        Columns.player_name: "Alpha, A",
+                        Columns.player_id: "A",
+                        Columns.score: score,
+                    }
+                )
+            )
+    for _ in range(6):
+        rows.append(
+            _league_row(
+                **{
+                    Columns.season: "2023/2024",
+                    Columns.player_name: "Beta, B",
+                    Columns.player_id: "B",
+                    Columns.score: 210,
+                }
+            )
+        )
+    for _ in range(4):
+        rows.append(
+            _league_row(
+                **{
+                    Columns.season: "2022/2023",
+                    Columns.player_name: "Alumni, A",
+                    Columns.player_id: "AL",
+                    Columns.score: 190,
+                }
+            )
+        )
+
+    payload = _service_with_df(rows).get_club_player_results_table("Test Club", season="2023/2024")
+    table = payload["table"]
+    by_name = {row["player_name"]: row for row in table["data"]}
+    assert set(by_name) == {"Alpha, A", "Beta, B"}
+    assert by_name["Alpha, A"]["games"] == 4
+    assert by_name["Alpha, A"]["average"] == 220.0
+    assert by_name["Alpha, A"]["membership_seasons"] == 1
+    assert by_name["Alpha, A"]["best_season"] == "2023/2024"
+    assert by_name["Alpha, A"]["club_active"] is True
+    assert by_name["Beta, B"]["games"] == 6
+    assert table["metadata"]["latest_season"] == "2023/2024"
+
+
 def test_get_club_player_results_route_returns_table():
     from app import create_app
 

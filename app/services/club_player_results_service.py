@@ -43,13 +43,13 @@ def _empty_table(club: str = "") -> Dict[str, Any]:
 
 
 class ClubPlayerResultsService(ClubLegendsService):
-    def get_club_player_results_table(self, club: str) -> Dict[str, Any]:
+    def get_club_player_results_table(self, club: str, season: Optional[str] = None) -> Dict[str, Any]:
         clubs = self._league_service.get_available_clubs()
         resolved = self._league_service.resolve_club_name(club, clubs)
         if not resolved:
             return _empty_table(str(club or "").strip())
 
-        df = self._club_frame(resolved)
+        df = self._club_frame(resolved, season)
         if df.empty or Columns.player_name not in df.columns or Columns.season not in df.columns:
             return _empty_table(resolved)
 

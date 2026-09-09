@@ -203,6 +203,10 @@ export function TeamStats() {
   const showTeamDetail = !!club && !!team;
   const showClubPicker = !myClubActive;
   const showFilterBar = showClubPicker || (club && clubTeams.length > 0);
+  const overviewSeasons =
+    showClubOverview && season && season !== "all"
+      ? matrixSeasons.filter((s) => s === season)
+      : matrixSeasons;
 
   return (
     <div className="mx-auto max-w-[1280px] px-4 pt-8 pb-24 lg:px-8 lg:pt-12">
@@ -264,6 +268,23 @@ export function TeamStats() {
                 </select>
               </FilterField>
             )}
+
+            {showClubOverview && matrixSeasons.length > 0 && (
+              <FilterField label={t("season", "Saison")}>
+                <select
+                  className="h-9 min-w-[min(100%,160px)] rounded-sm border border-border bg-surface-subtle px-2.5 text-small"
+                  value={season === "all" || !season ? "all" : season}
+                  onChange={(e) => selectSeason(e.target.value)}
+                >
+                  <option value="all">{t("ui.team.all_seasons", "Alle Saisons")}</option>
+                  {matrixSeasons.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+              </FilterField>
+            )}
           </div>
         </div>
       ) : null}
@@ -297,7 +318,8 @@ export function TeamStats() {
             club={resolvedClub || club}
             teams={clubTeams}
             matrixRows={matrixRows}
-            seasons={matrixSeasons}
+            seasons={overviewSeasons}
+            season={season}
             matrixLoading={matrixLoading}
             matrixError={matrixError}
             leagueLongNames={clubMatrixQuery.data?.league_long_names ?? {}}

@@ -9,12 +9,14 @@ import { rankedTeamTableOptions } from "../../league/leagueTableOptions";
 
 type Props = {
   club: string;
+  season?: string | null;
   t: (key: string, fallback?: string) => string;
 };
 
-export function ClubPlayerResults({ club, t }: Props) {
+export function ClubPlayerResults({ club, season = null, t }: Props) {
   const navigate = useNavigate();
-  const query = useClubPlayerResults(club);
+  const query = useClubPlayerResults(club, { season });
+  const seasonScoped = Boolean(season && season !== "all" && season !== "latest");
 
   const tableData = useMemo(() => {
     const raw = query.data?.table;
@@ -24,7 +26,10 @@ export function ClubPlayerResults({ club, t }: Props) {
 
   const handleTableReady = useCallback(
     (handle: DataTableHandle) => {
-      const onCellClick = (_e: unknown, cell: { getField: () => string; getRow: () => { getData: () => unknown } }) => {
+      const onCellClick = (
+        _e: unknown,
+        cell: { getField: () => string; getRow: () => { getData: () => unknown } },
+      ) => {
         if (cell.getField() !== "player_name") return;
         const row = cell.getRow().getData() as { player_name?: string; player_id?: string };
         const name = String(row.player_name ?? "").trim();
@@ -49,10 +54,15 @@ export function ClubPlayerResults({ club, t }: Props) {
           {t("ui.team.club_player_results_heading", "Spielerergebnisse im Club")}
         </h2>
         <p className="text-small text-muted mt-1">
-          {t(
-            "ui.team.club_player_results_hint",
-            "Liga-Spiele in dieser Club-Zugehörigkeit — eine Zeile pro Spieler.",
-          )}
+          {seasonScoped
+            ? t(
+                "ui.team.club_player_results_hint_season",
+                "Liga-Spiele in dieser Club-Zugehörigkeit in der Saison {season} — eine Zeile pro Spieler.",
+              ).replace("{season}", String(season))
+            : t(
+                "ui.team.club_player_results_hint",
+                "Liga-Spiele in dieser Club-Zugehörigkeit — eine Zeile pro Spieler.",
+              )}
         </p>
       </header>
 
