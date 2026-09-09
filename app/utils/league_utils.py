@@ -104,6 +104,19 @@ def format_float_one_decimal(value: Union[int, float]) -> str:
     return f"{float(value):.1f}"
 
 
+def numeric_sort_key(value: Any, *, missing: float = float("-inf")) -> float:
+    """Coerce a table cell to float for ranking; non-numeric values sort last when reverse=True."""
+    try:
+        if value is None or value == "":
+            return missing
+        number = float(value)
+        if number != number:  # NaN
+            return missing
+        return number
+    except (TypeError, ValueError):
+        return missing
+
+
 def get_league_level(league: str) -> int:
     """
     Get the level of a league from ``league_mapping.csv``.

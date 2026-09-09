@@ -28,6 +28,7 @@ from app.config.debug_config import debug_config
 from app.utils.color_constants import get_theme_color, get_heat_map_color
 from app.utils.league_utils import (
     format_float_one_decimal,
+    numeric_sort_key,
     get_league_level,
     get_league_division_map,
     convert_to_simple_types,
@@ -3424,58 +3425,64 @@ class LeagueService:
             return {'data': {}, 'seasons': [], 'labels': []}
 
     def get_top_team_performances(self, league: str) -> TableData:
-        """Get top team performances across all seasons based on team averages"""
+        """Best team season averages across all seasons for a league."""
         try:
-            seasons = self.get_seasons()
-            all_performances = []
-            
-            for season in seasons:
-                try:
-                    # Get team averages for the season
-                    team_averages_data = self.get_team_averages_simple(league, season)
-                    
-                    if team_averages_data and 'data' in team_averages_data:
-                        # Extract team averages (final values from the season)
-                        for team_name, avg_series in team_averages_data['data'].items():
-                            if isinstance(avg_series, list) and avg_series:
-                                # Get final average (last value in the series)
-                                final_average = avg_series[-1] if avg_series[-1] is not None else 0
-                                
-                                all_performances.append([
-                                    team_name,
-                                    format_float_one_decimal(final_average),
-                                    season,
-                                    league  # Add league as second-to-last
-                                ])
-                                
-                except Exception as e:
-                    print(f"Error processing season {season}: {e}")
-                    continue
-            
-            # Sort by average descending (now index 3)
-            all_performances.sort(key=lambda x: x[3] if isinstance(x[3], (int, float)) else 0, reverse=True)
-            
-            # Create table structure - remove ColumnGroup title (use empty string)
+            filters = {
+                Columns.league_name: {"value": league, "operator": "eq"},
+                Columns.computed_data: {"value": False, "operator": "eq"},
+            }
+            player_data = self.adapter.get_filtered_data(filters=filters)
+
+            all_performances: List[List[Any]] = []
+            if player_data is not None and not player_data.empty:
+                grouped = player_data.groupby(
+                    [Columns.team_name, Columns.season],
+                    dropna=False,
+                    sort=False,
+                )
+                for (team_name, season), group in grouped:
+                    if pd.isna(team_name) or pd.isna(season):
+                        continue
+                    average = mean_scores(group[Columns.score], round_places=1)
+                    if average <= 0:
+                        continue
+                    all_performances.append(
+                        [
+                            str(team_name),
+                            average,
+                            str(season),
+                            league,
+                        ]
+                    )
+
+            all_performances.sort(key=lambda row: numeric_sort_key(row[1]), reverse=True)
+
             columns = [
                 ColumnGroup(
-                    title="",  # Empty title since it's shown in card header
+                    title="",
                     columns=[
                         Column(title=i18n_service.get_text("team"), field="team", width=ColumnWidths.team, align="left"),
-                        Column(title=i18n_service.get_text("average"), field="average", width=ColumnWidths.average, align="center", decimal_places=1),
+                        Column(
+                            title=i18n_service.get_text("average"),
+                            field="average",
+                            width=ColumnWidths.average,
+                            align="center",
+                            decimal_places=1,
+                        ),
                         Column(title=i18n_service.get_text("season"), field="season", width=ColumnWidths.season, align="center"),
-                        Column(title=i18n_service.get_text("league"), field="league", width=ColumnWidths.league, align="left")
-                    ]
+                        Column(title=i18n_service.get_text("league"), field="league", width=ColumnWidths.league, align="left"),
+                    ],
                 )
             ]
-            
+
             return TableData(
                 columns=columns,
-                data=all_performances[:20],  # Top 20 performances by average
+                data=all_performances[:20],
                 title=f"{league} - Top Team Performances",
                 description="Best team season averages across all years",
-                default_sort={"field": "average", "dir": "desc"}  # Sort by average descending
+                default_sort={"field": "average", "dir": "desc"},
             )
-            
+
         except Exception as e:
             print(f"Error in get_top_team_performances: {e}")
             return TableData(columns=[], data=[], title=i18n_service.get_text("error_loading_data"))
@@ -3733,8 +3740,7 @@ class LeagueService:
                     individual_data = self.get_individual_averages(league, season)
                     
                     if individual_data and individual_data.data:
-                        # Take top 5 from each season
-                        for row in individual_data.data[:5]:
+                        for row in individual_data.data:
                             # New individual_averages structure: [player_name, team_name, games, total_points, average, high_game]
                             if len(row) >= 6:
                                 performance_entry = [
@@ -3754,8 +3760,9 @@ class LeagueService:
             
 
             
-            # Sort by average descending (now index 4 since we added league)
-            all_performances.sort(key=lambda x: x[4] if isinstance(x[4], (int, float)) else 0, reverse=True)
+            # Sort by average (index 1). League was inserted later and the old
+            # key used index 4 (team name), so the table froze on early seasons.
+            all_performances.sort(key=lambda x: numeric_sort_key(x[1]), reverse=True)
             
             # Create table structure - remove ColumnGroup title (use empty string)
             columns = [
@@ -3823,8 +3830,8 @@ class LeagueService:
                     print(f"Error processing individual record games for season {season}: {e}")
                     continue
             
-            # Sort by score descending (now index 5)
-            record_games.sort(key=lambda x: x[5] if isinstance(x[5], (int, float)) else 0, reverse=True)
+            # Sort by score (index 1). The previous key used week (index 5).
+            record_games.sort(key=lambda x: numeric_sort_key(x[1]), reverse=True)
             
             # Create table structure - remove ColumnGroup title (use empty string)
             columns = [
@@ -3887,8 +3894,8 @@ class LeagueService:
                     print(f"Error processing team record games for season {season}: {e}")
                     continue
             
-            # Sort by score descending (now index 4)
-            record_games.sort(key=lambda x: x[4] if isinstance(x[4], (int, float)) else 0, reverse=True)
+            # Sort by score (index 1). The previous key used week (index 4).
+            record_games.sort(key=lambda x: numeric_sort_key(x[1]), reverse=True)
             
             # Create table structure - remove ColumnGroup title (use empty string)
             columns = [
@@ -4484,6 +4491,37 @@ class LeagueService:
         """
         return apply_heat_map_to_columns(table_data, cell_metadata, column_indices, min_val, max_val)
 
+    @staticmethod
+    def _team_vs_team_matchup_nav(matches: pd.DataFrame) -> Optional[Dict[str, int]]:
+        """Latest week (+ unique round) for a team-vs-opponent cell deep link."""
+        if matches is None or matches.empty or Columns.week not in matches.columns:
+            return None
+        weeks = pd.to_numeric(matches[Columns.week], errors="coerce")
+        rounds = (
+            pd.to_numeric(matches[Columns.round_number], errors="coerce")
+            if Columns.round_number in matches.columns
+            else None
+        )
+        pairs: List[Tuple[int, Optional[int]]] = []
+        for idx, week_val in weeks.items():
+            if pd.isna(week_val):
+                continue
+            week_i = int(week_val)
+            round_i: Optional[int] = None
+            if rounds is not None:
+                round_val = rounds.loc[idx]
+                if pd.notna(round_val):
+                    round_i = int(round_val)
+            pairs.append((week_i, round_i))
+        if not pairs:
+            return None
+        latest_week = max(week_i for week_i, _ in pairs)
+        nav: Dict[str, int] = {"week": latest_week}
+        rounds_at_latest = {round_i for week_i, round_i in pairs if week_i == latest_week and round_i is not None}
+        if len(rounds_at_latest) == 1:
+            nav["round"] = next(iter(rounds_at_latest))
+        return nav
+
     def get_team_vs_team_comparison_table(self, league: str, season: str, week: int = None) -> 'TableData':
         """
         Get team vs team comparison as TableData with heat map.
@@ -4649,9 +4687,11 @@ class LeagueService:
                                 total_points_list.append(total_points)
                             
                             avg_points = round(sum(total_points_list) / len(total_points_list), 1) if total_points_list else 0.0
+                            nav = self._team_vs_team_matchup_nav(team_vs_opponent)
                             comparison_data[team][opponent] = {
                                 'avg_score': avg_score,
                                 'avg_points': avg_points,
+                                **({'nav': nav} if nav else {}),
                             }
             
             # Row/column order = full-season standings (not the selected week's points).
@@ -4813,6 +4853,16 @@ class LeagueService:
 
                 table_data.append(row)
             
+            matchups: Dict[str, Dict[str, Dict[str, int]]] = {}
+            for team_name, opponents in comparison_data.items():
+                team_map: Dict[str, Dict[str, int]] = {}
+                for opponent_name, stats in opponents.items():
+                    nav = stats.get("nav")
+                    if nav:
+                        team_map[str(opponent_name)] = nav
+                if team_map:
+                    matchups[str(team_name)] = team_map
+
             # Heatmap coloring is now handled in the frontend
             # ========== RETURN TABLE DATA ==========
             return TableData(
@@ -4829,7 +4879,8 @@ class LeagueService:
                 metadata={
                     "score_range": {"min": score_min, "max": score_max},
                     "points_range": {"min": points_min, "max": points_max},
-                    "week": week
+                    "week": week,
+                    "matchups": matchups,
                 }
             )
             

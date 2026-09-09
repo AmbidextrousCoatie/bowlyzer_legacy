@@ -32,6 +32,10 @@ _ENTRIES_SUBDIR = "entries"
 # Bump per endpoint when response shape changes (invalidates disk cache without CSV edits).
 _ENDPOINT_PAYLOAD_VERSION: Dict[str, str] = {
     "get_team_performance_table": "abs-pinfall-v1",
+    "get_top_team_performances": "season-avg-sort-v1",
+    "get_top_individual_performances": "avg-sort-v1",
+    "get_record_individual_games": "score-sort-v1",
+    "get_record_team_games": "score-sort-v1",
     "get_team_win_percentage_table": "pos-rank-v2",
     "get_team_analysis": "abs-pinfall-v1",
     "get_individual_averages": "abs-pinfall-v1",
@@ -42,10 +46,10 @@ _ENDPOINT_PAYLOAD_VERSION: Dict[str, str] = {
     "get_week_matrix": "per-league-weeks-v3-bl-bzol-merge",
     "home_stats": "landing-v2",
     "get_latest_events": "latest-events-v1",
-    "get_team_vs_team_comparison": "unplayed-empty-v3",
+    "get_team_vs_team_comparison": "matchup-nav-v1",
     "get_club_matrix": "matrix-pos-v2",
-    "get_club_legends": "club-legends-v3",
-    "get_club_player_results": "club-player-results-v2",
+    "get_club_legends": "club-legends-v4",
+    "get_club_player_results": "club-player-results-v3",
     "get_club_rankings": "club-rankings-v4",
     # Nested ELIM.rounds + KO-then-net-average standings for elim/stepladder.
     "get_tournament_section": "elim-stepladder-standings-net-avg-v19",
@@ -60,6 +64,7 @@ _ENDPOINT_PAYLOAD_VERSION: Dict[str, str] = {
     "get_tournament_player_catalog": "tournament-player-catalog-v1",
     "get_available_players": "tournament-round-players-v1",
     "get_available_leagues": "metadata-index-v1",
+    "get_season_timetable": "tabledata-dict-v1",
     "team_get_teams": "metadata-index-v1",
     "player_search": "player-catalog-v3-club-games",
     "player_get_available_seasons": "player-subset-v3-club-games",
