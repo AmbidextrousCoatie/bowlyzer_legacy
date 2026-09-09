@@ -31,6 +31,7 @@ if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 from database.paths import analysis_log_path, historical_league_results_csv, unique_team_names_after_merge_csv
+from data_access.venue_mapping import apply_venue_mapping_to_series
 
 _LEAGUE_MAPPING_PATH = _REPO_ROOT / "database" / "relational_csv" / "league_mapping.csv"
 _LEAGUE_MAPPING_CACHE = None
@@ -47,9 +48,9 @@ _TEAM_NORMALIZATION_STATS = None
 _LEAGUE_GENDER_SCOPE_CACHE = None
 
 # Bump these when analysis/extraction logic changes in a way that should invalidate prior cache entries.
-ANALYZER_VERSION = "analyzer-v1.2.7"
-EXTRACTOR_VERSION = "extractor-v1.2.6"
-PROCESSOR_VERSION = "processor-v1.2.7"
+ANALYZER_VERSION = "analyzer-v1.2.8"
+EXTRACTOR_VERSION = "extractor-v1.2.7"
+PROCESSOR_VERSION = "processor-v1.2.8"
 
 
 def compute_file_sha256(path: Path, chunk_size: int = 1024 * 1024) -> str:
@@ -808,6 +809,8 @@ def normalize_extracted_dataframe(
             or normalize_optional_text(value)
             or value
         )
+    if "Location" in normalized.columns:
+        normalized["Location"] = apply_venue_mapping_to_series(normalized["Location"])
     return normalized
 
 
@@ -1321,29 +1324,30 @@ def extract_season_info(excel_file, sheet_name):
         return {'season_short': '??/??', 'year1': '????', 'year2': '????'}  # Default fallback
 
 
-def extract_date_info(df):
-    """Extract date information from first row of team sheet."""
+def extract_date_info(df, season_info=None):
+    """Extract date from Erfassung header (Datum: label, datetime cells, or DD.MM. text)."""
+    candidates = []
+    header = extract_erfassung_header_fields(df)
+    if header.get("date_raw") is not None:
+        candidates.append(header["date_raw"])
     try:
-        # Look in the first row for date pattern like "04.10. / 05.10." or "12.11."
-        first_row = df.iloc[0]
-        for col, value in first_row.items():
-            if pd.notna(value) and isinstance(value, str):
-                # Look for DD.MM. pattern (with optional slash and more)
-                date_match = re.search(r'(\d{2})\.(\d{2})\.', str(value))
-                if date_match:
-                    day = date_match.group(1)
-                    month = date_match.group(2)
-                    return {
-                        'day': day,
-                        'month': month
-                    }
-        
-        print("Warning: Could not find date information in first row")
-        return {'day': '04', 'month': '10'}  # Default fallback
-        
+        max_row = min(len(df), 3)
+        for row_idx in range(max_row):
+            for value in df.iloc[row_idx]:
+                if pd.notna(value):
+                    candidates.append(value)
     except Exception as e:
         print(f"Error extracting date info: {e}")
-        return {'day': 'n/a', 'month': 'n/a'}  # Default fallback
+        return None
+
+    for value in candidates:
+        parsed = complete_old_format_date_info(parse_old_format_date(value), season_info)
+        if old_format_date_is_usable(parsed, season_info):
+            return parsed
+        if parsed and parsed.get("day") and parsed.get("month"):
+            return parsed
+    print("Warning: Could not find date information in Erfassung header")
+    return None
 
 
 def infer_season_from_path(excel_file):
@@ -1490,27 +1494,29 @@ def complete_old_format_date_info(date_info: dict | None, season_info: dict | No
 
 def old_format_date_is_usable(date_info: dict | None, season_info: dict | None) -> bool:
     completed = complete_old_format_date_info(date_info, season_info)
-    if not completed:
-        return False
+    iso = format_iso_date(completed)
+    return iso is not None
+
+
+def format_iso_date(date_info: dict | None) -> str | None:
+    """Return YYYY-MM-DD when day/month/year are usable."""
+    if not date_info:
+        return None
     try:
-        day = int(completed["day"])
-        month = int(completed["month"])
-        year = int(completed["year_full"])
+        day = int(date_info["day"])
+        month = int(date_info["month"])
+        year = int(date_info["year_full"])
     except (KeyError, TypeError, ValueError):
-        return False
-    return 1 <= day <= 31 and 1 <= month <= 12 and year >= 1980
+        return None
+    if not (1 <= day <= 31 and 1 <= month <= 12 and year >= 1980):
+        return None
+    return f"{year:04d}-{month:02d}-{day:02d}"
 
 
 def combine_season_and_date(season_info, date_info):
     """Combine season and date information to create full date."""
-    try:
-        day = date_info["day"]
-        month = int(date_info["month"])
-        year = _old_format_year_from_season_month(month, season_info)
-        return f"{year}-{month:02d}-{int(day):02d}"
-    except Exception as e:
-        print(f"Error combining season and date: {e}")
-        return "could not extract date"  # Default fallback
+    completed = complete_old_format_date_info(date_info, season_info)
+    return format_iso_date(completed) or ""
 
 
 def detect_team_anchor_start_col(raw_df, default_start_col=25):
@@ -1551,8 +1557,8 @@ def extract_excel_data(excel_file='2025_BYL_M-1.xlsx', team_sheet='Erfassung1', 
     season_info = extract_season_info(excel_file, season_sheet)
     print(f"Extracted season info: {season_info}")
     
-    # Extract date information from first row of team sheet
-    date_info = extract_date_info(df)
+    # Extract date information from Erfassung header (no dummy 04.10 fallback)
+    date_info = extract_date_info(df, season_info)
     print(f"Extracted date info: {date_info}")
     
     # Combine season and date to get full date
@@ -1569,6 +1575,7 @@ def parse_teams(
     league_override=None,
     week_override=None,
     max_games_per_week=None,
+    location_override=None,
 ):
     """Parse all teams in the Excel file."""
     
@@ -1599,6 +1606,8 @@ def parse_teams(
         team_info = extract_team_info(team_data)
         if week_override is not None:
             team_info["week"] = str(week_override)
+        if location_override:
+            team_info["location"] = location_override
         print(f"Team: {team_info['team_name']}")
         print(f"Location: {team_info['location']}")
         print(f"Week: {team_info['week']}")
@@ -1630,6 +1639,12 @@ def extract_team_info(team_data):
         'opponent': 'Unknown'
     }
     
+    header = extract_erfassung_header_fields(team_data)
+    if header.get("location"):
+        team_info["location"] = header["location"]
+    if header.get("week"):
+        team_info["week"] = str(header["week"])
+
     # Debug: Print the actual row 2 (index 1) to see what's there
     if len(team_data) > 1:
         print(f"Row 2 (index 1) contents:")
@@ -1638,16 +1653,18 @@ def extract_team_info(team_data):
             if pd.notna(value):
                 print(f"  Col {i}: '{value}'")
     
-    # Location is always in column 30 (index 29) of row 2 (index 1)
-    if len(team_data) > 1 and len(team_data.columns) > 5:
-        location_value = team_data.iloc[1, 5]  # Row 2, Column 30 (index 29)
-        print(f"Location value at col 30: '{location_value}' (type: {type(location_value)})")
+    # Legacy offset: after slicing from Team-Nr. at column 25, Ort sits at relative col 5.
+    if team_info["location"] == "Unknown" and len(team_data) > 1 and len(team_data.columns) > 5:
+        location_value = team_data.iloc[1, 5]
+        print(f"Location value at relative col 5: '{location_value}' (type: {type(location_value)})")
         if pd.notna(location_value):
-            team_info['location'] = str(location_value).strip()
-            print(f"Location (col 30): {team_info['location']}")
+            text = str(location_value).strip()
+            if text and text.rstrip(":").lower() not in {"ort", "liga", "bahn"}:
+                team_info["location"] = text
+                print(f"Location (relative col 5): {team_info['location']}")
 
     # Week is always in column 44 (index 43) of row 2 (index 1)
-    if len(team_data) > 1 and len(team_data.columns) > 19:
+    if team_info["week"] == "1" and len(team_data) > 1 and len(team_data.columns) > 19:
         week_value = team_data.iloc[1, 19]  # Row 2, Column 44 (index 43)
         print(f"Week value at col 44: '{week_value}' (type: {type(week_value)})")
         if pd.notna(week_value):
@@ -2383,6 +2400,78 @@ def _pre_2022_value_beside_label(df, row_idx: int, col_idx: int, max_col: int):
         if _pre_2022_metadata_value_present(value):
             return value
     return None
+
+
+def extract_erfassung_header_fields(df) -> dict:
+    """Read Ort / Datum / Spieltag from an Erfassung team block or sliced sheet."""
+    meta = {"location": None, "location_raw": None, "date_raw": None, "week": None, "week_raw": None}
+    if df is None or getattr(df, "empty", True):
+        return meta
+    max_row = min(len(df), 4)
+    max_col = min(int(df.shape[1]), 30) if getattr(df, "shape", None) else 0
+    for row_idx in range(max_row):
+        for col_idx in range(max_col):
+            label = (normalize_optional_text(get_cell_value(df, row_idx, col_idx)) or "").rstrip(":").lower()
+            if not label:
+                continue
+            if label == "ort" and not _pre_2022_metadata_value_present(meta["location_raw"]):
+                meta["location_raw"] = _pre_2022_value_beside_label(df, row_idx, col_idx, max_col)
+            elif label == "datum" and not _pre_2022_metadata_value_present(meta["date_raw"]):
+                meta["date_raw"] = _pre_2022_value_beside_label(df, row_idx, col_idx, max_col)
+            elif label == "spieltag" and not _pre_2022_metadata_value_present(meta["week_raw"]):
+                meta["week_raw"] = _pre_2022_value_beside_label(df, row_idx, col_idx, max_col)
+    meta["location"] = normalize_optional_text(meta["location_raw"])
+    week_value = parse_week_from_text(meta["week_raw"])
+    if week_value is not None:
+        meta["week"] = week_value
+    return meta
+
+
+def parse_spielorte_schedule(spielorte_df, season_info=None) -> dict:
+    """
+    Parse the week/date/venue table at the top of post-2022 Spielorte.
+
+    Layout (0-based): col 0 week number, col 1 date (range or DD.MM.), col 2 venue.
+    Column 4 is often a dropdown catalog of all houses and must be ignored.
+    """
+    schedule = {}
+    if spielorte_df is None or getattr(spielorte_df, "empty", True):
+        return schedule
+    max_row = min(len(spielorte_df), 16)
+    max_col = int(spielorte_df.shape[1]) if getattr(spielorte_df, "shape", None) else 0
+    if max_col < 3:
+        return schedule
+    for row_idx in range(max_row):
+        week = parse_week_from_text(get_cell_value(spielorte_df, row_idx, 0))
+        if week is None or week < 1 or week > 20:
+            continue
+        date_raw = get_cell_value(spielorte_df, row_idx, 1)
+        location = normalize_optional_text(get_cell_value(spielorte_df, row_idx, 2))
+        date_info = complete_old_format_date_info(parse_old_format_date(date_raw), season_info)
+        iso = format_iso_date(date_info)
+        if not location and not iso:
+            continue
+        if week in schedule:
+            continue
+        schedule[week] = {
+            "week": week,
+            "date": iso,
+            "location": location,
+            "date_raw": date_raw,
+        }
+    return schedule
+
+
+def read_spielorte_schedule(excel_path, season_info=None, workbook=None) -> dict:
+    """Load Spielorte and return week → {date, location} for post-2022 workbooks."""
+    read_kwargs: dict = {"sheet_name": "Spielorte", "header": None, "nrows": 20}
+    if workbook is not None:
+        read_kwargs["workbook"] = workbook
+    try:
+        df = read_excel_safely(excel_path, **read_kwargs)
+    except Exception:
+        return {}
+    return parse_spielorte_schedule(df, season_info)
 
 
 def _parse_ligabericht_metadata_df(df) -> dict:
