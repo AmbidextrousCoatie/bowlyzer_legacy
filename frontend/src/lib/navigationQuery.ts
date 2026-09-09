@@ -7,6 +7,7 @@ import { seasonForUrlQuery } from "./api";
  *
  * Global ``myClub`` (see ``MY_CLUB_QUERY_KEY``) is intentionally NOT stripped here —
  * it persists across routes until the user clears Mein Club.
+ * ``story`` / ``beat`` (Einstieg rundgang) are likewise global until dismissed.
  */
 export const CLUB_PATH = "/club";
 
@@ -37,7 +38,7 @@ export const TOURNAMENT_PLAYER_QUERY_KEYS = ["player"] as const;
 export const SPIELER_QUERY_KEYS = ["player_name", "player_id"] as const;
 
 /** Liga drill-down on `/liga` only (`season` is also used on `/club` and `/turnier`). */
-export const LIGA_QUERY_KEYS = ["league", "week", "division"] as const;
+export const LIGA_QUERY_KEYS = ["league", "week", "division", "level"] as const;
 
 const SEASON_QUERY_SCOPES = [
   "/liga",
