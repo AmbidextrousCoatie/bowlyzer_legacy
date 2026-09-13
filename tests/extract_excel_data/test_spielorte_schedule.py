@@ -81,6 +81,22 @@ def test_extract_team_info_uses_ort_label_not_offset_cell() -> None:
     assert info["location"] == "Regensburg Superbowl"
 
 
+def test_extract_team_info_returns_dict_when_opponent_row_starts_with_gegner() -> None:
+    """LL S (D) 25/26 layout: opponent row starts with the Gegner label."""
+    rows = [
+        ["Team-Nr.", None, "Liga:", None, "Landesliga Süd Frauen"],
+        [1, None, "Ort:", None, "Unterführing Dreambowl Palace"],
+        ["EPA München 1", None, None, None, None],
+    ]
+    df = pd.DataFrame(rows).reindex(range(30))
+    df.iloc[22, 1] = "Gegner"
+    df.iloc[22, 2] = "Highroller Rosenheim 1"
+    info = extract_team_info(df)
+    assert info is not None
+    assert info["team_name"] == "EPA München 1"
+    assert info["opponent"] == "Highroller Rosenheim 1"
+
+
 def test_normalize_extracted_dataframe_maps_location() -> None:
     df = pd.DataFrame(
         {

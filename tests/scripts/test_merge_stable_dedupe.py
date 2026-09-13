@@ -61,3 +61,15 @@ def test_merge_collapses_same_game_with_different_match_numbers(tmp_path: Path) 
     ]
     assert len(player_rows) == 1
     assert player_rows.iloc[0]["Score"] == "150"
+
+
+def test_merge_accepts_single_input(tmp_path: Path) -> None:
+    source = tmp_path / "historical.csv"
+    out = tmp_path / "merged.csv"
+    pd.DataFrame([_row(match_number="1", player="Nickoleit, Thomas")]).to_csv(
+        source, sep=";", index=False
+    )
+    merge_sources([source], out, key_names=list(DEFAULT_KEYS), write_csv=True)
+    merged = pd.read_csv(out, sep=";", dtype=str).fillna("")
+    assert len(merged) == 1
+    assert merged.iloc[0]["Player ID"] == "16251"

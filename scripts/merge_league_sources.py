@@ -241,8 +241,8 @@ def merge_sources(
     write_csv: bool = False,
     show_progress: bool = True,
 ) -> Dict:
-    if len(input_paths) < 2:
-        raise ValueError("Provide at least two input CSV files.")
+    if not input_paths:
+        raise ValueError("Provide at least one input CSV file.")
 
     if normalize_team_names:
         reset_team_normalization_stats()
@@ -416,8 +416,9 @@ def merge_sources(
 def main() -> int:
     parser = argparse.ArgumentParser(
         description=(
-            "Merge multiple CSV files with ordered priority. "
-            "Later inputs win conflicts for duplicate dedupe keys."
+            "Merge CSV files with ordered priority. "
+            "Later inputs win conflicts for duplicate dedupe keys. "
+            "A single input is allowed (passthrough publish)."
         )
     )
     parser.add_argument(

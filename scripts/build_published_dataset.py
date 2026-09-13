@@ -6,6 +6,7 @@ League merge always includes every available source file (later inputs win on du
 GF pipeline is last among the built-in sources):
 
   historical extract → legacy scrape extract (08/09–18/19) → ``--extra-league`` → GF pipeline
+  (omit GF with ``--skip-gf-league``)
 
 ``legacy_scrape`` is an acquisition path for the same league game content, not a separate
 product line — omit it only with ``--skip-legacy-scrape`` (e.g. smoke tests).
@@ -122,6 +123,7 @@ def build_league_input_paths(
     gf_league: Path,
     extra_league: List[Path],
     with_legacy_scrape: bool = True,
+    with_gf_league: bool = True,
 ) -> List[Path]:
     """
     Ordered league merge inputs (low -> high priority on duplicate keys).
@@ -132,7 +134,8 @@ def build_league_input_paths(
     if with_legacy_scrape:
         ordered.append(legacy_scrape_league_csv())
     ordered.extend(extra_league)
-    ordered.append(gf_league)
+    if with_gf_league:
+        ordered.append(gf_league)
     return _dedupe_paths(ordered)
 
 
@@ -375,6 +378,14 @@ def main() -> int:
         ),
     )
     parser.add_argument(
+        "--skip-gf-league",
+        action="store_true",
+        help=(
+            "Omit the GF pipeline league CSV from the merge "
+            f"(default path: {pipeline_gf_league_csv()})."
+        ),
+    )
+    parser.add_argument(
         "--skip-female-league-audit",
         action="store_true",
         help="Do not fail when legacy/extra league CSVs collapse Damen into male league ids.",
@@ -505,6 +516,7 @@ def main() -> int:
         gf_league=gf_league,
         extra_league=list(args.extra_league),
         with_legacy_scrape=not args.skip_legacy_scrape,
+        with_gf_league=not args.skip_gf_league,
     )
     print("League merge (low -> high priority on duplicate keys; GF pipeline last):")
     for idx, path in enumerate(league_input_candidates):
@@ -578,13 +590,18 @@ def main() -> int:
         summary["affiliation_registry"] = affiliation_summary
 
     if run_league:
-        if len(league_inputs) < 2:
+        if not league_inputs:
             print(
-                "Error: need at least two league input files after resolving paths. "
-                "Provide historical + GF (legacy scrape is included by default when present).",
+                "Error: no league input files after resolving paths. "
+                "Need historical extract (and optionally legacy scrape / extras / GF).",
                 file=sys.stderr,
             )
             return 2
+        if len(league_inputs) == 1:
+            print(
+                "  note: publishing from a single league source "
+                f"({league_inputs[0].name}); scrape/GF were skipped or missing."
+            )
         print("==> merging league sources …")
         summary["league"] = merge_sources(
             input_paths=league_inputs,
