@@ -40,6 +40,9 @@ export const SPIELER_QUERY_KEYS = ["player_name", "player_id"] as const;
 /** Liga drill-down on `/liga` only (`season` is also used on `/club` and `/turnier`). */
 export const LIGA_QUERY_KEYS = ["league", "week", "division", "level"] as const;
 
+/** Presentation slide id on `/praesentation` only. */
+export const PRESENTATION_QUERY_KEYS = ["slide"] as const;
+
 const SEASON_QUERY_SCOPES = [
   "/liga",
   "/club",
@@ -97,6 +100,9 @@ export function searchParamsForPath(targetPath: string, source: URLSearchParams)
   }
   if (!targetPath.startsWith("/spieler")) {
     for (const key of SPIELER_QUERY_KEYS) next.delete(key);
+  }
+  if (!targetPath.startsWith("/praesentation")) {
+    for (const key of PRESENTATION_QUERY_KEYS) next.delete(key);
   }
   if (!keepsSeasonQuery(targetPath)) {
     next.delete("season");

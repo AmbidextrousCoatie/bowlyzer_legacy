@@ -53,7 +53,9 @@ describe("homePalette", () => {
     expect(HOME_TOPIC_PALETTE.club300).toBe(5);
     expect(HOME_TOPIC_PALETTE.myClub).toBe(5);
     expect(HOME_TOPIC_PALETTE.glossary).toBe(6);
+    expect(HOME_TOPIC_PALETTE.verband).toBe(7);
     expect(homePaletteColor(HOME_TOPIC_PALETTE.glossary)).toBe("#D95A6A");
+    expect(homePaletteColor(HOME_TOPIC_PALETTE.verband)).toBe("#C94C8A");
   });
 });
 

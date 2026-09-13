@@ -30,6 +30,7 @@ import { ClubpokalPlaceholder } from "./pages/ClubpokalPlaceholder";
 import { Glossary } from "./pages/Glossary";
 import { WhyBowlyzer } from "./pages/WhyBowlyzer";
 import { Impressum } from "./pages/Impressum";
+import { VerbandPresentation } from "./pages/presentation/VerbandPresentation";
 import { queryClient } from "./lib/queryClient";
 
 function App() {
@@ -49,6 +50,7 @@ function App() {
                 <Routes>
                   <Route path="/" element={<Home />} />
                   <Route path="/einstieg" element={<Einstieg />} />
+                  <Route path="/praesentation" element={<VerbandPresentation />} />
                   <Route path="/club-300" element={<Club300 />} />
                   <Route path="/liga" element={<LeagueStats />} />
                   <Route path="/turnier" element={<TournamentStats />} />

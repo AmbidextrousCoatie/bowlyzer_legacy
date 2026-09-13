@@ -2,6 +2,7 @@ import { seasonForUrlQuery } from "./api";
 import { findEinstiegStory, type EinstiegStory } from "./einstiegStories";
 import { MY_CLUB_QUERY_KEY } from "./myClub";
 import { linkForPath } from "./navigationQuery";
+import { normalizeUnicodeLabel } from "./teamUtils";
 
 export const STORY_QUERY_KEY = "story";
 export const STORY_BEAT_QUERY_KEY = "beat";
@@ -44,11 +45,15 @@ export function hrefForStoryBeat(
   if (!beat) return "/einstieg";
 
   const next = new URLSearchParams();
-  const database = beat.params.database ?? source.get("database");
+  // `/turnier` strips non-tournament ?database= — omit it so StoryChrome does not
+  // briefly treat the beat as off-path during that rewrite.
+  const onTurnier = beat.path === "/turnier" || beat.path.startsWith("/turnier/");
+  const database = onTurnier ? null : (beat.params.database ?? source.get("database"));
   if (database) next.set("database", database);
   const myClub = beat.params[MY_CLUB_QUERY_KEY] ?? source.get(MY_CLUB_QUERY_KEY);
   if (myClub) next.set(MY_CLUB_QUERY_KEY, myClub);
   applyBeatParams(next, beat.params);
+  if (onTurnier) next.delete("database");
   next.set(STORY_QUERY_KEY, story.id);
   next.set(STORY_BEAT_QUERY_KEY, String(beatIndex + 1));
   const qs = next.toString();
@@ -59,11 +64,24 @@ export function hrefEinstiegIndex(source: URLSearchParams): string {
   return linkForPath("/einstieg", stripStoryQuery(source));
 }
 
+/** Params that identify a beat on a path (not ambient globals the page may rewrite). */
+const STORY_BEAT_IDENTITY_SKIP_KEYS = new Set(["database"]);
+
 export function isOnStoryBeatPath(
   pathname: string,
   story: EinstiegStory,
   beatIndex: number,
+  searchParams?: URLSearchParams,
 ): boolean {
   const beat = story.beats[beatIndex];
-  return !!beat && pathname === beat.path;
+  if (!beat || pathname !== beat.path) return false;
+  if (!searchParams) return true;
+  for (const [key, value] of Object.entries(beat.params)) {
+    if (!value || STORY_BEAT_IDENTITY_SKIP_KEYS.has(key)) continue;
+    const expected = key === "season" ? seasonForUrlQuery(value) : value;
+    const actual = searchParams.get(key);
+    if (actual == null) return false;
+    if (normalizeUnicodeLabel(actual) !== normalizeUnicodeLabel(expected)) return false;
+  }
+  return true;
 }

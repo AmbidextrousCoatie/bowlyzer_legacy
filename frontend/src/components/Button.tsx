@@ -53,6 +53,7 @@ type ButtonLinkProps = {
   size?: ButtonSize;
   className?: string;
   style?: CSSProperties;
+  title?: string;
   children: ReactNode;
   onClick?: () => void;
 };
@@ -63,6 +64,7 @@ export function ButtonLink({
   size = "md",
   className,
   style,
+  title,
   children,
   onClick,
 }: ButtonLinkProps) {
@@ -71,6 +73,7 @@ export function ButtonLink({
       to={to}
       className={buttonClass(variant, size, className)}
       style={style}
+      title={title}
       onClick={onClick}
     >
       {children}

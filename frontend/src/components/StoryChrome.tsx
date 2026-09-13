@@ -1,4 +1,5 @@
 import { ChevronLeft, ChevronRight, Compass, Undo2, X } from "lucide-react";
+import { useEffect } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Button, ButtonLink } from "./Button";
 import {
@@ -13,30 +14,53 @@ import { homePaletteBannerStyleForTopic } from "../lib/homePalette";
 
 /**
  * Sticky rundgang bar while ``?story=`` & ``?beat=`` are set.
- * Hidden on ``/einstieg`` (the index). Off-path shows a resume/exit pair.
+ * Hidden on ``/einstieg`` (the index).
+ * Zurück/Weiter stay available even when off-path so a URL rewrite cannot trap the tour.
+ * ArrowLeft / ArrowRight mirror Zurück / Weiter (ignored while typing in fields).
  */
 export function StoryChrome() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const parsed = parseStoryQuery(searchParams);
+  const active = !!parsed && pathname !== "/einstieg";
 
-  if (!parsed || pathname === "/einstieg") return null;
-
-  const { story, beatIndex } = parsed;
-  const beat = story.beats[beatIndex];
-  const onBeatPath = isOnStoryBeatPath(pathname, story, beatIndex);
+  const story = parsed?.story;
+  const beatIndex = parsed?.beatIndex ?? 0;
+  const beat = story?.beats[beatIndex];
+  const onBeatPath =
+    !!story && isOnStoryBeatPath(pathname, story, beatIndex, searchParams);
   const isFirst = beatIndex === 0;
-  const isLast = beatIndex === story.beats.length - 1;
-  const barStyle = homePaletteBannerStyleForTopic(story.topicKey);
+  const isLast = !!story && beatIndex === story.beats.length - 1;
+  const barStyle = story ? homePaletteBannerStyleForTopic(story.topicKey) : undefined;
 
-  const backHref = isFirst
-    ? hrefEinstiegIndex(searchParams)
-    : hrefForStoryBeat(story, beatIndex - 1, searchParams);
-  const nextHref = isLast
-    ? hrefEinstiegIndex(searchParams)
-    : hrefForStoryBeat(story, beatIndex + 1, searchParams);
-  const resumeHref = hrefForStoryBeat(story, beatIndex, searchParams);
+  const backHref =
+    !story || isFirst
+      ? hrefEinstiegIndex(searchParams)
+      : hrefForStoryBeat(story, beatIndex - 1, searchParams);
+  const nextHref =
+    !story || isLast
+      ? hrefEinstiegIndex(searchParams)
+      : hrefForStoryBeat(story, beatIndex + 1, searchParams);
+  const resumeHref = story ? hrefForStoryBeat(story, beatIndex, searchParams) : "/einstieg";
+
+  useEffect(() => {
+    if (!active) return;
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
+      if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+      if (isTypingTarget(event.target)) return;
+
+      event.preventDefault();
+      void navigate(event.key === "ArrowLeft" ? backHref : nextHref);
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [active, backHref, nextHref, navigate]);
+
+  if (!active || !story || !beat) return null;
 
   function endStory() {
     setSearchParams(
@@ -65,44 +89,43 @@ export function StoryChrome() {
             <p className="text-small leading-relaxed opacity-85">
               {onBeatPath
                 ? beat.caption
-                : "Du bist abgebogen — zurück zum Schritt oder Rundgang beenden."}
+                : "Du bist abgebogen — zurück zum Schritt oder mit Weiter/Zurück fortfahren."}
             </p>
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-1.5">
-            {onBeatPath ? (
-              <>
-                <ButtonLink
-                  to={backHref}
-                  variant="palette"
-                  size="sm"
-                  className="border border-current/40 bg-transparent hover:bg-black/10"
-                >
-                  <ChevronLeft size={14} strokeWidth={1.75} aria-hidden className="mr-1" />
-                  {isFirst ? "Einstiege" : "Zurück"}
-                </ButtonLink>
-                <ButtonLink
-                  to={nextHref}
-                  variant="palette"
-                  size="sm"
-                  className="bg-surface text-foreground hover:bg-surface-subtle"
-                >
-                  {isLast ? "Einstiege" : "Weiter"}
-                  {!isLast ? (
-                    <ChevronRight size={14} strokeWidth={1.75} aria-hidden className="ml-1" />
-                  ) : null}
-                </ButtonLink>
-              </>
-            ) : (
+            {!onBeatPath ? (
               <Button
                 variant="palette"
                 size="sm"
-                className="bg-surface text-foreground hover:bg-surface-subtle"
+                className="border border-current/40 bg-transparent hover:bg-black/10"
                 onClick={() => navigate(resumeHref)}
               >
                 <Undo2 size={14} strokeWidth={1.75} aria-hidden className="mr-1" />
                 Zum Schritt
               </Button>
-            )}
+            ) : null}
+            <ButtonLink
+              to={backHref}
+              variant="palette"
+              size="sm"
+              className="border border-current/40 bg-transparent hover:bg-black/10"
+              title="Zurück (←)"
+            >
+              <ChevronLeft size={14} strokeWidth={1.75} aria-hidden className="mr-1" />
+              {isFirst ? "Einstiege" : "Zurück"}
+            </ButtonLink>
+            <ButtonLink
+              to={nextHref}
+              variant="palette"
+              size="sm"
+              className="bg-surface text-foreground hover:bg-surface-subtle"
+              title="Weiter (→)"
+            >
+              {isLast ? "Einstiege" : "Weiter"}
+              {!isLast ? (
+                <ChevronRight size={14} strokeWidth={1.75} aria-hidden className="ml-1" />
+              ) : null}
+            </ButtonLink>
             <button
               type="button"
               onClick={endStory}
@@ -117,4 +140,11 @@ export function StoryChrome() {
       </div>
     </div>
   );
+}
+
+function isTypingTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.isContentEditable) return true;
+  const tag = target.tagName;
+  return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
 }

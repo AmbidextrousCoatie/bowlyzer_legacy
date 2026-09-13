@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 import { TEAM_COLOR_PALETTES } from "./color-utils";
 
 /**
- * Home / landing topic colors — slots 1–7 on `rainbowPastel` (0-based indices below).
+ * Home / landing topic colors — slots 1–8 on `rainbowPastel` (0-based indices below).
  *
  * | Slot | Topic      | Index | Hex (rainbowPastel) |
  * |------|------------|-------|---------------------|
@@ -13,6 +13,7 @@ import { TEAM_COLOR_PALETTES } from "./color-utils";
  * | 5    | Clubpokal  | 4     | #F7A86E             |
  * | 6    | Club 300 / Mein Club | 5 | #E86E56     |
  * | 7    | Glossar    | 6     | #D95A6A             |
+ * | 8    | Verbandstag | 7    | #C94C8A             |
  *
  * Keep element order in hero cards, entity-map rows, and nav groups aligned with
  * this sequence so color bands read consistently left-to-right.
@@ -26,6 +27,7 @@ export const HOME_TOPIC_PALETTE = {
   club300: 5,
   myClub: 5,
   glossary: 6,
+  verband: 7,
 } as const;
 
 export type HomeTopicPaletteKey = keyof typeof HOME_TOPIC_PALETTE;

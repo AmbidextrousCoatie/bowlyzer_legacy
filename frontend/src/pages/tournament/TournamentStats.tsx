@@ -82,6 +82,8 @@ export function TournamentStats() {
   );
 
   // Clear season/tournament when Mein Club excludes the current selection.
+  // Tournament-only podium archive (?tournament without ?season) keeps the group
+  // filter — Mein Club must not wipe it or story beats get stuck off-path.
   useEffect(() => {
     if (!myClubActive || !clubFilter) return;
     if (!seasonsQuery.isSuccess || !tournamentsQuery.isSuccess) return;
@@ -100,6 +102,7 @@ export function TournamentStats() {
       next.delete("player");
       changed = true;
     } else if (
+      season &&
       tournament &&
       tournaments.length > 0 &&
       !tournaments.some((tn) => normalizeUnicodeLabel(tn) === normalizeUnicodeLabel(tournament))
