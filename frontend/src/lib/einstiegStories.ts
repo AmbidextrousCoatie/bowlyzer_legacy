@@ -113,10 +113,10 @@ export const EINSTIEG_STORIES: readonly EinstiegStory[] = [
         params: {
           database: EINSTIEG_DEMO_DATABASE,
           myClub: EMAX_CLUB,
-          season: "25/26",
+          season: "17/18",
         },
         caption:
-          "Mein Club auf Liga: nur die Spielklassen, in denen BC EMAX Unterföhring 25/26 antritt — Spielplan und Tabellen für genau diese Ligen.",
+          "Mein Club auf Liga: nur die Spielklassen, in denen BC EMAX Unterföhring 17/18 vertreten war — Spielplan und Tabellen für genau diese Ligen.",
       },
       {
         path: "/club",

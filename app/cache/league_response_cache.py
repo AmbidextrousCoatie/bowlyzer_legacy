@@ -64,7 +64,7 @@ _ENDPOINT_PAYLOAD_VERSION: Dict[str, str] = {
     "get_tournament_player_catalog": "tournament-player-catalog-v1",
     "get_available_players": "tournament-round-players-v1",
     "get_available_leagues": "metadata-index-v1",
-    "get_season_timetable": "tabledata-dict-v1",
+    "get_season_timetable": "venue-canonical-v1",
     "team_get_teams": "metadata-index-v1",
     "player_search": "player-catalog-v3-club-games",
     "player_get_available_seasons": "player-subset-v3-club-games",

@@ -8367,3 +8367,950 @@ To show “how did Steffen finish in a tournament?”, point the beat at the tur
 - Hard-refresh or restart `vp dev` if HMR missed the edit.
 
 **Bottom line:** add/edit stories in `einstiegStories.ts`, keep beats on routes/params the destination page understands, then walk the story from `/einstieg`. No extra publish pipeline.
+
+---
+
+_**User**_
+
+the colors for "Saisonverlauf" are in inverse order. fix that so the colors of the graph match the positions in the tables
+
+---
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Fixing the color order for "Saisonverlauf" so graph colors match table positions.
+
+Locating the Saisonverlauf code.
+</details></think>
+
+_**Agent (default)**_
+
+I'll find how Saisonverlauf assigns series colors versus table row order.
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend",
+  "pattern": "Saisonverlauf|saisonverlauf"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend",
+  "pattern": "Saisonverlauf|saisonverlauf",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "frontend\\src\\pages\\league\\blocks\\LeagueSeasonOverview.tsx"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 2
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/*.{ts,tsx}",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src",
+  "pattern": "Spielplan|seasonSpielplan|rainbowPastel|harmonic10"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src",
+  "pattern": "Spielplan|seasonSpielplan|rainbowPastel|harmonic10",
+  "topFiles": [
+    {
+      "matchCount": 22,
+      "uri": "frontend/src/lib/seasonSpielplan.test.ts"
+    },
+    {
+      "matchCount": 2,
+      "uri": "frontend/src/lib/spielplanChart.test.ts"
+    },
+    {
+      "matchCount": 2,
+      "uri": "frontend/src/pages/player/blocks/SeasonStats.tsx"
+    },
+    {
+      "matchCount": 25,
+      "uri": "frontend/src/lib/color-utils.ts"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/hooks/useLeague.ts"
+    },
+    {
+      "matchCount": 2,
+      "uri": "frontend/src/pages/league/blocks/LeagueSeasonOverview.tsx"
+    },
+    {
+      "matchCount": 51,
+      "uri": "frontend/src/lib/seasonSpielplan.ts"
+    },
+    {
+      "matchCount": 15,
+      "uri": "frontend/src/lib/design-tokens.ts"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/lib/datatable/types.ts"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/lib/club300Analytics.ts"
+    },
+    {
+      "matchCount": 11,
+      "uri": "frontend/src/lib/spielplanChart.ts"
+    },
+    {
+      "matchCount": 3,
+      "uri": "frontend/src/lib/homePalette.ts"
+    },
+    {
+      "matchCount": 10,
+      "uri": "frontend/src/pages/league/blocks/SeasonSpielplan.tsx"
+    },
+    {
+      "matchCount": 2,
+      "uri": "frontend/src/pages/player/blocks/TrendChart.tsx"
+    },
+    {
+      "matchCount": 2,
+      "uri": "frontend/src/pages/league/LeagueStats.tsx"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/lib/homeStandingsPreview.test.ts"
+    },
+    {
+      "matchCount": 6,
+      "uri": "frontend/src/pages/diagnosis/DesignSystem.tsx"
+    },
+    {
+      "matchCount": 2,
+      "uri": "frontend/src/lib/einstiegStories.ts"
+    }
+  ],
+  "totalFiles": 18,
+  "totalMatches": 159
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Checking LeagueSeasonOverview to find the color order mismatch.
+
+Examining the TSX code for the Saisonverlauf charts to understand how colors are assigned.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\pages\league\blocks\LeagueSeasonOverview.tsx</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src\\pages\\league",
+  "pattern": "over_time|cumulative|color|getColor|assignColor|series"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src\\pages\\league",
+  "pattern": "over_time|cumulative|color|getColor|assignColor|series",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/pages/league/leagueTableOptions.ts"
+    },
+    {
+      "matchCount": 2,
+      "uri": "frontend/src/pages/league/blocks/SeasonSpielplan.tsx"
+    },
+    {
+      "matchCount": 6,
+      "uri": "frontend\\src\\pages\\league\\blocks\\LeagueSeasonOverview.tsx"
+    },
+    {
+      "matchCount": 6,
+      "uri": "frontend/src/pages/league/blocks/LeagueSeasonOverview.tsx"
+    },
+    {
+      "matchCount": 2,
+      "uri": "frontend\\src\\pages\\league\\blocks\\SeasonSpielplan.tsx"
+    },
+    {
+      "matchCount": 3,
+      "uri": "frontend/src/pages/league/blocks/SeasonLeagueStandings.tsx"
+    },
+    {
+      "matchCount": 4,
+      "uri": "frontend\\src\\pages\\league\\blocks\\LeagueOverview.tsx"
+    },
+    {
+      "matchCount": 6,
+      "uri": "frontend\\src\\pages\\league\\blocks\\TeamPerformance.tsx"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend\\src\\pages\\league\\leagueTableOptions.ts"
+    },
+    {
+      "matchCount": 6,
+      "uri": "frontend/src/pages/league/blocks/TeamPerformance.tsx"
+    },
+    {
+      "matchCount": 3,
+      "uri": "frontend\\src\\pages\\league\\blocks\\SeasonLeagueStandings.tsx"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend\\src\\pages\\league\\blocks\\TeamVsTeamMatrix.tsx"
+    },
+    {
+      "matchCount": 4,
+      "uri": "frontend/src/pages/league/blocks/LeagueOverview.tsx"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/pages/league/blocks/TeamVsTeamMatrix.tsx"
+    }
+  ],
+  "totalFiles": 14,
+  "totalMatches": 46
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The color mapping comes from `seedTeamColorsFromTablePayload`. `lineChartOption` applies team order. This causes the inverse color order.
+
+The inversion likely stems from `sorted_by_best` being used instead of table rank order.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src\\lib",
+  "pattern": "seedTeamColorsFromTablePayload|ensureTeamColors|getTeamColor|sorted_by"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src\\lib",
+  "pattern": "seedTeamColorsFromTablePayload|ensureTeamColors|getTeamColor|sorted_by",
+  "topFiles": [
+    {
+      "matchCount": 10,
+      "uri": "frontend/src/lib/datatable/createDataTable.ts"
+    },
+    {
+      "matchCount": 5,
+      "uri": "frontend/src/lib/color-utils.ts"
+    },
+    {
+      "matchCount": 10,
+      "uri": "frontend\\src\\lib\\datatable\\createDataTable.ts"
+    },
+    {
+      "matchCount": 5,
+      "uri": "frontend/src/lib/charts/options.ts"
+    },
+    {
+      "matchCount": 5,
+      "uri": "frontend\\src\\lib\\color-utils.ts"
+    },
+    {
+      "matchCount": 5,
+      "uri": "frontend\\src\\lib\\charts\\options.ts"
+    }
+  ],
+  "totalFiles": 6,
+  "totalMatches": 40
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\charts\options.ts</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The color mapping function `updateTeamColorMap` assigns colors based on the team order array. This explains why the graph colors are inverted relative to the table positions.
+
+Charts and the standings table seed colors independently. A race condition likely causes the inversion: charts assign colors using their own sorted order, while the table seeds colors from its payload. If charts re-run after seeding, they may reverse the order and invert the colors. I will examine both functions closely.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\color-utils.ts</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.{py,ts,tsx,js}",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "sorted_by_best|sorted_by_total|updateTeamColorMap"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "sorted_by_best|sorted_by_total|updateTeamColorMap",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": ".\\frontend\\src\\lib\\datatable\\createDataTable.ts"
+    },
+    {
+      "matchCount": 4,
+      "uri": ".\\frontend\\src\\pages\\league\\blocks\\LeagueSeasonOverview.tsx"
+    },
+    {
+      "matchCount": 2,
+      "uri": ".\\frontend\\src\\hooks\\useLeague.ts"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\frontend\\src\\lib\\color-utils.ts"
+    },
+    {
+      "matchCount": 3,
+      "uri": ".\\frontend\\src\\pages\\league\\blocks\\TeamPerformance.tsx"
+    },
+    {
+      "matchCount": 4,
+      "uri": ".\\frontend\\src\\lib\\charts\\options.ts"
+    },
+    {
+      "matchCount": 2,
+      "uri": ".\\app\\models\\series_data.py"
+    }
+  ],
+  "totalFiles": 7,
+  "totalMatches": 18
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+Checking `updateTeamColorMap` and how `sorted_by_best` is computed on the backend. For positions, "best" likely means the lowest rank, which should align colors with table order.
+
+The chart's `useMemo` calls `updateTeamColorMap` before the table's `useEffect` seeds colors. This means chart sorting may override table order. The effect should win if standings load.
+
+Charts recompute when team data loads and overwrite table colors again. The "inverse order" likely means `sorted_by_best` is sorted ascending by position but then reversed.
+
+Reconsidering whether `sorted_by_best` actually means highest score rather than lowest position. Checking the backend computation for positions.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\models\series_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\color-utils.ts</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app",
+  "pattern": "sorted_by_best|TeamPositions|team_positions"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app",
+  "pattern": "sorted_by_best|TeamPositions|team_positions",
+  "topFiles": [
+    {
+      "matchCount": 8,
+      "uri": "app\\services\\league_service.py"
+    },
+    {
+      "matchCount": 6,
+      "uri": "app\\routes\\league_routes.py"
+    }
+  ],
+  "totalFiles": 2,
+  "totalMatches": 14
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+`SeriesData.to_dict()` omits the `sorted_by_best` field. That likely explains why the graph colors are inverted.
+
+The frontend relies on `sorted_by_best`, so I am checking `get_team_positions_simple` to trace the inversion.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\services\league_service.py</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "sorted_by_best"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "sorted_by_best",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "frontend\\src\\pages\\league\\blocks\\LeagueSeasonOverview.tsx"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend\\src\\hooks\\useLeague.ts"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/hooks/useLeague.ts"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend\\src\\pages\\league\\blocks\\TeamPerformance.tsx"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/pages/league/blocks/LeagueSeasonOverview.tsx"
+    },
+    {
+      "matchCount": 4,
+      "uri": ".specstory/history/2026-05-12_08-34-57Z-tournament-configuration-and-leaderboard-adjustments.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/pages/league/blocks/TeamPerformance.tsx"
+    }
+  ],
+  "totalFiles": 7,
+  "totalMatches": 10
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The API response does not contain a `sorted_by_best` field.
+
+Positions data uses `sorted_by_total` with reverse=True. This places the worst teams first. That reverses the table order. Points charts sort correctly. The positions color map needs fixing.
+
+The `over_time` position chart is the culprit. `updateTeamColorMap` clears existing league colors before reassigning them. This likely causes the color mismatch.
+
+A race condition is causing the mismatch. Standings load first and seed correct colors. Then the positions chart re-runs and clears the map with the reversed total-sort order. The chart order overwrites the standings order.
+
+Three fixes are being considered. Reuse existing colors instead of reassigning them. Sort positions by best or last place rather than total. Stop charts from overwriting standings colors. A legacy comment in the seeding function suggests chart and table alignment was the original goal. The standings table already disables color updates.
+
+Legacy documentation claims `updateTeamColorMap` preserves existing team color maps, yet it actually clears league colors first. This contradicts the stated intent. The best fix is either to stop charts from clearing and reassigning colors, or to reverse the positions sorting order.
+
+The "doesn't overwrite" behavior was broken when `clearLeagueTeamColors` was introduced. The simplest fix is to stop `updateTeamColorMap` from clearing existing colors when they were seeded from the standings table. Another option is to reverse the positions sort order so lower sums appear first.
+
+The user's description points directly to the position chart. The fix will use ascending total sort for positions so best teams appear first. Charts will also be prevented from overwriting colors already seeded from the standings table.
+
+Removing the color clear from `updateTeamColorMap` would preserve seeded table colors. Charts would then keep the correct order. The function is also called intentionally to reset colors. All callers are being reviewed.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend",
+  "pattern": "updateTeamColorMap\\("
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend",
+  "pattern": "updateTeamColorMap\\(",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/lib/datatable/createDataTable.ts"
+    },
+    {
+      "matchCount": 3,
+      "uri": "frontend/src/lib/charts/options.ts"
+    },
+    {
+      "matchCount": 3,
+      "uri": "frontend\\src\\lib\\charts\\options.ts"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend\\src\\lib\\datatable\\createDataTable.ts"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/lib/color-utils.ts"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend\\src\\lib\\color-utils.ts"
+    }
+  ],
+  "totalFiles": 6,
+  "totalMatches": 10
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\charts\options.ts</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src\\lib\\color-utils.ts",
+  "pattern": "clearLeagueTeamColors|updateTeamColorMap|seedTeamColors"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src\\lib\\color-utils.ts",
+  "pattern": "clearLeagueTeamColors|updateTeamColorMap|seedTeamColors",
+  "topFiles": [
+    {
+      "matchCount": 6,
+      "uri": "frontend\\src\\lib\\color-utils.ts"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 6
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **0** results in **1** directory</summary>
+
+Directory: **`c:\Users\cfell\repositories\bowlyzer_deploy\frontend`** (0 files)
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+`updateTeamColorMap` clears league colors and reassigns them by chart order. This reverses the color sequence.
+
+The positions chart orders by total rank, which is worst-first. This overwrites table seeding with inverted colors. The fix is to stop clearing colors in `updateTeamColorMap` so existing seeds remain, and to reverse the positions chart order to best-first.
+
+Removing the clear in `updateTeamColorMap` prevents later charts from overwriting seeded colors. Race conditions are safe because the seed corrects any premature assignments. Colors may still be wrong until standings load, but seeding fixes them afterward. There is also a timing issue where `getTeamColor` is called after `updateTeamColorMap` inside `lineChartOption`.
+
+Removing the clear in `updateTeamColorMap` is safe because `getTeamColor` is called immediately after assignment within the same call. If seeding has already run, the seeded colors are returned correctly. If seeding has not run yet, the first chart may assign inverted colors until seeding triggers a re-render. The charts `useMemo` does not depend on color map state, since it is a module singleton.
+
+The chart option is built inside a `useMemo` that does not depend on the color map state. Colors are baked into the ECharts option at creation time. If the positions chart renders before standings load, it locks in the inverted colors permanently. Standings seeding cannot fix this because the memo will not re-run.
+
+Three fixes are being weighed. The preferred path removes the clear in `updateTeamColorMap`, adds standings data to the chart `useMemo` dependencies, and lets the seeded color map drive the chart options after seeding completes.
+
+The frontend can reverse `sorted_by_total` directly in `LeagueSeasonOverview` when `sorted_by_best` is absent. This avoids backend changes.
+
+Reversing `sorted_by_total` for the positions chart gives best-first ordering. This roughly matches the table, though sums of positions can differ slightly from final standings.
+
+A better approach is to extract the team order directly from the standings table payload when available. If standings are present, use those names instead of deriving from positions.
+
+Another option is to skip `updateTeamColorMap` entirely for charts when the league already has seeded colors.
+
+The `createDataTable` path with disabled team color updates needs review. The clear in `updateTeamColorMap` might be intentional for league navigation. Reversing `sorted_by_total` for positions is the simplest frontend fix.
+
+The implementation plan is now fixed. `updateTeamColorMap` will stop clearing colors and only assign missing keys. Chart options will depend on `standings.data` so they rebuild after seeding. The positions chart will use the standings row order when available, falling back to a reversed `sorted_by_total` otherwise.
+
+The same color inversion issue may exist in SeasonLeagueStandings and TeamPerformance, but the user specifically asked about Saisonverlauf in LeagueSeasonOverview. A concrete implementation is being drafted: extracting the team order from the standings table payload and feeding it into the positions chart option.
+
+The chart `useMemo` will depend on `standingsOrder`, `teamPositions.data`, `weekLabel`, `league`, and `standingsOrder`. The positions series order will be `standingsOrder` if available, then `sorted_by_best`, then a reversed `sorted_by_total`. The points chart keeps `sorted_by_total` directly. `updateTeamColorMap` will drop its `clear` call.
+</details></think>
+
+_**Agent (default)**_
+
+Root cause: position charts assign colors via `sorted_by_total` (sum of ranks → worst first) and `updateTeamColorMap` clears table-seeded colors. Fixing both.
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\pages\league\blocks\TeamPerformance.tsx</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\tests",
+  "pattern": "updateTeamColorMap|seedTeamColors"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\tests",
+  "pattern": "updateTeamColorMap|seedTeamColors",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend",
+  "pattern": "updateTeamColorMap|seedTeamColors"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend",
+  "pattern": "updateTeamColorMap|seedTeamColors",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "frontend\\src\\lib\\datatable\\types.ts"
+    },
+    {
+      "matchCount": 4,
+      "uri": "frontend\\src\\lib\\charts\\options.ts"
+    },
+    {
+      "matchCount": 3,
+      "uri": "frontend/src/lib/color-utils.ts"
+    },
+    {
+      "matchCount": 6,
+      "uri": "frontend/src/lib/datatable/createDataTable.ts"
+    },
+    {
+      "matchCount": 2,
+      "uri": "frontend\\src\\pages\\league\\blocks\\SeasonLeagueStandings.tsx"
+    },
+    {
+      "matchCount": 4,
+      "uri": "frontend/src/lib/charts/options.ts"
+    },
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/lib/datatable/types.ts"
+    },
+    {
+      "matchCount": 6,
+      "uri": "frontend\\src\\lib\\datatable\\createDataTable.ts"
+    },
+    {
+      "matchCount": 3,
+      "uri": "frontend\\src\\lib\\color-utils.ts"
+    },
+    {
+      "matchCount": 3,
+      "uri": "frontend/src/pages/league/blocks/LeagueSeasonOverview.tsx"
+    },
+    {
+      "matchCount": 3,
+      "uri": "frontend\\src\\pages\\league\\blocks\\LeagueSeasonOverview.tsx"
+    },
+    {
+      "matchCount": 2,
+      "uri": "frontend/src/pages/league/blocks/SeasonLeagueStandings.tsx"
+    }
+  ],
+  "totalFiles": 12,
+  "totalMatches": 38
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+I will modify `updateTeamColorMap` to only fill missing color entries instead of clearing the map. This preserves seeded table colors and fixes the inverse color order in the graph.
+
+I will also update `LeagueSeasonOverview` to use the standings table order for chart series when available. Otherwise it will fall back to reversing `sorted_by_total`. I will add a `seriesOrderForPositions` helper to standardize this logic. The `TeamPerformance` position trend will be fixed for consistency.
+</details></think>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\color-utils.ts</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\pages\league\blocks\LeagueSeasonOverview.tsx</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\pages\league\blocks\LeagueSeasonOverview.tsx</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\pages\league\blocks\TeamPerformance.tsx</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The updateTeamColorMap change contains a bug.
+
+Incrementing the palette index for existing colors skips slots for new teams. The fix iterates through current teams and assigns palette colors only to missing entries.
+
+The original code assigned palette indices sequentially, causing collisions when new teams reused existing colors. The revised approach tracks the next free index instead of advancing the palette counter for every team.
+
+A simpler way to find the next free palette slot is to count how many colors are already assigned for this league. This avoids scanning the entire palette array.
+</details></think>
+
+_**Agent (default)**_
+
+Fixing palette-index assignment in `updateTeamColorMap` so existing colors aren't overwritten incorrectly.
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\color-utils.ts</summary>
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src\\lib\\color-utils.ts",
+    "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src\\pages\\league\\blocks\\LeagueSeasonOverview.tsx",
+    "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src\\pages\\league\\blocks\\TeamPerformance.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src\\lib\\color-utils.ts"
+    },
+    {
+      "relativeWorkspacePath": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src\\pages\\league\\blocks\\LeagueSeasonOverview.tsx"
+    },
+    {
+      "relativeWorkspacePath": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src\\pages\\league\\blocks\\TeamPerformance.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (default)**_
+
+<think><details><summary>Thought Process</summary>
+The colors for "Saisonverlauf" are inverted. I'll reverse the color order to match the table positions.
+</details></think>
+
+_**Agent (default)**_
+
+Fixed. Two things were stacking the wrong way:
+
+1. **Position order** — for Tabellenplatz, `sorted_by_total` is the *sum of ranks* (higher = worse), so the chart painted last place with palette color 0. Charts now prefer **standings table row order**, and fall back to a **reversed** `sorted_by_total`.
+
+2. **Color overwrite** — `updateTeamColorMap` was clearing league colors on every chart build, so table seeding lost to the inverted chart order. It now only fills **missing** colors and leaves standings-seeded ones alone.
+
+After refresh, Platz 1 in the table and that team’s line in both Saisonverlauf charts should share the same color.

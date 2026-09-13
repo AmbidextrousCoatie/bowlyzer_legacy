@@ -14,6 +14,7 @@ from app.models.series_data import SeriesData
 from data_access.dtype_normalization import BOOL_FALSE_TOKENS, BOOL_TRUE_TOKENS
 from data_access.schema import Columns
 from data_access.text_norm import normalize_unicode_label, safe_rank_int
+from data_access.venue_mapping import canonicalize_venue_label
 from data_access.score_utils import (
     mean_scores,
     pinfall_display,
@@ -3517,9 +3518,11 @@ class LeagueService:
             for _, row in week_data.iterrows():
                 week_num = row[Columns.week]
                 if week_num not in week_info:
+                    raw_location = row.get(Columns.location, f"{league} Venue")
+                    mapped = canonicalize_venue_label(raw_location)
                     week_info[week_num] = {
                         'date': row.get(Columns.date, 'TBD'),
-                        'location': row.get(Columns.location, f"{league} Venue"),
+                        'location': mapped or raw_location,
                         'has_data': True
                     }
             

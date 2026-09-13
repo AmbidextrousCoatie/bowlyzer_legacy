@@ -168,10 +168,12 @@ export function TeamPerformance({ season, league, team }: Props) {
 
   const positionTrendOption = useMemo(() => {
     if (!positions.data?.data) return null;
+    // Position totals are sum of ranks (higher = worse); reverse for table order.
     const teamOrder =
       positions.data.sorted_by_best ??
-      positions.data.sorted_by_total ??
-      Object.keys(positions.data.data);
+      (positions.data.sorted_by_total
+        ? [...positions.data.sorted_by_total].reverse()
+        : Object.keys(positions.data.data));
     return mutedTrendOption(positions.data.data, teamKey, {
       invertY: true,
       yAxisName: t("position", "Tabellenplatz"),

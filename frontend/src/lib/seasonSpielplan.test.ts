@@ -11,6 +11,7 @@ import {
   parseSpielplanDateKey,
   parseTimetableEvents,
 } from "./seasonSpielplan";
+import { canonicalizeVenueLabel } from "./venueMapping";
 
 function timetable(rows: unknown[][]): TableData {
   return {
@@ -37,6 +38,16 @@ describe("normalizeVenueKey", () => {
   test("treats hyphen and space variants as the same house", () => {
     expect(normalizeVenueKey("Isar-München")).toBe(normalizeVenueKey("Isar München"));
     expect(normalizeVenueKey("City-Augsburg")).toBe(normalizeVenueKey("City Augsburg"));
+  });
+});
+
+describe("canonicalizeVenueLabel", () => {
+  test("collapses Dream-Bowl spellings onto one canonical house", () => {
+    expect(canonicalizeVenueLabel("Dream-Bowl München")).toBe("Unterföhring Dreambowl Palace");
+    expect(canonicalizeVenueLabel("Dream-Bowl-Palace")).toBe("Unterföhring Dreambowl Palace");
+    expect(canonicalizeVenueLabel("Dream Bowl Unterföhring")).toBe(
+      "Unterföhring Dreambowl Palace",
+    );
   });
 });
 
@@ -79,8 +90,8 @@ describe("parseTimetableEvents", () => {
         leagueLong: "Bereichsliga Süd 1",
         week: 1,
         dateKey: "2011-09-18",
-        venueRaw: "Brunnthal",
-        venueKey: "brunnthal",
+        venueRaw: "Brunnthal Max Munich",
+        venueKey: "brunnthal max munich",
       },
     ]);
   });
@@ -102,8 +113,8 @@ describe("parseTimetableEvents", () => {
       "TableData(columns=[], data=[[2, '2011-10-09', 'Cosmos Arena Nürnberg', 'Completed'], [3, '2011-10-23', 'OK Bowling Bindlach', 'Completed']], title='A N1')";
     const events = parseTimetableEvents(repr, aN1);
     expect(events.map((e) => [e.week, e.dateKey, e.venueRaw])).toEqual([
-      [2, "2011-10-09", "Cosmos Arena Nürnberg"],
-      [3, "2011-10-23", "OK Bowling Bindlach"],
+      [2, "2011-10-09", "Nürnberg Cosmos"],
+      [3, "2011-10-23", "Bindlach OK Bowling"],
     ]);
     const table = coerceTimetableTable(repr);
     expect(table?.columns[0]?.columns?.map((col) => col.field)).toEqual([
@@ -151,13 +162,30 @@ describe("buildSeasonSpielplan", () => {
       leagueCount: 3,
       venueCount: 2,
     });
-    expect(days[0]?.venues.map((v) => v.displayName)).toEqual(["Brunnthal", "BluBowl Nürnberg"]);
-    expect(days[0]?.venues[0]).toMatchObject({ shared: true, displayName: "Brunnthal" });
+    expect(days[0]?.venues.map((v) => v.displayName)).toEqual([
+      "Brunnthal Max Munich",
+      "Nürnberg BluBowl",
+    ]);
+    expect(days[0]?.venues[0]).toMatchObject({ shared: true, displayName: "Brunnthal Max Munich" });
     expect(days[0]?.venues[0]?.events.map((e) => e.leagueShort)).toEqual(["BL S1", "KL S3"]);
     expect(days[0]?.venues[1]?.shared).toBe(false);
 
     expect(days[1]?.dateKey).toBe("2011-10-02");
     expect(days[1]?.venues[0]?.shared).toBe(false);
+  });
+
+  test("collapses Dream-Bowl spellings into one house", () => {
+    const days = buildSeasonSpielplan(
+      [blS1, klS3, aN1],
+      [
+        timetable([[1, "2011-10-02", "Dream-Bowl München", "Completed"]]),
+        timetable([[1, "2011-10-02", "Dream-Bowl-Palace", "Completed"]]),
+        timetable([[1, "2011-10-02", "Dream Bowl Unterföhring", "Completed"]]),
+      ],
+    );
+    expect(days[0]?.venues).toHaveLength(1);
+    expect(days[0]?.venues[0]?.displayName).toBe("Unterföhring Dreambowl Palace");
+    expect(days[0]?.venues[0]?.shared).toBe(true);
   });
 
   test("merges hyphenated venue names on the same day", () => {
@@ -170,7 +198,7 @@ describe("buildSeasonSpielplan", () => {
     );
     expect(days[0]?.venues).toHaveLength(1);
     expect(days[0]?.venues[0]?.shared).toBe(true);
-    expect(days[0]?.venues[0]?.displayName).toMatch(/Isar/);
+    expect(days[0]?.venues[0]?.displayName).toBe("München Isar Bowling");
   });
 
   test("puts TBD dates in a trailing undated bucket", () => {
@@ -230,10 +258,10 @@ describe("buildSpielplanChartModel", () => {
     expect(model.dateKeys).toEqual(["2011-09-18", "2011-10-02"]);
     expect(model.dateLabels).toEqual(["So 18.09", "So 02.10"]);
 
-    const dream = model.venues.find((venue) => venue.displayName === "Dream-Bowl München");
-    expect(dream?.abbrev).toBe("DBM");
-    const blubowl = model.venues.find((venue) => venue.displayName === "BluBowl Nürnberg");
-    expect(blubowl?.abbrev).toBe("BBN");
+    const dream = model.venues.find((venue) => venue.displayName === "Unterföhring Dreambowl Palace");
+    expect(dream?.abbrev).toBe("UDP");
+    const blubowl = model.venues.find((venue) => venue.displayName === "Nürnberg BluBowl");
+    expect(blubowl?.abbrev).toBe("NBB");
 
     const sharedColor = model.points.find(
       (point) => point.league === "BL S1" && point.dateKey === "2011-09-18",

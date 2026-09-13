@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { seedTeamColorsFromTablePayload } from "../../../lib/color-utils";
+import {
+  extractTeamNamesFromTablePayload,
+  seedTeamColorsFromTablePayload,
+} from "../../../lib/color-utils";
 import {
   buildWeekLabels,
   lineChartOption,
@@ -54,45 +57,57 @@ export function LeagueSeasonOverview({ season, league }: Props) {
   const teamVsTeam = useTeamVsTeamComparison(season, league);
   const individualAverages = useIndividualAverages(season, league);
 
+  /** Standings row order = palette index 0…n (1st place → first color). */
+  const standingsOrder = useMemo(
+    () => (standings.data ? extractTeamNamesFromTablePayload(standings.data) : null),
+    [standings.data],
+  );
+
+  useEffect(() => {
+    if (standings.data) seedTeamColorsFromTablePayload(standings.data, league);
+  }, [standings.data, league]);
+
   const positionsOption = useMemo(() => {
     if (!teamPositions.data?.data) return null;
+    // Position ``sorted_by_total`` is sum of ranks (higher = worse) — reverse so
+    // chart series order matches the table when standings are not yet available.
     const order =
+      standingsOrder ??
       teamPositions.data.sorted_by_best ??
-      teamPositions.data.sorted_by_total ??
-      Object.keys(teamPositions.data.data);
+      (teamPositions.data.sorted_by_total
+        ? [...teamPositions.data.sorted_by_total].reverse()
+        : Object.keys(teamPositions.data.data));
     return lineChartOption(
       teamPositions.data.data,
       order,
       buildWeekLabels(teamPositions.data.data, weekLabel),
       { invertYAxis: true, yAxisRange: "exact", league },
     );
-  }, [teamPositions.data, weekLabel, league]);
+  }, [teamPositions.data, weekLabel, league, standingsOrder]);
 
   const weeklyPointsOption = useMemo(() => {
     if (!teamPoints.data?.data) return null;
-    const order = teamPoints.data.sorted_by_total ?? Object.keys(teamPoints.data.data);
+    const order =
+      standingsOrder ?? teamPoints.data.sorted_by_total ?? Object.keys(teamPoints.data.data);
     return scatterMultiAxisOption(
       teamPoints.data.data,
       order,
       buildWeekLabels(teamPoints.data.data, weekLabel),
       { tooltipValueLabel: t("points", "Punkte"), league },
     );
-  }, [teamPoints.data, weekLabel, t, league]);
-
-  useEffect(() => {
-    if (standings.data) seedTeamColorsFromTablePayload(standings.data, league);
-  }, [standings.data, league]);
+  }, [teamPoints.data, weekLabel, t, league, standingsOrder]);
 
   const cumulativePointsOption = useMemo(() => {
     const accumulated = teamPoints.data?.data_accumulated;
     if (!accumulated) return null;
-    const order = teamPoints.data?.sorted_by_total ?? Object.keys(accumulated);
+    const order =
+      standingsOrder ?? teamPoints.data?.sorted_by_total ?? Object.keys(accumulated);
     return lineChartOption(accumulated, order, buildWeekLabels(accumulated, weekLabel), {
       invertYAxis: false,
       yAxisRange: "auto",
       league,
     });
-  }, [teamPoints.data, weekLabel, league]);
+  }, [teamPoints.data, weekLabel, league, standingsOrder]);
 
   const standingsTableOptions = useMemo<DataTableOptions>(
     () => ({

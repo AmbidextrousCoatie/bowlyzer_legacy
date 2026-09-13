@@ -1,6 +1,7 @@
 import type { TableData } from "./datatable/types";
 import { BRAND_PRIMARY } from "./design-tokens";
 import { getLeagueLevel } from "./leagueLevel";
+import { canonicalizeVenueLabel } from "./venueMapping";
 
 export type SpielplanLeagueMeta = {
   value: string;
@@ -204,7 +205,7 @@ export function parseTimetableEvents(
     const typedRow = row as Record<string, unknown> | unknown[];
     const week = parseWeek(cellValue(typedRow, fields, "week"));
     if (week == null) continue;
-    const venueRaw = asText(cellValue(typedRow, fields, "location"));
+    const venueRaw = canonicalizeVenueLabel(asText(cellValue(typedRow, fields, "location")));
     events.push({
       league: league.value,
       leagueShort: league.short_name || league.value,

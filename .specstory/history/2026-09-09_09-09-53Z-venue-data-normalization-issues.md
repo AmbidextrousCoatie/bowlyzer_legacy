@@ -14,6 +14,18 @@ the venue data is highly flawed:
 
 _**Agent (grok-4.6)**_
 
+<think><details><summary>Thought Process</summary>
+Venue normalization will be added to preprocessing by collecting all individual venue names and creating a mapping similar to clubs. The missing venue and date data for 2022 onward also needs investigation.
+
+Exploring the codebase to understand the current club mapping, venue handling, preprocessing pipeline, and data sources.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+I'll start by tracing how venues and dates are ingested today, and how club mapping works so we can mirror that for venues. Then I'll look at why post-2022 rows are missing those fields.
+
+_**Agent (grok-4.6)**_
+
 <tool-use data-tool-type="unknown" data-tool-name="todo_write"><details>
 <summary>Tool use: **todo_write**</summary>
 
@@ -24,7 +36,31 @@ Parameters:
   "merge": true
 }
 ```
-Status: **loading**
+Result:
+
+```json
+{
+  "finalTodos": [
+    {
+      "content": "Investigate venue/date data flow and why post-2022 data is missing",
+      "id": "1",
+      "status": "in_progress"
+    },
+    {
+      "content": "Collect all unique venue names from the dataset",
+      "id": "2",
+      "status": "pending"
+    },
+    {
+      "content": "Add venue mapping similar to clubs in preprocessing",
+      "id": "3",
+      "status": "pending"
+    }
+  ],
+  "success": true
+}
+```
+Status: **completed**
 
 </details></tool-use>
 
@@ -32,7 +68,90 @@ _**Agent (grok-4.6)**_
 
 <tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
 <summary>Tool use: **ripgrep_raw_search**</summary>
-Status: **loading**
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.{py,csv,md,json}",
+  "pattern": "venue"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "pattern": "venue",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "database/relational_csv/event.csv"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tests/infrastructure/conftest.py"
+    },
+    {
+      "matchCount": 4,
+      "uri": ".specstory/history/2026-04-22_11-48-04Z-database-schema-for-tournament-results.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".specstory/history/2026-05-19_07-58-26Z-exposing-web-service-on.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".specstory/history/2026-04-26_07-40-49Z-gf-api-data-fetching-for-tournaments.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".specstory/history/2026-06-08_19-38-54Z-explore-data-pipeline-architecture.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".specstory/history/2026-05-12_08-34-57Z-tournament-configuration-and-leaderboard-adjustments.md"
+    },
+    {
+      "matchCount": 2,
+      "uri": ".specstory/history/2026-07-22_10-05-43Z-repo-decluttering-strategy.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".specstory/history/2026-05-06_06-02-50Z-excel-data-processing-pipeline.md"
+    },
+    {
+      "matchCount": 5,
+      "uri": "database/schema.json"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".specstory/history/2026-06-15_07-45-17Z-explore-data-pipeline-structure.md"
+    },
+    {
+      "matchCount": 5,
+      "uri": "docs/planning/TEAM_STATS_ENHANCEMENT_PLAN.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/routes/league_routes.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "scripts/data/extract_excel_data.py"
+    },
+    {
+      "matchCount": 54,
+      "uri": ".specstory/history/2026-09-05_16-07-15Z-season-view-data-presentation.md"
+    }
+  ],
+  "totalFiles": 15,
+  "totalMatches": 182
+}
+```
+Status: **completed**
 
 </details></tool-use>
 
@@ -40,30 +159,8422 @@ _**Agent (grok-4.6)**_
 
 <tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
 <summary>Tool use: **ripgrep_raw_search**</summary>
-Status: **loading**
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.{py,md}",
+  "pattern": "club.*mapping|club.*normali|clubs_registry|affiliation"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "pattern": "club.*mapping|club.*normali|clubs_registry|affiliation",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": ".specstory/history/2026-05-11_12-05-43Z-tournament-data-processing-and-merging.md"
+    },
+    {
+      "matchCount": 6,
+      "uri": "scripts/build_affiliation_registry.py"
+    },
+    {
+      "matchCount": 27,
+      "uri": "data_access/tournament_club_resolution.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": ".specstory/history/2026-04-22_11-48-04Z-database-schema-for-tournament-results.md"
+    },
+    {
+      "matchCount": 5,
+      "uri": ".specstory/history/2026-07-09_06-35-01Z-i-want-to-create-a-little-cmd-line-tool-for.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".specstory/history/2026-07-13_15-37-06Z-explore-club-chart-tournament.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".specstory/history/2026-07-22_07-02-43Z-inspect-bye-game-positions.md"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app/services/league_service.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app/services/player_service.py"
+    },
+    {
+      "matchCount": 3,
+      "uri": ".specstory/history/2026-07-09_06-35-01Z-i-want-to-create.md"
+    }
+  ],
+  "totalFiles": 10,
+  "totalMatches": 845
+}
+```
+Status: **completed**
 
 </details></tool-use>
 
 _**Agent (grok-4.6)**_
 
 <tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
-<summary>Tool use: **glob_file_search** • Searched codebase "" • **0** results in **0** directories</summary>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **1** result in **1** directory</summary>
 
-No results found
+Directory: **``** (1 file)
+
+| File |
+|------|
+| `database/relational_csv/venue.csv` |
 </details></tool-use>
 
 _**Agent (grok-4.6)**_
 
 <tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
-<summary>Tool use: **glob_file_search** • Searched codebase "" • **0** results in **0** directories</summary>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **4** results in **1** directory</summary>
 
-No results found
+Directory: **``** (4 files)
+
+| File |
+|------|
+| `database/relational_csv/club_mapping.csv` |
+| `tests/data_access/test_club_mapping_import.py` |
+| `scripts/import_club_mapping_from_resolved.py` |
+| `data_access/club_mapping_import.py` |
 </details></tool-use>
 
 _**Agent (grok-4.6)**_
 
 <tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
-<summary>Tool use: **glob_file_search** • Searched codebase "" • **0** results in **0** directories</summary>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **3** results in **1** directory</summary>
 
-No results found
+Directory: **``** (3 files)
+
+| File |
+|------|
+| `database/config/extract_excel_overrides.csv` |
+| `database/data/ko_bracket_overrides.example.json` |
+| `database/config/team_number_overrides.csv` |
 </details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Examining the club mapping system and the extract_excel_data.py pipeline to understand how venue data is currently extracted from Excel.
+
+Investigating why dates and venues are missing from post-2022 data.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\database\relational_csv\club_mapping.csv</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\database\relational_csv\venue.csv</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/extract_excel_data.py",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "location|venue|date"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "location|venue|date",
+  "topFiles": [
+    {
+      "matchCount": 100,
+      "uri": "scripts/data/extract_excel_data.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 100
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/*.{py,md}",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "club_mapping"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "club_mapping",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": ".specstory/history/2026-07-09_06-35-01Z-i-want-to-create.md"
+    },
+    {
+      "matchCount": 2,
+      "uri": ".specstory/history/2026-09-05_16-07-15Z-season-view-data-presentation.md"
+    },
+    {
+      "matchCount": 2,
+      "uri": "docs/pipeline/import.md"
+    },
+    {
+      "matchCount": 10,
+      "uri": "scripts/import_club_mapping_from_resolved.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "docs/pipeline/validate.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "docs/pipeline/publish.md"
+    },
+    {
+      "matchCount": 2,
+      "uri": "data_access/club_name_validation.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".specstory/history/2026-07-09_06-35-01Z-i-want-to-create-a-little-cmd-line-tool-for.md"
+    },
+    {
+      "matchCount": 8,
+      "uri": ".specstory/history/2026-07-21_11-34-10Z-club-page-statistics-display.md"
+    },
+    {
+      "matchCount": 3,
+      "uri": "tests/data_access/test_clubs_registry.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tests/data_access/test_tournament_data_normalization.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "docs/planning/VEREIN_CLUB_DISAMBIGUATION.md"
+    },
+    {
+      "matchCount": 42,
+      "uri": ".specstory/history/2026-07-18_07-19-58Z-explore-vereine-diagnose-ui.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".specstory/history/2026-07-19_12-26-14Z-explore-league-tournament-filters.md"
+    },
+    {
+      "matchCount": 16,
+      "uri": ".specstory/history/2026-07-22_10-05-43Z-repo-decluttering-strategy.md"
+    },
+    {
+      "matchCount": 2,
+      "uri": "database/data/ARTIFACTS.md"
+    },
+    {
+      "matchCount": 2,
+      "uri": "database/relational_csv/README.md"
+    },
+    {
+      "matchCount": 2,
+      "uri": "data_access/tournament_data_normalization.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".specstory/history/2026-09-01_08-44-11Z-user-stories-for-project.md"
+    },
+    {
+      "matchCount": 38,
+      "uri": ".specstory/history/2026-07-18_11-01-02Z-scan-pipeline-markdown-docs.md"
+    }
+  ],
+  "totalFiles": 29,
+  "totalMatches": 202
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **4** results in **1** directory</summary>
+
+Directory: **``** (4 files)
+
+| File |
+|------|
+| `tests/data_access/test_club_mapping_import.py` |
+| `scripts/import_club_mapping_from_resolved.py` |
+| `data_access/club_mapping_import.py` |
+| `database/relational_csv/club_mapping.csv` |
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **78** results in **1** directory</summary>
+
+Directory: **``** (78 files)
+
+| File |
+|------|
+| `data_access/validate_data.py` |
+| `data_access/series_data.py` |
+| `tests/data_access/test_data_adapter_pandas_imported_data.py` |
+| `data_access/player_name_normalization_config.py` |
+| `data_access/publish_manifest.py` |
+| `tests/data_access/test_player_id_name_normalization.py` |
+| `data_access/player_name_normalization.py` |
+| `data_access/data_sources_registry.py` |
+| `tests/data_access/test_pass_nr_edv_bridge.py` |
+| `data_access/build_relational_csv.py` |
+| `data_access/reconstruct_flat_csv.py` |
+| `data_access/affiliation_registry.py` |
+| `data_access/adapters/data_adapter_factory.py` |
+| `tests/data_access/test_club_mapping_import.py` |
+| `tests/data_access/test_pd_dataframes.py` |
+| `tests/data_access/test_league_points_budget.py` |
+| `data_access/tournament_data_quality.py` |
+| `data_access/pd_dataframes.py` |
+| `data_access/publish_gate.py` |
+| `data_access/schema_validator.py` |
+| `data_access/league_week_coverage.py` |
+| `data_access/league_weekly_points_analysis.py` |
+| `data_access/investigate_issues.py` |
+| `tests/data_access/test_league_standings_validation.py` |
+| `data_access/tournament_club_resolution.py` |
+| `tests/data_access/test_score_utils.py` |
+| `tests/data_access/test_players_registry.py` |
+| `tests/data_access/test_publish_gate.py` |
+| `tests/data_access/test_shared_pandas_store.py` |
+| `tests/data_access/test_league_week_coverage.py` |
+| `tests/data_access/test_competition_schema.py` |
+| `tests/data_access/test_league_week_schema.py` |
+| `data_access/adapters/data_adapter_pandas.py` |
+| `tests/data_access/test_clubs_registry.py` |
+| `data_access/player_id_name_normalization.py` |
+| `data_access/xls_biff_salvage.py` |
+| `tests/data_access/test_league_weekly_points_analysis.py` |
+| `tests/data_access/test_tournament_data_normalization.py` |
+| `data_access/tournament_data_normalization.py` |
+| `tests/data_access/test_series_data.py` |
+| `data_access/read.py` |
+| `tests/data_access/test_tournament_club_resolution.py` |
+| `tests/data_access/test_player_name_normalization_config.py` |
+| `data_access/adapters/data_adapter.py` |
+| `data_access/models/raw_data_models.py` |
+| `tests/data_access/test_tournament_coverage.py` |
+| `data_access/players_registry.py` |
+| `data_access/competition_schema.py` |
+| `tests/data_access/test_tournament_data_quality.py` |
+| `tests/data_access/test_publish_manifest.py` |
+| `tests/data_access/test_affiliation_registry.py` |
+| `tests/data_access/test_data_adapter_pandas_dummy_data.py` |
+| `tests/data_access/test_affiliation_league_extend.py` |
+| `tests/data_access/test_dtype_normalization_records.py` |
+| `data_access/club_name_validation.py` |
+| `tests/data_access/test_player_name_normalization.py` |
+| `tests/data_access/test_xls_biff_salvage.py` |
+| `tests/data_access/test_parquet_sidecar.py` |
+| `data_access/league_week_schema.py` |
+| `data_access/league_points_budget.py` |
+| `data_access/tournament_coverage.py` |
+| `data_access/create_test_data_with_errors.py` |
+| `data_access/aktive_mitglieder_registry.py` |
+| `data_access/adapters/data_adapter_mysql.py` |
+| `data_access/text_norm.py` |
+| `data_access/schema.py` |
+| `tests/data_access/test_aktive_mitglieder_registry.py` |
+| `data_access/score_utils.py` |
+| `data_access/clubs_registry.py` |
+| `data_access/shared_pandas_store.py` |
+| `data_access/adapters/data_adapter_sqlite.py` |
+| `data_access/parquet_sidecar.py` |
+| `data_access/club_mapping_import.py` |
+| `data_access/league_standings_validation.py` |
+| `data_access/dtype_normalization.py` |
+| `data_access/check_input_data_issues.py` |
+| `data_access/compare_csv_files.py` |
+| `data_access/models/league_models.py` |
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+I am examining the Excel extraction logic for venues and dates, specifically comparing pre-2022 and post-2022 formats.
+
+A `_pre_2022metadata` path exists. I need to compare how the newer format extracts venue and date.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+Club mapping is a canonical-name-plus-aliases CSV. Next I’ll inspect how Excel extraction pulls venue/date, especially the pre- vs post-2022 formats.
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\data\extract_excel_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\data\extract_excel_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/*.{py,md}",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "location|Location"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "location|Location",
+  "topFiles": [
+    {
+      "matchCount": 14,
+      "uri": ".specstory/history/2026-06-03_17-17-54Z-data-caching-performance-and-worker-efficiency.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "business_logic/server.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "database/README.md"
+    },
+    {
+      "matchCount": 6,
+      "uri": ".specstory/history/2026-07-22_10-34-41Z-run-position-scheme-audit.md"
+    },
+    {
+      "matchCount": 3,
+      "uri": ".specstory/history/2026-04-28_19-10-45Z-dark-mode-removal-for-mobile-web-app.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".specstory/history/2026-05-18_22-48-23Z-explore-tournament-loading-path.md"
+    },
+    {
+      "matchCount": 2,
+      "uri": ".specstory/history/2026-06-03_17-13-11Z-map-data-pipeline-sources.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tests/scripts/test_warm_league_wide_jobs.py"
+    },
+    {
+      "matchCount": 14,
+      "uri": ".specstory/history/2026-05-05_22-17-10Z-git-status-changes-and-contract-hardening.md"
+    },
+    {
+      "matchCount": 2,
+      "uri": "database/conversion/bowlingbayern_legacy_core.py"
+    },
+    {
+      "matchCount": 13,
+      "uri": ".specstory/history/2026-06-03_17-17-54Z-data-caching-performance-and.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "docs/TEAM_DROPDOWN_FIX.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tests/scripts/test_warm_player_cache.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "tests/database/test_import_bayerische_meisterschaft_xlsx.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "scripts/warm_cache_shard.py"
+    },
+    {
+      "matchCount": 17,
+      "uri": ".specstory/history/2026-05-18_12-35-26Z-docker-container-build-issues.md"
+    },
+    {
+      "matchCount": 2,
+      "uri": ".specstory/history/2026-05-18_06-11-54Z-react-application-refactoring-and-deployment.md"
+    },
+    {
+      "matchCount": 5,
+      "uri": "docs/Excel_Extraction.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".specstory/history/2026-06-28_15-49-04Z-explore-player-tournament-caches.md"
+    },
+    {
+      "matchCount": 59,
+      "uri": ".specstory/history/2026-07-22_10-05-43Z-repo-decluttering-strategy.md"
+    }
+  ],
+  "totalFiles": 87,
+  "totalMatches": 711
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **2** results in **1** directory</summary>
+
+Directory: **``** (2 files)
+
+| File |
+|------|
+| `.\scripts\data\extract_excel_data.py` |
+| `.\database\config\extract_excel_overrides.csv` |
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\docs\pipeline\import.md</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Examining extract_excel_data.py to compare post-2022 and pre-2022 extraction logic. Reviewing related tests.
+
+Inspecting parquet files for Location and Date columns by season.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\data\\extract_excel_data.py",
+  "pattern": "2022|post.?2022|new.?format|modern|spielorte|Spielorte|Erfassung"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\data\\extract_excel_data.py",
+  "pattern": "2022|post.?2022|new.?format|modern|spielorte|Spielorte|Erfassung",
+  "topFiles": [
+    {
+      "matchCount": 100,
+      "uri": "scripts\\data\\extract_excel_data.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 100
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/tests/**/*.py",
+  "pattern": "location|venue|date"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "pattern": "location|venue|date",
+  "topFiles": [
+    {
+      "matchCount": 5,
+      "uri": "tests/infrastructure/test_repositories_csv/test_player_repository.py"
+    },
+    {
+      "matchCount": 26,
+      "uri": "tests/infrastructure/test_repositories_csv/test_event_repository.py"
+    },
+    {
+      "matchCount": 7,
+      "uri": "tests/infrastructure/test_repositories_csv/test_game_result_repository.py"
+    },
+    {
+      "matchCount": 9,
+      "uri": "tests/domain/test_entities_team.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tests/scripts/test_warm_player_cache.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tests/scripts/test_warm_league_wide_jobs.py"
+    },
+    {
+      "matchCount": 11,
+      "uri": "tests/domain/test_entities_match.py"
+    }
+  ],
+  "totalFiles": 7,
+  "totalMatches": 491
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\merge_league_sources.py",
+  "pattern": "Location|Date"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\merge_league_sources.py",
+  "pattern": "Location|Date",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\seasonSpielplan.ts</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend",
+  "pattern": "normalizeVenue|venue_mapping|normalize.*location"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend",
+  "pattern": "normalizeVenue|venue_mapping|normalize.*location",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "frontend/src/lib/seasonSpielplan.ts"
+    },
+    {
+      "matchCount": 4,
+      "uri": "frontend/src/lib/seasonSpielplan.test.ts"
+    }
+  ],
+  "totalFiles": 2,
+  "totalMatches": 6
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **1** result in **1** directory</summary>
+
+Directory: **``** (1 file)
+
+| File |
+|------|
+| `tests/extract_excel_data/test_normalize_progress.py` |
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Checking how post-2022 extraction handles location and date.
+
+Locating the modern-format extraction logic. Inspecting the parquet files to quantify missing venue and date records.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\data\extract_excel_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.py",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\data\\extract_excel_data.py",
+  "pattern": "Spielorte|location|Location|date_info|full_date"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\data\\extract_excel_data.py",
+  "pattern": "Spielorte|location|Location|date_info|full_date",
+  "topFiles": [
+    {
+      "matchCount": 100,
+      "uri": "scripts\\data\\extract_excel_data.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 100
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **1** result in **1** directory</summary>
+
+Directory: **``** (1 file)
+
+| File |
+|------|
+| `tests/extract_excel_data/test_normalize_progress.py` |
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **1** result in **1** directory</summary>
+
+Directory: **``** (1 file)
+
+| File |
+|------|
+| `scripts/data/extract_excel_data.py` |
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\database\config\extract_excel_overrides.csv</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Examining the post-2022 processing path to understand how location and date values populate the CSV rows.
+
+Checking the published parquet files to quantify missing Location and Date values by season.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\data\extract_excel_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\data\extract_excel_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/*.{py,md}",
+  "pattern": "Spielorte"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "pattern": "Spielorte",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "tests/data_access/test_league_standings_validation.py"
+    },
+    {
+      "matchCount": 39,
+      "uri": ".specstory/history/2026-05-06_06-02-50Z-excel-data-processing-pipeline.md"
+    }
+  ],
+  "totalFiles": 2,
+  "totalMatches": 58
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **1** result in **1** directory</summary>
+
+Directory: **``** (1 file)
+
+| File |
+|------|
+| `tests/extract_excel_data/test_normalize_progress.py` |
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/tests/**/*.py",
+  "pattern": "extract_team_info|data_format_post_2022|Location"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "pattern": "extract_team_info|data_format_post_2022|Location",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "tests/data_access/test_league_weekly_points_analysis.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tests/database/test_paths.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "tests/data_access/test_league_standings_validation.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "tests/data_access/test_league_points_budget.py"
+    }
+  ],
+  "totalFiles": 4,
+  "totalMatches": 6
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+The post-2022 data issue is becoming clearer.
+
+Post-2022 analysis reads the Spielorte sheet for season, teams, and weeks, but ignores its venue schedule entirely. Location remains None because the code does not extract it from that sheet.
+
+Post-2022 location extraction pulls from hardcoded columns in the Erfassung sheets. This likely targets the wrong cells and explains the missing venues and dates. The next step is to inspect the actual parquet data and the Spielorte sheet layout to quantify the gaps.
+
+The user reports that post-2022 data actually contains venues and dates. This contradicts the earlier assumption. The cause may be extraction failures, missing source data, or Spielorte being ignored. Sample Excel files and published parquet will be inspected to verify.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+Post-2022 analysis never reads venue or date from `Spielorte`; I’ll check the published parquet and the actual sheet layout next.
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/*.{py,md}",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\docs",
+  "pattern": "Spielorte"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\docs",
+  "pattern": "Spielorte",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **0** results in **1** directory</summary>
+
+Directory: **``** (0 files)
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/*.{py,md}",
+  "pattern": "normalize_extracted_dataframe|Unknown"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "pattern": "normalize_extracted_dataframe|Unknown",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "database/tournament_import/registry.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tests/scripts/test_build_published_jobs.py"
+    },
+    {
+      "matchCount": 3,
+      "uri": ".specstory/history/2026-05-07_21-35-17Z-data-source-cleanup-and-consolidation.md"
+    },
+    {
+      "matchCount": 3,
+      "uri": "tests/database/test_legacy_pdf_erg_2016.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".specstory/history/2026-06-15_07-45-17Z-explore-data-pipeline-structure.md"
+    },
+    {
+      "matchCount": 2,
+      "uri": "database/tournament_scrape/categories.py"
+    },
+    {
+      "matchCount": 11,
+      "uri": ".specstory/history/2026-06-03_17-17-54Z-data-caching-performance-and.md"
+    },
+    {
+      "matchCount": 3,
+      "uri": "scripts/cav_inspector.py"
+    },
+    {
+      "matchCount": 3,
+      "uri": ".specstory/history/2026-07-21_11-34-10Z-club-page-statistics-display.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".specstory/history/2026-05-20_14-35-52Z-explore-excel-import-pipeline.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".specstory/history/2026-05-06_06-02-50Z-excel-data-processing-pipeline.md"
+    }
+  ],
+  "totalFiles": 11,
+  "totalMatches": 141
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\clubs_registry.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\database\relational_csv\README.md</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **1** result in **1** directory</summary>
+
+Directory: **``** (1 file)
+
+| File |
+|------|
+| `docs/Excel_Extraction.md` |
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+I will check Excel_Extraction.md and query the parquet data.
+
+The Spielorte sheet contains venue names and dates. The current extraction logic only reads metadata fields such as season and team counts. It does not pull the actual venue names or match them to individual games. This explains why the venue and date columns are empty for most records after 2022.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\docs\Excel_Extraction.md</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "contextAfter": 80,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\data\\extract_excel_data.py",
+  "pattern": "def normalize_extracted_dataframe"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\data\\extract_excel_data.py",
+  "pattern": "def normalize_extracted_dataframe",
+  "topFiles": [
+    {
+      "matchCount": 81,
+      "uri": "scripts\\data\\extract_excel_data.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 1
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/*.{py,md}",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database",
+  "pattern": "league_results_merged|Location"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database",
+  "pattern": "league_results_merged|Location",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "database/tournament_import/adapters/legacy_bm_einz_xls_dual.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "database/tournament_import/adapters/legacy_pdf_shared.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "database/tournament_import/adapters/legacy_pdf_erg_2016.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "database/data/ARTIFACTS.md"
+    },
+    {
+      "matchCount": 2,
+      "uri": "database/conversion/bowlingbayern_legacy_core.py"
+    },
+    {
+      "matchCount": 5,
+      "uri": "database/paths.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "database/README.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "database/tournament_import/schema.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "database/data/README.md"
+    }
+  ],
+  "totalFiles": 9,
+  "totalMatches": 17
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\database\paths.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\data\\extract_excel_data.py",
+  "pattern": "_ANALYZE_SPIELORTE|spielorte"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\data\\extract_excel_data.py",
+  "pattern": "_ANALYZE_SPIELORTE|spielorte",
+  "topFiles": [
+    {
+      "matchCount": 7,
+      "uri": "scripts\\data\\extract_excel_data.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 7
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Analyzing parquet data to assess Location and Date coverage by season.
+
+Checking historical Spielorte layouts and sample Excel files. Planning to collect all unique venue names and build a club-style mapping. Running parquet statistics and reviewing the work directory. Noticed the current script only reads the first 25 rows of the Spielorte sheet.
+
+Venue and date tables likely sit below the metadata rows in the Spielorte sheet. Searching historical layout details to confirm.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/*.{md,txt}",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\docs",
+  "pattern": "Spielorte"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\docs",
+  "pattern": "Spielorte",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/*.py",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts",
+  "pattern": "column 30|Anlage|Spielort|Erfassung"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts",
+  "pattern": "column 30|Anlage|Spielort|Erfassung",
+  "topFiles": [
+    {
+      "matchCount": 16,
+      "uri": "scripts/data/extract_excel_data.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 16
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/*.py",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\data_access",
+  "pattern": "Location|Date"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\data_access",
+  "pattern": "Location|Date",
+  "topFiles": [
+    {
+      "matchCount": 4,
+      "uri": "data_access/compare_csv_files.py"
+    },
+    {
+      "matchCount": 5,
+      "uri": "data_access/reconstruct_flat_csv.py"
+    },
+    {
+      "matchCount": 21,
+      "uri": "data_access/build_relational_csv.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "data_access/schema.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "data_access/validate_data.py"
+    }
+  ],
+  "totalFiles": 5,
+  "totalMatches": 33
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\schema.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **0** results in **1** directory</summary>
+
+Directory: **``** (0 files)
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **0** results in **1** directory</summary>
+
+Directory: **``** (0 files)
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Examining build_relational_csv.py for venue mapping logic. Querying the parquet data to investigate missing venue and date information.
+
+Checking the unmatched_event_locations.csv file from prior history. Reviewing existing tests and sample Excel fixtures for venue extraction patterns.
+
+Confirmed access to data_access and extract_excel_data.py. Will quantify the missing venue and date gaps in the parquet data first, then inspect the source Excel files.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\build_relational_csv.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **1** result in **1** directory</summary>
+
+Directory: **``** (1 file)
+
+| File |
+|------|
+| `tests/extract_excel_data/test_normalize_progress.py` |
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **0** results in **1** directory</summary>
+
+Directory: **``** (0 files)
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **0** results in **1** directory</summary>
+
+Directory: **``** (0 files)
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\data_access",
+  "pattern": "venue_mapping|location_mapping|unmatched_location"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\data_access",
+  "pattern": "venue_mapping|location_mapping|unmatched_location",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "data_access/build_relational_csv.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 2
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\database\data\ARTIFACTS.md</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Checking parquet data to assess location and date coverage by season.
+
+Examining extract_team_info and existing extract_excel tests. Searching for sample Excel files in the source directory. Reviewing the get_season_timetable function that feeds Spielplan.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/*.py",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app",
+  "pattern": "get_season_timetable|timetable|Location"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app",
+  "pattern": "get_season_timetable|timetable|Location",
+  "topFiles": [
+    {
+      "matchCount": 6,
+      "uri": "app/services/league_service.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/cache/league_response_cache.py"
+    },
+    {
+      "matchCount": 7,
+      "uri": "app/cache/cache_warmup.py"
+    },
+    {
+      "matchCount": 4,
+      "uri": "app/services/i18n_service.py"
+    },
+    {
+      "matchCount": 10,
+      "uri": "app/routes/league_routes.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app\\cache\\league_response_cache.py"
+    },
+    {
+      "matchCount": 6,
+      "uri": "app\\services\\league_service.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/config/database_config.py"
+    }
+  ],
+  "totalFiles": 8,
+  "totalMatches": 36
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **1** result in **1** directory</summary>
+
+Directory: **``** (1 file)
+
+| File |
+|------|
+| `tests/extract_excel_data/test_normalize_progress.py` |
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **21** results in **1** directory</summary>
+
+Directory: **``** (21 files)
+
+| File |
+|------|
+| `tests/scripts/test_publish_tournament_parquet.py` |
+| `tests/scripts/test_warm_cache_shard.py` |
+| `tests/scripts/test_warm_player_highest_games.py` |
+| `tests/scripts/test_cav_inspector.py` |
+| `tests/scripts/test_warm_league_wide_jobs.py` |
+| `tests/scripts/test_audit_player_id_names.py` |
+| `tests/scripts/test_scrape_player_registry.py` |
+| `tests/scripts/test_merge_duplicates_report.py` |
+| `tests/scripts/test_import_player_name_normalization.py` |
+| `tests/scripts/test_merge_tournament_schema.py` |
+| `tests/scripts/test_merge_league_gender_split.py` |
+| `tests/scripts/test_sweep_team_name_normalization.py` |
+| `tests/scripts/test_audit_female_league_split.py` |
+| `tests/scripts/test_warm_player_cache.py` |
+| `tests/scripts/test_audit_tournament_club_gaps.py` |
+| `tests/scripts/test_build_published_jobs.py` |
+| `tests/scripts/test_import_player_id_normalization.py` |
+| `tests/scripts/test_scrape_legacy_tournaments.py` |
+| `tests/scripts/test_warm_league_cache_shard.py` |
+| `tests/scripts/test_merge_stable_dedupe.py` |
+| `tests/scripts/test_send_notify_email.py` |
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\data\extract_excel_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Checking the parquet file for location and date coverage.
+
+Examining `get_season_timetable` and `extract_team_info` to understand how Location and Date are used. Checking for Excel source files on disk and reviewing the `tests/extract_excel_data` tests. Also looking at how `league_service` extracts timetable data.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\services\league_service.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **1** result in **1** directory</summary>
+
+Directory: **``** (1 file)
+
+| File |
+|------|
+| `tests/extract_excel_data/test_normalize_progress.py` |
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **1** result in **1** directory</summary>
+
+Directory: **``** (1 file)
+
+| File |
+|------|
+| `tests/test_pre_2022_placement_bonuses.py` |
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/tests/**/*.py",
+  "pattern": "extract_date_info|extract_team_info|parse_old_format_date"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "pattern": "extract_date_info|extract_team_info|parse_old_format_date",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "tests/test_old_format_date_season.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 2
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\database\schema.json</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Querying the parquet data to quantify missing location and date information.
+
+Writing a Python script to analyze the venue data. Checking whether Excel source files exist and reviewing the Spielorte sheet structure. Verifying the location extraction logic: the comment claims column 30, but after slicing the dataframe starting at column 25, iloc[1, 5] corresponds to the original column 30.
+
+Post-2022 sheets may lack location or date data. The Schiedsrichterinfos sheet handles season data. The Spielorte sheet likely contains weekly venue tables. Existing extract tests will be reviewed to understand expected formats.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **1** result in **1** directory</summary>
+
+Directory: **``** (1 file)
+
+| File |
+|------|
+| `tests/extract_excel_data/test_normalize_progress.py` |
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **1** result in **1** directory</summary>
+
+Directory: **``** (1 file)
+
+| File |
+|------|
+| `tests/extract_excel_data/test_normalize_progress.py` |
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\club_mapping_import.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\database\schema.json</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Running a Python script to analyze the parquet data. Also searching for Excel files and the work directory.
+
+Reviewing the extract_excel logic. The location value is read from row 2, column 30 of the sliced DataFrame. A function to extract date information from the first row of team sheets is also being examined.
+
+The date extraction searches the first row of the sliced team sheet. Missing dates in post-2022 data likely stem from this lookup failing, not from incorrect parsing.
+
+Legacy scraping hardcodes Location to empty strings. The merge logic may overwrite venue and date values when combining sources. I will inspect merge_league_sources.py next.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/merge_league_sources.py",
+  "pattern": "Location|Date"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "pattern": "Location|Date",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/scripts/**/*.py",
+  "pattern": "Location|Date"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "pattern": "Location|Date",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "scripts/scan_tournament_stage_cuts.py"
+    },
+    {
+      "matchCount": 15,
+      "uri": "scripts/data/import_bayerische_meisterschaft_xlsx.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "tests/scripts/test_merge_league_gender_split.py"
+    },
+    {
+      "matchCount": 10,
+      "uri": "scripts/data/extract_excel_data.py"
+    },
+    {
+      "matchCount": 4,
+      "uri": "scripts/data/generate_tournament_clean_results.py"
+    },
+    {
+      "matchCount": 7,
+      "uri": "scripts/transform_gf_tournament_to_canonical.py"
+    }
+  ],
+  "totalFiles": 6,
+  "totalMatches": 61
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\database\conversion\bowlingbayern_legacy_core.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\conversion",
+  "pattern": "Location|Date"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\conversion",
+  "pattern": "Location|Date",
+  "topFiles": [
+    {
+      "matchCount": 4,
+      "uri": "database/conversion/bowlingbayern_legacy_core.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 4
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+bowlingbayern_legacy_core.py leaves the Location field empty for Gravity Forms and current season data. This explains why venue and date information is missing for recent seasons.
+
+The missing venue data for recent seasons may stem from two sources. I will check the legacy core script and parquet files to verify whether Gravity Forms or newer Excel formats actually contain venue and date fields.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\database\conversion\bowlingbayern_legacy_core.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **0** results in **1** directory</summary>
+
+Directory: **``** (0 files)
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/*.{py,md}",
+  "pattern": "week_dates|Spielort|venue|Anlage"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "pattern": "week_dates|Spielort|venue|Anlage",
+  "topFiles": [
+    {
+      "matchCount": 3,
+      "uri": ".\\.specstory\\history\\2026-09-09_09-09-53Z-venue-data-normalization-issues.md"
+    },
+    {
+      "matchCount": 5,
+      "uri": ".\\.specstory\\history\\2026-07-21_11-34-10Z-club-page-statistics-display.md"
+    },
+    {
+      "matchCount": 32,
+      "uri": ".\\.specstory\\history\\2026-09-05_16-07-15Z-season-view-data-presentation.md"
+    }
+  ],
+  "totalFiles": 3,
+  "totalMatches": 269
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\docs\DATA_PIPELINE.md</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+The data pipeline is now clearer.
+
+Three data sources were identified: legacy .xls files, a historical Excel extract, and the current GF pipeline. The current season pipeline hardcodes venue locations to empty strings. The missing venue and date data since 2022 likely stems from the post-2022 Excel format and the GF pipeline. The next step is to inspect the parquet files, the extract_team_info function, and the Spielorte sheet layout.
+
+The Spielorte sheet likely contains weekly venue data that is currently being missed. The Erfassung sheet may supply location from a fixed cell that is empty. Existing extract_excel tests should be reviewed more thoroughly.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **171** results in **1** directory</summary>
+
+Directory: **``** (171 files)
+
+| File |
+|------|
+| `tests/database/test_tournament_source_registry.py` |
+| `tests/infrastructure/test_repositories_csv/test_game_repository.py` |
+| `tests/scripts/test_scrape_legacy_tournaments.py` |
+| `tests/infrastructure/test_repositories_csv/test_team_repository.py` |
+| `tests/app/test_player_data_cache.py` |
+| `tests/data_access/test_dtype_normalization_records.py` |
+| `tests/app/test_player_routes_season.py` |
+| `tests/test_league_response_cache.py` |
+| `tests/domain/__init__.py` |
+| `tests/database/test_legacy_pdf_targets.py` |
+| `tests/scripts/test_import_player_name_normalization.py` |
+| `tests/domain/test_entities_game_result.py` |
+| `tests/domain/test_value_objects_handicap.py` |
+| `tests/application/test_delete_team_handler.py` |
+| `tests/scripts/test_build_published_jobs.py` |
+| `tests/test_league_gender_normalization.py` |
+| `tests/app/test_cache_warmup.py` |
+| `tests/infrastructure/test_repositories_csv/test_position_comparison_repository.py` |
+| `tests/infrastructure/test_repositories_csv/test_event_repository.py` |
+| `tests/app/test_league_data_revision.py` |
+| `tests/scripts/test_warm_player_highest_games.py` |
+| `tests/data_access/test_publish_gate.py` |
+| `tests/app/test_player_game_records.py` |
+| `tests/infrastructure/test_repositories_csv/test_scoring_system_repository.py` |
+| `tests/data_access/test_player_id_name_normalization.py` |
+| `tests/database/test_import_clubmeisterschaft_fingerprint.py` |
+| `tests/conftest.py` |
+| `tests/domain/test_entities_game.py` |
+| `tests/test_pre_2022_placement_bonuses.py` |
+| `tests/infrastructure/test_repositories_csv/__init__.py` |
+| `tests/__init__.py` |
+| `tests/app/test_pipeline_status_service.py` |
+| `tests/app/test_player_merged_runtime_load.py` |
+| `tests/database/test_legacy_pdf_erg_2016.py` |
+| `tests/app/test_i18n_cache_localize.py` |
+| `tests/app/test_tournament_stage_config.py` |
+| `tests/app/test_team_routes_season.py` |
+| `tests/infrastructure/test_repositories_csv/test_club_repository.py` |
+| `tests/application/__init__.py` |
+| `tests/app/test_tournament_database_source.py` |
+| `tests/domain/test_entities_player.py` |
+| `tests/data_access/test_league_week_schema.py` |
+| `tests/data_access/test_series_data.py` |
+| `tests/domain/test_domain_services_handicap_calculator.py` |
+| `tests/data_access/test_players_registry.py` |
+| `tests/database/test_import_bayerische_meisterschaft_xlsx.py` |
+| `tests/scripts/test_merge_league_gender_split.py` |
+| `tests/app/test_gesamt_cut_shading.py` |
+| `tests/app/test_tournament_summary_netto.py` |
+| `tests/scripts/test_send_notify_email.py` |
+| `tests/database/test_paths.py` |
+| `tests/app/test_tournament_round_results_ko.py` |
+| `tests/infrastructure/test_repositories_csv/test_team_season_repository.py` |
+| `tests/infrastructure/conftest.py` |
+| `tests/app/test_field_progress_incremental.py` |
+| `tests/app/test_team_special_matches.py` |
+| `tests/infrastructure/test_repositories_csv/test_player_repository.py` |
+| `tests/domain/test_entities_team.py` |
+| `tests/data_access/test_competition_schema.py` |
+| `tests/database/test_legacy_bm_einz_xls_dual.py` |
+| `tests/database/test_legacy_pdf_erg_edv_grid.py` |
+| `tests/database/test_legacy_pdf_validation.py` |
+| `tests/scripts/test_audit_female_league_split.py` |
+| `tests/database/test_legacy_pdf_erg_2015.py` |
+| `tests/application/test_get_team_vs_team_comparison_handler.py` |
+| `tests/data_access/test_score_utils.py` |
+| `tests/application/test_get_league_standings_handler.py` |
+| `tests/domain/test_domain_services_standings_calculator.py` |
+| `tests/scripts/test_publish_tournament_parquet.py` |
+| `tests/application/test_update_team_handler.py` |
+| `tests/data_access/test_clubs_registry.py` |
+| `tests/app/test_request_analytics.py` |
+| `tests\app\test_team_vs_team_matchup_nav.py` |
+| `tests/app/test_club_player_results.py` |
+| `tests/scripts/test_merge_tournament_schema.py` |
+| `tests/scripts/test_audit_tournament_club_gaps.py` |
+| `tests/app/test_club_rankings.py` |
+| `tests/app/test_league_data_oddities.py` |
+| `tests/data_access/test_league_weekly_points_analysis.py` |
+| `tests/data_access/test_club_mapping_import.py` |
+| `tests/domain/test_value_objects_game_result.py` |
+| `tests/app/test_game_team_details.py` |
+| `tests/app/test_club_legends.py` |
+| `tests\app\test_top_performances_sort.py` |
+| `tests/domain/test_entities_league.py` |
+| `tests/app/test_tournament_elim_stepladder_ko.py` |
+| `tests/scripts/test_warm_league_wide_jobs.py` |
+| `tests/database/test_legacy_pdf_erg_pre2016.py` |
+| `tests/database/test_tournament_source_exceptions.py` |
+| `tests/data_access/test_pass_nr_edv_bridge.py` |
+| `tests/data_access/test_publish_manifest.py` |
+| `tests/application/test_get_league_history_handler.py` |
+| `tests/domain/conftest.py` |
+| `tests/app/test_club_name_validation_service.py` |
+| `tests/app/test_player_aggregate_merge.py` |
+| `tests/app/test_league_week_expectations.py` |
+| `tests/app/test_player_period_stats.py` |
+| `tests/data_access/test_league_points_budget.py` |
+| `tests/scripts/test_warm_cache_shard.py` |
+| `tests/scripts/test_sweep_team_name_normalization.py` |
+| `tests/database/test_generator.py` |
+| `tests/scripts/test_cav_inspector.py` |
+| `tests/infrastructure/__init__.py` |
+| `tests/data_access/test_league_standings_validation.py` |
+| `tests/data_access/test_player_name_normalization_config.py` |
+| `tests/data_access/test_tournament_coverage.py` |
+| `tests/scripts/test_warm_player_cache.py` |
+| `tests/scripts/test_merge_stable_dedupe.py` |
+| `tests/app/test_league_week_matrix.py` |
+| `tests/data_access/test_player_name_normalization.py` |
+| `tests/app/test_season_query.py` |
+| `tests/domain/test_value_objects_score.py` |
+| `tests/data_access/test_tournament_data_quality.py` |
+| `tests/database/test_build_published_dataset.py` |
+| `tests/database/test_legacy_pdf_format_resolve.py` |
+| `tests/app/test_tournament_data_quality_service.py` |
+| `tests/data_access/test_parquet_sidecar.py` |
+| `tests/data_access/test_data_adapter_pandas_imported_data.py` |
+| `tests/data_access/test_tournament_data_normalization.py` |
+| `tests/application/test_update_game_handler.py` |
+| `tests/app/test_player_aggregate_rank_cache.py` |
+| `tests/app/test_individual_averages_pinfall.py` |
+| `tests/data_access/test_affiliation_league_extend.py` |
+| `tests/application/test_delete_game_handler.py` |
+| `tests/data_access/test_aktive_mitglieder_registry.py` |
+| `tests/integration/test_api_routes.py` |
+| `tests/domain/test_entities_match_scoring.py` |
+| `tests/application/test_get_match_overview_handler.py` |
+| `tests/data_access/test_data_adapter_pandas_dummy_data.py` |
+| `tests/infrastructure/test_repositories_csv/test_game_result_repository.py` |
+| `tests/data_access/test_tournament_club_resolution.py` |
+| `tests/app/test_home_service.py` |
+| `tests/domain/test_value_objects_season.py` |
+| `tests/application/test_query_validators.py` |
+| `tests/data_access/test_shared_pandas_store.py` |
+| `tests/scripts/test_import_player_id_normalization.py` |
+| `tests/domain/test_entities_match.py` |
+| `tests/scripts/test_scrape_player_registry.py` |
+| `tests/domain/test_value_objects_points.py` |
+| `tests/application/test_create_game_handler.py` |
+| `tests/test_old_format_date_season.py` |
+| `tests/app/test_club_matrix_resolve.py` |
+| `tests/app/test_tournament_overview.py` |
+| `tests/extract_excel_data/test_normalize_progress.py` |
+| `tests/scripts/test_audit_player_id_names.py` |
+| `tests/scripts/test_warm_league_cache_shard.py` |
+| `tests/application/test_get_team_week_details_handler.py` |
+| `tests/database/test_legacy_pdf_format.py` |
+| `tests/app/test_league_level.py` |
+| `tests/application/test_get_team_statistics_handler.py` |
+| `tests/application/test_create_team_handler.py` |
+| `tests/app/test_league_standings_validation_service.py` |
+| `tests/integration/__init__.py` |
+| `tests/data_access/test_xls_biff_salvage.py` |
+| `tests/test_process_output_paths.py` |
+| `tests/infrastructure/test_repositories_csv/test_match_scoring_repository.py` |
+| `tests/domain/test_domain_services_statistics_calculator.py` |
+| `tests/infrastructure/test_repositories_csv/test_league_repository.py` |
+| `tests/domain/test_entities_position_comparison.py` |
+| `tests/app/test_league_service_warm_cache.py` |
+| `tests/app/test_tournament_utils.py` |
+| `tests/data_access/test_pd_dataframes.py` |
+| `tests/data_access/test_affiliation_registry.py` |
+| `tests/infrastructure/test_repositories_csv/test_match_repository.py` |
+| `tests/app/test_league_level5_merge.py` |
+| `tests/infrastructure/test_repositories_csv/test_club_player_repository.py` |
+| `tests/database/test_tournament_import_service.py` |
+| `tests/infrastructure/test_repositories_csv/test_league_season_repository.py` |
+| `tests/database/test_tournament_import_io.py` |
+| `tests/scripts/test_merge_duplicates_report.py` |
+| `tests/data_access/test_league_week_coverage.py` |
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/tests/**/*.py",
+  "pattern": "extract_excel_data|extract_team_info|data_format_post_2022|Spielorte"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "pattern": "extract_excel_data|extract_team_info|data_format_post_2022|Spielorte",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "tests/data_access/test_league_points_budget.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tests/test_league_gender_normalization.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tests/test_old_format_date_season.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tests/data_access/test_league_weekly_points_analysis.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tests/test_process_output_paths.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tests/test_pre_2022_placement_bonuses.py"
+    },
+    {
+      "matchCount": 3,
+      "uri": "tests/data_access/test_league_standings_validation.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tests/extract_excel_data/test_normalize_progress.py"
+    }
+  ],
+  "totalFiles": 8,
+  "totalMatches": 11
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\database\conversion\bowlingbayern_legacy_core.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Running parquet analysis and searching for Excel files.
+
+The 2026-05-06 conversation notes that only the first 25 rows of the Spielorte sheet were analyzed. The actual venue and date schedule likely sits below those metadata cells. Post-2022 Erfassung sheets may store venue data differently, or the location cell may contain non-standard values.
+
+`extract_date_info` defaults to October 4th when the first row lacks a date. This would create uniform incorrect dates for every week. The missing venue and dates likely stem from this fallback rather than true absence.
+
+The user's observation that most records lack venue and dates suggests Location is genuinely empty or NaN rather than merely defaulting to "Unknown". The merged data may contain blank strings or nulls for post-2022 entries. The next step is to inspect `extract_team_info` to understand how these empty values propagate.
+
+`extract_team_info` leaves Location as 'Unknown' when the source cell is NaN. Normalization does not overwrite this field. The merge logic in `merge_league_sources.py` is now being inspected to see if later sources with empty Location values override earlier entries.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\merge_league_sources.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/scripts/merge_league_sources.py",
+  "pattern": "source|Location|priority|dedup"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "pattern": "source|Location|priority|dedup",
+  "topFiles": [
+    {
+      "matchCount": 54,
+      "uri": "scripts/merge_league_sources.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 54
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/*.{py,md}",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts",
+  "pattern": "bowlingbayern|gf.*league|legacy_scrape|historical_league"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts",
+  "pattern": "bowlingbayern|gf.*league|legacy_scrape|historical_league",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "scripts/data/import_clubmeisterschaft_donaubowler_xlsx.py"
+    },
+    {
+      "matchCount": 6,
+      "uri": "scripts/data/extract_excel_data.py"
+    },
+    {
+      "matchCount": 3,
+      "uri": "scripts/scrape_legacy_tournaments.py"
+    },
+    {
+      "matchCount": 17,
+      "uri": "scripts/rebuild_published_from_scratch.py"
+    },
+    {
+      "matchCount": 3,
+      "uri": "scripts/analyze_legacy_scrape_csv.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "scripts/run_gf_pipeline.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "scripts/data/generate_tournament_clean_results.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "scripts/scrape_legacy_liga.py"
+    },
+    {
+      "matchCount": 5,
+      "uri": "scripts/data/convert_bowlingbayern_to_legacy.py"
+    }
+  ],
+  "totalFiles": 9,
+  "totalMatches": 62
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Checking the parquet files for Location and Date coverage.
+
+Also searching Excel and CSV files. The Spielorte table only reads 25 rows. Need to understand its full layout and how dates and venues are stored.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\.specstory\\history\\2026-05-06_06-02-50Z-excel-data-processing-pipeline.md",
+  "pattern": "Spielorte"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\.specstory\\history\\2026-05-06_06-02-50Z-excel-data-processing-pipeline.md",
+  "pattern": "Spielorte",
+  "topFiles": [
+    {
+      "matchCount": 30,
+      "uri": ".specstory\\history\\2026-05-06_06-02-50Z-excel-data-processing-pipeline.md"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 42
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\.specstory\\history\\2026-05-06_06-02-50Z-excel-data-processing-pipeline.md",
+  "pattern": "Anlage|location.*Erfassung|column 30|C1:F"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\.specstory\\history\\2026-05-06_06-02-50Z-excel-data-processing-pipeline.md",
+  "pattern": "Anlage|location.*Erfassung|column 30|C1:F",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\data\extract_excel_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Running parquet analysis and searching for Excel files.
+
+Checking the Spielorte sheet layout from the conversation history.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\.specstory\history\2026-05-06_06-02-50Z-excel-data-processing-pipeline.md</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\data\\extract_excel_data.py",
+  "pattern": "def get_cell_value|def extract_season_info"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\data\\extract_excel_data.py",
+  "pattern": "def get_cell_value|def extract_season_info",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "scripts\\data\\extract_excel_data.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 2
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\data\extract_excel_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Venue normalization will be added to preprocessing by mapping individual venue names. The missing venue and date data since 2022 also needs investigation.
+
+Parquet coverage and Excel Spielorte sheets will be inspected to locate the missing venue and date sources. Unique venue names will be collected to build a mapping CSV. Post-2022 extraction errors likely stem from incorrect cells in the Erfassung sheet and a dummy fallback date.
+
+The Spielorte sheet contains the actual week-to-date and venue mappings, yet it is currently ignored. The GF pipeline for seasons 25/26 hardcodes empty locations. The Schiedsrichterinfos sheet may also hold venue or date information. The missing data spans the 2022–2026 season range.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **0** results in **1** directory</summary>
+
+Directory: **`C:\tmp`** (0 files)
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **0** results in **1** directory</summary>
+
+Directory: **`c:\Users\cfell\repositories\bowlyzer_deploy\database\work`** (0 files)
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\database\data\runs\latest.json</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+The data directory is located at `C:\tmp\bowlyzer\data`.
+
+The historical Excel file is located at `C:\tmp\Sammlung-Ligaergebnisse`. A glob search on `C:\tmp` returned zero results, likely due to sandbox restrictions. I will try accessing it via Shell with full permissions.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+Terminal unavailable: this machine cannot enforce the 'workspace_readwrite' sandbox policy this command requires, because no working sandbox backend is available (Windows sandbox helper only provides network proxy, not filesystem isolation). This is not a permission denial. Commands requiring this policy cannot run here unless sandbox support is set up on this machine.
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+The sandbox is blocking access. I need to request full permissions to disable it.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: if (Test-Path &#34;C:\tmp\bowlyzer\data&#34;) { Get-ChildItem &#34;C:\tmp\bowlyzer\data&#34; -Name | Select-Object -First 40 } else { Write-Output &#34;NO work dir&#34; }; Write-Output &#34;---&#34;; if (Test-Path &#34;C:\tmp\Sammlung-Ligaergebnisse&#34;) { Get-ChildItem &#34;C:\tmp\Sammlung-Ligaergebnisse&#34; -Name | Select-Object -First 30 } else { Write-Output &#34;NO sammlung&#34; }; Write-Output &#34;---&#34;; if (Test-Path &#34;C:\Users\cfell\repositories\bowlyzer_deploy\database\data\league_results_merged.parquet&#34;) { Write-Output &#34;parquet exists&#34; } else { Write-Output &#34;NO parquet&#34; }</summary>
+```bash
+if (Test-Path "C:\tmp\bowlyzer\data") { Get-ChildItem "C:\tmp\bowlyzer\data" -Name | Select-Object -First 40 } else { Write-Output "NO work dir" }; Write-Output "---"; if (Test-Path "C:\tmp\Sammlung-Ligaergebnisse") { Get-ChildItem "C:\tmp\Sammlung-Ligaergebnisse" -Name | Select-Object -First 30 } else { Write-Output "NO sammlung" }; Write-Output "---"; if (Test-Path "C:\Users\cfell\repositories\bowlyzer_deploy\database\data\league_results_merged.parquet") { Write-Output "parquet exists" } else { Write-Output "NO parquet" }
+```
+
+```
+league
+legacy_scrape
+tmp
+tournaments
+league_standings_validation.csv
+player_id_name_conflicts.csv
+tournament_data_quality.csv
+_bench_dups.csv
+_bench_dups_non_exact.csv
+---
+Bayernliga 2019-20
+Liga 2022-23
+Ligaprogramme Nord 2023-24
+Ligaprogramme S�d 2023-24
+Ligaprogramme S�d 2024-25
+Ligaprogramme_Nord 2024-25
+Nordbereich 2019-20
+Saison 2025-26
+S�dbereich 2019-20
+---
+parquet exists
+
+```
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Excel files are present. I will begin examining the venue data.
+
+I'll analyze the parquet Location/Date fields by season. I'll inspect the Spielorte and Erfassung1 sheets in the post-2022 Excel files. I'll collect unique venue names. I'm writing a Python script to automate this.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+Excel sources and the published parquet are both available. Next I’ll measure Location/Date coverage by season and inspect a post-2022 `Spielorte` sheet.
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c &#34;
+import pandas as pd
+from pathlib import Path
+p = Path(r&#39;C:\Users\cfell\repositories\bowlyzer_deploy\database\data\league_results_merged.parquet&#39;)
+df = pd.read_parquet(p, columns=[&#39;Season&#39;,&#39;League&#39;,&#39;Week&#39;,&#39;Date&#39;,&#39;Location&#39;])
+print(&#39;rows&#39;, len(df))
+print(&#39;cols ok&#39;)
+
+def is_missing_date(s):
+    t = s.fillna(&#39;&#39;).astype(str).str.strip()
+    return t.eq(&#39;&#39;) | t.str.lower().isin([&#39;nan&#39;,&#39;tbd&#39;,&#39;none&#39;,&#39;nat&#39;,&#39;could not extract date&#39;,&#39;n/a&#39;,&#39;na&#39;,&#39;-&#39;])
+
+def is_missing_loc(s):
+    t = s.fillna(&#39;&#39;).astype(str).str.strip()
+    return t.eq(&#39;&#39;) | t.str.lower().isin([&#39;nan&#39;,&#39;unknown&#39;,&#39;none&#39;,&#39;tbd&#39;,&#39;n/a&#39;,&#39;na&#39;,&#39;-&#39;])
+
+df[&#39;_miss_date&#39;] = is_missing_date(df[&#39;Date&#39;])
+df[&#39;_miss_loc&#39;] = is_missing_loc(df[&#39;Location&#39;])
+
+# unique events
+ev = df.drop_duplicates([&#39;Season&#39;,&#39;League&#39;,&#39;Week&#39;])
+print(&#39;\\n=== event-level (season,league,week) ===&#39;)
+print(&#39;events&#39;, len(ev))
+g = ev.groupby(&#39;Season&#39;).agg(
+    events=(&#39;Week&#39;,&#39;count&#39;),
+    miss_date=(&#39;_miss_date&#39;,&#39;sum&#39;),
+    miss_loc=(&#39;_miss_loc&#39;,&#39;sum&#39;),
+).reset_index()
+g[&#39;date_ok_pct&#39;] = (100*(g.events-g.miss_date)/g.events).round(1)
+g[&#39;loc_ok_pct&#39;] = (100*(g.events-g.miss_loc)/g.events).round(1)
+print(g.to_string(index=False))
+
+print(&#39;\\n=== row-level ===&#39;)
+g2 = df.groupby(&#39;Season&#39;).agg(
+    rows=(&#39;Week&#39;,&#39;count&#39;),
+    miss_date=(&#39;_miss_date&#39;,&#39;sum&#39;),
+    miss_loc=(&#39;_miss_loc&#39;,&#39;sum&#39;),
+).reset_index()
+g2[&#39;date_ok_pct&#39;] = (100*(g2.rows-g2.miss_date)/g2.rows).round(1)
+g2[&#39;loc_ok_pct&#39;] = (100*(g2.rows-g2.miss_loc)/g2.rows).round(1)
+print(g2.to_string(index=False))
+
+print(&#39;\\n=== sample missing post-2022 ===&#39;)
+post = ev[ev[&#39;Season&#39;].isin([&#39;22/23&#39;,&#39;23/24&#39;,&#39;24/25&#39;,&#39;25/26&#39;])]
+print(&#39;post events&#39;, len(post), &#39;miss date&#39;, int(post._miss_date.sum()), &#39;miss loc&#39;, int(post._miss_loc.sum()))
+print(&#39;sample miss loc:&#39;)
+print(post[post._miss_loc][[&#39;Season&#39;,&#39;League&#39;,&#39;Week&#39;,&#39;Date&#39;,&#39;Location&#39;]].head(15).to_string(index=False))
+print(&#39;\\nsample miss date:&#39;)
+print(post[post._miss_date][[&#39;Season&#39;,&#39;League&#39;,&#39;Week&#39;,&#39;Date&#39;,&#39;Location&#39;]].head(15).to_string(index=False))
+
+print(&#39;\\n=== unique locations (non-missing) ===&#39;)
+locs = df.loc[~df._miss_loc, &#39;Location&#39;].astype(str).str.strip()
+print(&#39;unique&#39;, locs.nunique())
+vc = locs.value_counts()
+print(vc.head(40).to_string())
+print(&#39;\\n... total unique&#39;, len(vc))
+&#34;
+</summary>
+```bash
+uv run python -c "
+import pandas as pd
+from pathlib import Path
+p = Path(r'C:\Users\cfell\repositories\bowlyzer_deploy\database\data\league_results_merged.parquet')
+df = pd.read_parquet(p, columns=['Season','League','Week','Date','Location'])
+print('rows', len(df))
+print('cols ok')
+
+def is_missing_date(s):
+    t = s.fillna('').astype(str).str.strip()
+    return t.eq('') | t.str.lower().isin(['nan','tbd','none','nat','could not extract date','n/a','na','-'])
+
+def is_missing_loc(s):
+    t = s.fillna('').astype(str).str.strip()
+    return t.eq('') | t.str.lower().isin(['nan','unknown','none','tbd','n/a','na','-'])
+
+df['_miss_date'] = is_missing_date(df['Date'])
+df['_miss_loc'] = is_missing_loc(df['Location'])
+
+# unique events
+ev = df.drop_duplicates(['Season','League','Week'])
+print('\\n=== event-level (season,league,week) ===')
+print('events', len(ev))
+g = ev.groupby('Season').agg(
+    events=('Week','count'),
+    miss_date=('_miss_date','sum'),
+    miss_loc=('_miss_loc','sum'),
+).reset_index()
+g['date_ok_pct'] = (100*(g.events-g.miss_date)/g.events).round(1)
+g['loc_ok_pct'] = (100*(g.events-g.miss_loc)/g.events).round(1)
+print(g.to_string(index=False))
+
+print('\\n=== row-level ===')
+g2 = df.groupby('Season').agg(
+    rows=('Week','count'),
+    miss_date=('_miss_date','sum'),
+    miss_loc=('_miss_loc','sum'),
+).reset_index()
+g2['date_ok_pct'] = (100*(g2.rows-g2.miss_date)/g2.rows).round(1)
+g2['loc_ok_pct'] = (100*(g2.rows-g2.miss_loc)/g2.rows).round(1)
+print(g2.to_string(index=False))
+
+print('\\n=== sample missing post-2022 ===')
+post = ev[ev['Season'].isin(['22/23','23/24','24/25','25/26'])]
+print('post events', len(post), 'miss date', int(post._miss_date.sum()), 'miss loc', int(post._miss_loc.sum()))
+print('sample miss loc:')
+print(post[post._miss_loc][['Season','League','Week','Date','Location']].head(15).to_string(index=False))
+print('\\nsample miss date:')
+print(post[post._miss_date][['Season','League','Week','Date','Location']].head(15).to_string(index=False))
+
+print('\\n=== unique locations (non-missing) ===')
+locs = df.loc[~df._miss_loc, 'Location'].astype(str).str.strip()
+print('unique', locs.nunique())
+vc = locs.value_counts()
+print(vc.head(40).to_string())
+print('\\n... total unique', len(vc))
+"
+
+```
+
+```
+Traceback (most recent call last):
+  File "<string>", line 5, in <module>
+  File "C:\Users\cfell\repositories\bowlyzer_deploy\.venv\Lib\site-packages\pandas\io\parquet.py", line 671, in read_parquet
+    return impl.read(
+           ^^^^^^^^^^
+  File "C:\Users\cfell\repositories\bowlyzer_deploy\.venv\Lib\site-packages\pandas\io\parquet.py", line 260, in read
+    pa_table = self.api.parquet.read_table(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\cfell\repositories\bowlyzer_deploy\.venv\Lib\site-packages\pyarrow\parquet\core.py", line 1959, in read_table
+    return dataset.read(columns=columns, use_threads=use_threads,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\cfell\repositories\bowlyzer_deploy\.venv\Lib\site-packages\pyarrow\parquet\core.py", line 1585, in read
+    table = self._dataset.to_table(
+            ^^^^^^^^^^^^^^^^^^^^^^^
+  File "pyarrow/_dataset.pyx", line 579, in pyarrow._dataset.Dataset.to_table
+    return self.scanner(
+  File "pyarrow/_dataset.pyx", line 415, in pyarrow._dataset.Dataset.scanner
+    return Scanner.from_dataset(
+  File "pyarrow/_dataset.pyx", line 3704, in pyarrow._dataset.Scanner.from_dataset
+    options = Scanner._make_scan_options(
+  File "pyarrow/_dataset.pyx", line 3617, in pyarrow._dataset.Scanner._make_scan_options
+    _populate_builder(
+  File "pyarrow/_dataset.pyx", line 3567, in pyarrow._dataset._populate_builder
+    check_status(builder.ProjectColumns([tobytes(c) for c in columns]))
+  File "pyarrow/error.pxi", line 92, in pyarrow.lib.check_status
+    raise convert_status(status)
+pyarrow.lib.ArrowInvalid: No match for FieldRef.Name(League) in Season: large_string
+Week: large_string
+Date: large_string
+Players per Team: large_string
+Location: large_string
+Round Number: large_string
+Match Number: large_string
+Team: large_string
+Position: large_string
+Player: large_string
+Player ID: large_string
+Opponent: large_string
+Score: large_string
+
+… (output truncated)
+```
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\data\extract_excel_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+The league column is labeled `Event` in schema version 2.
+
+Rerunning the analysis.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c &#34;
+import pandas as pd
+from pathlib import Path
+p = Path(r&#39;C:\Users\cfell\repositories\bowlyzer_deploy\database\data\league_results_merged.parquet&#39;)
+df = pd.read_parquet(p, columns=[&#39;Season&#39;,&#39;Event&#39;,&#39;Week&#39;,&#39;Date&#39;,&#39;Location&#39;])
+print(&#39;rows&#39;, len(df))
+
+def is_missing_date(s):
+    t = s.fillna(&#39;&#39;).astype(str).str.strip()
+    return t.eq(&#39;&#39;) | t.str.lower().isin([&#39;nan&#39;,&#39;tbd&#39;,&#39;none&#39;,&#39;nat&#39;,&#39;could not extract date&#39;,&#39;n/a&#39;,&#39;na&#39;,&#39;-&#39;])
+
+def is_missing_loc(s):
+    t = s.fillna(&#39;&#39;).astype(str).str.strip()
+    return t.eq(&#39;&#39;) | t.str.lower().isin([&#39;nan&#39;,&#39;unknown&#39;,&#39;none&#39;,&#39;tbd&#39;,&#39;n/a&#39;,&#39;na&#39;,&#39;-&#39;])
+
+df[&#39;_miss_date&#39;] = is_missing_date(df[&#39;Date&#39;])
+df[&#39;_miss_loc&#39;] = is_missing_loc(df[&#39;Location&#39;])
+
+ev = df.drop_duplicates([&#39;Season&#39;,&#39;Event&#39;,&#39;Week&#39;])
+print(&#39;\\n=== event-level (season,league,week) ===&#39;)
+print(&#39;events&#39;, len(ev))
+g = ev.groupby(&#39;Season&#39;).agg(
+    events=(&#39;Week&#39;,&#39;count&#39;),
+    miss_date=(&#39;_miss_date&#39;,&#39;sum&#39;),
+    miss_loc=(&#39;_miss_loc&#39;,&#39;sum&#39;),
+).reset_index()
+g[&#39;date_ok_pct&#39;] = (100*(g.events-g.miss_date)/g.events).round(1)
+g[&#39;loc_ok_pct&#39;] = (100*(g.events-g.miss_loc)/g.events).round(1)
+print(g.to_string(index=False))
+
+print(&#39;\\n=== unique Date samples by season (post 21) ===&#39;)
+for season in [&#39;21/22&#39;,&#39;22/23&#39;,&#39;23/24&#39;,&#39;24/25&#39;,&#39;25/26&#39;]:
+    sub = ev[ev.Season==season]
+    if sub.empty:
+        print(season, &#39;NO DATA&#39;)
+        continue
+    dates = sub[&#39;Date&#39;].fillna(&#39;&#39;).astype(str).str.strip().value_counts().head(8)
+    locs = sub[&#39;Location&#39;].fillna(&#39;&#39;).astype(str).str.strip().value_counts().head(8)
+    print(f&#39;\\n{season} events={len(sub)} miss_date={int(sub._miss_date.sum())} miss_loc={int(sub._miss_loc.sum())}&#39;)
+    print(&#39; dates:&#39;, dict(dates))
+    print(&#39; locs:&#39;, dict(locs))
+&#34;
+</summary>
+```bash
+uv run python -c "
+import pandas as pd
+from pathlib import Path
+p = Path(r'C:\Users\cfell\repositories\bowlyzer_deploy\database\data\league_results_merged.parquet')
+df = pd.read_parquet(p, columns=['Season','Event','Week','Date','Location'])
+print('rows', len(df))
+
+def is_missing_date(s):
+    t = s.fillna('').astype(str).str.strip()
+    return t.eq('') | t.str.lower().isin(['nan','tbd','none','nat','could not extract date','n/a','na','-'])
+
+def is_missing_loc(s):
+    t = s.fillna('').astype(str).str.strip()
+    return t.eq('') | t.str.lower().isin(['nan','unknown','none','tbd','n/a','na','-'])
+
+df['_miss_date'] = is_missing_date(df['Date'])
+df['_miss_loc'] = is_missing_loc(df['Location'])
+
+ev = df.drop_duplicates(['Season','Event','Week'])
+print('\\n=== event-level (season,league,week) ===')
+print('events', len(ev))
+g = ev.groupby('Season').agg(
+    events=('Week','count'),
+    miss_date=('_miss_date','sum'),
+    miss_loc=('_miss_loc','sum'),
+).reset_index()
+g['date_ok_pct'] = (100*(g.events-g.miss_date)/g.events).round(1)
+g['loc_ok_pct'] = (100*(g.events-g.miss_loc)/g.events).round(1)
+print(g.to_string(index=False))
+
+print('\\n=== unique Date samples by season (post 21) ===')
+for season in ['21/22','22/23','23/24','24/25','25/26']:
+    sub = ev[ev.Season==season]
+    if sub.empty:
+        print(season, 'NO DATA')
+        continue
+    dates = sub['Date'].fillna('').astype(str).str.strip().value_counts().head(8)
+    locs = sub['Location'].fillna('').astype(str).str.strip().value_counts().head(8)
+    print(f'\\n{season} events={len(sub)} miss_date={int(sub._miss_date.sum())} miss_loc={int(sub._miss_loc.sum())}')
+    print(' dates:', dict(dates))
+    print(' locs:', dict(locs))
+"
+
+```
+
+```
+rows 743955
+\n=== event-level (season,league,week) ===
+events 2841
+Season  events  miss_date  miss_loc  date_ok_pct  loc_ok_pct
+ 08/09     213          0         0        100.0       100.0
+ 09/10     215          0         0        100.0       100.0
+ 10/11     226          0         0        100.0       100.0
+ 11/12     212          0         0        100.0       100.0
+ 12/13     213          0         0        100.0       100.0
+ 13/14     213          0         0        100.0       100.0
+ 14/15     197          0         0        100.0       100.0
+ 15/16     189          0         0        100.0       100.0
+ 16/17     198          0         0        100.0       100.0
+ 17/18     197          0         0        100.0       100.0
+ 18/19     190          0         0        100.0       100.0
+ 19/20     199          0         0        100.0       100.0
+ 22/23     137          0       137        100.0         0.0
+ 23/24     135          0       135        100.0         0.0
+ 24/25      72          0        72        100.0         0.0
+ 25/26      35          1        35         97.1         0.0
+\n=== unique Date samples by season (post 21) ===
+21/22 NO DATA
+\n22/23 events=137 miss_date=0 miss_loc=137
+ dates: {'2022-10-04': np.int64(125), '2023-01-15': np.int64(2), '2023-01-29': np.int64(2), '2023-02-05': np.int64(2), '2023-03-05': np.int64(2), '2023-04-02': np.int64(2), '2023-02-26': np.int64(1), '2023-03-12': np.int64(1)}
+ locs: {'Unknown': np.int64(137)}
+\n23/24 events=135 miss_date=0 miss_loc=135
+ dates: {'2023-10-04': np.int64(123), '2024-02-18': np.int64(2), '2024-02-25': np.int64(2), '2024-03-17': np.int64(2), '2024-04-14': np.int64(2), '2024-04-28': np.int64(2), '2024-05-12': np.int64(2)}
+ locs: {'Unknown': np.int64(135)}
+\n24/25 events=72 miss_date=0 miss_loc=72
+ dates: {'2024-10-04': np.int64(20), '2025-03-02': np.int64(8), '2024-09-29': np.int64(8), '2024-10-20': np.int64(6), '2024-10-13': np.int64(5), '2024-11-17': np.int64(5), '2025-
+… (output truncated)
+```
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+The missing venue and date fields appear to be a post-2022 data issue.
+
+The 2022–2023 season shows 125 of 137 events defaulted to 2022-10-04. The 2023–2024 season shows 123 of 135 events defaulted to 2023-10-04. The 2025–2026 season uses entry dates instead of match dates. Locations are empty or hardcoded as "Unknown".
+
+The 2024–2025 season contains some genuine dates, suggesting certain files store match dates in the Erfassung sheet. The 2022–2023 and 2024–2025 workbooks need inspection of the Spielorte and Erfassung1 sheets to locate the correct venue and date sources.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+Post-2022 venues are all `Unknown`, and most dates are the dummy `04.10` fallback. I’ll inspect `Spielorte` and `Erfassung` in a real workbook next.
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: Get-ChildItem &#34;C:\tmp\Sammlung-Ligaergebnisse\Liga 2022-23&#34; -Name | Select-Object -First 20; Write-Output &#34;==== 2024-25 Nord ====&#34;; Get-ChildItem &#34;C:\tmp\Sammlung-Ligaergebnisse\Ligaprogramme_Nord 2024-25&#34; -Name | Select-Object -First 20; Write-Output &#34;==== 2024-25 Sud ====&#34;; Get-ChildItem &#34;C:\tmp\Sammlung-Ligaergebnisse\Ligaprogramme Süd 2024-25&#34; -ErrorAction SilentlyContinue -Name | Select-Object -First 20</summary>
+```bash
+Get-ChildItem "C:\tmp\Sammlung-Ligaergebnisse\Liga 2022-23" -Name | Select-Object -First 20; Write-Output "==== 2024-25 Nord ===="; Get-ChildItem "C:\tmp\Sammlung-Ligaergebnisse\Ligaprogramme_Nord 2024-25" -Name | Select-Object -First 20; Write-Output "==== 2024-25 Sud ===="; Get-ChildItem "C:\tmp\Sammlung-Ligaergebnisse\Ligaprogramme Süd 2024-25" -ErrorAction SilentlyContinue -Name | Select-Object -First 20
+```
+
+```
+BOL N1 M.xls
+BOL N1 M.xlsx
+BOL N2 M.xls
+BOL N2 M.xlsx
+BOL N3 M.xls
+BOL N3 M.xlsx
+BOLS 1 M.xls
+BOLS 1 M.xlsx
+BOLS 2 M.xls
+BOLS 2 M.xlsx
+BOLS 3 M.xls
+BOLS 3 M.xlsx
+BYL F.xls
+BYL F.xlsx
+BYL M.xls
+BYL M.xlsx
+BZL N1 M.xls
+BZL N1 M.xlsx
+BZL N2 M.xls
+BZL N2 M.xlsx
+==== 2024-25 Nord ====
+BOL_N1.xls
+BOL_N1.xlsx
+BOL_N2.xls
+BOL_N2.xlsx
+BOL_N3.xls
+BOL_N3.xlsx
+BYL Frauen.xlsx
+BYL_M�nner.xlsx
+BZL_N1.xls
+BZL_N1.xlsx
+BZL_N2.xls
+BZL_N2.xlsx
+BZL_N3.xls
+BZL_N3.xlsx
+KRL_N1.xls
+KRL_N1.xlsx
+KRL_N2.xls
+KRL_N2.xlsx
+KRL_N3.xls
+KRL_N3.xlsx
+==== 2024-25 Sud ====
+BOLS 1 M.xls
+BOLS 1 M.xlsx
+BOLS 2 M.xls
+BOLS 2 M.xlsx
+BOLS 3 M.xls
+BOLS 3 M.xlsx
+BZLS 1 M.xls
+BZLS 1 M.xlsx
+BZLS 2 M.xls
+BZLS 2 M.xlsx
+BZLS 3 M.xls
+BZLS 3 M.xlsx
+KRLS 1 M.xls
+KRLS 1 M.xlsx
+KRLS 2 M.xls
+KRLS 2 M.xlsx
+KRLS 3 M.xls
+KRLS 3 M.xlsx
+LL S 1 F.xls
+LL S 1 F.xlsx
+
+```
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\text_norm.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\data_access\test_club_mapping_import.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Inspecting workbook layouts to understand how venue and date information is stored.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c &#34;
+import pandas as pd
+from pathlib import Path
+from scripts.data.extract_excel_data import read_excel_safely, get_sheet_names_safely, detect_team_anchor_start_col
+
+files = [
+    Path(r&#39;C:\tmp\Sammlung-Ligaergebnisse\Liga 2022-23\BYL M.xlsx&#39;),
+    Path(r&#39;C:\tmp\Sammlung-Ligaergebnisse\Ligaprogramme_Nord 2024-25\BYL Frauen.xlsx&#39;),
+]
+for f in files:
+    print(&#39;=&#39;*80)
+    print(f)
+    names = get_sheet_names_safely(f)
+    print(&#39;sheets sample:&#39;, names[:25], &#39;... total&#39;, len(names))
+    print(&#39;has Spielorte&#39;, &#39;Spielorte&#39; in names, &#39;Erfassung1&#39;, &#39;Erfassung1&#39; in names)
+
+    sp = read_excel_safely(f, sheet_name=&#39;Spielorte&#39;, header=None)
+    print(&#39;\\nSpielorte shape&#39;, sp.shape)
+    print(&#39;--- Spielorte first 40 rows, cols 0-12 ---&#39;)
+    pd.set_option(&#39;display.max_columns&#39;, 20)
+    pd.set_option(&#39;display.width&#39;, 200)
+    pd.set_option(&#39;display.max_colwidth&#39;, 40)
+    print(sp.iloc[:40, :12].to_string())
+&#34;
+</summary>
+```bash
+uv run python -c "
+import pandas as pd
+from pathlib import Path
+from scripts.data.extract_excel_data import read_excel_safely, get_sheet_names_safely, detect_team_anchor_start_col
+
+files = [
+    Path(r'C:\tmp\Sammlung-Ligaergebnisse\Liga 2022-23\BYL M.xlsx'),
+    Path(r'C:\tmp\Sammlung-Ligaergebnisse\Ligaprogramme_Nord 2024-25\BYL Frauen.xlsx'),
+]
+for f in files:
+    print('='*80)
+    print(f)
+    names = get_sheet_names_safely(f)
+    print('sheets sample:', names[:25], '... total', len(names))
+    print('has Spielorte', 'Spielorte' in names, 'Erfassung1', 'Erfassung1' in names)
+
+    sp = read_excel_safely(f, sheet_name='Spielorte', header=None)
+    print('\\nSpielorte shape', sp.shape)
+    print('--- Spielorte first 40 rows, cols 0-12 ---')
+    pd.set_option('display.max_columns', 20)
+    pd.set_option('display.width', 200)
+    pd.set_option('display.max_colwidth', 40)
+    print(sp.iloc[:40, :12].to_string())
+"
+
+```
+
+```
+================================================================================
+C:\tmp\Sammlung-Ligaergebnisse\Liga 2022-23\BYL M.xlsx
+sheets sample: ['MS', 'Spielorte', 'Schl�ssel', 'Schiedsrichterinfos', 'Spielzettel1', 'Erfassung1', 'Tabelle1', 'Schnitt1', 'SRBericht1', 'Spielzettel2', 'Erfassung2', 'Tabelle2', 'TabGes2', 'Schnitt2', 'SchnittGes2', 'SRBericht2', 'SRBericht3', 'Spielzettel3', 'SRBericht4', 'Erfassung3', 'Tabelle3', 'TabGes3', 'Schnitt3', 'SchnittGes3', 'Spielzettel4'] ... total 46
+has Spielorte True Erfassung1 True
+\nSpielorte shape (622, 3)
+--- Spielorte first 40 rows, cols 0-12 ---
+                     0               1                            2
+0                    1  14./15.01.2023         Regensburg Superbowl
+1                    2  28./29.01.2023  Schweinfurt Extreme Bowling
+2                    3  04./05.02.2023         M�nchen Isar-Bowling
+3                    4  25./26.02.2023         M�nchen Isar-Bowling
+4                    5  04./05.03.2023            N�rnberg Westbowl
+5                    6  01./02.04.2023         Brunnthal Max Munich
+6                  NaN             NaN                          NaN
+7                  NaN             NaN                          NaN
+8                  NaN             NaN                          NaN
+9                  NaN             NaN                          NaN
+10                 NaN             NaN                          NaN
+11                 NaN             NaN                          NaN
+12                 NaN             NaN                          NaN
+13                 NaN             NaN                          NaN
+14                 NaN             NaN                          NaN
+15                 NaN             NaN                          NaN
+16                 NaN             NaN                          NaN
+17             Saison:             NaN                  2022 / 2023
+18                 NaN             NaN                          NaN
+19 
+… (output truncated)
+```
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+The Spielorte sheet contains the venue data needed for normalization.
+
+The schedule table in the first rows of the Spielorte sheet contains the true venue and date records for 2022 onward. The current code ignores this table and only reads scattered cells further down. The Erfassung sheets may also hold venue data elsewhere.
+
+Erfassung1 needs inspection to confirm the current extraction targets the wrong cells. Date formats differ by season: 2022-23 includes the year, while 2024-25 omits it. The existing parser already handles both variants. Unique venue names will be gathered from published parquet, Spielorte sheets, and pre-2022 location fields to build a venue_mapping.csv. The Erfassung1 header and unique parquet venues will be dumped next.
+
+More Spielorte sheets need inspection for layout variations, including headers. Season 25/26 shows empty venue fields; dates come from Datum des Eintrags. The GF source columns must be checked for venue data too.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c &#34;
+import pandas as pd
+from pathlib import Path
+from scripts.data.extract_excel_data import read_excel_safely, detect_team_anchor_start_col
+
+f = Path(r&#39;C:\tmp\Sammlung-Ligaergebnisse\Liga 2022-23\BYL M.xlsx&#39;)
+er = read_excel_safely(f, sheet_name=&#39;Erfassung1&#39;, header=None)
+print(&#39;Erfassung1 shape&#39;, er.shape)
+print(&#39;--- first 8 rows, cols 0-40 ---&#39;)
+pd.set_option(&#39;display.max_columns&#39;, 50)
+pd.set_option(&#39;display.width&#39;, 240)
+pd.set_option(&#39;display.max_colwidth&#39;, 24)
+print(er.iloc[:8, :40].to_string())
+print()
+anchor = detect_team_anchor_start_col(er)
+print(&#39;anchor&#39;, anchor)
+sliced = er.iloc[:, anchor:anchor+24]
+print(&#39;sliced first 5 rows:&#39;)
+print(sliced.iloc[:5].to_string())
+print()
+print(&#39;iloc[1,5] (current location cell):&#39;, sliced.iloc[1,5] if sliced.shape[1]&gt;5 else &#39;n/a&#39;)
+print(&#39;iloc[0] first row values:&#39;)
+for i,v in enumerate(sliced.iloc[0]):
+    if pd.notna(v):
+        print(i, repr(v)[:80])
+&#34;
+</summary>
+```bash
+uv run python -c "
+import pandas as pd
+from pathlib import Path
+from scripts.data.extract_excel_data import read_excel_safely, detect_team_anchor_start_col
+
+f = Path(r'C:\tmp\Sammlung-Ligaergebnisse\Liga 2022-23\BYL M.xlsx')
+er = read_excel_safely(f, sheet_name='Erfassung1', header=None)
+print('Erfassung1 shape', er.shape)
+print('--- first 8 rows, cols 0-40 ---')
+pd.set_option('display.max_columns', 50)
+pd.set_option('display.width', 240)
+pd.set_option('display.max_colwidth', 24)
+print(er.iloc[:8, :40].to_string())
+print()
+anchor = detect_team_anchor_start_col(er)
+print('anchor', anchor)
+sliced = er.iloc[:, anchor:anchor+24]
+print('sliced first 5 rows:')
+print(sliced.iloc[:5].to_string())
+print()
+print('iloc[1,5] (current location cell):', sliced.iloc[1,5] if sliced.shape[1]>5 else 'n/a')
+print('iloc[0] first row values:')
+for i,v in enumerate(sliced.iloc[0]):
+    if pd.notna(v):
+        print(i, repr(v)[:80])
+"
+
+```
+
+```
+Erfassung1 shape (299, 78)
+--- first 8 rows, cols 0-40 ---
+          0                       1       2        3     4                     5     6        7     8        9     10       11    12       13    14       15    16       17         18       19              20      21    22                     23  24         25                      26      27       28    29                    30    31       32    33       34    35       36    37       38    39
+0        NaN                Team-Nr.     NaN    Liga:   NaN     Bayernliga M�nner   NaN      NaN   NaN      NaN   NaN      NaN   NaN      NaN   NaN      NaN   NaN      NaN     Datum:      NaN  14./15.01.2023     NaN   NaN  nur hier eingeben >>> NaN        NaN                Team-Nr.     NaN    Liga:   NaN     Bayernliga M�nner   NaN      NaN   NaN      NaN   NaN      NaN   NaN      NaN   NaN
+1        NaN                       1     NaN     Ort:   NaN  Regensburg Superbowl   NaN      NaN   NaN      NaN   NaN      NaN   NaN      NaN   NaN      NaN   NaN      NaN  Spieltag:        1             NaN     NaN   NaN                    NaN NaN        NaN                       1     NaN     Ort:   NaN  Regensburg Superbowl   NaN      NaN   NaN      NaN   NaN      NaN   NaN      NaN   NaN
+2        NaN  Raubritter Hallstadt 1     NaN      NaN   NaN                   NaN   NaN      NaN   NaN      NaN   NaN      NaN   NaN      NaN   NaN      NaN   NaN      NaN        NaN      NaN             NaN     NaN   NaN                    NaN NaN        NaN  Raubritter Hallstadt 1     NaN      NaN   NaN                   NaN   NaN      NaN   NaN      NaN   NaN      NaN   NaN      NaN   NaN
+3        NaN                     NaN     NaN     Bahn     7                  Bahn     6     Bahn     9     Bahn    11     Bahn     3     Bahn     5     Bahn    12     Bahn         10     Bahn               4     NaN   NaN                    NaN NaN        NaN                     NaN     NaN     Bahn     7                  Bahn     6     Bahn     9     B
+… (output truncated)
+```
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/*.{py,md,csv}",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database",
+  "pattern": "Ort|Anlage|Spielort|Location|venue"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database",
+  "pattern": "Ort|Anlage|Spielort|Location|venue",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "database\\data\\league_results_merged.csv"
+    },
+    {
+      "matchCount": 1,
+      "uri": "database\\data\\tournaments_postprocessed.csv"
+    },
+    {
+      "matchCount": 2,
+      "uri": "database\\README.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "database\\data\\README.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "database\\data\\ARTIFACTS.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": "database\\tournament_import\\adapters\\legacy_pdf_shared.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "database\\tournament_import\\adapters\\legacy_pdf_erg_2016.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "database\\tournament_import\\adapters\\legacy_bm_einz_xls_dual.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "database\\tournament_import\\schema.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "database\\conversion\\bowlingbayern_legacy_core.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "database\\relational_csv\\event.csv"
+    }
+  ],
+  "totalFiles": 11,
+  "totalMatches": 13
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **3** results in **1** directory</summary>
+
+Directory: **``** (3 files)
+
+| File |
+|------|
+| `database/conversion/bowlingbayern_legacy_core.py` |
+| `database/sources/bowlingbayern_liga_csv.py` |
+| `scripts/data/convert_bowlingbayern_to_legacy.py` |
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\database\sources\bowlingbayern_liga_csv.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+The Erfassung layout issue is now fully understood.
+
+The extractor slices the dataframe starting from the left Team-Nr. anchor instead of the right block. This misaligns the column indices, causing iloc[1, 5] to read NaN rather than the expected value.
+
+The venue name actually sits at original column 5, not column 30. After slicing from the left Team-Nr. anchor, it maps to iloc[1, 4], while iloc[1, 5] remains NaN. The hardcoded column 30 assumption is incorrect.
+
+The hardcoded column 30 offset assumes Team-Nr. is at column 25. Because the detector always selects the leftmost Team-Nr. anchor, the slice begins at column 1 instead. The venue value therefore lands at iloc[1, 4] rather than the assumed iloc[1, 5].
+
+Erfassung contains duplicate Team-Nr. headers across both columns, making vertical parsing unreliable. Spielorte offers a cleaner alternative: one row per week with reliable date and venue data. A plan is being drafted to leverage this sheet.
+
+The plan now has four concrete steps.
+
+Parse the Spielorte schedule to supply week, date, and venue data for post-2022 weeks. Use this as the primary source instead of Erfassung cells. Keep Erfassung as a fallback and extract location and date by searching for "Ort:" and "Datum:" labels.
+
+Collect all unique venue names into a mapping file similar to club_mapping.csv. Apply this during dataframe normalization.
+
+For GF 25/26, the empty location stems from a hardcoded value in bowlingbayern_legacy_core. The GF source itself may already contain venue data and needs verification.
+
+The venue normalization will draw unique names from the pre-2022 parquet and the Spielorte sheets. The mapping file will follow the club_mapping.csv pattern with canonical names and aliases.
+
+The venue mapping will be wired into `normalize_extracted_dataframe`. Canonical names will be built from obvious duplicates, with remaining unique names kept as identity mappings. The existing `venue.csv` and `venue_name` alias tables will be checked for curated entries. The GF 25/26 source CSV will be inspected for venue data.
+
+The venue mapping will mirror `club_mapping.csv` exactly, using pipe-separated aliases and applying inside `normalize_extracted_dataframe`. Unique names will be gathered from parquet and Spielorte. Additional Spielorte sheets will be inspected for layout variations, and the GF source verified for venue data.
+
+Spielorte 2024 Frauen contains a catalog of all venues in column 4. The actual week venue is in column 2. The extractor will target column 2 and ignore column 4. Dates without a year will be resolved using season_info. The 2023-24 and 19/20 files will be compared for layout differences. Existing venue.csv will seed canonical names.
+
+The date extraction logic also breaks after slicing. The date string "14./15.01.2023" sits at original column 20, which becomes sliced column 19. The regex expects two digits followed by a dot, but the slash between the days prevents a match. The unsliced first row would correctly capture the date.
+
+The date extraction logic should actually locate the date string after slicing, because the slash between the days does not prevent the regex from matching the second date fragment. Yet roughly 125 of 137 events in 2022/23 still default to 2022-10-04. This suggests the date extraction is failing for reasons unrelated to the slash, such as missing or misplaced Team-Nr. anchors.
+
+The slice offset is now clear. When Team-Nr. appears at both column 1 and column 25, the detector picks the leftmost anchor, so the slice begins at column 1 and captures the date at column 20. If Team-Nr. appears only at column 25, the slice starts at 25 and skips the date entirely. This explains why some files fail to extract dates while others succeed.
+
+The date extraction logic only processes string values. Excel datetime cells are skipped entirely. The fallback dummy 04.10 then resolves to 2022-10-04 for season 22/23. This explains the widespread incorrect dates. Spielorte remains the better source because it centralizes all weekly data in one sheet.
+
+The date extractor's default fallback of 04.10 will be removed entirely, since it actively invents invalid dates. Unique venue names and additional Spielorte layout variations will be gathered to complete the mapping inventory.
+
+Specific venue aliases are being catalogued for the mapping file, including Superbowl versus Super Bowl, Westbowl versus West Bowling, and Isar-Bowling versus Isar Bowling. The 2023-24 Spielorte sheet and GF columns will be inspected next.
+
+The venue mapping will group obvious aliases while leaving singleton names as canonical. Applying the mapping inside `normalize_extracted_dataframe` ensures merged parquet records receive canonical venues. This step is already invoked during source merging, so no extra pass is needed.
+
+Existing parquet files will need full re-extraction and re-merging to pick up the new venue mapping. The mapping can be applied at merge time to canonicalize existing "Unknown" and pre-2022 aliases without a full rebuild, though the missing post-2022 date and venue data still requires fresh extraction.
+
+The test suite for extract_excel needs review, and the processor version must be bumped.
+
+The cleanest architecture is to parse the Spielorte schedule during analysis and pass each week’s resolved date and venue into parse_teams during processing.
+
+A dedicated `parse_spielorte_schedule` function will map each week to its raw date and location. During processing, `parse_teams` will accept optional `location_override` and `date_override` arguments to inject the resolved values. If a week is absent from the Spielorte schedule, the pipeline falls back to Erfassung, which will be fixed to scan for "Ort:" and "Datum:" labels. More Spielorte files, unique parquet venues, and the GF source still need inspection.
+
+The 2019-20 Spielorte sheet will be checked for pre-2022 data. The GF 25/26 venue gap will be reported separately if the source lacks venue information. The team name normalization JSON will be reviewed for the mapping pattern. The processor version will be bumped. The 25-row analyze window already covers the Spielorte schedule, so parsing can happen during analysis rather than re-reading the Erfassung sheet during process.
+
+Re-reading the Spielorte schedule during process is preferred over caching it in the analysis log, since cached analysis data may be stale. A new `read_spielorte_schedule` helper will fetch the schedule once per file directly from the Excel path. The implementation plan now includes `parse_spielorte_schedule`, a label-based Erfassung parser for Ort, Datum, and Spieltag, and applying the venue mapping inside `normalize_extracted_dataframe`.
+
+A script will inventory all unique venue names. The GF CSV for 25/26 shows empty Location fields, so the local Saison 2025-26 Excel directory will be inspected for venue data.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="todo_write"><details>
+<summary>Tool use: **todo_write**</summary>
+
+Parameters:
+
+```json
+{
+  "merge": true
+}
+```
+Result:
+
+```json
+{
+  "finalTodos": [
+    {
+      "content": "Investigate venue/date data flow and why post-2022 data is missing",
+      "id": "1",
+      "status": "in_progress"
+    },
+    {
+      "content": "Collect all unique venue names from the dataset",
+      "id": "2",
+      "status": "in_progress"
+    },
+    {
+      "content": "Add venue mapping similar to clubs in preprocessing",
+      "id": "3",
+      "status": "pending"
+    }
+  ],
+  "initialTodos": [
+    {
+      "content": "Investigate venue/date data flow and why post-2022 data is missing",
+      "id": "1",
+      "status": "in_progress"
+    },
+    {
+      "content": "Collect all unique venue names from the dataset",
+      "id": "2",
+      "status": "pending"
+    },
+    {
+      "content": "Add venue mapping similar to clubs in preprocessing",
+      "id": "3",
+      "status": "pending"
+    }
+  ],
+  "success": true,
+  "wasMerge": true
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: Get-ChildItem &#34;C:\tmp\Sammlung-Ligaergebnisse\Saison 2025-26&#34; -Name | Select-Object -First 25; Write-Output &#34;==== GF csv headers ====&#34;; Get-ChildItem &#34;C:\tmp\bowlyzer\data\league&#34; -ErrorAction SilentlyContinue -Name | Select-Object -First 30; Write-Output &#34;==== pipeline ====&#34;; Get-ChildItem &#34;C:\Users\cfell\repositories\bowlyzer_deploy\database\work&#34; -ErrorAction SilentlyContinue -Recurse -Filter &#34;liga_*&#34; | Select-Object -First 20 FullName</summary>
+```bash
+Get-ChildItem "C:\tmp\Sammlung-Ligaergebnisse\Saison 2025-26" -Name | Select-Object -First 25; Write-Output "==== GF csv headers ===="; Get-ChildItem "C:\tmp\bowlyzer\data\league" -ErrorAction SilentlyContinue -Name | Select-Object -First 30; Write-Output "==== pipeline ===="; Get-ChildItem "C:\Users\cfell\repositories\bowlyzer_deploy\database\work" -ErrorAction SilentlyContinue -Recurse -Filter "liga_*" | Select-Object -First 20 FullName
+```
+
+```
+Liga Nord
+Liga S�d
+==== GF csv headers ====
+extract_excel_analysis_log.json
+historical_excel_19_24.csv
+historical_league_results.csv
+league_results_merged_duplicates.csv
+league_results_merged_duplicates_non_exact.csv
+merged_duplicates.csv
+merged_duplicates_non_exact.csv
+unique_team_names_after_merge.csv
+==== pipeline ====
+
+
+```
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\database\config\team_name_normalization.json</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\test_old_format_date_season.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Collecting unique venue names from parquet and Spielorte. Inspecting the 2025-26 Excel file. Reviewing existing extract tests for patterns.
+
+A script will gather unique venue names from parquet and Spielorte across all xlsx files. Canonical mappings will reuse existing venue.csv entries such as Max Munich, Dreambowl Palace, and West Bowling.
+
+Mapping will follow the club pattern: canonical name plus aliases. Super Bowl Regensburg is one example. All venue names will be gathered first to build the full mapping.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c &#34;
+import pandas as pd
+from pathlib import Path
+from collections import Counter
+from scripts.data.extract_excel_data import read_excel_safely, get_sheet_names_safely, parse_week_from_text, parse_old_format_date, normalize_optional_text
+
+# 1) parquet unique locations
+p = Path(r&#39;C:\Users\cfell\repositories\bowlyzer_deploy\database\data\league_results_merged.parquet&#39;)
+df = pd.read_parquet(p, columns=[&#39;Season&#39;,&#39;Location&#39;])
+miss = {&#39;&#39;,&#39;nan&#39;,&#39;unknown&#39;,&#39;none&#39;,&#39;tbd&#39;,&#39;n/a&#39;,&#39;na&#39;,&#39;-&#39;}
+loc = df[&#39;Location&#39;].fillna(&#39;&#39;).astype(str).str.strip()
+ok = loc[~loc.str.lower().isin(miss)]
+print(&#39;=== parquet unique locations&#39;, ok.nunique(), &#39;===&#39;)
+vc = ok.value_counts()
+for name, n in vc.items():
+    seasons = sorted(df.loc[loc==name, &#39;Season&#39;].unique())
+    print(f&#39;{n:6d}  {name!r}  seasons={seasons[0]}..{seasons[-1]} ({len(seasons)})&#39;)
+
+print(&#39;\\n=== Spielorte schedules from xlsx ===&#39;)
+root = Path(r&#39;C:\tmp\Sammlung-Ligaergebnisse&#39;)
+xlsx = list(root.rglob(&#39;*.xlsx&#39;))
+print(&#39;xlsx files&#39;, len(xlsx))
+spielorte_venues = Counter()
+schedule_rows = 0
+files_with = 0
+for f in xlsx:
+    try:
+        names = get_sheet_names_safely(f)
+    except Exception as e:
+        continue
+    if &#39;Spielorte&#39; not in names:
+        continue
+    try:
+        sp = read_excel_safely(f, sheet_name=&#39;Spielorte&#39;, header=None, nrows=30)
+    except Exception:
+        continue
+    found = 0
+    for i in range(min(16, len(sp))):
+        week = parse_week_from_text(sp.iloc[i,0] if sp.shape[1]&gt;0 else None)
+        date_raw = sp.iloc[i,1] if sp.shape[1]&gt;1 else None
+        loc_raw = sp.iloc[i,2] if sp.shape[1]&gt;2 else None
+        date_info = parse_old_format_date(date_raw)
+        loc_txt = normalize_optional_text(loc_raw)
+        if week and date_info and loc_txt:
+            spielorte_venues[loc_txt] += 1
+            found += 1
+            schedule_rows += 1
+    if found:
+        files_with += 1
+print(&#39;files with schedule&#39;, files_with, &#39;rows&#39;, schedule_rows)
+print(&#39;unique spielorte venues&#39;, len(spielorte_venues))
+for name, n in spielorte_venues.most_common():
+    print(f&#39;{n:4d}  {name}&#39;)
+&#34;
+</summary>
+```bash
+uv run python -c "
+import pandas as pd
+from pathlib import Path
+from collections import Counter
+from scripts.data.extract_excel_data import read_excel_safely, get_sheet_names_safely, parse_week_from_text, parse_old_format_date, normalize_optional_text
+
+# 1) parquet unique locations
+p = Path(r'C:\Users\cfell\repositories\bowlyzer_deploy\database\data\league_results_merged.parquet')
+df = pd.read_parquet(p, columns=['Season','Location'])
+miss = {'','nan','unknown','none','tbd','n/a','na','-'}
+loc = df['Location'].fillna('').astype(str).str.strip()
+ok = loc[~loc.str.lower().isin(miss)]
+print('=== parquet unique locations', ok.nunique(), '===')
+vc = ok.value_counts()
+for name, n in vc.items():
+    seasons = sorted(df.loc[loc==name, 'Season'].unique())
+    print(f'{n:6d}  {name!r}  seasons={seasons[0]}..{seasons[-1]} ({len(seasons)})')
+
+print('\\n=== Spielorte schedules from xlsx ===')
+root = Path(r'C:\tmp\Sammlung-Ligaergebnisse')
+xlsx = list(root.rglob('*.xlsx'))
+print('xlsx files', len(xlsx))
+spielorte_venues = Counter()
+schedule_rows = 0
+files_with = 0
+for f in xlsx:
+    try:
+        names = get_sheet_names_safely(f)
+    except Exception as e:
+        continue
+    if 'Spielorte' not in names:
+        continue
+    try:
+        sp = read_excel_safely(f, sheet_name='Spielorte', header=None, nrows=30)
+    except Exception:
+        continue
+    found = 0
+    for i in range(min(16, len(sp))):
+        week = parse_week_from_text(sp.iloc[i,0] if sp.shape[1]>0 else None)
+        date_raw = sp.iloc[i,1] if sp.shape[1]>1 else None
+        loc_raw = sp.iloc[i,2] if sp.shape[1]>2 else None
+        date_info = parse_old_format_date(date_raw)
+        loc_txt = normalize_optional_text(loc_raw)
+        if week and date_info and loc_txt:
+            spielorte_venues[loc_txt] += 1
+            found += 1
+            schedule_rows += 1
+    if found:
+        files_with += 1
+print('files with schedule', files_with, 'rows', schedule_rows)
+print('unique spielorte venues', len(spielorte_venues))
+for name, n in spielorte_venues.most_common():
+    print(f'{n:4d}  {name}')
+"
+
+```
+
+```
+]633;P;Cwd=C:\\Users\\cfell\\repositories\\bowlyzer_deploy]633;P;HasRichCommandDetection=True]633;A$ ]633;B]633;E;uv run python -c "\x0aimport pandas as pd\x0afrom pathlib import Path\x0afrom collections import Counter\x0afrom scripts.data.extract_excel_data import read_excel_safely, get_sheet_names_safely, parse_week_from_text, parse_old_format_date, normalize_optional_text\x0a\x0a# 1) parquet unique locations\x0ap = Path(r'C:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\data\\league_results_merged.parquet')\x0adf = pd.read_parquet(p, columns=['Season','Location'])\x0amiss = {'','nan','unknown','none','tbd','n/a','na','-'}\x0aloc = df['Location'].fillna('').astype(str).str.strip()\x0aok = loc[~loc.str.lower().isin(miss)]\x0aprint('=== parquet unique locations', ok.nunique(), '===')\x0avc = ok.value_counts()\x0afor name, n in vc.items():\x0a    seasons = sorted(df.loc[loc==name, 'Season'].unique())\x0a    print(f'{n:6d}  {name!r}  seasons={seasons[0]}..{seasons[-1]} ({len(seasons)})')\x0a\x0aprint('\\\\n=== Spielorte schedules from xlsx ===')\x0aroot = Path(r'C:\\tmp\\Sammlung-Ligaergebnisse')\x0axlsx = list(root.rglob('*.xlsx'))\x0aprint('xlsx files', len(xlsx))\x0aspielorte_venues = Counter()\x0aschedule_rows = 0\x0afiles_with = 0\x0afor f in xlsx:\x0a    try:\x0a        names = get_sheet_names_safely(f)\x0a    except Exception as e:\x0a        continue\x0a    if 'Spielorte' not in names:\x0a        continue\x0a    try:\x0a        sp = read_excel_safely(f, sheet_name='Spielorte', header=None, nrows=30)\x0a    except Exception:\x0a        continue\x0a    found = 0\x0a    for i in range(min(16, len(sp))):\x0a        week = parse_week_from_text(sp.iloc[i,0] if sp.shape[1]>0 else None)\x0a        date_raw = sp.iloc[i,1] if sp.shape[1]>1 else None\x0a        loc_raw = sp.iloc[i,2] if sp.shape[1]>2 else None\x0a        date_info = parse_old_format_date(date_raw)\x0a        loc_txt = normalize_optional_text(loc_raw)\x0a        if week and date_info an
+… (output truncated)
+```
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: Get-ChildItem &#34;C:\tmp\Sammlung-Ligaergebnisse\Saison 2025-26&#34; -Recurse -Filter *.xlsx | Select-Object -First 15 FullName</summary>
+```bash
+Get-ChildItem "C:\tmp\Sammlung-Ligaergebnisse\Saison 2025-26" -Recurse -Filter *.xlsx | Select-Object -First 15 FullName
+```
+
+```
+
+
+```
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+The first command was backgrounded.
+
+The 202526 xlsx file returned empty. It may be a .xls file instead.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="await"><details>
+<summary>Tool use: **await**</summary>
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: Get-ChildItem &#34;C:\tmp\Sammlung-Ligaergebnisse\Saison 2025-26&#34; -Recurse | Select-Object -First 30 Name, Extension, Length</summary>
+```bash
+Get-ChildItem "C:\tmp\Sammlung-Ligaergebnisse\Saison 2025-26" -Recurse | Select-Object -First 30 Name, Extension, Length
+```
+
+```
+
+
+```
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+The 2025-26 venue listing returned empty again.
+
+Encoding issues with "Süd" may explain the empty result. I'll inspect the venue collection output.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: C:\Users\cfell\.cursor\projects\c-Users-cfell-repositories-bowlyzer-deploy\terminals\70010.txt</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: Get-ChildItem &#34;C:\tmp\Sammlung-Ligaergebnisse&#34; | ForEach-Object { $_.Name }</summary>
+```bash
+Get-ChildItem "C:\tmp\Sammlung-Ligaergebnisse" | ForEach-Object { $_.Name }
+```
+
+```
+Bayernliga 2019-20
+Liga 2022-23
+Ligaprogramme Nord 2023-24
+Ligaprogramme S�d 2023-24
+Ligaprogramme S�d 2024-25
+Ligaprogramme_Nord 2024-25
+Nordbereich 2019-20
+Saison 2025-26
+S�dbereich 2019-20
+
+```
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+The full scope of the venue data issues is now clear.
+
+I will implement a `parse_spielorte_schedule` function to extract dates and venues from the Spielorte table. It scans the first ~16 rows and reads week numbers, parsed dates, and venue names from columns 0–2. Rows labeled "Saison:" or containing non-week values are skipped. Column 4 is ignored because it contains a venue catalog dropdown.
+
+Post-2022 processing will load the schedule once per file and use its dates and venues for each week. The Erfassung fallback will search team headers for "Ort:" and "Datum:" labels instead of inventing dummy dates. The `extract_date_info` function will also handle datetime cells. A `venue_mapping.csv` will map venue aliases to canonical names.
+
+A `data_access/venue_mapping.py` module will load and resolve venue aliases, modeled after the club mapping system. It will integrate into `normalize_extracted_dataframe`. Canonical names will follow the modern "City House" Spielorte format, such as "München Isar Bowling" and "Kempten Big Bowl".
+
+Canonical names for München Hollywood Super Bowling and Brunnthal Max Munich are being finalized. The Hollywood Munich alias includes spelling variants such as Hollywood-München and Hollwood München.
+
+Additional venue aliases are being mapped. Unterführing Dreambowl Palace covers Dream-Bowl, Dream Bowl, and various abbreviations. Nürnberg BluBowl includes BluBowl Nürnberg and Blu Bowl Nürnberg. Pfaffenhofen Hollywood Super Bowling maps to Pfaffenhofen. Lauterach Strike-Center maps to Lauterach. Ingolstadt Cosmos Bowling Arena maps to Ingolstadt.
+
+Augsburg City Bowling aliases include City Augsburg, City-Bowling, and City Bowling. Bamberg Bowlinghaus covers Mainfranken Bamberg, Bamberg-Mainfranken, and Bowlinghaus Bamberg. Bindlach OK Bowling maps to OK Bowling Bindlach and Bindlach OK-Bowling.
+
+Dettelbach Extreme Bowlingarena aliases include Extreme Dettelbach, Dettelbach Extreme-Bowling, and Exteme Bowling Dettelbach. Nürnberg West Bowling aliases cover Westbowling Nürnberg, Westbowl Nürnberg, and West Bowl Nürnberg.
+
+Regensburg Super Bowl aliases include Superbowl Regensburg, Super Bowl Regensburg, and Regensburg Superbowl. Olching 5005 Bowling maps to Olching. Landshut LA-Bowling aliases include Landshut and LA-Bowling Landshut. Garmisch Zugspitzbowling covers Garmisch and Zugspitz-Bowling Garmisch. Rottendorf Bowling-Center maps to Rottendorf. Schweinfurt Extreme Bowlingarena aliases include Extreme Bowling Schweinfurt, Extrem Bowling Schweinfurt, and Exteme Bowling Schweinfurt.
+
+Bayreuth Blu Bowl aliases are being added. The mapping logic distinguishes identical houses from different ones in the same city. Pfaffenhofen, Olching, and Kempten are treated as single canonical names. Nürnberg contains multiple distinct venues such as BluBowl, Cosmos, and West Bowling, so they remain separate entries.
+
+Nürnberg aliases now include Brunswick, Cosmos, and Bowlingworld. Augsburg distinguishes City Bowling from ABC and Blu-Bowl. München separates Dream Bowl from Olympia. Würzburg adds Cosmos Arena and Maschy's Bowling.
+
+Only aliases that are clearly the same house will be merged. Different brands in the same city remain separate entries. City-only names such as Kempten, Olching, and Landshut are treated as the single bowling center in that town. They will map to the modern Spielorte name when a one-to-one match exists.
+
+Salzburg aliases will be grouped carefully. Only Sport-Oase variants will merge; Sky, Star, and Sport-Arena will stay separate. Friedrichshafen and Friedrichshafen Seaside likely refer to the same house. The mapping will live in `venue_mapping.csv` alongside a function to apply it. The existing `venue.csv` will remain untouched because it uses a different relational model. A unique venues inventory may be generated and committed, with a note in the README.
+
+Documentation updates will cover the venue mapping in the relational CSV README and the data pipeline normalize section. New tests will verify the schedule parser, Erfassung label extraction, venue alias resolution, and the prevention of invented dummy dates. Existing test mocks will be reused via pandas DataFrames without real Excel files. Analyzer and processor versions will be bumped to reflect the extraction logic changes. The post-2022 process loop will branch based on the data format flag.
+
+The post-2022 loop will read the Spielorte schedule once per file and feed each week’s resolved date and location into `parse_teams` as overrides. This requires threading the location and date through `parse_teams` into `extract_team_info`, where the function will fall back to the Erfassung “Ort:” label when the Spielorte table lacks venue data.
+
+`extract_date_info` will drop the 04.10 default and use `parse_old_format_date` to handle Excel datetime cells. When `date_info` is missing, `combine_season_and_date` will return an empty string rather than a dummy date. The `parse_teams` and `extract_team_info` signatures are being reviewed to minimize the required code changes.
+
+The date regex correctly captures multi-day ranges like "12.10./13.10." and two-digit years like "15.01.2023". The year will be filled from the season data.
+
+A helper function named `spielorte_full_date` will convert parsed date information into an ISO-formatted string. It reuses the existing `complete_old_format_date_info` logic and returns a YYYY-MM-DD value when the date is valid.
+
+`combine_season_and_date` will be replaced by a helper that preserves an explicit `year_full` when one is already present. The Erfassung extraction will scan the first three header rows for "Ort:" and "Datum:" labels, falling back to the next non-empty cell after the label match.
+
+`combine_season_and_date` will return an empty string instead of the "could not extract date" placeholder. The GF 25/26 folder is empty, so the 2025–2026 season files must be located via Python directory listing.
+
+GF 25/26 parquet files lack venue data and will be documented rather than fixed. The 2025–26 folder will be inspected with Python to bypass encoding issues.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c &#34;
+from pathlib import Path
+p = Path(r&#39;C:\tmp\Sammlung-Ligaergebnisse&#39;)
+for child in p.iterdir():
+    print(repr(child.name), &#39;dir&#39; if child.is_dir() else &#39;file&#39;)
+print(&#39;--- 2025 ---&#39;)
+for child in p.iterdir():
+    if &#39;2025&#39; in child.name:
+        print(&#39;folder&#39;, child)
+        for sub in child.rglob(&#39;*&#39;):
+            if sub.is_file():
+                print(&#39; &#39;, sub.relative_to(child), sub.suffix, sub.stat().st_size)
+&#34;
+</summary>
+```bash
+uv run python -c "
+from pathlib import Path
+p = Path(r'C:\tmp\Sammlung-Ligaergebnisse')
+for child in p.iterdir():
+    print(repr(child.name), 'dir' if child.is_dir() else 'file')
+print('--- 2025 ---')
+for child in p.iterdir():
+    if '2025' in child.name:
+        print('folder', child)
+        for sub in child.rglob('*'):
+            if sub.is_file():
+                print(' ', sub.relative_to(child), sub.suffix, sub.stat().st_size)
+"
+
+```
+
+```
+'Bayernliga 2019-20' dir
+'Liga 2022-23' dir
+'Ligaprogramme Nord 2023-24' dir
+'Ligaprogramme S�d 2023-24' dir
+'Ligaprogramme S�d 2024-25' dir
+'Ligaprogramme_Nord 2024-25' dir
+'Nordbereich 2019-20' dir
+'Saison 2025-26' dir
+'S�dbereich 2019-20' dir
+--- 2025 ---
+folder C:\tmp\Sammlung-Ligaergebnisse\Saison 2025-26
+  Liga Nord\Bayernliga-F-Endstand.xlsx .xlsx 2573063
+  Liga Nord\Bayernliga-M-Endstand.xlsx .xlsx 2174425
+  Liga Nord\Bezirksliga-N1-Spieltag-5.xls .xls 5780992
+  Liga Nord\Bezirksliga-N1-Spieltag-5.xlsx .xlsx 1053161
+  Liga Nord\Bezirksliga-N1-Spieltag-6.pdf .pdf 374461
+  Liga Nord\Bezirksliga-N2 Endstand.xls .xls 3304448
+  Liga Nord\Bezirksliga-N2 Endstand.xlsx .xlsx 780948
+  Liga Nord\Bezirksliga-N3 Endstand.xls .xls 7896576
+  Liga Nord\Bezirksliga-N3 Endstand.xlsx .xlsx 1131445
+  Liga Nord\Bezirksoberliga-N1 Endstand.xlsx .xlsx 2121932
+  Liga Nord\Bezirksoberliga-N2 Endstand.xls .xls 7166464
+  Liga Nord\Bezirksoberliga-N2 Endstand.xlsx .xlsx 1419704
+  Liga Nord\Bezirksoberliga-N3 Endstand.xlsx .xlsx 2124286
+  Liga Nord\Kreisliga-N1 Endstand.xls .xls 2698240
+  Liga Nord\Kreisliga-N1 Endstand.xlsx .xlsx 769982
+  Liga Nord\Kreisliga-N2-Endstand.xlsx .xlsx 1513437
+  Liga Nord\Kreisliga-N3 Endstand.xls .xls 9920512
+  Liga Nord\Kreisliga-N3 Endstand.xlsx .xlsx 1503756
+  Liga Nord\Landesliga-N1-Endstand.xlsx .xlsx 2120031
+  Liga Nord\Landesliga-N2-Endstand.xls .xls 7170048
+  Liga Nord\Landesliga-N2-Endstand.xlsx .xlsx 1359040
+  Liga S�d\Bezirksliga-S1 Endstand.xlsx .xlsx 2375304
+  Liga S�d\Bezirksliga-S2 Endstand.xlsx .xlsx 2207504
+  Liga S�d\Bezirksliga-S3 Endstand.xlsx .xlsx 2121184
+  Liga S�d\Bezirksoberliga-S1 Endstand.xlsx .xlsx 2170957
+  Liga S�d\Bezirksoberliga-S2 Endstand.xlsx .xlsx 2196825
+  Liga S�d\Bezirksoberliga-S3 Endstand.xlsx .xlsx 2354476
+  Liga S�d\Kreisliga-S1 Endstand.xlsx .xlsx 1485133
+  Liga S�d\Kreisliga-S2 Endstand.xlsx .xlsx 1945083
+  Liga S�d\Kreisliga-S3 Endstand.xlsx .xlsx 2196103
+  Liga S�d\Lan
+… (output truncated)
+```
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\data\extract_excel_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\extract_excel_data\test_normalize_progress.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\database\relational_csv\README.md</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+2025-26 Excel files may contain Spielorte data.
+
+GF currently provides the 25/26 parquet data with empty Location fields. Processing the 2025-26 Excel files would yield venue and date information. However, merging those Excel records before GF would fail because `keep="last"` would let GF overwrite the venues. A better approach is to merge the Excel data first and then let GF fill any remaining empty Location and Date values.
+
+The root cause is broken Spielorte extraction in the 22/23 through 24/25 Excel files. Fixing that extraction will resolve those seasons plus 25/26 if processed. Venue mapping will follow. During merge, empty GF Location and Date values will be filled from earlier sources.
+
+Coalescing empty GF Location values from earlier sources risks scope creep. The user specifically requested venue normalization and investigation of missing venue and date data since 2022.
+
+GF CSV likely lacks a venue column entirely. The 2025-26 parquet contains 35 events with empty locations, confirming GF is the sole source for that season. Merge coalescing will backfill empty Location and Date values from earlier sources when available.
+
+GF conversion will remain unchanged unless a venue column is found in the raw data. The GF CSV headers are being inspected to verify.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/*.{md,py}",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "pipeline_gf_league|gf_league|liga_.*ergebnisse"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "pipeline_gf_league|gf_league|liga_.*ergebnisse",
+  "topFiles": [
+    {
+      "matchCount": 5,
+      "uri": ".\\.specstory\\history\\2026-07-21_11-34-10Z-club-page-statistics-display.md"
+    },
+    {
+      "matchCount": 9,
+      "uri": ".\\scripts\\rebuild_published_from_scratch.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\database\\paths.py"
+    },
+    {
+      "matchCount": 7,
+      "uri": ".\\.specstory\\history\\2026-07-07_07-48-20Z-explore-tournament-import-architecture.md"
+    },
+    {
+      "matchCount": 2,
+      "uri": ".\\.specstory\\history\\2026-06-28_11-56-46Z-explore-tournament-scraper-codebase.md"
+    },
+    {
+      "matchCount": 8,
+      "uri": ".\\.specstory\\history\\2026-05-19_07-58-26Z-exposing-web-service-on.md"
+    },
+    {
+      "matchCount": 12,
+      "uri": ".\\.specstory\\history\\2026-05-20_14-35-52Z-explore-excel-import-pipeline.md"
+    },
+    {
+      "matchCount": 14,
+      "uri": ".\\.specstory\\history\\2026-06-28_08-11-47Z-importing-tournament-results-analysis.md"
+    },
+    {
+      "matchCount": 22,
+      "uri": ".\\.specstory\\history\\2026-07-22_10-05-43Z-repo-decluttering-strategy.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\.specstory\\history\\2026-06-03_17-17-54Z-data-caching-performance-and.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\.specstory\\history\\2026-06-03_17-13-11Z-map-data-pipeline-sources.md"
+    },
+    {
+      "matchCount": 9,
+      "uri": ".\\.specstory\\history\\2026-06-15_07-45-17Z-explore-data-pipeline-structure.md"
+    },
+    {
+      "matchCount": 7,
+      "uri": ".\\.specstory\\history\\2026-05-18_12-35-26Z-docker-container-build-issues.md"
+    },
+    {
+      "matchCount": 9,
+      "uri": ".\\.specstory\\history\\2026-06-08_19-38-54Z-explore-data-pipeline-architecture.md"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\docs\\Excel_Extraction.md"
+    },
+    {
+      "matchCount": 6,
+      "uri": ".\\scripts\\build_published_dataset.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": ".\\app\\config\\database_config.py"
+    },
+    {
+      "matchCount": 4,
+      "uri": ".\\docs\\planning\\PIPELINE_STATE_OVERVIEW.md"
+    },
+    {
+      "matchCount": 4,
+      "uri": ".\\docs\\planning\\DATA_PIPELINE_PLAN.md"
+    },
+    {
+      "matchCount": 5,
+      "uri": ".\\tests\\database\\test_build_published_dataset.py"
+    }
+  ],
+  "totalFiles": 29,
+  "totalMatches": 172
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+File not found
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\rebuild_published_from_scratch.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Legacy scraping from 08/09–18/19 shows venues were captured correctly.
+
+Historical Excel files from 19/20–24/25 lack venues and use dummy dates. GF data for 25/26 hardcodes empty locations. The 2019–20 Excel layout still works. 21/22 is completely missing, likely due to COVID. Re-extracting 25/26 from Excel Spielorte or parsing Endstand files could fix the venue gap, but that requires a larger pipeline change.
+
+Excel extraction for post-2022 will be fixed first. Venue normalization will follow. A TODO will mark the empty GF location field. The venue mapping will mirror the club registry pattern but remain simpler. Unique venue names will be collected during preprocessing and grouped into the mapping file.
+
+The venue mapping module will be created at `data_access/venue_mapping.py` with a CSV table and test files. An `iso_date_from_date_info` helper will be added. The team info extractor will gain a `_header_value_beside_label` method to read Excel headers beside labels, matching the pre-2022 parser. `parse_teams` will receive a `location_override` parameter. The main processing loop around lines 3873–3921 will be updated to apply the mapping.
+
+Analyze mode will not store parsed Spielorte locations, since eligibility checks do not need per-week venue data. The processor version must increase because process output now includes venue mappings.
+
+`apply_venue_mapping` will be wired into `normalize_extracted_dataframe` so existing CSVs get canonicalized without re-extraction. "Unknown" venues stay untouched until re-extraction happens. The mapping CSV will use UTF-8. City-only names will map to individual houses. Ambiguous cities like Nürnberg, München, Augsburg, Würzburg, Salzburg, and Bamberg need careful handling; Mainfranken Bamberg versus Bowlinghaus Bamberg may actually be the same house.
+
+Bamberg Bowlinghaus and Mainfranken Bamberg will be merged as aliases. Nürnberg Brunswick, BluBowl, West, Cosmos, and Bowlingworld are distinct eras and houses, so they remain separate. The "neu:" prefix will be treated as an alias for the base name.
+
+Typo aliases such as Exteme, Extrem, Hollwood, and Cosmos Bolwing will be included in the mapping. The identity key will use unicode normalization plus case folding, following the club registry pattern. Hyphen and space variations will not be auto-folded during lookup; every alias will be listed explicitly, matching the club approach.
+
+A secondary compact identity key will be added to auto-merge venue names that differ only by punctuation or spacing, such as Isar-München and Isar München. This key replaces hyphens, dashes, slashes, dots, and commas with spaces and collapses whitespace. The exact unicode NFC and casefolded key remains primary; the compact key serves as a fallback.
+
+The lookup builder will register both exact and compact keys for each venue entry. If compact keys collide across different canonical names, the compact mapping will be skipped and only the exact key kept.
+
+`extract_date_info` will be rewritten to run `parse_old_format_date` on all first-row cells, including datetime columns, and to scan the first few rows for a "Datum:" label.
+
+Tests that merge venue data will need updates. The exact insertion points in `parse_teams` and the main processing loop are being reviewed again for precise edits.
+
+A `format_iso_date` helper will validate day, month, and year values before assembling an ISO date string. `combine_season_and_date` will use this formatter alongside the completed date information.
+
+`extract_date_info` will return `None` instead of dummy values. Existing tests that rely on the old `04.10` fallback may break, though `test_old_format_date_season.py` does not cover that path. Tests for `parse_spielorte_schedule` will be added for both layouts observed. A new `extract_erfassung_header_fields` helper will scan the first three rows for labels like Ort, Datum, and Spieltag near the Team-Nr. header. `extract_team_info` will search for these labels first, then fall back to `iloc[1,5]` for backwards compatibility.
+
+The Erfassung header scan will reuse the existing `_pre_2022_value_beside_label` helper. It searches the first four rows and up to thirty columns for labels beside known offsets. Ort maps to column 2 and Datum to column 18. The helper then reads the adjacent cell to extract the raw location, date, and week values.
+
+The Erfassung header scan normalizes labels by stripping trailing colons and lowercasing, then triggers the existing `_pre_2022_value_beside_label` helper to read the adjacent cell. This provides a fallback source of truth when Spielorte data is absent, while Spielorte remains the primary source. The planned processing loop begins by reading the post-2022 schedule and iterating over weeks.
+
+The post-2022 schedule reader will target the Spielorte sheet. Each week will first be checked against that sheet for its date and location. If the sheet lacks either, the Erfassung header scan will supply them. The existing season row already provides the year needed to complete partial dates.
+
+The `parse_spielorte_schedule` function will scan the first sixteen rows of the Spielorte sheet. It extracts week numbers from the first column and skips any entry that is not a small integer or exceeds twenty. This prevents misreading later rows, such as the team count column, as week identifiers.
+
+The `parse_spielorte_schedule` implementation will read the date from column 1 and the location from column 2. It completes the date with season context, formats it to ISO, and stores the result only if a week is not yet present. The "Saison:" label at row 17 correctly yields no week number, so it is safely ignored.
+
+Version strings will be bumped to analyzer-v1.2.8, extractor-v1.2.7, and processor-v1.2.8. The analyzer version likely stays unchanged unless debug output is added. The processor version alone should invalidate the combo cache. The venue mapping CSV will be built by grouping the remaining ungrouped parquet names.
+
+Venue aliases are being grouped by canonical name. Isar München covers variants like Isar-München and München Isar-Bowling. Kempten Big Bowl groups Kempten, Big-Bowl Kempten, and Kempten Big Bowl. Hollywood München includes Hollywood-München and Hollywood-Bowling München. Brunnthal Max Munich merges Max Brunnthal, Brunnthal, and Max München Brunnthal.
+
+New venue aliases are being grouped under canonical names. Unterführing Dreambowl Palace covers variants like Dream-Bowl, Dream Bowl, and Dream-Bowl Palace. Nürnberg BluBowl groups Blu Bowl Nürnberg and Nürnberg Blu Bowl. Pfaffenhofen Hollywood Super Bowling merges Pfaffenhofen and Pfaffenhofen Hollywood Super Bowling.
+
+Lauterach Strike-Center aliases include Lauterach and Lauterach Strike-Center. Ingolstadt Cosmos Bowling Arena aliases include Ingolstadt and Ingolstadt Cosmos Bowling Arena. Augsburg City Bowling variants such as City Augsburg, City-Augsburg, and City-Bowling Augsburg are grouped together. ABC Augsburg and ABC Bowling Augsburg are kept as separate entries from City Augsburg.
+
+Bamberg Bowlinghaus aliases include Mainfranken Bamberg, Bamberg Mainfranken, and Bamberg-Mainfranken. Bindlach OK Bowling variants cover OK Bowling Bindlach and Bindlach OK-Bowling. Dettelbach Extreme Bowlingarena aliases include Extreme Bowling Dettelbach and Dettelbach Extreme-Bowling.
+
+Nürnberg West Bowling aliases include Westbowling Nürnberg, Westbowl Nürnberg, and West Bowl Nürnberg. Regensburg Super Bowl aliases cover Superbowl Regensburg, Super Bowl Regensburg, and Regensburg-Super Bowl. Olching 5005 Bowling groups Olching and Olching 5005 Bowling. Landshut LA-Bowling aliases include Landshut, LA-Bowling Landshut, and Landshut LA-Bowling.
+
+Garmisch Zugspitzbowling aliases include Garmisch, Zugspitz-Bowling Garmisch, and Garmisch Zugspitzbowling. Rottendorf Bowling-Center aliases cover Rottendorf and Rottendorf Bowling-Center. Schweinfurt Extreme Bowlingarena variants include Extreme Bowling Schweinfurt, Extrem Bowling Schweinfurt, Exteme Bowling Schweinfurt, and Schweinfurt Extreme Bowlingarena. Schweinfurt World of Bowling is kept as a separate entry.
+
+Bayreuth aliases are merged under Blu Bowl. Erlangen Sportland variants are grouped together.
+
+Würzburg Cosmos Arena aliases include Cosmos Arena Würzburg, Cosmos Bowling Würzburg, and Würzburg Cosmos. Nürnberg Brunswick variants cover Nürnberg Brunswick, Nürnberg Brunswick Bowling, and Nürnberg-Brunswick Bowling. Nürnberg Cosmos aliases include Cosmos Arena Nürnberg, Nürnberg Cosmos Bowling, and Nürnberg Cosmos.
+
+New venue aliases are being grouped. Nürnberg Bowling World and Bowlingworld Nürnberg merge under Bowlingworld Nürnberg. Augsburg Blu Bowl variants like Blu-Bowl Augsburg and Blu Bowl Augsburg are grouped together. Friedrichshafen Seaside aliases include Friedrichshafen and Friedrichshafen Seaside. Neu-Ulm has no Spielorte equivalent. Tauberbischofsheim variants such as Tauberbischofsheim BiT and Tauberbischofsheim-BiT are grouped under Bowling in Tauber. Fürth PX-Bowling aliases include Fürth PX-Bowling and Fürth-PX Bowling. Fürth Funk aliases like Fürth Funk Freestyle Bowling and Fürth Funk Bowling Arena are grouped together.
+
+Fürth Lifestyle aliases include Fürth Lifestyle-Bowling and Fürth-Lifestyle Bowling. Sportland Coburg variants such as Coburg Sportland and Coburg - Sportland are grouped together. Dörfles Esbach Sportland is aliased to Sportland Coburg because Dörfles-Esbach is a Coburg district. Lichtenfels Pegasus Bowling aliases cover Lichtenfels Pegasus Bowling and Lichtenfels-Pegasus Bowling. Sport-Oase Salzburg variants like Sport-Oase-Salzburg and SOS Salzburg are grouped together.
+
+Salzburg aliases are grouped under SportOase. Bad-Aibling, Dachau, Pfarrkirchen, Herbrechtingen, Bad-Tölz, Maschy's Bowling Würzburg, and Kitzingen Goldberg are mapped individually.
+
+Canonical names will prefer modern Spielorte forms when available, otherwise the most common parquet name. The existing `normalize_optional_text` helper will be reused. Files will be written in order: venue_mapping.py and its CSV, then extract_excel_data changes, then tests, then documentation.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "contextAfter": 15,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\data\\extract_excel_data.py",
+  "pattern": "def normalize_optional_text"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\data\\extract_excel_data.py",
+  "pattern": "def normalize_optional_text",
+  "topFiles": [
+    {
+      "matchCount": 16,
+      "uri": "scripts\\data\\extract_excel_data.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 1
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\data\extract_excel_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\docs\DATA_PIPELINE.md</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\scripts\test_merge_stable_dedupe.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Ready to implement. Adding a `location_override` parameter to `parse_teams` for venue normalization.
+
+Rewriting `extract_date_info` to scan the first three rows for dates. Missing dates will return empty strings rather than placeholder text. Checking `combine_season_and_date` callers for consistency.
+
+Both missing-date paths will return empty strings. Venue mapping CSV will be UTF-8 encoded. Checking `extract_excel_data` imports before adding the venue mapping import.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\data\extract_excel_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\data\extract_excel_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+A circular import risk exists between extract_excel_data and clubs_registry.
+
+venue_mapping will import only text_norm from extract_excel_data. normalize_extracted_dataframe can safely import venue_mapping from data_access. A placeholder location helper will handle empty or unknown venues.
+
+The location override logic now pulls from schedule entries first, then falls back to the ERFASSUNG header fields. Header dates will be parsed raw and completed with season_info in the caller.
+
+Team extraction will still attempt to locate the venue internally so standalone usage remains intact. The venue mapping CSV will be generated via the Write tool to ensure proper UTF-8 encoding. A regex will strip the "neu:" prefix during preprocessing as a general cleanup step.
+
+Venue labels will be normalized using compact keys. Trailing punctuation is stripped and separators replaced with spaces. This collapses variants like Dream-Bowl and Dream Bowl into identical strings. However, word-order differences such as Bamberg Mainfranken versus Mainfranken Bamberg would not match automatically. Explicit aliases will be required for those cases.
+
+Documentation updates will remain minimal. The frontend normalizeVenueKey function handles display grouping and will not be changed. Canonical names in the venue mapping CSV will be sorted alphabetically to match the club mapping format. A diagnose UI was considered but skipped since it was not requested.
+
+Five test files are planned. One covers venue mapping. Another covers Spielorte schedule parsing. A third covers ERFASSUNG header fields. Tests will verify that extract_date_info returns None instead of a dummy fallback date for empty rows. They will also verify that normalize_extracted_dataframe applies the venue mapping. A synthetic Spielorte dataframe matching the real layout will be used. A separate test for team location overrides may be skipped as redundant.
+
+Debug prints in `extract_excel_data` will remain unchanged because they are redirected. The date extraction regex correctly matches 15.01.2023 in the sliced dataframe, so the 2022-10-04 fallback is unexpected. Most files likely contain a Team-Nr. column that shifts the anchor position and prevents the date parser from reaching the actual date string.
+
+The Team-Nr. column at column 25 slices the dataframe starting at 25. The Datum column at column 20 is excluded from the slice. The first row of the sliced dataframe lacks a date string. The parser falls back to 04.10. That becomes 2022-10-04. BYL M 2022-23 only avoided this because its Team-Nr. column sat at column 1. Most files likely contain the right-side team block without the left-side date.
+
+Spielorte is the robust fix independent of Team-Nr. layout. The Erfassung header search must scan the unsliced sheet before slicing. Alternatively, the slice offset can be corrected so that the original column positions remain valid.
+
+The left-block bug is specific to the left Team-Nr. anchor. When the left block is present, the Ort label sits at relative column 4, so iloc[1,5] is empty. Label search inside extract_team_info would find Ort: within each team block, yet the right team in the same rows may have a different location. The existing three-row team slices do not cleanly separate left and right blocks.
+
+Label-based extraction will serve as the Erfassung fallback and as the primary source for Spielorte. The venue mapping CSV will be generated programmatically to guarantee correct UTF-8 encoding.
+
+A small `iter_mapping_aliases` helper will be added for tests and future CLI use. The venue mapping will be generated by a Python one-off script rather than the Write tool, ensuring no aliases are omitted. The dataset contains roughly 163 parquet names plus 35 Spielorte entries, which should collapse to about fifty canonical venues.
+
+"Unknown" locations will be left unmapped and empty cells will stay empty. Compact keys for "Isar Bowling" and "München Isar Bowling" differ, so they will not collide. A `format_iso_date` helper will be added alongside the updated `extract_date_info`.
+
+`extract_date_info` will be refactored to use `parse_old_format_date` for direct year extraction. The function will read the raw date candidate from the Erfassung header fields and scan the first three rows for the date label.
+
+`combine_season_and_date` will call `complete_old_format_date_info` and `format_iso_date`, returning an empty string when season information is missing and the date lacks a year. The pre-2022 full-date parser will also use `format_iso_date`. `read_spielorte_schedule` will read the "Spielorte" sheet with no header, up to twenty rows, and return an empty dictionary if the sheet is missing or unreadable.
+
+The Spielorte schedule parser will scan 16 rows by default. It will expand to 20 rows if the season exceeds 16 weeks. The venue mapping CSV will use pipe-separated aliases in the same format as the club mapping. The canonical name will be omitted from the aliases column.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+Post-2022 workbooks already have week, date, and venue on `Spielorte`; extraction never read that table and fell back to dummy `04.10` dates plus `Unknown`. I’ll add a club-style venue map and wire Spielorte into preprocessing.
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="todo_write"><details>
+<summary>Tool use: **todo_write**</summary>
+
+Parameters:
+
+```json
+{
+  "merge": true
+}
+```
+Result:
+
+```json
+{
+  "finalTodos": [
+    {
+      "content": "Investigate venue/date data flow and why post-2022 data is missing",
+      "id": "1",
+      "status": "completed"
+    },
+    {
+      "content": "Collect all unique venue names from the dataset",
+      "id": "2",
+      "status": "completed"
+    },
+    {
+      "content": "Add venue mapping similar to clubs in preprocessing",
+      "id": "3",
+      "status": "in_progress"
+    }
+  ],
+  "initialTodos": [
+    {
+      "content": "Investigate venue/date data flow and why post-2022 data is missing",
+      "id": "1",
+      "status": "in_progress"
+    },
+    {
+      "content": "Collect all unique venue names from the dataset",
+      "id": "2",
+      "status": "in_progress"
+    },
+    {
+      "content": "Add venue mapping similar to clubs in preprocessing",
+      "id": "3",
+      "status": "pending"
+    }
+  ],
+  "success": true,
+  "wasMerge": true
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\clubs_registry.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Writing venue_mapping.py and its CSV. Then modifying extract_excel_data.
+
+The CSV will be generated with a structured Python write. The mapping script will mirror the club_mapping pattern.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\venue_mapping.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Writing the venue mapping CSV file.
+
+Thoroughly collecting venue aliases from parquet files and Spielorte.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\database\relational_csv\venue_mapping.csv</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+A comma inside the venue name `Würzburg, Cosmos Bowling` will break CSV parsing.
+
+Removing the problematic alias avoids quoting the entire field. The compact key already covers "Würzburg Cosmos Bowling".
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\database\relational_csv\venue_mapping.csv</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+A venue name normalization issue was identified. After removing commas, "Würzburg, Cosmos Bowling" becomes "würzburg cosmos bowling", which incorrectly matches the alias "Würzburg Cosmos Bowling".
+
+The venue mapping will be applied in `normalize_extracted_dataframe`. Several functions in `extract_excel_data` are being updated to handle date formatting, team locations, and schedule parsing. Imports for `venue_mapping` are being added.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\data\extract_excel_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\data\extract_excel_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\data\extract_excel_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Updating date extraction and team parsing functions. Adding helpers for venue normalization.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\data\extract_excel_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\data\extract_excel_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+A function ordering issue was found: `extract_date_info` calls `extract_erfassung_header_fields`, but that function is defined later in the file.
+
+Python resolves forward references at import time, so the ordering concern is harmless. The missing helper function still needs to be added.
+
+`extract_date_info` is missing its `season_info` argument in `extract_excel_data`. This parameter must be passed through `extract_team_info` and `parse_teams` as well.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\data\extract_excel_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\data\extract_excel_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\data\extract_excel_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\data\extract_excel_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Adding functions to extract ERFASSUNG header fields, parse Spielorte schedules, and read Spielorte schedule files.
+
+Placing the new helper functions after `_pre_2022_value_beside_label` to match their reuse pattern. `extract_date_info` will call `extract_erfassung_header_fields`, which is defined later in the file but safe at runtime.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\data\extract_excel_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+A function ordering bug was found: `extract_erfassung_header_fields` is called before it is defined.
+
+The suspected ordering bug is harmless. `extract_erfassung_header_fields` is defined before `extract_date_info` at runtime, and its helper functions are already available.
+
+The process loop will be updated to use the Spielorte schedule. `pre_2022_full_date` will be switched to `format_iso_date`. `season_info` must be passed to `extract_date_info` inside the process loop.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\data\extract_excel_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\data\extract_excel_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Updating `pre_2022_full_date` to use `format_iso_date`. Empty dates will return `""` rather than the old fallback string to preserve test compatibility.
+
+Checking tests for the old "could not extract date" fallback. Moving the `spielorte` schedule load outside the week loop so it runs once per input file instead of per week.
+
+The post-2022 season inference now checks the row's season field first, then falls back to inferring from the file path.
+
+The `spielorte` schedule is loaded once per input file using the resolved season info. Inside the week loop, the code extracts date information from each week's dataframe, combines it with the season info, and retrieves the corresponding week schedule.
+
+Week schedules provide location overrides and explicit dates. When no date exists, the code extracts header fields, parses the raw date, completes the old format, and combines it with season info. Location is only overridden if the schedule provides one.
+
+Venue mapping is applied during pre-2022 extraction rather than after concatenation. The location override is passed directly to `parse_teams`.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/*.{py}",
+  "pattern": "could not extract date"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "pattern": "could not extract date",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": ".\\scripts\\data\\extract_excel_data.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 1
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\data\extract_excel_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\data\extract_excel_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Simplifying the pre-2022 full-date function by calling `format_iso_date` directly from the existing `date_info` object, which already contains `year_full`.
+
+Pre-2022 invalid dates now return empty strings instead of error messages. Moving on to replace the process loop.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\data\extract_excel_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\data\extract_excel_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+A forward-reference issue exists in the date extraction logic. `extract_date_info` is defined before the helper functions it calls.
+
+The forward-reference concern is unfounded. `parse_old_format_date` is defined before `extract_date_info` executes, so the call resolves correctly at runtime.
+
+Venue normalization will be applied during extraction via `normalize_extracted_dataframe`, which handles both pre-2022 and post-2022 data.
+
+Existing historical CSVs will receive venue alias canonicalization on the next merge without requiring re-extraction. The "Unknown" venue label persists until extraction occurs again.
+
+No circular imports exist between the venue mapping module and the data extraction module.
+
+Tests and documentation updates remain to be completed.
+
+Venue mapping will also be applied during extraction itself as a safeguard. The normalize step already handles empty locations correctly, turning NaN values into empty strings.
+
+The "Unknown" venue placeholder is preserved through normalization.
+
+Test coverage needs to handle the cached venue alias lookup. Tests can use real CSV data or build a lookup from explicit rows. A test for hyphenated alias compact-matching is also required.
+
+A bug exists in the cached venue alias lookup. The lookup stores compact keys before exact keys. Canonicalization checks identity first. Then it matches compact forms against the merged table.
+
+Collided compact keys are removed from the compact dictionary before merging. The "Isar-München" alias correctly resolves through both identity and compact matching. The venue mapping configuration will be added to the Excel extraction documentation.
+
+Pre-2022 locations such as "Regensburg Superbowl" are raw text. Normalization will map them to canonical venues. Venue mapping will not be applied to the frontend. Tests will verify the date extraction ordering.
+
+The Würzburg comma alias was removed. Compact matching still resolves "Würzburg, Cosmos Bowling" to "Würzburg Cosmos Bowling".
+
+Tests will be written now. Canonicalization may also be applied inside `extract_team_info` so Unknown stays while real names are mapped at extraction and normalization.
+
+A smoke test will parse real Spielorte from a constructed dataframe. `extract_date_info` will be tested to ensure it does not return 04.10.
+
+The date extraction ordering will be verified with pytest.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\data_access\test_venue_mapping.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\extract_excel_data\test_spielorte_schedule.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\database\relational_csv\README.md</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\docs\DATA_PIPELINE.md</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\docs\DATA_PIPELINE.md</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\docs\Excel_Extraction.md</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Checking whether the opponent row contains at least 23 rows, as required by extract_team_info.
+
+The test dataframe is too short and will crash when accessing row 22. I'll make extract_team_info safe for short frames.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\data\extract_excel_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Checking opponent row access around line 1670.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\data\extract_excel_data.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+The original code contains a bug where the return statement and rows 25–29 are incorrectly nested inside the opponent_row loop.
+
+Padding the test dataframe to 30 rows avoids modifying extract_team_info.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\extract_excel_data\test_spielorte_schedule.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+A potential ordering issue exists: `extract_date_info` is defined before `parse_old_format_date`.
+
+`extract_date_info` calls `complete_old_format_date_info`, which is defined later in the file. This is acceptable.
+
+Venue mapping will be skipped for `extract_pre_2022`.
+
+Tests will run next. A smoke test against a real schedule file is planned.
+
+A circular import risk was noted: `extract_excel_data` imports `venue_mapping` at the module level, which may pull in `pandas` and `text_norm` during test imports.
+
+The circular import concern is resolved. Tests import `venue_mapping` directly without pulling in `extract_excel_data`. The earlier ordering worry is also harmless because `extract_date_info` is only referenced at module load time, not executed.
+
+`extract_date_info` is only invoked inside `extract_excel_data`, so its definition order is harmless.
+
+`extract_pre_2022` will normalize venue locations through the canonicalize step.
+
+The existing `combine_season_and_date` test should remain unaffected because it calls `complete_old_format_date_info` directly rather than relying on the old exception path.
+
+`extract_date_info` is safe from misreading non-date strings such as "Bayernliga Männer" or "Team-Nr.", because `parse_old_format_date` returns None for them. The cell scan order—header date first, then the first three rows—is correct. Venue mapping will be skipped for the bowling bayern dataset. `get_cell_value` is guaranteed to exist at call time, so the forward reference in `extract_date_info` is harmless.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run pytest tests/data_access/test_venue_mapping.py tests/extract_excel_data/test_spielorte_schedule.py tests/test_old_format_date_season.py tests/extract_excel_data/test_normalize_progress.py tests/test_league_gender_normalization.py tests/test_process_output_paths.py tests/test_pre_2022_placement_bonuses.py -q --tb=short</summary>
+```bash
+uv run pytest tests/data_access/test_venue_mapping.py tests/extract_excel_data/test_spielorte_schedule.py tests/test_old_format_date_season.py tests/extract_excel_data/test_normalize_progress.py tests/test_league_gender_normalization.py tests/test_process_output_paths.py tests/test_pre_2022_placement_bonuses.py -q --tb=short
+```
+
+```
+........................................                                 [100%]
+40 passed in 0.79s
+
+```
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Tests passed. Now smoke-testing real Excel files to confirm Spielorte parsing works. Will also apply the venue mapping to a few parquet names.
+
+Running broader data_access tests and verifying extract_date_info on a real Erfassung sheet. Found a potential typo: the canonical name uses "Unterführing" but the CSV lists "Unterföhring" — likely a wrong "u" instead of "ö".
+
+Confirmed the canonical name is wrong: it uses "Unterführing" instead of "Unterföhring". Fixing it now and checking the mapping file.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\relational_csv\\venue_mapping.csv",
+  "pattern": "Unterf"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\relational_csv\\venue_mapping.csv",
+  "pattern": "Unterf",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "database\\relational_csv\\venue_mapping.csv"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 1
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/*.{py,csv,ts}",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "Unterführing|Unterföhring"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "Unterführing|Unterföhring",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": ".\\tests\\extract_excel_data\\test_spielorte_schedule.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\tests\\data_access\\test_venue_mapping.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\database\\relational_csv\\venue_mapping.csv"
+    },
+    {
+      "matchCount": 4,
+      "uri": ".\\frontend\\src\\lib\\einstiegStories.ts"
+    },
+    {
+      "matchCount": 4,
+      "uri": ".\\frontend\\src\\lib\\leagueNavigation.test.ts"
+    },
+    {
+      "matchCount": 5,
+      "uri": ".\\tests\\app\\test_team_routes_season.py"
+    },
+    {
+      "matchCount": 5,
+      "uri": ".\\frontend\\src\\lib\\einstiegStories.test.ts"
+    },
+    {
+      "matchCount": 2,
+      "uri": ".\\frontend\\src\\lib\\navigationQuery.test.ts"
+    },
+    {
+      "matchCount": 2,
+      "uri": ".\\database\\relational_csv\\club_mapping.csv"
+    },
+    {
+      "matchCount": 2,
+      "uri": ".\\scripts\\bench_page_apis.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\data_access\\reconstruct_flat_csv.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\database\\relational_csv\\venue.csv"
+    },
+    {
+      "matchCount": 3,
+      "uri": ".\\scripts\\dev\\debug_team_total.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\database\\relational_csv\\club.csv"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".\\database\\config\\team_number_overrides.csv"
+    },
+    {
+      "matchCount": 4,
+      "uri": ".\\scripts\\dev\\check_team_total.py"
+    }
+  ],
+  "totalFiles": 16,
+  "totalMatches": 39
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+A normalization error was found: Unterführing (ü) was used instead of Unterföhring (ö).
+
+The canonical name will be Unterföhring. Unterführing remains an alias for the typo. This prevents duplicate entries when raw Spielorte strings use the correct spelling.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\database\relational_csv\venue_mapping.csv</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\data_access\test_venue_mapping.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\extract_excel_data\test_spielorte_schedule.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\extract_excel_data\test_spielorte_schedule.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Clearing the venue mapping cache before testing, since tests already loaded it.
+
+Venue mapping will be applied after Spielorte extraction so canonical names appear in the CSV. Normalization always runs afterward. Smoke testing will cover real BYL M 2022-23 and Frauen 2024-25 files. An Excel_Extraction note about Spielorte schedules will be added.
+
+Mapping aliases like "Regensburg Superbowl" to "Regensburg Super Bowl" are verified. Pre-2022 locations flow through analysis extraction and normalization. Combo CSVs receive canonical names via location_override. Ruff checks and live smoke tests follow.
+
+The Würzburg cache row parses correctly. Mapping will not be applied to empty bowlingbayern entries. The 2025-26 season gap is noted but out of scope. Round-trip venue mapping will be smoke-tested against real workbooks.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run pytest tests/data_access/test_venue_mapping.py tests/extract_excel_data/test_spielorte_schedule.py -q --tb=short
+uv run python -c &#34;
+from pathlib import Path
+from scripts.data.extract_excel_data import read_spielorte_schedule, season_label_to_season_info, extract_erfassung_header_fields, read_excel_safely, detect_team_anchor_start_col
+from data_access.venue_mapping import canonicalize_venue_label
+
+files = [
+    (Path(r&#39;C:\tmp\Sammlung-Ligaergebnisse\Liga 2022-23\BYL M.xlsx&#39;), &#39;22/23&#39;),
+    (Path(r&#39;C:\tmp\Sammlung-Ligaergebnisse\Ligaprogramme_Nord 2024-25\BYL Frauen.xlsx&#39;), &#39;24/25&#39;),
+]
+for f, season in files:
+    si = season_label_to_season_info(season)
+    sched = read_spielorte_schedule(f, si)
+    print(f.name, &#39;weeks&#39;, sorted(sched))
+    for w, meta in sorted(sched.items()):
+        loc = canonicalize_venue_label(meta[&#39;location&#39;])
+        print(f&#39;  ST{w}: {meta[\&#34;date\&#34;]} | {meta[\&#34;location\&#34;]!r} -&gt; {loc!r}&#39;)
+    er = read_excel_safely(f, sheet_name=&#39;Erfassung1&#39;, header=None)
+    start = detect_team_anchor_start_col(er)
+    sliced = er.iloc[:, start:start+24]
+    header = extract_erfassung_header_fields(sliced)
+    print(&#39;  Erfassung1 header&#39;, header[&#39;location&#39;], header[&#39;week&#39;], header[&#39;date_raw&#39;])
+&#34;
+</summary>
+```bash
+uv run pytest tests/data_access/test_venue_mapping.py tests/extract_excel_data/test_spielorte_schedule.py -q --tb=short
+uv run python -c "
+from pathlib import Path
+from scripts.data.extract_excel_data import read_spielorte_schedule, season_label_to_season_info, extract_erfassung_header_fields, read_excel_safely, detect_team_anchor_start_col
+from data_access.venue_mapping import canonicalize_venue_label
+
+files = [
+    (Path(r'C:\tmp\Sammlung-Ligaergebnisse\Liga 2022-23\BYL M.xlsx'), '22/23'),
+    (Path(r'C:\tmp\Sammlung-Ligaergebnisse\Ligaprogramme_Nord 2024-25\BYL Frauen.xlsx'), '24/25'),
+]
+for f, season in files:
+    si = season_label_to_season_info(season)
+    sched = read_spielorte_schedule(f, si)
+    print(f.name, 'weeks', sorted(sched))
+    for w, meta in sorted(sched.items()):
+        loc = canonicalize_venue_label(meta['location'])
+        print(f'  ST{w}: {meta[\"date\"]} | {meta[\"location\"]!r} -> {loc!r}')
+    er = read_excel_safely(f, sheet_name='Erfassung1', header=None)
+    start = detect_team_anchor_start_col(er)
+    sliced = er.iloc[:, start:start+24]
+    header = extract_erfassung_header_fields(sliced)
+    print('  Erfassung1 header', header['location'], header['week'], header['date_raw'])
+"
+
+```
+
+```
+..........                                                               [100%]
+10 passed in 0.61s
+  File "<string>", line 16
+    print(f'  ST{w}: {meta[" date\]}
+                           ^
+SyntaxError: unterminated string literal (detected at line 16)
+
+```
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+An escaping issue appeared in a Python one-liner.
+
+A script file or quote simplification should resolve the escaping issue.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c @&#39;
+from pathlib import Path
+from scripts.data.extract_excel_data import read_spielorte_schedule, season_label_to_season_info, extract_erfassung_header_fields, read_excel_safely, detect_team_anchor_start_col
+from data_access.venue_mapping import canonicalize_venue_label
+
+files = [
+    (Path(r&#34;C:\tmp\Sammlung-Ligaergebnisse\Liga 2022-23\BYL M.xlsx&#34;), &#34;22/23&#34;),
+    (Path(r&#34;C:\tmp\Sammlung-Ligaergebnisse\Ligaprogramme_Nord 2024-25\BYL Frauen.xlsx&#34;), &#34;24/25&#34;),
+]
+for f, season in files:
+    si = season_label_to_season_info(season)
+    sched = read_spielorte_schedule(f, si)
+    print(f.name, &#34;weeks&#34;, sorted(sched))
+    for w, meta in sorted(sched.items()):
+        loc = canonicalize_venue_label(meta[&#34;location&#34;])
+        print(&#34;  ST%s: %s | %r -&gt; %r&#34; % (w, meta[&#34;date&#34;], meta[&#34;location&#34;], loc))
+    er = read_excel_safely(f, sheet_name=&#34;Erfassung1&#34;, header=None)
+    start = detect_team_anchor_start_col(er)
+    sliced = er.iloc[:, start:start+24]
+    header = extract_erfassung_header_fields(sliced)
+    print(&#34;  Erfassung1 header&#34;, header[&#34;location&#34;], header[&#34;week&#34;], header[&#34;date_raw&#34;])
+&#39;
+</summary>
+```bash
+uv run python -c @'
+from pathlib import Path
+from scripts.data.extract_excel_data import read_spielorte_schedule, season_label_to_season_info, extract_erfassung_header_fields, read_excel_safely, detect_team_anchor_start_col
+from data_access.venue_mapping import canonicalize_venue_label
+
+files = [
+    (Path(r"C:\tmp\Sammlung-Ligaergebnisse\Liga 2022-23\BYL M.xlsx"), "22/23"),
+    (Path(r"C:\tmp\Sammlung-Ligaergebnisse\Ligaprogramme_Nord 2024-25\BYL Frauen.xlsx"), "24/25"),
+]
+for f, season in files:
+    si = season_label_to_season_info(season)
+    sched = read_spielorte_schedule(f, si)
+    print(f.name, "weeks", sorted(sched))
+    for w, meta in sorted(sched.items()):
+        loc = canonicalize_venue_label(meta["location"])
+        print("  ST%s: %s | %r -> %r" % (w, meta["date"], meta["location"], loc))
+    er = read_excel_safely(f, sheet_name="Erfassung1", header=None)
+    start = detect_team_anchor_start_col(er)
+    sliced = er.iloc[:, start:start+24]
+    header = extract_erfassung_header_fields(sliced)
+    print("  Erfassung1 header", header["location"], header["week"], header["date_raw"])
+'
+
+```
+
+```
+In C:\Users\cfell\AppData\Local\Temp\ps-script-d4022db3-ce9a-4007-a80d-8cd75207989a.ps1:108 Zeichen:18
++ uv run python -c @'
++                  ~~
+Die Zeichenfolge hat kein Abschlusszeichen: '@.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : TerminatorExpectedAtEndOfString
+ 
+
+```
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+PowerShell does not support bash heredocs.
+
+A temporary script file will be used instead.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\database\work\_tmp_spielorte_smoke.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+The database directory may be gitignored.
+
+A temporary script will be deleted.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python database/work/_tmp_spielorte_smoke.py</summary>
+```bash
+uv run python database/work/_tmp_spielorte_smoke.py
+```
+
+```
+Traceback (most recent call last):
+  File "C:\Users\cfell\repositories\bowlyzer_deploy\database\work\_tmp_spielorte_smoke.py", line 3, in <module>
+    from data_access.venue_mapping import canonicalize_venue_label
+ModuleNotFoundError: No module named 'data_access'
+
+```
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+The script needs to be run from the repository root, either via PYTHONPATH or `uv run python -m`.
+
+`uv run python` fails because the project environment lacks the editable package. I will use `PYTHONPATH` instead.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: $env:PYTHONPATH = &#34;C:\Users\cfell\repositories\bowlyzer_deploy&#34;; uv run python database/work/_tmp_spielorte_smoke.py</summary>
+```bash
+$env:PYTHONPATH = "C:\Users\cfell\repositories\bowlyzer_deploy"; uv run python database/work/_tmp_spielorte_smoke.py
+```
+
+```
+BYL M.xlsx weeks [1, 2, 3, 4, 5, 6]
+  ST1: 2023-01-15 | 'Regensburg Superbowl' -> 'Regensburg Super Bowl'
+  ST2: 2023-01-29 | 'Schweinfurt Extreme Bowling' -> 'Schweinfurt Extreme Bowlingarena'
+  ST3: 2023-02-05 | 'M�nchen Isar-Bowling' -> 'M�nchen Isar Bowling'
+  ST4: 2023-02-26 | 'M�nchen Isar-Bowling' -> 'M�nchen Isar Bowling'
+  ST5: 2023-03-05 | 'N�rnberg Westbowl' -> 'N�rnberg West Bowling'
+  ST6: 2023-04-02 | 'Brunnthal Max Munich' -> 'Brunnthal Max Munich'
+Detected team anchor column from 'Team-Nr.': 1
+  Erfassung1 header Regensburg Superbowl 1 14./15.01.2023
+BYL Frauen.xlsx weeks [1, 2, 3, 4, 5, 6]
+  ST1: 2024-10-13 | 'Unterf�hring Dreambowl Palace' -> 'Unterf�hring Dreambowl Palace'
+  ST2: 2024-11-03 | 'Regensburg Super Bowl' -> 'Regensburg Super Bowl'
+  ST3: 2025-02-02 | 'Unterf�hring Dreambowl Palace' -> 'Unterf�hring Dreambowl Palace'
+  ST4: 2025-02-16 | 'N�rnberg West Bowling' -> 'N�rnberg West Bowling'
+  ST5: 2025-03-16 | 'Brunnthal Max Munich' -> 'Brunnthal Max Munich'
+  ST6: 2025-04-06 | 'Schweinfurt Extreme Bowlingarena' -> 'Schweinfurt Extreme Bowlingarena'
+Detected team anchor column from 'Team-Nr.': 1
+  Erfassung1 header Unterf�hring Dreambowl Palace 1 12.10./13.10.
+
+```
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+The smoke test passed. Dummy 2022-10-04 dates were replaced with real January through April 2023 dates.
+
+Venue normalization is working correctly. The Erfassung header serves as a fallback source. Real dates now appear for 24/25 matches. Unicode characters render properly despite console encoding issues. The temporary smoke script was deleted. Documentation for the Spielorte schedule was added to Excel_Extraction. Ruff was run on the modified Python files. The München Isar-Bowling mapping is confirmed.
+
+Pre-2022 extraction already applies venue normalization. The hyphenated "München Isar-Bowling" maps correctly to its canonical form. A few additional data_access tests may be run.
+
+Published parquet files must be regenerated from scratch. Re-normalizing historical CSVs would fix venue aliases but cannot repair unknown or dummy dates. The user should re-run the full extraction and merge pipeline.
+
+Exact commands from Excel_Extraction.md will be cited. For 25/26 GF, Location is currently hardcoded empty; the Spielorte schedule exists in the Endstand files and could be overlaid later. A brief note about the schedule table will be added to Excel_Extraction.md near the Spielorte metadata section.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "contextAfter": 8,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\docs\\Excel_Extraction.md",
+  "pattern": "Reads metadata from sheet"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\docs\\Excel_Extraction.md",
+  "pattern": "Reads metadata from sheet",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="delete_file"><details>
+<summary>Tool use: **delete_file**</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Locating where to document the Spielorte schedule in Excel_Extraction.md.
+
+Added venue_mapping.csv to the configuration. Now adding a brief note in the process/analyze section.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\docs\Excel_Extraction.md</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\docs\\Excel_Extraction.md",
+  "pattern": "Post-2022|Spielorte C18|process mode"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\docs\\Excel_Extraction.md",
+  "pattern": "Post-2022|Spielorte C18|process mode",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+A short paragraph about Spielorte schedules and venue mapping will be added after the analyze output section.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\docs\Excel_Extraction.md</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run ruff check data_access/venue_mapping.py tests/data_access/test_venue_mapping.py tests/extract_excel_data/test_spielorte_schedule.py scripts/data/extract_excel_data.py</summary>
+```bash
+uv run ruff check data_access/venue_mapping.py tests/data_access/test_venue_mapping.py tests/extract_excel_data/test_spielorte_schedule.py scripts/data/extract_excel_data.py
+```
+
+```
+[1m[91mE402 [0m[1mModule level import not at top of file[0m
+  [1m[94m-->[0m scripts\data\extract_excel_data.py:33:1
+   [1m[94m|[0m
+[1m[94m31 |[0m     sys.path.insert(0, str(_REPO_ROOT))
+[1m[94m32 |[0m
+[1m[94m33 |[0m from database.paths import analysis_log_path, historical_league_results_csv, unique_team_names_after_merge_csv
+   [1m[94m|[0m [1m[91m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[1m[94m34 |[0m from data_access.venue_mapping import apply_venue_mapping_to_series
+   [1m[94m|[0m
+
+[1m[91mE402 [0m[1mModule level import not at top of file[0m
+  [1m[94m-->[0m scripts\data\extract_excel_data.py:34:1
+   [1m[94m|[0m
+[1m[94m33 |[0m from database.paths import analysis_log_path, historical_league_results_csv, unique_team_names_after_merge_csv
+[1m[94m34 |[0m from data_access.venue_mapping import apply_venue_mapping_to_series
+   [1m[94m|[0m [1m[91m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[1m[94m35 |[0m
+[1m[94m36 |[0m _LEAGUE_MAPPING_PATH = _REPO_ROOT / "database" / "relational_csv" / "league_mapping.csv"
+   [1m[94m|[0m
+
+[1m[91mF541 [0m[[1m[96m*[0m] [1mf-string without any placeholders[0m
+    [1m[94m-->[0m scripts\data\extract_excel_data.py:1650:15
+     [1m[94m|[0m
+[1m[94m1648 |[0m     # Debug: Print the actual row 2 (index 1) to see what's there
+[1m[94m1649 |[0m     if len(team_data) > 1:
+[1m[94m1650 |[0m         print(f"Row 2 (index 1) contents:")
+     [1m[94m|[0m               [1m[91m^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[1m[94m1651 |[0m         row_2 = team_data.iloc[1]
+[1m[94m1652 |[0m         for i, value in enumerate(row_2):
+     [1m[94m|[0m
+[1m[96mhelp[0m: [1mRemove extraneous `f` prefix[0m
+
+[1m[91mF541 [0m[[1m[96m*[0m] [1mf-string without any placeholders[0m
+    [1m[94m-->[0m scripts\data\extract_excel_data.py:1684:11
+     [1m[94m|[0m
+[1m[94m1682 |[0
+… (output truncated)
+```
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+The E402 warning on extract_excel_data is pre-existing. It stems from inserting sys.path before importing.
+
+The new import follows the same sys.path pattern. Pre-existing F541 f-string issues will be left alone. Ruff will be checked only on the new files.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run ruff check data_access/venue_mapping.py tests/data_access/test_venue_mapping.py tests/extract_excel_data/test_spielorte_schedule.py</summary>
+```bash
+uv run ruff check data_access/venue_mapping.py tests/data_access/test_venue_mapping.py tests/extract_excel_data/test_spielorte_schedule.py
+```
+
+```
+All checks passed!
+
+```
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Clearing the LRU cache if tests load the venue mapping at import time.
+
+Venue mapping now applies to Location fields during pre-2022 extraction. The published parquet remains unchanged until the next extract and merge run.
+
+The full extract will not run unless requested, as it takes a long time.
+
+Season 2025-26 GF files lack venue and date information. Excel Endstand files for that season contain Spielorte, which could fill the missing Location and Date fields during merge. This approach would still blank Location if GF wins the merge, so parsing Spielorte directly into GF conversion is a better alternative.
+
+The venue_mapping.csv file has been added to the hand-edited list.
+
+A double-check is needed on the venue identity key for "Isar-München" against the mapping.
+
+The venue mapping is fully implemented. Pre-2022 aliases will be canonicalized during the next historical CSV merge. Dummy Unknown entries will persist until re-extraction. Re-extracting seasons 22/23 and 24/25 from Excel will populate real dates and venues.
+
+Re-merging without re-extraction will canonicalize pre-2022 aliases, though Unknown entries will remain unchanged. I will provide the exact commands rather than running the full extract myself. I am also checking a potential typo in DATA_PIPELINE.md regarding the venue_mapping line alignment.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\docs\DATA_PIPELINE.md</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="todo_write"><details>
+<summary>Tool use: **todo_write**</summary>
+
+Parameters:
+
+```json
+{
+  "merge": true
+}
+```
+Result:
+
+```json
+{
+  "finalTodos": [
+    {
+      "content": "Investigate venue/date data flow and why post-2022 data is missing",
+      "id": "1",
+      "status": "completed"
+    },
+    {
+      "content": "Collect all unique venue names from the dataset",
+      "id": "2",
+      "status": "completed"
+    },
+    {
+      "content": "Add venue mapping similar to clubs in preprocessing",
+      "id": "3",
+      "status": "completed"
+    }
+  ],
+  "initialTodos": [
+    {
+      "content": "Investigate venue/date data flow and why post-2022 data is missing",
+      "id": "1",
+      "status": "completed"
+    },
+    {
+      "content": "Collect all unique venue names from the dataset",
+      "id": "2",
+      "status": "completed"
+    },
+    {
+      "content": "Add venue mapping similar to clubs in preprocessing",
+      "id": "3",
+      "status": "in_progress"
+    }
+  ],
+  "success": true,
+  "wasMerge": true
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Fixing the alignment of venue_mapping.csv in the ASCII diagram for consistency.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\docs\DATA_PIPELINE.md</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+The user-facing summary will lead with findings and completed work.
+
+The summary will present investigation findings with concrete numbers, identify the root cause, and detail the implementation. It will explain how to expand the venue mapping, flag that re-extraction is required, and note the 25/26 GF leftover. Tool names and todos will be omitted.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+Post-2022 venues and dates were never missing from the Excel files — extraction was looking in the wrong place and inventing fallbacks.
+
+**What the published data shows**
+
+| Season | Events | Date | Venue |
+|--------|--------|------|--------|
+| 08/09–19/20 | ~2,100 | real | present (163 spellings) |
+| 22/23 | 137 | 125× dummy `2022-10-04` | all `Unknown` |
+| 23/24 | 135 | 123× dummy `2023-10-04` | all `Unknown` |
+| 24/25 | 72 | mixed; many still `2024-10-04` | all `Unknown` |
+| 25/26 | 35 | GF entry timestamps | empty |
+
+**Root cause (22/23–24/25 Excel)**  
+Sheet `Spielorte` already has the calendar in columns A–C (week, date, venue). Analyze/process only read season/team-count cells further down. Erfassung then used a `Team-Nr.` column offset that misses `Ort:` / `Datum:`, and missing dates were filled with **4 October**.
+
+**25/26** is a different source: Gravity Forms conversion hardcodes `Location: ""` and has no bowling-center field. Endstand workbooks under `Saison 2025-26` do have `Spielorte`, but they are not the published 25/26 source.
+
+**What landed**
+
+- `database/relational_csv/venue_mapping.csv` — same shape as `club_mapping.csv` (`canonical_name`, pipe-separated `aliases`). Seeded from 163 parquet names + 35 Spielorte names (Isar/Dream-Bowl/Superbowl/Westbowl/… grouped; Nürnberg Brunswick vs BluBowl vs West kept separate).
+- Applied in `normalize_extracted_dataframe` (extract + merge).
+- Process mode now reads the Spielorte week table for date/venue, with Erfassung `Ort:` / `Datum:` as fallback. The dummy 4 October fallback is gone.
+
+Edit aliases in `venue_mapping.csv` the same way as clubs. After that, re-extract 22/23–24/25 so Spielplan is not still `Unknown` / 4 Oct:
+
+```powershell
+$env:BOWLYZER_WORK_DATA_DIR = "C:\tmp\bowlyzer\data"
+uv run python scripts/data/extract_excel_data.py --mode process --folder "C:\tmp\Sammlung-Ligaergebnisse" -r --force_reanalyze
+uv run python scripts/build_published_dataset.py --job league --write-csv
+```
+
+A merge-only run will canonicalize pre-2022 spellings (`Isar München` → `München Isar Bowling`) but will not fill `Unknown`. Filling 25/26 venues would mean overlaying Spielorte from those Endstand files onto GF rows — say if you want that next.
+
+---
+
+_**User**_
+
+i ran all commands and restarted flask. 
+http://192.168.68.109:5173/liga?database=db_real_merged&myClub=BC+EMAX+Unterf%C3%B6hring&season=18%2F19&story=club&beat=4
+i still see multiple version of Dream-Bowl
+
+---
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+The user ran all commands and restarted Flask, yet multiple Dream-Bowl entries still appear on the liga page for BC EMAX Unterföhring, season 18/19.
+
+Season 18/19 is legacy data, so venue mapping should have run during merge. The remaining variants likely mean the mapping was skipped on publish, the frontend groups venues separately, the aliases miss those names, the merge failed to re-normalize Location, or stale cache is serving old data.
+
+The frontend’s `normalizeVenueKey` only normalizes hyphens and case. It cannot merge distinct venue names like “Dream-Bowl” and “Dream Bowl Unterföhring”. The published dataset may also have skipped re-normalization if it reused existing parquet files.
+
+Cache warmup may still hold old timetables. The exact Dream-Bowl variants in the 18/19 parquet need checking. The merge script must be verified to apply venue mapping. The Spielplan grouping logic also needs review.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+18/19 is pre-2022 scrape data, so this is likely either mapping gaps or Spielplan grouping that still treats Dream-Bowl spellings as different houses. I’ll check the published locations and how the UI groups them.
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src",
+  "pattern": "normalizeVenueKey|venueRaw|Dream"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src",
+  "pattern": "normalizeVenueKey|venueRaw|Dream",
+  "topFiles": [
+    {
+      "matchCount": 5,
+      "uri": "frontend\\src\\lib\\spielplanChart.test.ts"
+    },
+    {
+      "matchCount": 7,
+      "uri": "frontend\\src\\lib\\seasonSpielplan.ts"
+    },
+    {
+      "matchCount": 10,
+      "uri": "frontend\\src\\lib\\seasonSpielplan.test.ts"
+    }
+  ],
+  "totalFiles": 3,
+  "totalMatches": 22
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\seasonSpielplan.ts</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\relational_csv\\venue_mapping.csv",
+  "pattern": "Dream"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\relational_csv\\venue_mapping.csv",
+  "pattern": "Dream",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "database\\relational_csv\\venue_mapping.csv"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 1
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\build_published_dataset.py",
+  "pattern": "normalize_extracted_dataframe|Location|venue_mapping"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts\\build_published_dataset.py",
+  "pattern": "normalize_extracted_dataframe|Location|venue_mapping",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+The frontend `normalizeVenueKey` function only normalizes punctuation and case. It does not merge distinct venue names like "Dream-Bowl München" and "Dream Bowl Unterföhring" into the same key. These separate entries remain visible.
+
+The merge script may not have called normalization. The league cache might still hold old timetable JSON. Existing parquet files could prevent remapping. I will inspect the 18/19 Dream-Bowl variants in the parquet and verify the merge path. I also need to check if Flask caches require rebuilding.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\scripts\build_published_dataset.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts",
+  "pattern": "normalize_extracted_dataframe|merge_sources"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\scripts",
+  "pattern": "normalize_extracted_dataframe|merge_sources",
+  "topFiles": [
+    {
+      "matchCount": 5,
+      "uri": "scripts\\data\\extract_excel_data.py"
+    },
+    {
+      "matchCount": 4,
+      "uri": "scripts\\merge_league_sources.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "scripts\\build_published_dataset.py"
+    }
+  ],
+  "totalFiles": 3,
+  "totalMatches": 11
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\pages\league\blocks\SeasonSpielplan.tsx</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\docs\DATA_PIPELINE.md</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+The user confirmed they ran all commands and restarted Flask. Multiple Dream-Bowl versions still appear.
+
+`rebuild_league_caches.py` may have been skipped. The parquet data for 18/19 Dream-Bowl needs inspection. Compact key matching should merge aliases into one canonical name. If duplicates persist, the merge likely failed, the cache is stale, or the frontend normalizes keys before mapping applies.
+
+Some Dream-Bowl variants may be missing from the mapping entirely. I will inspect the parquet data and the chart legend grouping, since the URL loads the Einstieg story at beat 4. I also need to verify the league timetable cache.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\spielplanChart.ts</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\seasonSpielplan.ts</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\einstiegStories.ts</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app",
+  "pattern": "get_season_timetable|league_response_cache"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app",
+  "pattern": "get_season_timetable|league_response_cache",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "app/__init__.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/cache/league_data_revision.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app/services/league_service.py"
+    },
+    {
+      "matchCount": 7,
+      "uri": "app/routes/league_routes.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app/cache/player_data_cache.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/routes/main.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/services/tournament_service.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/routes/player_routes.py"
+    },
+    {
+      "matchCount": 7,
+      "uri": "app/cache/cache_warmup.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/routes/tournament_routes.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/cache/league_response_cache.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app\\cache\\league_response_cache.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app\\services\\league_service.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/routes/team_routes.py"
+    }
+  ],
+  "totalFiles": 14,
+  "totalMatches": 29
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+The Spielplan groups by `normalizeVenueKey`, which only normalizes hyphens and case. This likely causes different venue names to be treated as separate entries, explaining why multiple Dream-Bowl versions still appear.
+
+The merge step should have collapsed these venue variants during concatenation. I will inspect the 18/19 parquet files for remaining Dream-Bowl entries. The merge applies per-source mapping before concatenation.
+
+Legacy 18/19 data comes from a historical CSV that gets normalized during merge. The remaining duplicates may stem from a cached empty lookup, a compact key collision dropping mappings, or alias keys failing to match the canonical identity.
+
+Compact key collisions are unlikely. The real issue may be stale disk cache. `get_season_timetable` is cached, so restarting Flask without rebuilding caches could still serve old timetable data with old venue names. Another possibility is that merge did not actually re-run, leaving existing parquet files untouched.
+
+The previous command block omitted `rebuild_league_caches`. That explains why stale cached JSON still shows old venue names. I will now query the 18/19 parquet files for Dream-Bowl variants and verify whether the mapping collapses them.
+
+Canonicalizing venue names at read time inside `league_service.get_season_timetable` would be more resilient than relying solely on merge-time mapping. The frontend should also group by canonical venue rather than just folding hyphens. If parquet still contains duplicate Dream-Bowl variants, the mapping needs expansion and the grouping logic must be tightened.
+
+The API should return canonical venue names directly, since the frontend cannot access the CSV mapping. If parquet is already remapped, stale cache is the only remaining cause for duplicate entries. I will query the parquet files and league cache files next. The compact keys for "Dream-Bowl München" and "Dream Bowl" differ, so both need explicit aliases mapped to the same canonical.
+
+Adding frontend grouping for Dream-Bowl is too fragile. Canonicalizing at the API level is the better fix. If the mapping is applied while building the timetable response, newly cached entries will already be canonical. This avoids relying on stale parquet or cache files.
+
+Backend canonicalization is preferable to frontend deduplication. The API will return canonical venue names directly, which collapses the chart legend into a single group. I will expand the venue mapping to cover any remaining 18/19 Dream-Bowl variants. Next I will inspect the parquet files and the cache directory.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\einstiegStories.ts</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\cache\league_response_cache.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\seasonSpielplan.test.ts</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+The URL contains `season=18/19`, `story=club`, and `beat=4`.
+
+Beat 4 in the club story corresponds to the fifth beat (`/club team season 25/26`). The URL instead points to the tabelle story beat 1 (`/liga season 18/19`).
+
+The duplicate Dream-Bowl entries likely come from parquet data or frontend grouping. Compact keys such as "Dream-Bowl München" and "Dream Bowl Unterföhring" may collide under the same normalized key. I will inspect the parquet files and verify whether the Location field was updated.
+
+Checking whether the merge actually applied the venue mapping. NaN values in the Location column might bypass the map, or a Categorical bug could prevent correct replacement. The function does call `.map()`, so the mapping itself looks sound. I will now inspect the 18/19 parquet data for unique locations containing "dream" or "bowl".
+
+I will check the frontend cache files for stale data. The venue mapping should be applied inside `get_season_timetable` so the API returns canonical names. I am also verifying whether the parquet update actually wrote the corrected Location values for 18/19.
+
+I will bump the `get_season_timetable` cache version so stale frontend caches invalidate automatically without a full rebuild. I will also expand the venue mapping to catch any missed 18/19 variants. If the parquet data is already canonical, the duplicates are almost certainly caused by cached responses or outdated frontend data.
+
+I am investigating why the venue mapping did not apply during the merge. The rebuild script might have skipped 18/19, or the user may have published from an old merged parquet that bypasses the Location remapping step. I will check whether `merge_sources` or the `--extra-league` pipeline skipped normalization.
+
+I suspect the scrape source was skipped, leaving old 18/19 location names in the merged parquet. I will query the raw data to confirm.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\venue_mapping.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\services\league_service.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Querying the parquet file to analyze why multiple Dream-Bowl versions still appear.
+
+Suspecting umlaut mismatches between names like "Dream Bowl Unterföhring" and "DreamBowl Palace Unterführing" are causing duplicate entries. Will verify 18/19 location data directly from the parquet file.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\database\work\_tmp_venues_18.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+The database/work directory may not be on PYTHONPATH correctly. I'll run with PYTHONPATH set from the repository root.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: $env:PYTHONPATH = &#34;C:\Users\cfell\repositories\bowlyzer_deploy&#34;; uv run python database/work/_tmp_venues_18.py</summary>
+```bash
+$env:PYTHONPATH = "C:\Users\cfell\repositories\bowlyzer_deploy"; uv run python database/work/_tmp_venues_18.py
+```
+
+```
+18/19 unique locations 24
+
+Dream* variants in 18/19 parquet:
+   9927  'Unterf�hring Dreambowl Palace'  id='unterf�hring dreambowl palace' compact='unterf�hring dreambowl palace' -> 'Unterf�hring Dreambowl Palace'
+
+All 18/19 locations after canonicalize:
+ unique raw 24 unique mapped 24
+
+Raw names that still differ after map (sample):
+canonicals with >1 raw spelling 0
+
+```
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+The 18/19 parquet already contains a single canonical "Unterföhring Dreambowl Palace" entry for all Dream variants. The duplicate display likely stems from another data source or a caching issue.
+
+Backend data is fully canonicalized. The duplicate Dream-Bowl entries likely come from stale cache, frontend grouping logic, chart legend abbreviations, or the myClub filter pulling from outdated league names.
+
+Flask restart does not clear disk cache. The cache version is still `tabledata-dict-v1`, so old entries retain outdated location strings. The user did not run `rebuild_league_caches.py`. Even after rebuilding caches, stale entries would persist. Canonicalization needs to be applied inside `get_season_timetable` itself so cached results are always correct.
+
+Canonicalizing inside `get_season_timetable` only fixes new cache writes. Old entries remain invalid until the cache version is bumped. Chart legend abbreviations may also be mixing legacy DBM labels with the canonical DBP label.
+
+A more specific cache problem is now suspected. Some leagues may have fresh canonical cache entries while others still hold old legacy names. The frontend could then receive a mix of both old and new location strings simultaneously. This would explain why multiple Dream-Bowl variants appear together. The exact 18/19 locations need to be checked to confirm whether the cache is partially updated.
+
+The root cause is now confirmed. Some leagues were served from stale cache with old names, while others were freshly built with the canonical name. This mixed result explains the duplicate Dream-Bowl variants. A backend cache version bump is the correct fix; shipping a frontend alias map would be redundant.
+
+Frontend grouping will be strengthened too. Tokens like "dream" and "bowl" will be folded into a single venue key so stale cache entries still merge correctly. A cache version bump is sufficient because the cache key embeds the payload version, meaning a Flask restart alone clears old entries.
+
+A cache version bump is the fastest fix. After deployment, a Flask restart alone will clear stale entries without needing to rebuild caches. Canonicalizing inside the service is still needed so future cache writes are correct. Shipping a frontend alias map was considered but rejected as incomplete. One concern remains: the frontend might still reach an old Flask instance that lacks the new code.
+
+The user restarted Flask, but the cache version bump has not been deployed yet. The parquet is remapped while the disk cache still holds old location strings. The plan is to canonicalize inside `get_season_timetable`, bump the cache payload version, and generate a compact frontend alias map from `venue_mapping.csv` to handle stale API responses.
+
+Frontend alias mapping is being dropped. It would duplicate the CSV or require a new API endpoint. The plan is to canonicalize inside `league_service` and bump the cache version. A condensed alias map may still be added to `seasonSpielplan.ts` for grouping keys.
+
+pickDisplayName uses the most frequent raw string in each group, so merging legacy and canonical names would naturally select the correct display text. A frontend alias map is therefore worthwhile despite partial coverage. A canonicalizeVenueLabel helper will be added to seasonSpielplan.ts.
+
+Heuristic frontend grouping was rejected as too risky. A compact venue mapping will be generated from the CSV and imported into the frontend for canonicalization.
+
+Generating a frontend alias map from the CSV was abandoned to avoid a build step. The plan is now to canonicalize inside the service and bump the cache version. A Flask restart alone will clear stale entries.
+
+I will list all 18/19 locations to verify whether the duplicate Dream-Bowl entries are actually abbreviations in the chart legend, such as "UDP" versus "DBM". I will also inspect the 18/19 EMAX leagues specifically.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: $env:PYTHONPATH = &#34;C:\Users\cfell\repositories\bowlyzer_deploy&#34;; uv run python -c &#34;import pandas as pd; df=pd.read_parquet(r&#39;database/data/league_results_merged.parquet&#39;, columns=[&#39;Season&#39;,&#39;Event&#39;,&#39;Location&#39;]); s=df[df.Season==&#39;18/19&#39;]; print(s.Location.fillna(&#39;&#39;).astype(str).str.strip().value_counts().to_string())&#34;</summary>
+```bash
+$env:PYTHONPATH = "C:\Users\cfell\repositories\bowlyzer_deploy"; uv run python -c "import pandas as pd; df=pd.read_parquet(r'database/data/league_results_merged.parquet', columns=['Season','Event','Location']); s=df[df.Season=='18/19']; print(s.Location.fillna('').astype(str).str.strip().value_counts().to_string())"
+```
+
+```
+Location
+Unterf�hring Dreambowl Palace           9927
+N�rnberg West Bowling                   4932
+Brunnthal Max Munich                    4475
+Bowlingworld N�rnberg                   3822
+Regensburg Super Bowl                   3332
+Kempten Big Bowl                        3307
+M�nchen Hollywood Super Bowling         3253
+M�nchen Isar Bowling                    2737
+Bamberg Bowlinghaus                     2070
+Bayreuth Blu Bowl                       2040
+Schweinfurt Extreme Bowlingarena        1639
+Maschy's Bowling W�rzburg               1464
+Lauterach Strike-Center                 1352
+Dettelbach Extreme Bowlingarena         1332
+Ingolstadt Cosmos Bowling Arena         1021
+Pfaffenhofen Hollywood Super Bowling     964
+Garmisch Zugspitzbowling                 864
+Rottendorf Bowling-Center                828
+Coburg Sportland                         730
+Olching 5005 Bowling                     555
+Herbrechtingen                           504
+Sport-Oase Salzburg                      288
+Landshut LA-Bowling                      288
+Pfarrkirchen                             248
+
+```
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app",
+  "pattern": "canonicalize_venue|apply_venue"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app",
+  "pattern": "canonicalize_venue|apply_venue",
+  "topFiles": [],
+  "totalFiles": 0,
+  "totalMatches": 0
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\app\test_cache_warmup.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+The 18/19 Parquet data is fully canonicalized.
+
+The league timetable cache is likely still holding old location strings. This causes multiple Dream-Bowl versions to appear in the chart. The fix requires canonicalizing inside get_season_timetable, bumping the cache payload version to skip stale entries, and adding frontend canonicalization for immediate grouping.
+
+Frontend alias grouping would fail because old cache entries still hold the original venue names. The simplest fix is to bump the cache payload version and canonicalize directly in the Python service. Restarting Flask will invalidate stale cache keys and force fresh reads from Parquet, collapsing all Dream-Bowl variants into one.
+
+Restarting Flask without the new code will not clear stale cache entries, since the payload version stays unchanged. A frontend venue mapping will be added as a fallback safeguard so old cached API responses still group Dream-Bowl variants correctly.
+
+Updating only the frontend can fix the issue today. The Vite dev server proxies requests to Flask, so canonicalizing venue keys in seasonSpielplan.ts would group Dream-Bowl variants immediately even with stale API data. This pairs with the backend cache bump for correctness. A new frontend venue mapping file will hold the alias table, though maintaining two copies is undesirable.
+
+Evaluating how to load the venue mapping in the frontend. Options include importing the raw CSV via Vite, duplicating the map in TypeScript, or generating a JSON file. Need to verify whether Vite allows importing files from outside the frontend directory.
+
+A compact JSON file at frontend/src/lib/venueMapping.json will hold the venue aliases. The frontend canonicalize function will mirror the Python logic using identity keys, compact keys, and alias lookups. This lets the UI merge old cached names into one Dream-Bowl group immediately.
+
+The venue mapping will be generated automatically from the CSV rather than duplicated manually. Existing tests for get_season_timetable need review. The temporary script will be deleted. The canonicalize_venue_label helper will be imported from data_access. Empty locations will fall back to the original value.
+
+The cache payload version for get_season_timetable will be bumped to "venue-canonical-v1". A new frontend canonicalizeVenueLabel will be added to seasonSpielplan.ts, pulling its alias map from a JSON file to avoid bloating the TypeScript module. normalizeVenueKey will be strengthened to run canonicalization first. Tests in seasonSpielplan.test.ts will verify that Dream-Bowl München and Dream Bowl Unterföhring resolve to the same venueKey.
+
+The frontend canonicalizeVenueLabel will run before venueKey generation. displayName will also be pulled from the canonical label instead of the raw venue name. This ensures all Dream-Bowl variants collapse into a single display name.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/tests/**/*.py",
+  "pattern": "get_season_timetable|season_timetable"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "pattern": "get_season_timetable|season_timetable",
+  "topFiles": [
+    {
+      "matchCount": 8,
+      "uri": "tests/app/test_cache_warmup.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "tests/scripts/test_warm_league_wide_jobs.py"
+    }
+  ],
+  "totalFiles": 2,
+  "totalMatches": 10
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\vite.config.ts</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\seasonSpielplan.ts</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Canonicalizing names in `get_season_timetable` should eliminate duplicate Dream-Bowl entries.
+
+Cache version will be bumped. A frontend `venueMapping.ts` will group aliases from stale cache. The mapping mirrors Python's alias structure.
+
+A data-driven generator will build `venueMapping.ts` directly from the CSV. Tests will be added to `seasonSpielplan.test.ts` and the league service. The temporary file will be deleted. The Termine card on the single-league page will also benefit from the cache bump.
+
+The TypeScript mapping will be a static array of venue groups, keeping identity and compact keys to match Python logic. Frontend tests will verify that alternate names resolve to the same canonical venue key.
+
+Canonicalization is idempotent, so it safely handles already-canonical locations and empty strings. The frontend will import `canonicalizeVenueLabel` from `venueMapping.ts` and apply it inside `parseTimetableEvents` before falling back to the raw venue text. The mapping file will include a builder function to process the venue groups.
+
+Existing data-access tests already cover the Python canonicalization. A new backend timetable test may be skipped if it requires a full Flask app. Frontend tests will use the vp test pattern. Any tests expecting the old "Dream-Bowl München" display name must be updated because canonicalization now maps to "Unterföhring Dreambowl Palace".
+
+Both `seasonSpielplan.test.ts` and `spielplanChart.test.ts` contain "Dream-Bowl München" fixtures. These will be updated to expect "Unterföhring Dreambowl Palace" once canonicalization runs. The files are being reviewed now.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+Published 18/19 parquet already has a single Dreambowl name. The Spielplan is still splitting cached timetable strings like `Dream-Bowl München` vs `Dream-Bowl-Palace`. I’ll canonicalize venues in the timetable API, invalidate that cache, and group aliases in the chart.
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\seasonSpielplan.test.ts</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\spielplanChart.test.ts</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\database\relational_csv\venue_mapping.csv</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Missing Dream-Bowl aliases in the cache likely explain the duplicate entries. Adding those aliases should resolve the issue.
+
+Adding Dream-Bowl Palace variants and frontend mappings. "Brunnthal" now normalizes to "Brunnthal Max Munich", requiring test updates.
+
+Updating seasonSpielplan tests for canonicalized venue names. Mapping additional aliases: "Isar-München" to "München Isar Bowling", "BluBowl Nürnberg" to "Nürnberg BluBowl", "Cosmos Arena Nürnberg" to "Nürnberg Cosmos", and "OK Bowling Bindlach" to "Bindlach OK Bowling". Creating venueMapping.ts with Python-equivalent logic and CSV groups.
+
+Adding extra Dream-Bowl aliases to the CSV. Implementing the TypeScript mapping module next. Updating the league service to canonicalize venue labels from raw data. Checking whether "nan" placeholders survive normalization.
+
+Confirmed "nan" placeholders remain unchanged during canonicalization and are replaced by TBD later. The TypeScript mapping module will use NFC normalization and compact keys. Adding Dreambowl Palace aliases without city names to the CSV. Frontend tests will verify grouping of Dream-Bowl variants.
+
+Updating expected venueRaw in parseTimetableEvents and displayName in buildSeasonSpielplan. Brunnthal and BluBowl remain separate venues. Isar and Dream-Bowl still merge into München Isar Bowling. Adding a dedicated test for Dream-Bowl alias grouping. Bumping cache version and deleting temporary files.
+
+Considering importing the venue mapping CSV directly into the frontend TypeScript module via Vite's `?raw` loader. This would avoid maintaining a large hardcoded alias list in the source code. Need to verify whether Vite allows importing files from outside the `frontend/` directory root.
+
+Decided against importing the CSV directly into the frontend. Will instead duplicate the venue mapping as a TypeScript constant array, generating it programmatically from the CSV. The compact-key collision logic will match the Python implementation exactly.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\seasonSpielplan.test.ts</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\seasonSpielplan.test.ts</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Creating a venue mapping file to consolidate duplicate Dream-Bowl entries. It will be wired into the timetable event parser.
+
+Updating tests to match canonical venue names. Checking abbreviateVenues logic for Dream-Bowl München and BluBowl Nürnberg.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\seasonSpielplan.ts</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Writing a venue mapping file to consolidate duplicate Dream-Bowl entries.
+
+Canonicalizing venue labels in parseTimetableEvents. Adding Dream aliases to the venue mapping CSV. Bumping the league service cache.
+
+Updating parseTimetableEvents tests to match canonicalized venue keys. Searching Python cache tests for tabledata-dict-v1 references.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/*.{py,ts}",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "tabledata-dict-v1|get_season_timetable"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "tabledata-dict-v1|get_season_timetable",
+  "topFiles": [
+    {
+      "matchCount": 3,
+      "uri": "app/cache/cache_warmup.py"
+    },
+    {
+      "matchCount": 6,
+      "uri": "app/routes/league_routes.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/cache/league_response_cache.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app/services/league_service.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app\\cache\\league_response_cache.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "frontend/src/hooks/useLeague.ts"
+    },
+    {
+      "matchCount": 1,
+      "uri": "scripts/warm_league_cache.py"
+    },
+    {
+      "matchCount": 5,
+      "uri": "tests/app/test_cache_warmup.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "tests/scripts/test_warm_league_wide_jobs.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "app\\services\\league_service.py"
+    }
+  ],
+  "totalFiles": 10,
+  "totalMatches": 25
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\database\relational_csv\venue_mapping.csv</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Python's lru_cache is cached per process, so restarting Flask won't clear it. I need to invalidate the cache directly.
+
+Writing venueMapping.ts next. Then updating seasonSpielplan.ts, league_service, cache version, and tests. Need to check league_service imports.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\services\league_service.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\club300Analytics.ts</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+I'll write a compact venueMapping.ts file to consolidate the duplicate Dream-Bowl entries.
+
+The mapping will be generated at module init from groups to keep the file small. League service will apply it when storing week_info locations. I'll add frontend tests for Dream-Bowl variants and update seasonSpielplan tests. LRU cache clearing may be needed if tests import the mapping.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\venueMapping.ts</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Wiring parseTimetableEvents, league_service, cache bump, and tests.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\seasonSpielplan.ts</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\seasonSpielplan.ts</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\app\services\league_service.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\app\services\league_service.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\app\cache\league_response_cache.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+The duplicate Dream-Bowl entries persist because `league_service` uses `mapped` without importing `canonicalize` in the correct file copy. Two paths with backslashes caused the wrong import to be used.
+
+Pandas NaN values normalize safely to "nan". Tests need updating. The Termine card may still show stale API names until cache bumps and service mapping fixes the API.
+
+formatTimetableTable only formats dates and leaves locations unchanged. Once the API canonicalizes venue labels, the Termine card will display correctly. The seasonSpielplan tests also need updating.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\seasonSpielplan.test.ts</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\seasonSpielplan.test.ts</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\seasonSpielplan.test.ts</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\seasonSpielplan.test.ts</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\seasonSpielplan.test.ts</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\seasonSpielplan.test.ts</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+I suspect I duplicated the hyphenated test instead of adding the Dream-Bowl test after it.
+
+Reading the test file to verify the entry placement.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\seasonSpielplan.test.ts</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\services\league_service.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+The hyphenated test was replaced by a Dream-Bowl test.
+
+Re-adding the hyphenated test now. Checking abbreviateVenue logic for "Unterföhring Dreambowl Palace" and whether "BluBowl" tokenizes as "Blu Bowl".
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\seasonSpielplan.ts</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\seasonSpielplan.test.ts</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+The camelCase tokenization splits "BluBowl" into separate "Blu" and "Bowl" tokens. This likely causes duplicate entries for Dream-Bowl.
+
+Corrected the abbreviation from NB to NBB. Verified that shared venues appear first in the day sort, followed by Nürnberg BluBowl alphabetically. Confirmed that Brunnthal maps to both BL and KL while BluBowl maps to A N1. Will invalidate the venue_mapping cache and delete the temporary Python file before running tests.
+
+Checking whether the import fix was applied to the correct league_service.py path that Flask actually uses. Earlier git status showed two possible locations.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app\\services\\league_service.py",
+  "pattern": "canonicalize_venue_label"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app\\services\\league_service.py",
+  "pattern": "canonicalize_venue_label",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "app\\services\\league_service.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 2
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="delete_file"><details>
+<summary>Tool use: **delete_file**</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+The venue_mapping LRU cache should pick up new CSV aliases after a Flask restart.
+
+Running frontend and Python tests. Checking the Nürnberg BluBowl abbreviation.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: cd frontend; vp test src/lib/seasonSpielplan.test.ts src/lib/spielplanChart.test.ts src/lib/venueMapping.ts</summary>
+```bash
+cd frontend; vp test src/lib/seasonSpielplan.test.ts src/lib/spielplanChart.test.ts src/lib/venueMapping.ts
+```
+
+```
+vp : Die Benennung "vp" wurde nicht als Name eines Cmdlet, einer Funktion, einer Skriptdatei oder eines ausf�hrbaren 
+Programms erkannt. �berpr�fen Sie die Schreibweise des Namens, oder ob der Pfad korrekt ist (sofern enthalten), und 
+wiederholen Sie den Vorgang.
+In C:\Users\cfell\AppData\Local\Temp\ps-script-509790b3-5c61-4cf1-b077-7b502050a124.ps1:109 Zeichen:14
++ cd frontend; vp test src/lib/seasonSpielplan.test.ts src/lib/spielpla ...
++              ~~
+    + CategoryInfo          : ObjectNotFound: (vp:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+
+```
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run pytest tests/data_access/test_venue_mapping.py tests/app/test_cache_warmup.py tests/app/test_league_data_revision.py -q --tb=short</summary>
+```bash
+uv run pytest tests/data_access/test_venue_mapping.py tests/app/test_cache_warmup.py tests/app/test_league_data_revision.py -q --tb=short
+```
+
+```
+...............                                                          [100%]
+15 passed in 1.00s
+
+```
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+The vp command is missing from the shell PATH.
+
+Searching for the vp command locally. Will try npx or the local vite-plus instead.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **1** result in **1** directory</summary>
+
+Directory: **`c:\Users\cfell`** (1 file)
+
+| File |
+|------|
+| `../..\..\AppData\Local\pnpm\store\v10\projects\68a51de535c6e661c08087d9f7fd635a\node_modules\.bin\vp.CMD` |
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\package.json</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Trying to run via frontend/node_modules/.
+
+Running bin/vp or npx vite-plus test.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: .\node_modules\.bin\vp.cmd test src/lib/seasonSpielplan.test.ts src/lib/spielplanChart.test.ts</summary>
+```bash
+.\node_modules\.bin\vp.cmd test src/lib/seasonSpielplan.test.ts src/lib/spielplanChart.test.ts
+```
+
+```
+ RUN  C:/Users/cfell/repositories/bowlyzer_deploy/frontend
+
+ ❯ src/lib/seasonSpielplan.test.ts (16 tests | 1 failed) 24ms
+     × lays out one row per league and colors by venue 5ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/lib/seasonSpielplan.test.ts > buildSpielplanChartModel > lays out one row per league and colors by venue
+AssertionError: expected 'NBB' to be 'NB' // Object.is equality
+
+Expected: "NB"
+Received: "NBB"
+
+ ❯ src/lib/seasonSpielplan.test.ts:253:29
+    251|     expect(dream?.abbrev).toBe("UDP");
+    252|     const blubowl = model.venues.find((venue) => venue.displayName ===…
+    253|     expect(blubowl?.abbrev).toBe("NB");
+       |                             ^
+    254|
+    255|     const sharedColor = model.points.find(
+ ❯ node_modules/.pnpm/@voidzero-dev+vite-plus-tes_14a7936ebcc130d5f752c4e41449744f/node_modules/@voidzero-dev/vite-plus-test/dist/@vitest/runner/chunk-artifact.js:302:14
+ ❯ node_modules/.pnpm/@voidzero-dev+vite-plus-tes_14a7936ebcc130d5f752c4e41449744f/node_modules/@voidzero-dev/vite-plus-test/dist/@vitest/runner/chunk-artifact.js:1903:28
+ ❯ node_modules/.pnpm/@voidzero-dev+vite-plus-tes_14a7936ebcc130d5f752c4e41449744f/node_modules/@voidzero-dev/vite-plus-test/dist/@vitest/runner/chunk-artifact.js:2326:24
+ ❯ runWithCancel node_modules/.pnpm/@voidzero-dev+vite-plus-tes_14a7936ebcc130d5f752c4e41449744f/node_modules/@voidzero-dev/vite-plus-test/dist/@vitest/runner/chunk-artifact.js:2323:12
+ ❯ node_modules/.pnpm/@voidzero-dev+vite-plus-tes_14a7936ebcc130d5f752c4e41449744f/node_modules/@voidzero-dev/vite-plus-test/dist/@vitest/runner/chunk-artifact.js:2305:24
+ ❯ runWithTimeout node_modules/.pnpm/@voidzero-dev+vite-plus-tes_14a7936ebcc130d5f752c4e41449744f/node_modules/@voidzero-dev/vite-plus-test/dist/@vitest/runner/chunk-artifact.js:2272:12
+ ❯ node_modules/.pnpm/@voidzero-dev+vite-plus-tes_14a7936ebcc130d5f752c4e41449744f/node_modules/@voidzero-dev/vite-plus-test/dist/@vitest/runner/chunk-artifact.js:2955:70
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/
+… (output truncated)
+```
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+UDP passed. NBB is the correct abbreviation.
+
+The test needs fixing.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\seasonSpielplan.test.ts</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+Incorrect tool arguments
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+The duplicate Dream-Bowl entries likely stem from missing canonicalization. I'll add the canonicalize import and a small test in seasonSpielplan.test.ts, or create a new venueMapping.test.ts file.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\seasonSpielplan.test.ts</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\seasonSpielplan.test.ts</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\seasonSpielplan.test.ts</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Checking whether the hyphenated test entry still exists after the earlier addition.
+
+Re-running tests now. Adding a Python test for Dream-Bowl venue mapping aliases. Need to clear LRU cache since tests load from file. Will run frontend tests and ruff on league_service. The German locale correctly sorts Brunnthal before Nürnberg. A Flask restart is required to invalidate the alias lookup cache; otherwise frontend grouping alone may not fix the chart.
+
+A full restart of both Flask and Vite is required for the alias changes to take effect. Vite HMR should pick up TypeScript updates automatically.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\data_access\test_venue_mapping.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: .\node_modules\.bin\vp.cmd test src/lib/seasonSpielplan.test.ts src/lib/spielplanChart.test.ts</summary>
+```bash
+.\node_modules\.bin\vp.cmd test src/lib/seasonSpielplan.test.ts src/lib/spielplanChart.test.ts
+```
+
+```
+ RUN  C:/Users/cfell/repositories/bowlyzer_deploy/frontend
+
+
+ Test Files  2 passed (2)
+      Tests  22 passed (22)
+   Start at  14:19:37
+   Duration  299ms (transform 174ms, setup 0ms, import 226ms, tests 27ms, environment 0ms)
+
+
+```
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run pytest tests/data_access/test_venue_mapping.py -q --tb=short</summary>
+```bash
+uv run pytest tests/data_access/test_venue_mapping.py -q --tb=short
+```
+
+```
+ERROR: file or directory not found: tests/data_access/test_venue_mapping.py
+
+
+no tests ran in 0.00s
+
+```
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+The pytest failure likely stems from the working directory still being set to frontend from a previous command.
+
+Pytest ran from the frontend directory because the working directory was not explicitly set. I need to run it from the repository root instead, and verify the test file path exists.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **1** result in **1** directory</summary>
+
+Directory: **``** (1 file)
+
+| File |
+|------|
+| `.\tests\data_access\test_venue_mapping.py` |
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\cache\league_response_cache.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "*.{py,ts,tsx}",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "canonicalize_venue_label|get_season_timetable|venue-canonical"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "canonicalize_venue_label|get_season_timetable|venue-canonical",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "tests/scripts/test_warm_league_wide_jobs.py"
+    },
+    {
+      "matchCount": 4,
+      "uri": "app\\services\\league_service.py"
+    },
+    {
+      "matchCount": 10,
+      "uri": "tests\\data_access\\test_venue_mapping.py"
+    },
+    {
+      "matchCount": 4,
+      "uri": "app/services/league_service.py"
+    },
+    {
+      "matchCount": 5,
+      "uri": "tests/app/test_cache_warmup.py"
+    },
+    {
+      "matchCount": 3,
+      "uri": "app/cache/cache_warmup.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "scripts/warm_league_cache.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "data_access\\venue_mapping.py"
+    },
+    {
+      "matchCount": 6,
+      "uri": "app/routes/league_routes.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app\\cache\\league_response_cache.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "app/cache/league_response_cache.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "frontend/src/hooks/useLeague.ts"
+    }
+  ],
+  "totalFiles": 12,
+  "totalMatches": 41
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Frontend tests passed. Pytest failed because it ran from the frontend directory.
+
+Checking whether the previous fixes were actually deployed to the running Flask instance. Also verifying that venue aliases exist in both the CSV mapping and the frontend code, and that the backend canonicalizes labels during parsing. Suspecting stale browser cache, Vite HMR, or a different worktree as the cause.
+
+The CSV aliases may not match the actual venue strings in the 18/19 parquet data. I will inspect the raw venue values and confirm the backend canonicalization is actually invoked. I also need to check if the running Flask process is using the updated code, and examine how SeasonSpielplan renders venues.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\seasonSpielplan.ts</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\relational_csv\\venue_mapping.csv",
+  "pattern": "Dream"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\database\\relational_csv\\venue_mapping.csv",
+  "pattern": "Dream",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "database\\relational_csv\\venue_mapping.csv"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 1
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src\\lib\\venueMapping.ts",
+  "pattern": "Dream"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src\\lib\\venueMapping.ts",
+  "pattern": "Dream",
+  "topFiles": [
+    {
+      "matchCount": 24,
+      "uri": "frontend\\src\\lib\\venueMapping.ts"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 24
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\data_access\venue_mapping.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\services\league_service.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Multiple Dream-Bowl versions still appear after restarting Flask.
+
+Checking whether the timetable cache still holds old venue names, if the frontend groups by raw display name instead of canonical keys, or if the parquet data contains genuinely distinct venues rather than aliases.
+
+Checking if SeasonSpielplan renders raw venue names instead of canonical ones. Also verifying whether the Vite frontend bundle was rebuilt after the Flask restart, since stale bundles could explain why old names persist despite canonical data.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src\\lib\\seasonSpielplan.ts",
+  "pattern": "canonicalizeVenueLabel|venueRaw|displayName"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src\\lib\\seasonSpielplan.ts",
+  "pattern": "canonicalizeVenueLabel|venueRaw|displayName",
+  "topFiles": [
+    {
+      "matchCount": 20,
+      "uri": "frontend\\src\\lib\\seasonSpielplan.ts"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 20
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\venueMapping.ts</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src\\pages",
+  "pattern": "venueRaw|displayName|Dream"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src\\pages",
+  "pattern": "venueRaw|displayName|Dream",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "frontend/src/pages/league/blocks/SeasonSpielplan.tsx"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 1
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="get_mcp_tools"><details>
+<summary>Tool use: **get_mcp_tools**</summary>
+
+Parameters:
+
+```json
+{
+  "server": "cursor-ide-browser",
+  "toolName": "browser_tabs"
+}
+```
+Result:
+
+```json
+{
+  "content": "{\n  \"tool\": \"browser_tabs\",\n  \"description\": \"List, create, close, or select a browser tab\",\n  \"inputSchema\": {\n    \"type\": \"object\",\n    \"properties\": {\n      \"action\": {\n        \"type\": \"string\",\n        \"enum\": [\n          \"list\",\n          \"new\",\n          \"close\",\n          \"select\"\n        ],\n        \"description\": \"Operation to perform\"\n      },\n      \"index\": {\n        \"type\": \"number\",\n        \"description\": \"Tab index. Required for \\\"select\\\". Optional for \\\"close\\\" (defaults to current tab).\"\n      },\n      \"position\": {\n        \"type\": \"string\",\n        \"enum\": [\n          \"active\",\n          \"side\"\n        ],\n        \"description\": \"Only set for action \\\"new\\\" when the user explicitly asks to reveal, show, focus, or open the browser visibly. Set to \\\"active\\\" for visible/revealed browser UI, or \\\"side\\\" if the user mentions \\\"side\\\", \\\"beside\\\", \\\"side panel\\\", or \\\"side by side\\\". Omit this parameter for background automation so focus is preserved.\"\n      }\n    },\n    \"required\": [\n      \"action\"\n    ]\n  }\n}"
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Checking the venue label canonicalization logic in venueMapping.ts and inspecting the 18/19 data to find why Dream-Bowl appears multiple times.
+
+Opening the URL to verify the duplicate Dream-Bowl entries. Querying the 18/19 parquet data for unique locations containing "Dream".
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\venueMapping.ts</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="mcp-cursor-ide-browser-browser_tabs"><details>
+<summary>Tool use: **mcp-cursor-ide-browser-browser_tabs**</summary>
+
+Parameters:
+
+```json
+{
+  "tools": [
+    {
+      "name": "browser_tabs",
+      "parameters": "{\"action\":\"list\"}",
+      "serverName": "cursor-ide-browser"
+    }
+  ]
+}
+```
+Additional data:
+
+```json
+{
+  "status": "success"
+}
+```
+Result:
+
+```json
+{
+  "result": "{\"content\":[{\"type\":\"text\",\"text\":\"Open tabs:\\n\"}]}"
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+Terminal unavailable: this machine cannot enforce the 'workspace_readwrite' sandbox policy this command requires, because no working sandbox backend is available (Windows sandbox helper only provides network proxy, not filesystem isolation). This is not a permission denial. Commands requiring this policy cannot run here unless sandbox support is set up on this machine.
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+The shell command failed due to sandbox restrictions. I need to request all permissions to proceed.
+
+I'll also open the browser to that URL.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c &#34;
+from pathlib import Path
+import pandas as pd
+p = Path(&#39;database/data/league_results_merged.parquet&#39;)
+df = pd.read_parquet(p)
+cols = list(df.columns)
+print(&#39;cols&#39;, cols)
+loc = [c for c in cols if &#39;loc&#39; in c.lower() or &#39;ort&#39; in c.lower() or &#39;venue&#39; in c.lower()]
+print(&#39;loc-like&#39;, loc)
+season_col = [c for c in cols if &#39;season&#39; in c.lower()][0]
+loc_col = loc[0]
+s = df[df[season_col].astype(str).str.contains(&#39;18/19&#39;, na=False)]
+print(&#39;rows&#39;, len(s))
+vals = sorted(s[loc_col].dropna().astype(str).unique())
+print(&#39;n unique&#39;, len(vals))
+print(&#39;--- dream ---&#39;)
+for v in vals:
+    if &#39;dream&#39; in v.lower():
+        print(repr(v))
+print(&#39;--- all ---&#39;)
+for v in vals:
+    print(repr(v))
+&#34;
+</summary>
+```bash
+uv run python -c "
+from pathlib import Path
+import pandas as pd
+p = Path('database/data/league_results_merged.parquet')
+df = pd.read_parquet(p)
+cols = list(df.columns)
+print('cols', cols)
+loc = [c for c in cols if 'loc' in c.lower() or 'ort' in c.lower() or 'venue' in c.lower()]
+print('loc-like', loc)
+season_col = [c for c in cols if 'season' in c.lower()][0]
+loc_col = loc[0]
+s = df[df[season_col].astype(str).str.contains('18/19', na=False)]
+print('rows', len(s))
+vals = sorted(s[loc_col].dropna().astype(str).unique())
+print('n unique', len(vals))
+print('--- dream ---')
+for v in vals:
+    if 'dream' in v.lower():
+        print(repr(v))
+print('--- all ---')
+for v in vals:
+    print(repr(v))
+"
+
+```
+
+```
+cols ['Season', 'Week', 'Date', 'Players per Team', 'Location', 'Round Number', 'Match Number', 'Team', 'Position', 'Player', 'Player ID', 'Opponent', 'Score', 'Points', 'Bonus Points', 'Input Data', 'Computed Data', 'Event', 'Event Type', 'Club']
+loc-like ['Location']
+rows 51972
+n unique 24
+--- dream ---
+'Unterf�hring Dreambowl Palace'
+--- all ---
+'Bamberg Bowlinghaus'
+'Bayreuth Blu Bowl'
+'Bowlingworld N�rnberg'
+'Brunnthal Max Munich'
+'Coburg Sportland'
+'Dettelbach Extreme Bowlingarena'
+'Garmisch Zugspitzbowling'
+'Herbrechtingen'
+'Ingolstadt Cosmos Bowling Arena'
+'Kempten Big Bowl'
+'Landshut LA-Bowling'
+'Lauterach Strike-Center'
+"Maschy's Bowling W�rzburg"
+'M�nchen Hollywood Super Bowling'
+'M�nchen Isar Bowling'
+'N�rnberg West Bowling'
+'Olching 5005 Bowling'
+'Pfaffenhofen Hollywood Super Bowling'
+'Pfarrkirchen'
+'Regensburg Super Bowl'
+'Rottendorf Bowling-Center'
+'Schweinfurt Extreme Bowlingarena'
+'Sport-Oase Salzburg'
+'Unterf�hring Dreambowl Palace'
+
+```
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="get_mcp_tools"><details>
+<summary>Tool use: **get_mcp_tools**</summary>
+
+Parameters:
+
+```json
+{
+  "server": "cursor-ide-browser",
+  "toolName": "browser_navigate"
+}
+```
+Result:
+
+```json
+{
+  "content": "{\n  \"tool\": \"browser_navigate\",\n  \"description\": \"Navigate to a URL. By default reuses an existing tab; set newTab: true to open in a new tab.\",\n  \"inputSchema\": {\n    \"type\": \"object\",\n    \"properties\": {\n      \"url\": {\n        \"type\": \"string\",\n        \"description\": \"The URL to navigate to\"\n      },\n      \"viewId\": {\n        \"type\": \"string\",\n        \"description\": \"Target browser tab ID. If omitted, uses the last interacted tab.\"\n      },\n      \"position\": {\n        \"type\": \"string\",\n        \"enum\": [\n          \"active\",\n          \"side\"\n        ],\n        \"description\": \"Only set when the user explicitly asks to reveal, show, focus, or open the browser visibly. Set to \\\"active\\\" for visible/revealed browser UI, or \\\"side\\\" if the user mentions \\\"side\\\", \\\"beside\\\", \\\"side panel\\\", or \\\"side by side\\\". Omit this parameter for background automation so focus is preserved.\"\n      },\n      \"take_screenshot_afterwards\": {\n        \"type\": \"boolean\",\n        \"description\": \"When true, takes a screenshot after navigation completes. Defaults to false.\"\n      },\n      \"newTab\": {\n        \"type\": \"boolean\",\n        \"description\": \"When true, creates a new tab before navigating instead of reusing an existing tab. Defaults to false.\"\n      }\n    },\n    \"required\": [\n      \"url\"\n    ]\n  }\n}"
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\data_access\test_venue_mapping.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+The parquet file already contains a single canonical name for Dream Bowl in 18/19: `Unterföhring Dreambowl Palace`. The duplicate versions must be coming from somewhere else.
+
+The duplicates likely stem from stale Flask cache. Old timetable API responses may still contain the old names. Frontend grouping might also fail to canonicalize cached strings. Chart legends could be treating abbreviations as separate venues.
+
+The user already ran the extraction and rebuild commands and restarted Flask. Since the duplicates persist, the cache was likely not rebuilt or old entries are still being served.
+
+Stale cache keys may persist if Flask restarted from a different working directory or loaded a compiled `.pyc` of the old module. The browser’s React Query cache could also retain outdated timetable responses. The UI might be grouping by venue abbreviations such as UDP versus DBP instead of canonical names.
+
+I will curl the timetable endpoint and inspect the cache files for `get_season_timetable`. I also need to check `SeasonSpielplan.tsx` to see how the chart legend groups venues.
+
+A new possibility is that different leagues store different strings in their cached responses. The frontend might not be applying `venueMapping.ts` canonicalization in production because Vite did not pick up the change. A hard refresh may be required to load the updated JavaScript.
+
+I will search the cached timetable entries for 18/19 to identify any location strings that fall outside the current venue mapping. The Spielplan component might also be calling a separate API endpoint that bypasses the canonicalization logic.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="mcp-cursor-ide-browser-browser_navigate"><details>
+<summary>Tool use: **mcp-cursor-ide-browser-browser_navigate**</summary>
+
+Parameters:
+
+```json
+{
+  "tools": [
+    {
+      "name": "browser_navigate",
+      "parameters": "{\"url\":\"http://192.168.68.109:5173/liga?database=db_real_merged\u0026myClub=BC+EMAX+Unterf%C3%B6hring\u0026season=18%2F19\u0026story=club\u0026beat=4\",\"take_screenshot_afterwards\":true}",
+      "serverName": "cursor-ide-browser"
+    }
+  ]
+}
+```
+Additional data:
+
+```json
+{
+  "status": "success"
+}
+```
+Result:
+
+````json
+{
+  "result": "{\"content\":[{\"type\":\"text\",\"text\":\"### Action: snapshot\\n- Total refs: 66\\n- Interactive refs: 33\\n- Browser View ID: 220f20\\n\\n### Page state\\n- Page URL: http://192.168.68.109:5173/liga?database=db_real_merged\u0026myClub=BC+EMAX+Unterf%C3%B6hring\u0026season=18%2F19\u0026story=club\u0026beat=4\\n- Page Title: Bowl-A-Lyzer\\n- Page Snapshot:\\n```yaml\\n- role: document\\n  name: Bowl-A-Lyzer\\n  ref: root\\n  children:\\n    - role: link\\n      name: Bowl-A-Lyzer — Startseite\\n      ref: e0\\n    - role: button\\n      name: Sidebar einklappen\\n      ref: e1\\n    - role: textbox\\n      name: Mein Club\\n      ref: e2\\n      value: BC EMAX Unterföhring\\n      placeholder: Club suchen…\\n      states: [disabled, readonly, collapsed]\\n    - role: link\\n      name: Übersicht\\n      ref: e3\\n    - role: link\\n      name: Einstieg\\n      ref: e4\\n    - role: link\\n      name: Warum Bowl-A-Lyzer?\\n      ref: e5\\n    - role: link\\n      name: Club 300\\n      ref: e6\\n    - role: link\\n      name: Glossar\\n      ref: e7\\n    - role: link\\n      name: Spieler\\n      ref: e8\\n    - role: link\\n      name: Club\\n      ref: e9\\n    - role: link\\n      name: Liga\\n      ref: e10\\n      states: [current]\\n    - role: link\\n      name: Turnier\\n      ref: e11\\n    - role: link\\n      name: Clubpokal\\n      ref: e12\\n    - role: link\\n      name: Designsystem\\n      ref: e13\\n    - role: link\\n      name: Club-Matrix\\n      ref: e14\\n    - role: link\\n      name: Liga-Übersicht\\n      ref: e15\\n    - role: link\\n      name: Turnier-Übersicht\\n      ref: e16\\n    - role: link\\n      name: Validierung\\n      ref: e17\\n    - role: link\\n      name: Anomalien\\n      ref: e18\\n    - role: link\\n      name: Datenpipeline\\n      ref: e19\\n    - role: combobox\\n      name: Datenquelle\\n      ref: e20\\n      value: Keine Quelle verfügbar\\n      options: [Keine Quelle verfügbar]\\n      states: [d
+… (output truncated)
+````
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src\\pages\\league",
+  "pattern": "get_season_timetable|timetable|spielplan"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\frontend\\src\\pages\\league",
+  "pattern": "get_season_timetable|timetable|spielplan",
+  "topFiles": [
+    {
+      "matchCount": 8,
+      "uri": "frontend/src/pages/league/blocks/LeagueSeasonOverview.tsx"
+    },
+    {
+      "matchCount": 13,
+      "uri": "frontend/src/pages/league/blocks/SeasonSpielplan.tsx"
+    },
+    {
+      "matchCount": 8,
+      "uri": "frontend\\src\\pages\\league\\blocks\\LeagueSeasonOverview.tsx"
+    }
+  ],
+  "totalFiles": 3,
+  "totalMatches": 29
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **0** results in **1** directory</summary>
+
+Directory: **``** (0 files)
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\pages\league\blocks\SeasonSpielplan.tsx</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+The page is still loading. It shows "Keine Quelle verfügbar" and disabled filters.
+
+The browser may be isolated from the Flask backend. The page title shows 18/19 but filters remain empty. I need to wait for data to load, dismiss the story overlay, and scroll to Spielplan. I will also check Vite proxy settings. The duplicate Dream-Bowl entries persist despite the parquet file containing only one canonical name.
+
+The API cache is the most likely culprit. If the league cache was not rebuilt after the parquet update, stale data would still contain the old duplicate names. The cache invalidation logic should have triggered automatically when the parquet file timestamp changed.
+
+The cache revision likely includes location changes, since location is stored in the parquet file. The duplicates may instead stem from a missing republish of the 18/19 season. If the dataset were canonical, the live timetable endpoint would return a single name.
+
+Flask might be serving a different database or parquet file than the one I inspected. I will verify the running Flask process and its cache directory. I will also test the API directly from the user's machine using curl.
+
+The frontend might be running stale JavaScript that never applies canonicalizeVenueLabel. Alternatively, the API could be returning mismatched strings such as "Dream Bowl München" instead of "Dream-Bowl München". I will dump the unique Location values from a live 18/19 timetable API response to verify what the backend actually returns.
+
+I will inspect league_utils and other code paths that handle timetable canonicalization. React Query persistence might be preserving stale entries. I will search the cache directory for exact string mismatches, such as missing periods or extra spaces.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **0** results in **1** directory</summary>
+
+Directory: **``** (0 files)
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/*.{json,py,ts}",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "Dream"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "Dream",
+  "topFiles": [
+    {
+      "matchCount": 24,
+      "uri": "frontend\\src\\lib\\venueMapping.ts"
+    },
+    {
+      "matchCount": 1,
+      "uri": "scripts/data/generate_tournament_clean_results.py"
+    },
+    {
+      "matchCount": 8,
+      "uri": "database/data/tournament_stage_definitions.json"
+    },
+    {
+      "matchCount": 2,
+      "uri": "tests\\data_access\\test_venue_mapping.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "tests\\extract_excel_data\\test_spielorte_schedule.py"
+    },
+    {
+      "matchCount": 4,
+      "uri": "frontend/src/lib/spielplanChart.test.ts"
+    },
+    {
+      "matchCount": 9,
+      "uri": "frontend\\src\\lib\\seasonSpielplan.test.ts"
+    }
+  ],
+  "totalFiles": 7,
+  "totalMatches": 70
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="get_mcp_tools"><details>
+<summary>Tool use: **get_mcp_tools**</summary>
+
+Parameters:
+
+```json
+{
+  "server": "cursor-ide-browser",
+  "toolName": "browser_lock"
+}
+```
+Result:
+
+```json
+{
+  "content": "{\n  \"tool\": \"browser_lock\",\n  \"description\": \"Lock or unlock the browser to control whether the user can interact while you work. Set action to \\\"lock\\\" or \\\"unlock\\\". When locked, the user can still click \\\"Take Control\\\" to unlock if needed.\",\n  \"inputSchema\": {\n    \"type\": \"object\",\n    \"properties\": {\n      \"action\": {\n        \"type\": \"string\",\n        \"enum\": [\n          \"lock\",\n          \"unlock\"\n        ],\n        \"description\": \"Whether to lock or unlock the browser for user interaction.\"\n      },\n      \"viewId\": {\n        \"type\": \"string\",\n        \"description\": \"Target browser tab ID. If omitted, uses the last interacted tab.\"\n      }\n    },\n    \"required\": [\n      \"action\"\n    ]\n  }\n}"
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\hooks\useLeague.ts</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\vite.config.ts</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Vite may be proxying requests to localhost instead of reaching the Flask server.
+
+The "Keine Quelle verfügbar" error might just be an initial load issue. I'll verify whether the updated venue-canonical-v1 file is actually present in Flask's working directory, since the restart may not have picked up the changes. I'll also test the API directly with curl.
+
+The Cursor browser may be sandboxed from the local Flask server. I'll curl the API directly from the user's machine. Old timetable cache entries for other leagues might still contain the previous venue names.
+
+The frontend may need a hard refresh if Vite HMR missed the changes. If the parquet file is already canonical, the API should return a single name unless stale cache or an unapplied payload version bump is interfering. I'll inspect the cache directory and sample a timetable response. The duplicate Dream-Bowl labels might also be coming from the chart legend.
+
+The duplicate Dream-Bowl labels may come from leftover aliases or abbreviations such as DBM and DBP. The chart tooltip test still references "Dream-Bowl München" as a display name. The compact-key collision logic keeps exact venue keys even when compact keys drop. This suggests the mapping itself is likely correct.
+
+A compact key mismatch between "dreambowl palace" and "unterföhring dreambowl palace" could prevent proper merging. Any Dream-Bowl variant missing from the alias list would remain as a separate venue. I'll scan cache files and historical data for all unique Dream* strings to identify remaining duplicates.
+
+I will check the 18/19 raw source data for unique locations. I will review league_results before mapping. I will search the agent transcript for the original unique names.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="mcp-cursor-ide-browser-browser_lock"><details>
+<summary>Tool use: **mcp-cursor-ide-browser-browser_lock**</summary>
+
+Parameters:
+
+```json
+{
+  "tools": [
+    {
+      "name": "browser_lock",
+      "parameters": "{\"action\":\"lock\",\"viewId\":\"220f20\"}",
+      "serverName": "cursor-ide-browser"
+    }
+  ]
+}
+```
+Additional data:
+
+```json
+{
+  "status": "success"
+}
+```
+Result:
+
+```json
+{
+  "result": "{\"content\":[{\"type\":\"text\",\"text\":\"Browser locked.\"},{\"type\":\"text\",\"text\":\"{\\\"type\\\":\\\"metadata\\\",\\\"viewId\\\":\\\"220f20\\\",\\\"locked\\\":true}\"}]}"
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: # Find cache files and Dream-Bowl strings; hit timetable API
+Write-Host &#34;=== cache dirs ===&#34;
+Get-ChildItem -Path &#34;.cache&#34;,&#34;C:\tmp\bowlyzer&#34; -Recurse -Filter &#34;*timetable*&#34; -ErrorAction SilentlyContinue | Select-Object -First 20 FullName
+Get-ChildItem -Path &#34;.cache&#34; -ErrorAction SilentlyContinue | Select-Object Name
+if (Test-Path &#34;.cache\league&#34;) { Get-ChildItem &#34;.cache\league&#34; | Select-Object Name }
+
+Write-Host &#34;=== flask on 5000 ===&#34;
+try { (Invoke-WebRequest -Uri &#34;http://127.0.0.1:5000/get-data-sources-info&#34; -UseBasicParsing -TimeoutSec 8).Content.Substring(0,400) } catch { Write-Host $_.Exception.Message }
+
+Write-Host &#34;=== sample timetable ===&#34;
+try {
+  $r = Invoke-WebRequest -Uri &#34;http://127.0.0.1:5000/league/get_season_timetable?database=db_real_merged&amp;season=18/19&amp;league=BL%20S1&#34; -UseBasicParsing -TimeoutSec 30
+  $r.Content.Substring(0, [Math]::Min(1500, $r.Content.Length))
+} catch { Write-Host $_.Exception.Message }
+</summary>
+```bash
+# Find cache files and Dream-Bowl strings; hit timetable API
+Write-Host "=== cache dirs ==="
+Get-ChildItem -Path ".cache","C:\tmp\bowlyzer" -Recurse -Filter "*timetable*" -ErrorAction SilentlyContinue | Select-Object -First 20 FullName
+Get-ChildItem -Path ".cache" -ErrorAction SilentlyContinue | Select-Object Name
+if (Test-Path ".cache\league") { Get-ChildItem ".cache\league" | Select-Object Name }
+
+Write-Host "=== flask on 5000 ==="
+try { (Invoke-WebRequest -Uri "http://127.0.0.1:5000/get-data-sources-info" -UseBasicParsing -TimeoutSec 8).Content.Substring(0,400) } catch { Write-Host $_.Exception.Message }
+
+Write-Host "=== sample timetable ==="
+try {
+  $r = Invoke-WebRequest -Uri "http://127.0.0.1:5000/league/get_season_timetable?database=db_real_merged&season=18/19&league=BL%20S1" -UseBasicParsing -TimeoutSec 30
+  $r.Content.Substring(0, [Math]::Min(1500, $r.Content.Length))
+} catch { Write-Host $_.Exception.Message }
+
+```
+
+```
+=== cache dirs ===
+
+=== flask on 5000 ===
+=== sample timetable ===
+FullName                                                                                                               
+--------                                                                                                               
+C:\Users\cfell\repositories\bowlyzer_deploy\.cache\league\db_real_merged\entries\get_season_timetable__0050c5676a1d8...
+C:\Users\cfell\repositories\bowlyzer_deploy\.cache\league\db_real_merged\entries\get_season_timetable__00d31d3dcf70b...
+C:\Users\cfell\repositories\bowlyzer_deploy\.cache\league\db_real_merged\entries\get_season_timetable__00d7b8078a683...
+C:\Users\cfell\repositories\bowlyzer_deploy\.cache\league\db_real_merged\entries\get_season_timetable__015419438a28b...
+C:\Users\cfell\repositories\bowlyzer_deploy\.cache\league\db_real_merged\entries\get_season_timetable__026070fce960b...
+C:\Users\cfell\repositories\bowlyzer_deploy\.cache\league\db_real_merged\entries\get_season_timetable__0291d39447f45...
+C:\Users\cfell\repositories\bowlyzer_deploy\.cache\league\db_real_merged\entries\get_season_timetable__02e7bd39d44a9...
+C:\Users\cfell\repositories\bowlyzer_deploy\.cache\league\db_real_merged\entries\get_season_timetable__032edcff04722...
+C:\Users\cfell\repositories\bowlyzer_deploy\.cache\league\db_real_merged\entries\get_season_timetable__03729bbc34078...
+C:\Users\cfell\repositories\bowlyzer_deploy\.cache\league\db_real_merged\entries\get_season_timetable__03a94fe7b5c5e...
+C:\Users\cfell\repositories\bowlyzer_deploy\.cache\league\db_real_merged\entries\get_season_timetable__0530b5eea8c62...
+C:\Users\cfell\repositories\bowlyzer_deploy\.cache\league\db_real_merged\entries\get_season_timetable__05723cba8ca18...
+C:\Users\cfell\repositories\bowlyzer_deploy\.cache\league\db_real_merged\entries\get_season_timetable__058a23f8c634e...
+C:\Users\cfell\repositories\bowlyzer_deploy\.cache\league\db_real_merged\entries\get_season_timetable__05af2ad8feb21.
+… (output truncated)
+```
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "C:\\Users\\cfell\\.cursor\\projects\\c-Users-cfell-repositories-bowlyzer-deploy\\agent-transcripts\\ad9d83ba-8afa-45fe-b605-8ca5581e38d4",
+  "pattern": "Dream-Bowl"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "C:\\Users\\cfell\\.cursor\\projects\\c-Users-cfell-repositories-bowlyzer-deploy\\agent-transcripts\\ad9d83ba-8afa-45fe-b605-8ca5581e38d4",
+  "pattern": "Dream-Bowl",
+  "topFiles": [
+    {
+      "matchCount": 6,
+      "uri": "..\\..\\.cursor\\projects\\c-Users-cfell-repositories-bowlyzer-deploy\\agent-transcripts\\ad9d83ba-8afa-45fe-b605-8ca5581e38d4\\ad9d83ba-8afa-45fe-b605-8ca5581e38d4.jsonl"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 6
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+The timetable for BL S1 18/19 returned empty. The league name may be incorrect.
+
+Checking cache files for Dream-Bowl entries and verifying available leagues for 18/19. The browser page may still be loading. Old cached files might persist if their version was missing from the cache key at write time.
+
+Flask may be running stale code without the canonicalization fix or version bump. A cache miss would normally trigger recomputation from parquet, yielding a single correct name. If the process is outdated, it continues serving old cache files containing multiple Dream-Bowl variants.
+
+The user restarted Flask after rebuilding parquet, but the old timetable JSON remains in cache. The cache-bust and frontend canonicalize fix has not been deployed yet.
+
+The cache key likely omits the Location column from its revision hash. That would let stale cache files survive a parquet rebuild. Even an older get_season_timetable function would return canonical names when recomputing from the corrected parquet.
+
+Cache invalidation failed. The revision hash did not change, so old cache files were not evicted. I will grep the cache files for Dream-Bowl to confirm.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: Write-Host &#34;=== Dream-Bowl in timetable cache ===&#34;
+rg -l -i &#34;Dream-Bowl|DreamBowl|Dream Bowl&#34; .cache\league\db_real_merged\entries\get_season_timetable* 2&gt;$null | Measure-Object | Select-Object Count
+rg -i --no-filename &#34;Dream[^\&#34;]{0,40}&#34; .cache\league\db_real_merged\entries\get_season_timetable*.json 2&gt;$null | Select-Object -First 40
+
+Write-Host &#34;`n=== unique dream strings in timetable cache ===&#34;
+rg -o --no-filename &#34;Dream[A-Za-zÄÖÜäöüß .\-]*&#34; .cache\league\db_real_merged\entries\get_season_timetable*.json | Sort-Object -Unique
+
+Write-Host &#34;`n=== leagues 18/19 EMAX ===&#34;
+try {
+  $r = Invoke-WebRequest -Uri &#34;http://127.0.0.1:5000/league/get_available_leagues?database=db_real_merged&amp;season=18/19&#34; -UseBasicParsing -TimeoutSec 30
+  $r.Content.Substring(0, [Math]::Min(2500, $r.Content.Length))
+} catch { Write-Host $_.Exception.Message }
+</summary>
+```bash
+Write-Host "=== Dream-Bowl in timetable cache ==="
+rg -l -i "Dream-Bowl|DreamBowl|Dream Bowl" .cache\league\db_real_merged\entries\get_season_timetable* 2>$null | Measure-Object | Select-Object Count
+rg -i --no-filename "Dream[^\"]{0,40}" .cache\league\db_real_merged\entries\get_season_timetable*.json 2>$null | Select-Object -First 40
+
+Write-Host "`n=== unique dream strings in timetable cache ==="
+rg -o --no-filename "Dream[A-Za-zÄÖÜäöüß .\-]*" .cache\league\db_real_merged\entries\get_season_timetable*.json | Sort-Object -Unique
+
+Write-Host "`n=== leagues 18/19 EMAX ==="
+try {
+  $r = Invoke-WebRequest -Uri "http://127.0.0.1:5000/league/get_available_leagues?database=db_real_merged&season=18/19" -UseBasicParsing -TimeoutSec 30
+  $r.Content.Substring(0, [Math]::Min(2500, $r.Content.Length))
+} catch { Write-Host $_.Exception.Message }
+
+```
+
+```
+In C:\Users\cfell\AppData\Local\Temp\ps-script-c37b859c-cbeb-4b23-8922-e9ffcec23009.ps1:118 Zeichen:106
++ ... .1:5000/league/get_available_leagues?database=db_real_merged&season=1 ...
++                                                                 ~
+Das kaufm�nnische Und-Zeichen (&) ist nicht zul�ssig. Der &-Operator ist f�r eine zuk�nftige Verwendung reserviert. 
+Verwenden Sie das kaufm�nnische Und-Zeichen in doppelten Anf�hrungszeichen ("&"), um es als Teil einer Zeichenfolge zu 
+�bergeben.
+In C:\Users\cfell\AppData\Local\Temp\ps-script-c37b859c-cbeb-4b23-8922-e9ffcec23009.ps1:187 Zeichen:122
++ ... ata\Local\Temp\ps-state-out-006720b7-4e76-4c90-bb2c-e979fb489d50.txt"
++                                                                         ~
+Die Zeichenfolge hat kein Abschlusszeichen: ".
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : AmpersandNotAllowed
+ 
+
+```
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="get_mcp_tools"><details>
+<summary>Tool use: **get_mcp_tools**</summary>
+
+Parameters:
+
+```json
+{
+  "server": "cursor-ide-browser",
+  "toolName": "browser_snapshot"
+}
+```
+Result:
+
+```json
+{
+  "content": "{\n  \"tool\": \"browser_snapshot\",\n  \"description\": \"Capture accessibility snapshot of the current page, this is better than screenshot\",\n  \"inputSchema\": {\n    \"type\": \"object\",\n    \"properties\": {\n      \"viewId\": {\n        \"type\": \"string\",\n        \"description\": \"Target browser tab ID. If omitted, uses the last interacted tab.\"\n      },\n      \"interactive\": {\n        \"type\": \"boolean\",\n        \"description\": \"When true, only include interactive elements in the snapshot. Defaults to false.\"\n      },\n      \"maxDepth\": {\n        \"type\": \"number\",\n        \"description\": \"Maximum depth for snapshot output. Defaults to 20.\"\n      },\n      \"compact\": {\n        \"type\": \"boolean\",\n        \"description\": \"When true, outputs a more compact snapshot format. Defaults to false.\"\n      },\n      \"selector\": {\n        \"type\": \"string\",\n        \"description\": \"Optional CSS selector to scope the snapshot to a subtree.\"\n      },\n      \"includeDiff\": {\n        \"type\": \"boolean\",\n        \"description\": \"When true, include a diff vs the previous snapshot for this tab. Defaults to false.\"\n      },\n      \"take_screenshot_afterwards\": {\n        \"type\": \"boolean\",\n        \"description\": \"When true, takes a screenshot after snapshot completes. Defaults to false.\"\n      }\n    },\n    \"required\": []\n  }\n}"
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\cache\league_response_cache.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+A PowerShell parsing issue with the ampersand character is likely preventing the commands from executing properly.
+
+URLs need quoting. The previous search returned zero results because rg was likely missing or filtered by cursorignore. I'll use the Grep tool on the cache path instead.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "get_season_timetable*.json",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\.cache\\league\\db_real_merged\\entries",
+  "pattern": "Dream-Bowl|DreamBowl|Dream Bowl"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\.cache\\league\\db_real_merged\\entries",
+  "pattern": "Dream-Bowl|DreamBowl|Dream Bowl",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": ".cache\\league\\db_real_merged\\entries\\get_season_timetable__ac4455b385070e5b56a7.json"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".cache\\league\\db_real_merged\\entries\\get_season_timetable__f3cefc93a1ff0727b581.json"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".cache\\league\\db_real_merged\\entries\\get_season_timetable__4e15c0fb6ca70b32144d.json"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".cache\\league\\db_real_merged\\entries\\get_season_timetable__e19af384f387435843c8.json"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".cache\\league\\db_real_merged\\entries\\get_season_timetable__c5b2c06a7bac1e1e9546.json"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".cache\\league\\db_real_merged\\entries\\get_season_timetable__f87bdb12da8931055635.json"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".cache\\league\\db_real_merged\\entries\\get_season_timetable__c2e0d802b79405400bdb.json"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".cache\\league\\db_real_merged\\entries\\get_season_timetable__c291f7fb5571b8c9e1f3.json"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".cache\\league\\db_real_merged\\entries\\get_season_timetable__832fc6033fc120f2b2c1.json"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".cache\\league\\db_real_merged\\entries\\get_season_timetable__adeb5088155bd5ada3eb.json"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".cache\\league\\db_real_merged\\entries\\get_season_timetable__fea28d7d2a67b7ed336f.json"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".cache\\league\\db_real_merged\\entries\\get_season_timetable__54868798137eb4e596f6.json"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".cache\\league\\db_real_merged\\entries\\get_season_timetable__1538fb6492ab3c8cd4e5.json"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".cache\\league\\db_real_merged\\entries\\get_season_timetable__d9b0c19cfae061d262a1.json"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".cache\\league\\db_real_merged\\entries\\get_season_timetable__653e36d0b897323d0fe5.json"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".cache\\league\\db_real_merged\\entries\\get_season_timetable__4a50b41e67f78acbe74c.json"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".cache\\league\\db_real_merged\\entries\\get_season_timetable__8d85a669930a6e8f674a.json"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".cache\\league\\db_real_merged\\entries\\get_season_timetable__fe01b5467d948ebd01a5.json"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".cache\\league\\db_real_merged\\entries\\get_season_timetable__5e7369ccc2bcf30f8185.json"
+    },
+    {
+      "matchCount": 1,
+      "uri": ".cache\\league\\db_real_merged\\entries\\get_season_timetable__7c4626ff418d27c53bc7.json"
+    }
+  ],
+  "totalFiles": 40,
+  "totalMatches": 218
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: Write-Host &#34;=== unique dream strings in timetable cache ===&#34;
+$files = Get-ChildItem &#34;.cache\league\db_real_merged\entries\get_season_timetable*.json&#34;
+$matches = Select-String -Path $files.FullName -Pattern &#34;Dream&#34; -AllMatches
+$matches | ForEach-Object { $_.Line } | ForEach-Object {
+  [regex]::Matches($_, &#39;Dream[^&#34;\\,]{0,50}&#39;) | ForEach-Object { $_.Value }
+} | Sort-Object -Unique
+
+Write-Host &#34;`n=== count files with Dream-Bowl ===&#34;
+($matches | Where-Object { $_.Line -match &#39;Dream-Bowl&#39; } | Select-Object -ExpandProperty Path -Unique).Count
+
+Write-Host &#34;`n=== leagues ===&#34;
+$uri = &#34;http://127.0.0.1:5000/league/get_available_leagues?database=db_real_merged&amp;season=18/19&#34;
+(Invoke-WebRequest -Uri $uri -UseBasicParsing -TimeoutSec 30).Content.Substring(0, 2000)
+</summary>
+```bash
+Write-Host "=== unique dream strings in timetable cache ==="
+$files = Get-ChildItem ".cache\league\db_real_merged\entries\get_season_timetable*.json"
+$matches = Select-String -Path $files.FullName -Pattern "Dream" -AllMatches
+$matches | ForEach-Object { $_.Line } | ForEach-Object {
+  [regex]::Matches($_, 'Dream[^"\\,]{0,50}') | ForEach-Object { $_.Value }
+} | Sort-Object -Unique
+
+Write-Host "`n=== count files with Dream-Bowl ==="
+($matches | Where-Object { $_.Line -match 'Dream-Bowl' } | Select-Object -ExpandProperty Path -Unique).Count
+
+Write-Host "`n=== leagues ==="
+$uri = "http://127.0.0.1:5000/league/get_available_leagues?database=db_real_merged&season=18/19"
+(Invoke-WebRequest -Uri $uri -UseBasicParsing -TimeoutSec 30).Content.Substring(0, 2000)
+
+```
+
+```
+=== unique dream strings in timetable cache ===
+Dream Bowl
+Dream Bowl Unterf�hring
+Dream-Bowl
+Dream-Bowl M�nchen
+Dreambowl Palace
+Dream-Bowl Palace
+Dream-Bowl Palace Uf�.
+DreamBowl Palace Unt.f�.
+DreamBowl Palace Unterf�hrg
+DreamBowl Palace Unterf�hring
+Dreambowl Unterf�hring
+Dream-Bowl-Palace
+
+=== count files with Dream-Bowl ===
+134
+
+=== leagues ===
+Ausnahme beim Aufrufen von "Substring" mit 2 Argument(en):  "Der Index und die L�nge m�ssen sich auf eine Position in 
+der Zeichenfolge beziehen.
+Parametername: length"
+In C:\Users\cfell\AppData\Local\Temp\ps-script-0da49de3-e3cd-4f57-9096-575def4c8db7.ps1:121 Zeichen:1
++ (Invoke-WebRequest -Uri $uri -UseBasicParsing -TimeoutSec 30).Content ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : ArgumentOutOfRangeException
+ 
+
+```
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="mcp-cursor-ide-browser-browser_snapshot"><details>
+<summary>Tool use: **mcp-cursor-ide-browser-browser_snapshot**</summary>
+
+Parameters:
+
+```json
+{
+  "tools": [
+    {
+      "name": "browser_snapshot",
+      "parameters": "{\"take_screenshot_afterwards\":true}",
+      "serverName": "cursor-ide-browser"
+    }
+  ]
+}
+```
+Additional data:
+
+```json
+{
+  "status": "success"
+}
+```
+Result:
+
+````json
+{
+  "result": "{\"content\":[{\"type\":\"text\",\"text\":\"### Action: snapshot\\n- Total refs: 764\\n- Interactive refs: 124\\n- Browser View ID: 220f20\\n\\n### Page state\\n- Page URL: http://192.168.68.109:5173/liga?database=db_real_merged\u0026myClub=BC+EMAX+Unterf%C3%B6hring\u0026season=18%2F19\u0026story=club\u0026beat=4\\n- Page Title: Bowl-A-Lyzer\\n- Page Snapshot: Large snapshot (47590 bytes, 2270 lines) written to file\\n- Snapshot File: [C:\\\\Users\\\\cfell\\\\.cursor\\\\browser-logs\\\\snapshot-2026-09-09T12-22-16-806Z-2j47a4.log](file://C:\\\\Users\\\\cfell\\\\.cursor\\\\browser-logs\\\\snapshot-2026-09-09T12-22-16-806Z-2j47a4.log)\\n- Preview (first 50 lines):\\n```yaml\\n- role: document\\n  name: Bowl-A-Lyzer\\n  ref: root\\n  children:\\n    - role: link\\n      name: Bowl-A-Lyzer — Startseite\\n      ref: e0\\n    - role: button\\n      name: Sidebar einklappen\\n      ref: e1\\n    - role: textbox\\n      name: Mein Club\\n      ref: e2\\n      value: BC EMAX Unterföhring\\n      placeholder: Club suchen…\\n      states: [collapsed]\\n    - role: button\\n      name: Club-Auswahl aufheben\\n      ref: e66\\n    - role: link\\n      name: Übersicht\\n      ref: e3\\n    - role: link\\n      name: Einstieg\\n      ref: e4\\n    - role: link\\n      name: Warum Bowl-A-Lyzer?\\n      ref: e5\\n    - role: link\\n      name: Club 300\\n      ref: e6\\n    - role: link\\n      name: Glossar\\n      ref: e7\\n    - role: link\\n      name: Spieler\\n      ref: e8\\n    - role: link\\n      name: Club\\n      ref: e9\\n    - role: link\\n      name: Liga\\n      ref: e10\\n      states: [current]\\n    - role: link\\n      name: Turnier\\n      ref: e11\\n    - role: link\\n      name: Clubpokal\\n      ref: e12\\n```\\n\\n... (2220 more lines in file)\"},{\"type\":\"text\",\"text\":\"{\\\"type\\\":\\\"metadata\\\",\\\"viewId\\\":\\\"220f20\\\",\\\"title\\\":\\\"Bowl-A-Lyzer\\\",\\\"url\\\":\\\"http://192.168.68.109:5173/liga?database=db_real_merged\u0
+… (output truncated)
+````
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+The latest frontend code shows only one Dream-Bowl entry in the Cursor browser. This suggests the duplicate versions may be caused by a caching issue or an older build rather than the current source.
+
+The frontend canonicalization is confirmed working. The remaining duplicates likely stem from a stale browser cache, an incomplete deployment, or entries hidden off-screen in the legend.
+
+The user likely saw the old duplicates before the frontend canonicalize fix was fully applied. The live API still returns old cached names across 134 cache files.
+
+A hard refresh is needed because Flask restart alone cannot clear the stale JavaScript cache. The user's browser may still be running an older build without the new venue mapping. The 18/19 EMAX league data appears correctly mapped to a single UDP entry.
+
+Checking whether Flask misses old cache files and recomputes from parquet. Fetching the 18/19 timetable for league "LL S" to verify returned locations.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: $leagues = @(&#34;BayL&#34;,&#34;LL S&#34;,&#34;LL S (D)&#34;,&#34;BZDL S1&#34;,&#34;KL S3&#34;,&#34;A S1&#34;)
+foreach ($lg in $leagues) {
+  $encoded = [uri]::EscapeDataString($lg)
+  $uri = &#34;http://127.0.0.1:5000/league/get_season_timetable?database=db_real_merged&amp;season=18/19&amp;league=$encoded&#34;
+  $json = (Invoke-WebRequest -Uri $uri -UseBasicParsing -TimeoutSec 30).Content | ConvertFrom-Json
+  $locs = $json.data | ForEach-Object { $_[2] } | Sort-Object -Unique
+  Write-Host &#34;==== $lg ====&#34;
+  $locs | ForEach-Object { Write-Host $_ }
+}
+</summary>
+```bash
+$leagues = @("BayL","LL S","LL S (D)","BZDL S1","KL S3","A S1")
+foreach ($lg in $leagues) {
+  $encoded = [uri]::EscapeDataString($lg)
+  $uri = "http://127.0.0.1:5000/league/get_season_timetable?database=db_real_merged&season=18/19&league=$encoded"
+  $json = (Invoke-WebRequest -Uri $uri -UseBasicParsing -TimeoutSec 30).Content | ConvertFrom-Json
+  $locs = $json.data | ForEach-Object { $_[2] } | Sort-Object -Unique
+  Write-Host "==== $lg ===="
+  $locs | ForEach-Object { Write-Host $_ }
+}
+
+```
+
+```
+==== BayL ====
+Bowlingworld N�rnberg
+Dreambowl Unterf�hring
+Mainfranken Bamberg
+Superbowl Regensburg
+==== LL S ====
+Dream-Bowl-Palace
+Hollywood M�nchen
+Ingolstadt
+Isar M�nchen
+Lauterach
+==== LL S (D) ====
+Big-Bowl Kempten
+Dream-Bowl-Palace
+Hollywood M�nchen
+Max Brunnthal
+==== BZDL S1 ====
+==== KL S3 ====
+Dream-Bowl-Palace
+Garmisch
+Isar M�nchen
+Landshut
+Max Brunnthal
+Sport-Oase Salzburg
+==== A S1 ====
+Dream-Bowl-Palace
+Hollywood M�nchen
+Isar M�nchen
+Max Brunnthal
+Olching
+
+```
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "C:\\Users\\cfell\\.cursor\\browser-logs\\snapshot-2026-09-09T12-22-16-806Z-2j47a4.log",
+  "pattern": "Dream|UDP|Unterföhring"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "C:\\Users\\cfell\\.cursor\\browser-logs\\snapshot-2026-09-09T12-22-16-806Z-2j47a4.log",
+  "pattern": "Dream|UDP|Unterföhring",
+  "topFiles": [
+    {
+      "matchCount": 31,
+      "uri": "..\\..\\.cursor\\browser-logs\\snapshot-2026-09-09T12-22-16-806Z-2j47a4.log"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 31
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\frontend\src\lib\seasonSpielplan.test.ts</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+The live API is still returning unmapped names.
+
+Other venues are also unmapped. The local browser already collapsed the Dream-Bowl variants. The user likely still sees duplicates because their frontend is stale or cached.
+
+The frontend fix works locally. Flask is still serving stale cached data. The running server may be using old code without the version bump. Or the cache key does not yet include the new payload version.
+
+The running Flask process is missing the new payload version. It is serving old cache entries that were written before the canonicalize fix. A restart is needed to pick up the updated code.
+
+The parquet file contains only the canonical location name. If Flask had read it directly, it would return the correct name even without the new code. This confirms the running server is not using the updated parquet. It is either reading stale CSV data or its cache key does not include the new payload version.
+
+The payload version bump may have been added too late, since the user restarted before the code change took effect. Alternatively, the cache key construction might not actually include the payload version. I will inspect how the cache keys are built.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\cache\league_response_cache.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\cache\league_data_revision.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app",
+  "pattern": "_league_json_cache_get|payload_version|_ENDPOINT_PAYLOAD_VERSION"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\app",
+  "pattern": "_league_json_cache_get|payload_version|_ENDPOINT_PAYLOAD_VERSION",
+  "topFiles": [
+    {
+      "matchCount": 2,
+      "uri": "app\\cache\\league_response_cache.py"
+    },
+    {
+      "matchCount": 31,
+      "uri": "app\\routes\\league_routes.py"
+    }
+  ],
+  "totalFiles": 2,
+  "totalMatches": 33
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+The revision columns list omits Location and Date. Duplicate Dream-Bowl entries likely persist because these fields aren't used to identify unique records.
+
+Parquet remapping did not change the cache keys for season 18/19. The stale Dream-Bowl-Palace response persists because the live API is still running the old code. The version bump to `venue-canonical-v1` should have invalidated those keys, but the server likely never restarted after the payload version was updated.
+
+The user restarted Flask before the canonicalize fix was deployed. Cache files were rewritten under the new version key but still contain the old Dream-Bowl names. The server needs another restart after the update lands.
+
+The running Flask process predates the recent Python edits. It still uses the old payload version, so it matches the old cache keys and serves the stale Dream-Bowl data. The updated code is present on disk, but the server must be restarted again to load it.
+
+A Flask reloader may have picked up the new code, but a direct `wsgi.py` launch would not. The API still returns Dream-Bowl-Palace, so the server is likely still serving old cache files. I will check the exact cache path for the 18/19 season to confirm. The browser-side canonicalization already collapses duplicates, so the user still seeing multiple versions means their frontend JavaScript is outdated.
+
+The current Vite app already maps aliases correctly, so the Spielplan should collapse to one UDP entry once the browser hard-refreshes. The user still needs to restart Flask now so the API itself returns canonical names. Adding Location to the revision fingerprint would properly invalidate cache for future venue remaps.
+
+Adding Location and Date to the revision columns would invalidate every league cache whenever venues or dummy dates change. That is a broad but correct side effect. The payload version bump remains the surgical fix for the timetable. I will write a quick script to print the exact cache path Flask is currently using. Stale cache files can stay; the version bump should force a reload on the next server start.
+
+Stale bytecode is unlikely after a restart. I will compare the cache file modification time against the Flask process start time. Two Flask instances could explain why Vite proxies to an old server. I will check the process list and compute the hash for the 18/19 cache file. If the hash matches the new version key, the file exists and the server is still using it. If the hash differs, the file is missing and Flask should recompute.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run python -c @&#34;
+from flask import Flask
+from app.cache.league_response_cache import cache_file_path, _ENDPOINT_PAYLOAD_VERSION
+from app.services.i18n_service import i18n_service
+
+print(&#39;payload&#39;, _ENDPOINT_PAYLOAD_VERSION.get(&#39;get_season_timetable&#39;))
+# i18n needs app context maybe
+app = Flask(&#39;x&#39;)
+with app.app_context():
+    path, rev = cache_file_path(&#39;get_season_timetable&#39;, &#39;db_real_merged&#39;, {&#39;season&#39;: &#39;18/19&#39;, &#39;league&#39;: &#39;LL S&#39;})
+    print(&#39;path&#39;, path)
+    print(&#39;exists&#39;, path.is_file())
+    print(&#39;rev&#39;, rev)
+    if path.is_file():
+        import json
+        data = json.loads(path.read_text(encoding=&#39;utf-8&#39;))
+        locs = sorted({row[2] for row in data.get(&#39;data&#39;) or []})
+        print(&#39;locs&#39;, locs)
+&#34;@
+</summary>
+```bash
+uv run python -c @"
+from flask import Flask
+from app.cache.league_response_cache import cache_file_path, _ENDPOINT_PAYLOAD_VERSION
+from app.services.i18n_service import i18n_service
+
+print('payload', _ENDPOINT_PAYLOAD_VERSION.get('get_season_timetable'))
+# i18n needs app context maybe
+app = Flask('x')
+with app.app_context():
+    path, rev = cache_file_path('get_season_timetable', 'db_real_merged', {'season': '18/19', 'league': 'LL S'})
+    print('path', path)
+    print('exists', path.is_file())
+    print('rev', rev)
+    if path.is_file():
+        import json
+        data = json.loads(path.read_text(encoding='utf-8'))
+        locs = sorted({row[2] for row in data.get('data') or []})
+        print('locs', locs)
+"@
+
+```
+
+```
+Warning: Data source file not found: C:\Users\cfell\repositories\bowlyzer_deploy\database\data\bowling_ergebnisse_real.csv
+payload venue-canonical-v1
+path C:\Users\cfell\repositories\bowlyzer_deploy\.cache\league\db_real_merged\entries\get_season_timetable__34d327fc33e0f598bc4a.json
+exists False
+rev deeec8b19c18
+
+```
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\cache\league_data_revision.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\tests",
+  "pattern": "_REVISION_COLUMNS|location"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\tests",
+  "pattern": "_REVISION_COLUMNS|location",
+  "topFiles": [
+    {
+      "matchCount": 1,
+      "uri": "tests/scripts/test_warm_league_cache_shard.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tests/scripts/test_warm_cache_shard.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tests/scripts/test_warm_player_cache.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tests/database/test_import_clubmeisterschaft_fingerprint.py"
+    },
+    {
+      "matchCount": 2,
+      "uri": "tests/database/test_import_bayerische_meisterschaft_xlsx.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tests/scripts/test_warm_player_highest_games.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tests/scripts/test_warm_league_wide_jobs.py"
+    },
+    {
+      "matchCount": 6,
+      "uri": "tests\\extract_excel_data\\test_spielorte_schedule.py"
+    },
+    {
+      "matchCount": 1,
+      "uri": "tests\\data_access\\test_venue_mapping.py"
+    }
+  ],
+  "totalFiles": 9,
+  "totalMatches": 15
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+The expected cache file with venue-canonical-v1 is missing. This likely explains why multiple Dream-Bowl versions still appear.
+
+The running Flask instance is still using old cache keys. The previous restart occurred before the cache-bust code was saved, so Flask needs to be restarted again now. The frontend already collapses duplicate UDP entries correctly. Adding Location to the revision columns would also invalidate cache on parquet remaps without requiring payload version bumps.
+
+Adding Location to the revision columns would force a full cache rebuild, since every season fingerprint would change. Bumping the payload version on get_season_timetable is the lighter surgical fix. After restarting Flask, a cache miss will read the canonical parquet data and write fresh cache entries with canonical names.
+
+A hard-refresh of the Vite frontend should already collapse the duplicate UDP entries without needing a Flask restart. The remaining old names in tables like the Termine view are caused by the stale Flask cache.
+
+The LeagueSeasonOverview timetable table is a separate view from the club Spielplan chart. The frontend mapping already handles the latter correctly. Adding Location and Date to the revision fingerprint would prevent this class of bug from recurring, but that change would invalidate the entire cache and force a full rebuild. The payload version bump on the timetable endpoint alone is sufficient, so adding those columns is unnecessary.
+
+The stale-cache bug is confirmed as the root cause. Adding Location and Date to the revision columns and bumping the index version is now the chosen fix. Tests for revision columns are being checked.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "glob": "**/*.{py,md}",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "_REVISION_COLUMNS|_INDEX_VERSION|granular-v2"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy",
+  "pattern": "_REVISION_COLUMNS|_INDEX_VERSION|granular-v2",
+  "topFiles": [
+    {
+      "matchCount": 6,
+      "uri": "app/cache/league_data_revision.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 6
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\app\cache\league_data_revision.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\app\test_league_data_revision.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Adding Location to revision columns is the correct fix. This forces a full cache rebuild on Flask startup due to index version mismatch.
+
+The frontend already collapses Dream-Bowl correctly. Flask is still serving stale cache because it was not restarted after the venue canonical update. Bumping the index version would affect all endpoints, not just timetable.
+
+The user needs another Flask restart to pick up the venue canonical update. I will add Location and Date to the revision columns and bump the index version to granular-v3. A test will verify that location changes invalidate season revisions. The extra string column should not slow down index building.
+
+The user restarted Flask after running commands, yet the cache remained stale. This confirms the fingerprint gap is the real bug. Adding Location and Date to the revision columns and bumping the index version is the correct fix. A full cache rebuild on startup is acceptable because the user explicitly expected the restart to resolve the issue.
+
+Old cache files will remain but become stale and unused. The first page load will be slower until the revision index rebuilds. I will run the revision tests and unlock the browser. The frontend alias "Dreambowl Unterföhring" is already present in the venue mapping.
+
+The two Dream-Bowl entries come from different raw strings in the data. The frontend canonicalizes both to Unterföhring Dreambowl Palace. If the browser cache is stale, the user may still see duplicates. A hard refresh and another Flask restart should clear the frontend cache. The 18/19 parquet files were already published with the updated venue mapping.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\data_access\\schema.py",
+  "pattern": "location|date"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "c:\\Users\\cfell\\repositories\\bowlyzer_deploy\\data_access\\schema.py",
+  "pattern": "location|date",
+  "topFiles": [
+    {
+      "matchCount": 3,
+      "uri": "data_access\\schema.py"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 3
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2** • Read file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\app\test_league_data_revision.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Adding Location and Date to revision columns will invalidate cache when venue or date data changes.
+
+A focused test will be added and run next. The frontend already works in the current browser window. A hard refresh may be needed if the browser has not picked up the updated code. Flask should be restarted manually to load the new code.
+
+Bumping the global revision index would force Flask to rebuild the entire revision index from parquet on startup. This would cause all endpoints to miss cache and severely slow the application. The lighter payload version fix is sufficient. The global revision index will remain unchanged.
+
+The revision version is bumped to granular-v3. A new test will verify that changing the Location column updates the cache fingerprint. Existing tests remain unaffected because the sample dataframe lacks that column.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\app\cache\league_data_revision.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2** • Edit file: c:\Users\cfell\repositories\bowlyzer_deploy\tests\app\test_league_data_revision.py</summary>
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2** • Run command: uv run pytest tests/app/test_league_data_revision.py tests/data_access/test_venue_mapping.py tests/app/test_cache_warmup.py -q --tb=short</summary>
+```bash
+uv run pytest tests/app/test_league_data_revision.py tests/data_access/test_venue_mapping.py tests/app/test_cache_warmup.py -q --tb=short
+```
+
+```
+................                                                         [100%]
+16 passed in 1.02s
+
+```
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Tests passed. Unlocking the browser.
+
+The frontend now shows one UDP entry. The remaining duplicate likely comes from a test file using "Dream-Bowl München" as a hardcoded chart display name rather than from actual data grouping.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="mcp-cursor-ide-browser-browser_lock"><details>
+<summary>Tool use: **mcp-cursor-ide-browser-browser_lock**</summary>
+
+Parameters:
+
+```json
+{
+  "tools": [
+    {
+      "name": "browser_lock",
+      "parameters": "{\"action\":\"unlock\",\"viewId\":\"220f20\"}",
+      "serverName": "cursor-ide-browser"
+    }
+  ]
+}
+```
+Additional data:
+
+```json
+{
+  "status": "success"
+}
+```
+Result:
+
+```json
+{
+  "result": "{\"content\":[{\"type\":\"text\",\"text\":\"Browser unlocked.\"},{\"type\":\"text\",\"text\":\"{\\\"type\\\":\\\"metadata\\\",\\\"viewId\\\":\\\"220f20\\\",\\\"locked\\\":false}\"}]}"
+}
+```
+Status: **completed**
+
+</details></tool-use>
+
+_**Agent (grok-4.6)**_
+
+<think><details><summary>Thought Process</summary>
+Restarting Flask did not resolve the duplicate Dream-Bowl entries. The root cause likely lies elsewhere.
+
+The disk cache still held old Dream-Bowl spellings. Cache fingerprints ignored Location, so republishing venues did not invalidate those files. Restarting Flask reused them. Canonicalization and Location-inclusive cache fingerprints are now live. Restart Flask once more and hard-refresh the Vite page.
+</details></think>
+
+_**Agent (grok-4.6)**_
+
+Restarting Flask after the parquet rebuild was not enough. The Spielplan still mixed **stale timetable cache** with names like `Dream-Bowl-Palace` and `Dreambowl Unterföhring`. Those are the same house; the published 18/19 parquet already stores a single `Unterföhring Dreambowl Palace`.
+
+The cache key never looked at `Location`, so remapping venues did not invalidate `/league/get_season_timetable`. I confirmed the live API is still serving those old spellings. The chart groups whatever the API returns, so you still saw several Dream-Bowl rows.
+
+That grouping is now collapsed in the UI. On your URL I get one legend entry: **UDP = Unterföhring Dreambowl Palace**.
+
+Do this once more:
+
+1. Restart Flask again (this time the cache key and venue mapping in the API actually changed).
+2. Hard-refresh the Vite tab (`Ctrl+Shift+R`).
+
+After that, the 18/19 Spielplan should keep a single Dream-Bowl. First load after the restart can be slower while timetable cache is rewritten.

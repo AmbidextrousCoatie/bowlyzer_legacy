@@ -31,9 +31,12 @@ from data_access.schema import Columns
 from data_access.text_norm import normalize_unicode_label
 
 _ENV_GRANULAR = "LEAGUE_CACHE_GRANULAR_REVISION"
-_INDEX_VERSION = "granular-v2"
+_INDEX_VERSION = "granular-v3"
 
 # Stable row identity (aligned with merge_league_sources dedupe keys).
+# Location and Date are included so venue remaps / Spielorte date fills
+# invalidate timetable (and other) caches — they are not part of the merge
+# dedupe key, but they are part of the published payload.
 _REVISION_COLUMNS: tuple[str, ...] = (
     Columns.season,
     Columns.league_name,
@@ -45,6 +48,8 @@ _REVISION_COLUMNS: tuple[str, ...] = (
     Columns.player_name,
     Columns.score,
     Columns.points,
+    Columns.location,
+    Columns.date,
 )
 
 _INDEX_LOCK = threading.Lock()

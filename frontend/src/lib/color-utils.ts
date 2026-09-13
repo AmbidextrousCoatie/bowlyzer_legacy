@@ -406,22 +406,21 @@ export function clearLeagueTeamColors(league: string): void {
   }
 }
 
+/**
+ * Fill missing team colors from ``currentTeams`` order. Does **not** clear or
+ * overwrite existing entries — standings seeding via
+ * ``seedTeamColorsFromTablePayload`` stays the source of truth for league pages.
+ */
 export function updateTeamColorMap(currentTeams: string[] = [], league?: string | null): void {
   if (!Array.isArray(currentTeams)) return;
-  if (league) {
-    clearLeagueTeamColors(league);
-  } else {
-    Object.keys(teamColorMap).forEach((key) => {
-      if (!key.includes(TEAM_COLOR_KEY_SEP) && !currentTeams.includes(key)) {
-        delete teamColorMap[key];
-      }
-    });
-  }
-  let paletteIdx = 0;
+  const leaguePrefix = league ? `${league}${TEAM_COLOR_KEY_SEP}` : null;
+  let nextIdx = leaguePrefix
+    ? Object.keys(teamColorMap).filter((key) => key.startsWith(leaguePrefix)).length
+    : Object.keys(teamColorMap).filter((key) => !key.includes(TEAM_COLOR_KEY_SEP)).length;
   currentTeams.forEach((team) => {
     const key = teamColorMapKey(team, league);
     if (key && !teamColorMap[key]) {
-      teamColorMap[key] = getPaletteColor(paletteIdx++);
+      teamColorMap[key] = getPaletteColor(nextIdx++);
     }
   });
 }

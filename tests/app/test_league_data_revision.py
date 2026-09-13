@@ -85,6 +85,21 @@ def test_effective_data_revision_uses_season_slice(monkeypatch):
     assert effective_data_revision("db_x", {"season": "08-09"}) == rev_0809
 
 
+def test_location_remap_changes_season_revision() -> None:
+    base = _sample_df()
+    base[Columns.location] = ["Dream-Bowl-Palace", "Max Brunnthal", "Dream-Bowl-Palace", "Max Brunnthal"]
+    mapped = base.copy()
+    mapped[Columns.location] = [
+        "Unterföhring Dreambowl Palace",
+        "Brunnthal Max Munich",
+        "Unterföhring Dreambowl Palace",
+        "Brunnthal Max Munich",
+    ]
+    idx_base = build_revision_index_from_dataframe(base, source_fp="fp1")
+    idx_mapped = build_revision_index_from_dataframe(mapped, source_fp="fp1")
+    assert idx_base.seasons["08/09"] != idx_mapped.seasons["08/09"]
+
+
 def test_effective_data_revision_season_all_uses_global_revision(monkeypatch):
     index = build_revision_index_from_dataframe(_sample_df(), source_fp="test")
 
