@@ -1680,23 +1680,26 @@ def extract_team_info(team_data):
             break
     
     # Row 23 (index 22): Opponent team name
-    opponent_row = team_data.iloc[22]
-    print(f"\nOpponent row (row 23) values:")
-    for col_idx, value in opponent_row.items():
-        if pd.notna(value):
-            print(f"  Col {col_idx}: '{value}'")
-            # Look for team name patterns
-            if isinstance(value, str) and len(str(value).strip()) > 0 and "Team" not in str(value):
-                team_info['opponent'] = str(value).strip()
-                break
-        
-        # Also check rows 25-29 for opponent info
-        print(f"\nOpponent verification rows (25-29):")
-        for row_idx in range(24, 29):
+    opponent_labels = {"gegner", "opponent", "mannschaft"}
+    if len(team_data) > 22:
+        opponent_row = team_data.iloc[22]
+        print("\nOpponent row (row 23) values:")
+        for col_idx, value in opponent_row.items():
+            if pd.notna(value):
+                print(f"  Col {col_idx}: '{value}'")
+                text = str(value).strip()
+                label = text.rstrip(":").lower()
+                if text and "Team" not in text and label not in opponent_labels:
+                    team_info["opponent"] = text
+                    break
+
+        print("\nOpponent verification rows (25-29):")
+        for row_idx in range(24, min(29, len(team_data))):
             row = team_data.iloc[row_idx]
             print(f"  Row {row_idx+1}: {[str(v) for v in row.values if pd.notna(v)]}")
-        
-        return team_info
+
+    return team_info
+
 
 def detect_game_count_from_anchor(team_data):
     """
