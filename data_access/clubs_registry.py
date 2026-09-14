@@ -72,6 +72,7 @@ def club_from_team_label(team_label: object) -> str:
     return club_name_from_team(normalized)
 
 
+@lru_cache(maxsize=1)
 def club_mapping_alias_lookup() -> Dict[str, str]:
     """Normalized label key → canonical club from ``club_mapping.csv``."""
     out: Dict[str, str] = {}
@@ -89,6 +90,12 @@ def club_mapping_alias_lookup() -> Dict[str, str]:
             if base:
                 out[club_identity_key(base)] = canonical
     return out
+
+
+def clear_club_mapping_caches() -> None:
+    """Drop cached club_mapping rows/lookup after the CSV is rewritten."""
+    load_club_mapping_rows.cache_clear()
+    club_mapping_alias_lookup.cache_clear()
 
 
 def canonicalize_club_via_mapping(club_label: object, mapping_lookup: Mapping[str, str] | None = None) -> str:

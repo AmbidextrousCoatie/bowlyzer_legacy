@@ -1,8 +1,8 @@
 {
   "manifest_format_version": 1,
   "data_schema_version": 2,
-  "run_id": "20260914T164613Z",
-  "published_at": "2026-09-14T16:46:13.151234+00:00",
+  "run_id": "20260914T081911Z",
+  "published_at": "2026-09-14T08:19:11.255673+00:00",
   "forced": false,
   "blocking_audit_ids": [],
   "deferred_audit_ids": [
@@ -65,7 +65,7 @@
           "unique_rows_after_dedupe": 8273
         }
       ],
-      "size_bytes": 3758232
+      "size_bytes": 3756556
     },
     {
       "job": "tournament_merge",
@@ -119,7 +119,7 @@
           "unique_rows_after_dedupe": null
         }
       ],
-      "size_bytes": 542918
+      "size_bytes": 542935
     },
     {
       "job": "players_registry",

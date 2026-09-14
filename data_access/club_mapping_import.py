@@ -7,7 +7,11 @@ from pathlib import Path
 from typing import Dict, List, Mapping, Set
 
 from data_access.club_name_validation import load_saved_club_mappings
-from data_access.clubs_registry import _club_mapping_path, load_club_mapping_rows
+from data_access.clubs_registry import (
+    _club_mapping_path,
+    clear_club_mapping_caches,
+    load_club_mapping_rows,
+)
 from data_access.text_norm import normalize_unicode_label
 
 
@@ -63,8 +67,7 @@ def merge_resolved_mappings_into_club_mapping(
         writer.writeheader()
         writer.writerows(rows)
 
-    if hasattr(load_club_mapping_rows, "cache_clear"):
-        load_club_mapping_rows.cache_clear()
+    clear_club_mapping_caches()
 
     return {
         "path": str(path.resolve()),

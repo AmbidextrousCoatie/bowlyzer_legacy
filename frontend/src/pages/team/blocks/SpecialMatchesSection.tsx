@@ -105,7 +105,7 @@ function MiniTable({
             {showMargin ? (
               <>
                 <th className="py-1.5 text-left font-medium">
-                  {t("ui.special.opponent_score", "Gegner Kegel")}
+                  {t("ui.special.opponent_score", "Gegner Pins")}
                 </th>
                 <th className="py-1.5 text-left font-medium">
                   {t("ui.special.margin", "Diff")}

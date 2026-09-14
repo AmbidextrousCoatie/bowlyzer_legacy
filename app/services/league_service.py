@@ -208,7 +208,11 @@ class LeagueService:
         return [lg for lg in leagues if division_map.get(lg) == division]
 
     def _split_club_and_team_number(self, team_name: str):
-        """Split trailing team number from team name if present."""
+        """Split trailing team number from team name if present.
+
+        Club base is folded through ``club_mapping.csv`` so aliases like
+        ``Team Profi Shop`` land on the durable canonical Club.
+        """
         text = str(team_name or "").strip()
         if not text:
             return "", ""
@@ -217,6 +221,10 @@ class LeagueService:
             return text, ""
         club_name = str(match.group(1) or "").strip()
         team_number = str(match.group(2) or "").strip()
+        if club_name:
+            from data_access.competition_schema import canonicalize_club_label
+
+            club_name = canonicalize_club_label(club_name)
         return club_name, team_number
 
     def _club_team_full_name(self, club: str, team_number: str) -> str:
@@ -296,7 +304,7 @@ class LeagueService:
         for col in [Columns.team_name, Columns.team_name_opponent]:
             if col not in df.columns:
                 continue
-            for value in df[col].dropna().astype(str):
+            for value in df[col].dropna().astype(str).unique():
                 club_name, _team_number = self._split_club_and_team_number(value)
                 if club_name:
                     clubs.add(club_name)

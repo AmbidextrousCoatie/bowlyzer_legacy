@@ -17,7 +17,8 @@ export type VerbandSlideId =
   | "excel-turnier"
   | "career"
   | "final_remarks"
-  | "final_remarks_2";
+  | "final_remarks_2"
+  | "q-mitmachen";
 
 export type VerbandSlideLayout = "talk" | "question" | "artifact";
 
@@ -137,6 +138,15 @@ export const VERBAND_SLIDES: Record<VerbandSlideId, VerbandSlide> = {
       "- Club-Pokal einbauen (Datenlage schwierig).",
       "- Anbindung an den neuen digitalen Live-Betrieb ohne Umweg über Excel.",
     ],
+  },
+  "q-mitmachen": {
+    id: "q-bm",
+    layout: "question",
+    eyebrow: "Mitmachen",
+    title: "Fehlende Daten",
+    question: "Wer hat noch alte Datenbestände, die helfen Lücken zu schließen?",
+    lead: "meldet euch einfach bei chris@bowlyzer.de",
+    paragraphs: [],
   },
 } as const;
 

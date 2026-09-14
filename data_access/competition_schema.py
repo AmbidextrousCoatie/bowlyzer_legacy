@@ -36,6 +36,22 @@ def club_name_from_team(team_name: object) -> str:
     return str(match.group(1) or "").strip()
 
 
+def canonicalize_club_label(club_label: object) -> str:
+    """Fold ``club_mapping.csv`` aliases onto the durable canonical Club."""
+    text = str(club_label or "").strip()
+    if not text:
+        return ""
+    # Lazy import: clubs_registry imports club_name_from_team from this module.
+    from data_access.clubs_registry import canonicalize_club_via_mapping
+
+    return canonicalize_club_via_mapping(text) or text
+
+
+def canonical_club_from_team(team_name: object) -> str:
+    """Team label → club base → ``club_mapping.csv`` canonical."""
+    return canonicalize_club_label(club_name_from_team(team_name))
+
+
 def _blank_mask(series: pd.Series) -> pd.Series:
     return series.fillna("").astype(str).str.strip().eq("")
 
@@ -134,12 +150,17 @@ def apply_league_competition_schema_v2(df: pd.DataFrame) -> pd.DataFrame:
 
     if Columns.team_name in out.columns:
         if Columns.club not in out.columns:
-            out[Columns.club] = out[Columns.team_name].map(club_name_from_team)
+            out[Columns.club] = out[Columns.team_name].map(canonical_club_from_team)
         else:
             missing_club = _blank_mask(out[Columns.club])
-            out.loc[missing_club, Columns.club] = (
-                out.loc[missing_club, Columns.team_name].map(club_name_from_team)
-            )
+            out.loc[missing_club, Columns.club] = out.loc[
+                missing_club, Columns.team_name
+            ].map(canonical_club_from_team)
+            present_club = ~_blank_mask(out[Columns.club])
+            if present_club.any():
+                out.loc[present_club, Columns.club] = out.loc[present_club, Columns.club].map(
+                    canonicalize_club_label
+                )
 
     return out
 
@@ -232,12 +253,17 @@ def ensure_competition_core_columns_for_read(df: pd.DataFrame) -> pd.DataFrame:
                 out.loc[missing_type, Columns.event_type] = LEAGUE_EVENT_TYPE
 
     if Columns.team_name in out.columns and Columns.club not in out.columns:
-        out[Columns.club] = out[Columns.team_name].map(club_name_from_team)
+        out[Columns.club] = out[Columns.team_name].map(canonical_club_from_team)
     elif Columns.team_name in out.columns and Columns.club in out.columns:
         missing_club = _blank_mask(out[Columns.club])
-        out.loc[missing_club, Columns.club] = (
-            out.loc[missing_club, Columns.team_name].map(club_name_from_team)
-        )
+        out.loc[missing_club, Columns.club] = out.loc[
+            missing_club, Columns.team_name
+        ].map(canonical_club_from_team)
+        present_club = ~_blank_mask(out[Columns.club])
+        if present_club.any():
+            out.loc[present_club, Columns.club] = out.loc[present_club, Columns.club].map(
+                canonicalize_club_label
+            )
 
     return _ensure_tournament_player_row_flags(out)
 

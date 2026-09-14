@@ -1594,6 +1594,13 @@ def parse_teams(
                 break
     
     print(f"Found {len(team_start_rows)} team sections starting at rows: {team_start_rows}")
+
+    team_names = []
+    for start_row in team_start_rows:
+        name = _team_name_from_block(excel_df.iloc[start_row : start_row + 30])
+        if name:
+            team_names.append(name)
+    effective_max_games = _effective_max_games_per_week(max_games_per_week, len(team_start_rows))
     
     for team_idx, start_row in enumerate(team_start_rows):
         print(f"\n=== Processing Team {team_idx + 1} ===")
@@ -1620,12 +1627,13 @@ def parse_teams(
             league,
             players_per_team,
             date,
-            max_games_per_week=max_games_per_week,
+            max_games_per_week=effective_max_games,
+            known_team_names=team_names,
+            number_of_teams=len(team_start_rows),
         )
         
         # Add to CSV data
-        csv_data.extend(team_players)
-    
+        
     return csv_data
 
 
@@ -1701,12 +1709,154 @@ def extract_team_info(team_data):
     return team_info
 
 
+_SPIEL_HEADER_RE = re.compile(r"^spiel\s*(\d+)$", re.IGNORECASE)
+_MAX_SINGLE_GAME_PINS = 300
+_SPIEL_PLAYER_PIN_ROWS = range(6, 18)
+_FORM_OPPONENT_MARKERS = ("spielzettel", "ausgefüllt", "ausgefullt", "leserlich")
+_OPPONENT_ROW_LABELS = {"gegner", "opponent", "mannschaft"}
+
+
+def _header_cell_text(value):
+    text = normalize_optional_text(value)
+    return text.strip() if text else ""
+
+
+def _spiel_header_number(value):
+    """Return N for a 'Spiel N' header, else None. Gesamt is never a game."""
+    text = _header_cell_text(value)
+    if not text:
+        return None
+    match = _SPIEL_HEADER_RE.match(text)
+    return int(match.group(1)) if match else None
+
+
+def _is_gesamt_header(value):
+    return "gesamt" in _header_cell_text(value).lower()
+
+
+def _parse_pinfall(value):
+    if pd.isna(value):
+        return None
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        return None
+
+
+def _looks_like_team_opponent(value):
+    text = normalize_optional_text(value)
+    if not text:
+        return False
+    low = text.lower()
+    if any(marker in low for marker in _FORM_OPPONENT_MARKERS):
+        return False
+    if low.rstrip(":") in _OPPONENT_ROW_LABELS:
+        return False
+    if "gesamt" in low:
+        return False
+    return True
+
+
+def _player_pinfalls_in_column(team_data, pins_col):
+    if pins_col not in team_data.columns:
+        return []
+    values = []
+    for row_idx in _SPIEL_PLAYER_PIN_ROWS:
+        if row_idx >= len(team_data):
+            break
+        parsed = _parse_pinfall(team_data.iloc[row_idx][pins_col])
+        if parsed is not None:
+            values.append(parsed)
+    return values
+
+
+def _column_looks_like_player_totals(team_data, pins_col):
+    """True when unused Spiel columns hold week/player sums instead of one game."""
+    pinfalls = _player_pinfalls_in_column(team_data, pins_col)
+    return bool(pinfalls) and all(pins > _MAX_SINGLE_GAME_PINS for pins in pinfalls)
+
+
+def _max_games_from_team_count(number_of_teams):
+    """Upper bound for one Spieltag: double round-robin (2*(n-1)).
+
+    10-team templates still expose Spiel 1–9 even when the league has 4–8
+    teams. Spielorte A21/A23 often keep those template values, so the cap
+    must use the actual Erfassung team-block count.
+    """
+    try:
+        n = int(number_of_teams)
+    except (TypeError, ValueError):
+        return None
+    if n < 2:
+        return None
+    return 2 * (n - 1)
+
+
+def _effective_max_games_per_week(max_games_per_week, number_of_teams):
+    caps = []
+    for raw in (max_games_per_week, _max_games_from_team_count(number_of_teams)):
+        try:
+            value = int(raw)
+        except (TypeError, ValueError):
+            continue
+        if value > 0:
+            caps.append(value)
+    return min(caps) if caps else None
+
+
+def _opponent_is_league_team(value, known_team_names=None):
+    if not _looks_like_team_opponent(value):
+        return False
+    if not known_team_names:
+        return True
+    raw = normalize_optional_text(value)
+    if not raw:
+        return False
+    needle = str(normalize_team_name(raw) or raw).casefold()
+    for name in known_team_names:
+        other_raw = normalize_optional_text(name)
+        if not other_raw:
+            continue
+        other = str(normalize_team_name(other_raw) or other_raw).casefold()
+        if other and needle == other:
+            return True
+    return False
+
+
+def _team_name_from_block(team_data):
+    if team_data is None or len(team_data) < 3:
+        return None
+    for _, value in team_data.iloc[2].items():
+        text = normalize_optional_text(value)
+        if text:
+            return text
+    return None
+
+
+def _is_real_spiel_game(team_data, pins_col, opponent_row, known_team_names=None):
+    """A Spiel N column is a match only when the opponent is a league team.
+
+    Unused template slots (any league smaller than the 10-team sheet) often
+    copy a player's last game or week total into Spiel 7+; those columns have
+    no opponent, or a form-control label instead of a team.
+    """
+    if _column_looks_like_player_totals(team_data, pins_col):
+        return False
+    opponent_val = None
+    if opponent_row is not None and pins_col in opponent_row.index:
+        opponent_val = opponent_row[pins_col]
+    return _opponent_is_league_team(opponent_val, known_team_names)
+
+
 def detect_game_count_from_anchor(team_data):
     """
     Detect game count from anchor layout:
     - Team anchor row is row 0 in team_data.
     - Game labels are expected at row +4 and col + 2*n (starting at +2).
     - Stop when value contains 'Gesamt' or is empty/non-game.
+
+    This is the template header count (often 9), not games actually played.
+    Prefer detect_spiel_game_columns() when extracting scores.
     """
     if team_data.shape[0] <= 4:
         return None
@@ -1731,6 +1881,39 @@ def detect_game_count_from_anchor(team_data):
     return count if count > 0 else None
 
 
+def detect_spiel_game_columns(team_data, known_team_names=None):
+    """
+    Return [(game_number, pins_col, pkt_col), ...] for Spiel 1..n only.
+
+    Walk the Spiel header row and stop at Gesamt. Pins/Pkt cells under or
+    after Gesamt are never games. Unused template Spiel columns that hold
+    player/week totals (any league with fewer than 10 teams) are dropped.
+    """
+    if team_data is None or len(team_data) < 6:
+        return []
+
+    spiel_row = team_data.iloc[4]
+    opponent_row = team_data.iloc[22] if len(team_data) > 22 else None
+    columns = list(team_data.columns)
+    games = []
+    for pos, col in enumerate(columns):
+        header = spiel_row.iloc[pos] if pos < len(spiel_row) else None
+        if _is_gesamt_header(header):
+            break
+        game_no = _spiel_header_number(header)
+        if game_no is None:
+            continue
+        pkt_col = columns[pos + 1] if pos + 1 < len(columns) else None
+        games.append((game_no, col, pkt_col))
+
+    games = [
+        (game_no, pins_col, pkt_col)
+        for game_no, pins_col, pkt_col in games
+        if _is_real_spiel_game(team_data, pins_col, opponent_row, known_team_names)
+    ]
+    return games
+
+
 def extract_team_players(
     team_data,
     team_info,
@@ -1739,6 +1922,8 @@ def extract_team_players(
     players_per_team,
     date,
     max_games_per_week=None,
+    known_team_names=None,
+    number_of_teams=None,
 ):
     """Extract all player data for a team."""
     
@@ -1750,9 +1935,7 @@ def extract_team_players(
     # Find important columns
     name_col = None
     id_col = None
-    score_cols = []
-    points_cols = []
-    
+
     # Find Name and ID columns
     for col_idx, value in header_row.items():
         if pd.notna(value):
@@ -1761,68 +1944,72 @@ def extract_team_players(
                 name_col = col_idx
             elif "rl" in value_str:
                 id_col = col_idx
-    
-    # Find individual round columns
-    for col_idx, value in header_row.items():
-        if pd.notna(value):
-            value_str = str(value).lower()
-            if "pins" in value_str and "gesamt" not in value_str:
-                score_cols.append(col_idx)
-            elif "pkt" in value_str and "gesamt" not in value_str:
-                points_cols.append(col_idx)
-    
-    # Limit rounds conservatively.
-    if len(score_cols) > 9:
-        score_cols = score_cols[:9]
-    if len(points_cols) > 9:
-        points_cols = points_cols[:9]
 
-    anchor_game_count = detect_game_count_from_anchor(team_data)
-    candidate_limits = [len(score_cols)]
-    if max_games_per_week is not None:
+    # Game columns come from Spiel 1..n headers only; never from Pins under Gesamt.
+    spiel_games = detect_spiel_game_columns(team_data, known_team_names=known_team_names)
+    effective_max = _effective_max_games_per_week(max_games_per_week, number_of_teams)
+    if effective_max is not None:
+        spiel_games = spiel_games[:effective_max]
+
+    score_cols = [pins_col for _, pins_col, _ in spiel_games]
+    points_cols = [pkt_col for _, _, pkt_col in spiel_games]
+    max_team_game_pins = None
+    try:
+        ppt = int(players_per_team)
+        if ppt > 0:
+            max_team_game_pins = ppt * _MAX_SINGLE_GAME_PINS
+    except (TypeError, ValueError):
+        max_team_game_pins = None
+
+    opponent_row = team_data.iloc[22] if len(team_data) > 22 else pd.Series(dtype=object)
+
+    def _opponent_for_round(score_col):
+        if score_col not in opponent_row.index:
+            return "Unknown"
+        raw = opponent_row[score_col]
+        if not _opponent_is_league_team(raw, known_team_names):
+            return "Unknown"
+        return str(raw).strip()
+
+    def _points_sum(pos_rows, points_col):
+        if points_col is None or points_col not in pos_rows.columns:
+            return 0.0
+        total = pos_rows[points_col].sum()
+        if pd.isna(total):
+            return 0.0
         try:
-            mgpw = int(max_games_per_week)
-            if mgpw > 0:
-                candidate_limits.append(mgpw)
+            return float(total)
         except (TypeError, ValueError):
-            pass
-    if anchor_game_count is not None:
-        candidate_limits.append(anchor_game_count)
-    effective_round_limit = min(candidate_limits) if candidate_limits else len(score_cols)
-    if effective_round_limit < len(score_cols):
-        score_cols = score_cols[:effective_round_limit]
-    if effective_round_limit < len(points_cols):
-        points_cols = points_cols[:effective_round_limit]
-    
-    # Find opponent columns (same as score columns)
-    opponent_row = team_data.iloc[22]
-    opponent_cols = [col for col in score_cols if col in opponent_row.index and pd.notna(opponent_row[col])]
-    
+            return 0.0
+
     # Find team total scores and points
     team_total_row = team_data.iloc[18]
     team_total_scores = {}
     team_total_points = {}
-    
+
     for col_idx, value in team_total_row.items():
         if pd.notna(value) and col_idx in score_cols:
             round_idx = score_cols.index(col_idx)
             try:
-                team_total_scores[round_idx] = int(value)
-                if round_idx < len(points_cols):
-                    points_col = points_cols[round_idx]
-                    if pd.notna(team_total_row[points_col]):
-                        team_total_points[round_idx] = float(team_total_row[points_col])
-                    else:
-                        team_total_points[round_idx] = 0.0
+                team_score = int(float(value))
+                if max_team_game_pins is not None and team_score > max_team_game_pins:
+                    continue
+                team_total_scores[round_idx] = team_score
+                points_col = points_cols[round_idx] if round_idx < len(points_cols) else None
+                if (
+                    points_col is not None
+                    and points_col in team_total_row.index
+                    and pd.notna(team_total_row[points_col])
+                ):
+                    team_total_points[round_idx] = float(team_total_row[points_col])
                 else:
                     team_total_points[round_idx] = 0.0
             except (ValueError, TypeError):
                 pass
-    
+
     print(f"Found columns: Name={name_col}, ID={id_col}")
     print(f"Score columns (rounds): {score_cols}")
     print(f"Points columns (rounds): {points_cols}")
-    print(f"Opponent columns (rounds): {opponent_cols}")
     print(f"Team total scores: {team_total_scores}")
     print(f"Team total points: {team_total_points}")
     
@@ -1853,21 +2040,16 @@ def extract_team_players(
                     
                 print(f"  Player: {player_name} (ID: {player_id})")
                 
-                # Process each round (Spiel 1-9) - only individual rounds, not totals
+                # Process each Spiel 1..n round; skip pinfalls that cannot be a single game.
                 for round_idx, (score_col, points_col) in enumerate(zip(score_cols, points_cols)):
                     if pd.notna(row[score_col]):
                         try:
-                            score = int(row[score_col])
+                            score = int(float(row[score_col]))
+                            if score > _MAX_SINGLE_GAME_PINS:
+                                continue
 
-                            points = float(pos_rows[points_col].sum()) if pd.notna(pos_rows[points_col].sum()) else 0.0
-                            
-                            # Get opponent
-                            opponent = "Unknown"
-                            if round_idx < len(opponent_cols):
-                                opponent_col = opponent_cols[round_idx]
-                                if pd.notna(opponent_row[opponent_col]):
-                                    opponent = str(opponent_row[opponent_col]).strip()
-                            
+                            points = _points_sum(pos_rows, points_col)
+                            opponent = _opponent_for_round(score_col)
                             match_number = get_match_number(round_idx, team_info['team_name'], opponent)
                             
                             # Create CSV row
@@ -1901,13 +2083,7 @@ def extract_team_players(
     # Add team total rows
     for round_idx in range(len(score_cols)):
         if round_idx in team_total_scores:
-            # Get opponent
-            opponent = "Unknown"
-            if round_idx < len(opponent_cols):
-                opponent_col = opponent_cols[round_idx]
-                if pd.notna(opponent_row[opponent_col]):
-                    opponent = str(opponent_row[opponent_col]).strip()
-            
+            opponent = _opponent_for_round(score_cols[round_idx])
             match_number = get_match_number(round_idx, team_info['team_name'], opponent)
             
             # Create CSV row for team total

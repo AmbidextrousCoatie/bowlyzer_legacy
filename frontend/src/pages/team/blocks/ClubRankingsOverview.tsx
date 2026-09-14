@@ -281,7 +281,7 @@ function formatMatchContext(
       : "—";
   return t(
     "ui.team.club_rankings_match_context",
-    "{total} Kegel · {season} · {league} · W{week} · Spiel {round}",
+    "{total} Pins · {season} · {league} · W{week} · Spiel {round}",
   )
     .replace("{total}", total)
     .replace("{season}", entry.season)

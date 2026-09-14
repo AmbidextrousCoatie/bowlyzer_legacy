@@ -191,13 +191,22 @@ export const EINSTIEG_STORIES: readonly EinstiegStory[] = [
           slide: "final_remarks",
         },
         caption: "Was ist heute schon da?",
-      },      {
+      },
+      {
         path: "/praesentation",
         params: {
           database: EINSTIEG_DEMO_DATABASE,
           slide: "final_remarks_2",
         },
         caption: "Was ist noch geplant?",
+      },
+      {
+        path: "/praesentation",
+        params: {
+          database: EINSTIEG_DEMO_DATABASE,
+          slide: "q-mitmachen",
+        },
+        caption: "Frage stellen: Fehlende Daten",
       },
     ],
   },

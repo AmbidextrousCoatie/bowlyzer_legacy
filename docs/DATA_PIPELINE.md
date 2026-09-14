@@ -90,6 +90,12 @@ uv run python scripts/rebuild_league_caches.py --all-published --workers 8
 # 3) Restart the Flask app process so in-memory registry caches reload
 ```
 
+League publish derives ``Club`` from ``Team`` **and** folds ``club_mapping.csv``
+aliases onto the canonical name. Club-matrix / available-clubs do the same when
+splitting ``Team`` / ``Opponent``. ``team_name_normalization.json`` must not
+rewrite canonical spellings back to aliases (e.g. strip ``München`` from
+ProfiShop, or keep ``Weiss Blau`` instead of ``Weiß-Blau``).
+
 Optional checks:
 
 ```powershell

@@ -37,6 +37,31 @@ def test_apply_league_competition_schema_v2_on_publish():
     assert out.loc[0, Columns.club] == "Donaubowler Regensburg"
 
 
+def test_apply_league_competition_schema_folds_club_mapping_aliases():
+    df = pd.DataFrame(
+        {
+            "Season": ["25/26"],
+            "League": ["KL S1"],
+            "Team": ["Team Profi Shop 1"],
+            "Player": ["Alice"],
+        }
+    )
+    out = apply_league_competition_schema_v2(df)
+    assert out.loc[0, Columns.club] == "Team ProfiShop München"
+
+    already = pd.DataFrame(
+        {
+            "Season": ["25/26"],
+            "League": ["BayL"],
+            "Team": ["Weiss Blau München 2"],
+            "Club": ["Weiss Blau München"],
+            "Player": ["Bob"],
+        }
+    )
+    out2 = apply_league_competition_schema_v2(already)
+    assert out2.loc[0, Columns.club] == "Weiß-Blau München"
+
+
 def test_ensure_competition_core_columns_for_read_legacy_league():
     df = pd.DataFrame(
         {
