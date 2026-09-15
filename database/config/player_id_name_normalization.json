@@ -391,6 +391,204 @@
           "player_id": "7303"
         },
         "source": "dbu_id"
+      },
+      {
+        "match": {
+          "player_name": "Baumann, Jürgen",
+          "player_id": "150715"
+        },
+        "replace": {
+          "player_id": "25144"
+        },
+        "source": "dbu_id",
+        "note": "legacy pre-2008 EDV → modern"
+      },
+      {
+        "match": {
+          "player_name": "Bayer, Uwe",
+          "player_id": "150813"
+        },
+        "replace": {
+          "player_id": "16037"
+        },
+        "source": "dbu_id",
+        "note": "legacy pre-2008 EDV → modern"
+      },
+      {
+        "match": {
+          "player_name": "Beck, Michael",
+          "player_id": "151307"
+        },
+        "replace": {
+          "player_id": "16075"
+        },
+        "source": "dbu_id",
+        "note": "legacy pre-2008 EDV → modern"
+      },
+      {
+        "match": {
+          "player_name": "Drache, Wolfgang",
+          "player_id": "151108"
+        },
+        "replace": {
+          "player_id": "16066"
+        },
+        "source": "dbu_id",
+        "note": "legacy pre-2008 EDV → modern"
+      },
+      {
+        "match": {
+          "player_name": "Faltlhauser, Karl",
+          "player_id": "150811"
+        },
+        "replace": {
+          "player_id": "16036"
+        },
+        "source": "dbu_id",
+        "note": "legacy pre-2008 EDV → modern"
+      },
+      {
+        "match": {
+          "player_name": "Huber, Jennifer",
+          "player_id": "150972"
+        },
+        "replace": {
+          "player_id": "16056"
+        },
+        "source": "dbu_id",
+        "note": "legacy pre-2008 EDV → modern"
+      },
+      {
+        "match": {
+          "player_name": "Krämer, Hartmut",
+          "player_id": "150723"
+        },
+        "replace": {
+          "player_id": "16022"
+        },
+        "source": "dbu_id",
+        "note": "legacy pre-2008 EDV → modern"
+      },
+      {
+        "match": {
+          "player_name": "Köse, Sahin",
+          "player_id": "150603"
+        },
+        "replace": {
+          "player_id": "16002"
+        },
+        "source": "dbu_id",
+        "note": "legacy pre-2008 EDV → modern"
+      },
+      {
+        "match": {
+          "player_name": "Lederer, Peter",
+          "player_id": "150614"
+        },
+        "replace": {
+          "player_id": "16008"
+        },
+        "source": "dbu_id",
+        "note": "legacy pre-2008 EDV → modern"
+      },
+      {
+        "match": {
+          "player_name": "Mattler, Ralf",
+          "player_id": "150615"
+        },
+        "replace": {
+          "player_id": "16009"
+        },
+        "source": "dbu_id",
+        "note": "legacy pre-2008 EDV → modern"
+      },
+      {
+        "match": {
+          "player_name": "Nierlich, Peter",
+          "player_id": "151106"
+        },
+        "replace": {
+          "player_id": "16064"
+        },
+        "source": "dbu_id",
+        "note": "legacy pre-2008 EDV → modern"
+      },
+      {
+        "match": {
+          "player_name": "Niesner, Christian",
+          "player_id": "150827"
+        },
+        "replace": {
+          "player_id": "16044"
+        },
+        "source": "dbu_id",
+        "note": "legacy pre-2008 EDV → modern"
+      },
+      {
+        "match": {
+          "player_name": "Rechenberg, Nicole",
+          "player_id": "150578"
+        },
+        "replace": {
+          "player_id": "7997"
+        },
+        "source": "dbu_id",
+        "note": "legacy pre-2008 EDV → modern"
+      },
+      {
+        "match": {
+          "player_name": "Schöllhorn, Rainer",
+          "player_id": "151113"
+        },
+        "replace": {
+          "player_id": "16069"
+        },
+        "source": "dbu_id",
+        "note": "legacy pre-2008 EDV → modern"
+      },
+      {
+        "match": {
+          "player_name": "Vogt, Martin",
+          "player_id": "151318"
+        },
+        "replace": {
+          "player_id": "16077"
+        },
+        "source": "dbu_id",
+        "note": "legacy pre-2008 EDV → modern"
+      },
+      {
+        "match": {
+          "player_name": "Wiedl, Edeltraut",
+          "player_id": "150779"
+        },
+        "replace": {
+          "player_id": "16029"
+        },
+        "source": "dbu_id",
+        "note": "legacy pre-2008 EDV → modern"
+      },
+      {
+        "match": {
+          "player_name": "Zeitler, Bernd",
+          "player_id": "150724"
+        },
+        "replace": {
+          "player_id": "16023"
+        },
+        "source": "dbu_id",
+        "note": "legacy pre-2008 EDV → modern"
+      },
+      {
+        "match": {
+          "player_name": "Zimmermann, Herbert",
+          "player_id": "150819"
+        },
+        "replace": {
+          "player_id": "16041"
+        },
+        "source": "dbu_id",
+        "note": "legacy pre-2008 EDV → modern"
       }
     ],
     "different_person": [

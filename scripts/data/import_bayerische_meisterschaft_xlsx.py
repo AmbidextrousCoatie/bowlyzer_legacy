@@ -36,6 +36,7 @@ from database.tournament_import.postprocess import postprocess_rows as _postproc
 from database.tournament_import.schema import POSTPROCESSED_HEADERS
 
 from database.paths import get_data_dir, gf_tournaments_combined_postprocessed_csv, tournament_staging_dir
+from data_access.player_name_normalization import canonicalize_player_name
 
 GF_COMBINED_POSTPROCESSED = gf_tournaments_combined_postprocessed_csv()
 DEFAULT_OUTPUT = tournament_staging_dir() / "tournament_bayerische_meisterschaft_2026_postprocessed.csv"
@@ -54,6 +55,52 @@ def _clean_text(value: object) -> str:
     if value is None:
         return ""
     return str(value).strip()
+
+
+def _player_display_name(raw: str) -> str:
+    """Canonical ``Family, Given`` for stored Player cells (keeps walkover tags intact)."""
+    name = (raw or "").strip()
+    if not name:
+        return name
+    if "(" in name:
+        return name
+    return canonicalize_player_name(name) or name
+
+
+def _player_name_lookup_keys(raw: str) -> List[str]:
+    """Casefold keys covering ``Given Family`` and ``Family, Given`` for KO id lookup."""
+    name = (raw or "").strip()
+    if not name:
+        return []
+    keys = {name.casefold()}
+    canon = canonicalize_player_name(name)
+    if canon:
+        keys.add(canon.casefold())
+    if "," in name:
+        left, right = [p.strip() for p in name.split(",", 1)]
+        if left and right:
+            keys.add(f"{right} {left}".casefold())
+    else:
+        parts = name.split()
+        if len(parts) >= 2:
+            keys.add(f"{parts[-1]}, {' '.join(parts[:-1])}".casefold())
+    return list(keys)
+
+
+def _register_player_id(player_id_by_name: Dict[str, str], name: str, player_id: str) -> None:
+    pid = str(player_id or "").strip()
+    if not pid:
+        return
+    for key in _player_name_lookup_keys(name):
+        player_id_by_name.setdefault(key, pid)
+
+
+def _lookup_player_id(player_id_by_name: Dict[str, str], name: str) -> str:
+    for key in _player_name_lookup_keys(name):
+        pid = player_id_by_name.get(key)
+        if pid:
+            return pid
+    return ""
 
 
 def _as_int(value: object, default: int = 0) -> int:
@@ -176,7 +223,9 @@ def _build_round_rows(meta: TournamentMeta, workbook_path: Path) -> Tuple[List[D
     for round_number, (sheet_name, round_name) in round_map.items():
         source_rows = list(_iter_round_rows(workbook_path, sheet_name))
         for player_name, player_id, game_scores in source_rows:
-            player_id_by_name[player_name.strip().casefold()] = str(player_id)
+            display_name = _player_display_name(player_name)
+            _register_player_id(player_id_by_name, player_name, player_id)
+            _register_player_id(player_id_by_name, display_name, player_id)
             for game_idx, score in enumerate(game_scores):
                 if score is None:
                     continue
@@ -189,7 +238,7 @@ def _build_round_rows(meta: TournamentMeta, workbook_path: Path) -> Tuple[List[D
                         "Event Name": meta.event_name,
                         "Round Number": str(round_number),
                         "Round Name": round_name,
-                        "Player": player_name,
+                        "Player": display_name,
                         "Player ID": player_id,
                         "Club": "",
                         "Game Number": str(game_idx),
@@ -377,8 +426,10 @@ def _extract_ko_rows(
                 and "sieger" not in left_lower
             ):
                 games, next_row = _parse_ko_games(ws, row, active_section, ko_finale_series)
-                left_id = player_id_by_name.get(left_name.strip().casefold(), "")
-                right_id = player_id_by_name.get(right_name.strip().casefold(), "")
+                left_id = _lookup_player_id(player_id_by_name, left_name)
+                right_id = _lookup_player_id(player_id_by_name, right_name)
+                left_display = _player_display_name(left_name)
+                right_display = _player_display_name(right_name)
                 if _is_walkover_opponent(right_name):
                     absent_display = _no_show_display_name(right_name)
                     # No-show: emit a single 0–0 game pair tagged KO_WO so bracket UI can show walkover
@@ -392,7 +443,7 @@ def _extract_ko_rows(
                             "Event Name": meta.event_name,
                             "Round Number": str(round_number),
                             "Round Name": round_name,
-                            "Player": left_name,
+                            "Player": left_display,
                             "Player ID": left_id,
                             "Club": "KO_WO",
                             "Game Number": str(game_number),
@@ -446,7 +497,7 @@ def _extract_ko_rows(
                             "Event Name": meta.event_name,
                             "Round Number": str(round_number),
                             "Round Name": round_name,
-                            "Player": right_name,
+                            "Player": right_display,
                             "Player ID": right_id,
                             "Club": "KO_WO",
                             "Game Number": str(game_number),
@@ -468,7 +519,7 @@ def _extract_ko_rows(
                                 "Event Name": meta.event_name,
                                 "Round Number": str(round_number),
                                 "Round Name": round_name,
-                                "Player": left_name,
+                                "Player": left_display,
                                 "Player ID": left_id,
                                 "Club": "",
                                 "Game Number": str(game_number),
@@ -485,7 +536,7 @@ def _extract_ko_rows(
                                 "Event Name": meta.event_name,
                                 "Round Number": str(round_number),
                                 "Round Name": round_name,
-                                "Player": right_name,
+                                "Player": right_display,
                                 "Player ID": right_id,
                                 "Club": "",
                                 "Game Number": str(game_number),

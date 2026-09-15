@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { buildTournamentUrl, fetchJson } from "../lib/api";
 import type { TableData } from "../lib/datatable/types";
+import type { PlayerSearchEntry } from "./usePlayer";
 
 /** List endpoints are backed by server-side CSV revision cache; avoid refetch churn. */
 const TOURNAMENT_LIST_STALE_MS = 10 * 60 * 1000;
@@ -355,9 +356,9 @@ export function useTournamentPlayers(
 ) {
   const needsEventScope = !!round;
   return useQuery({
-    queryKey: ["tournament", "players", season ?? "", tournament ?? "", round ?? ""],
+    queryKey: ["tournament", "players", "v2", season ?? "", tournament ?? "", round ?? ""],
     queryFn: () =>
-      fetchJson<string[]>(
+      fetchJson<PlayerSearchEntry[]>(
         buildTournamentUrl("/tournament/get_available_players", {
           season: season || undefined,
           tournament: tournament || undefined,

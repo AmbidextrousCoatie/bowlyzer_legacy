@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronDown, Info, Menu, X } from "lucide-react";
 import type { UseQueryResult } from "@tanstack/react-query";
 import { BottomSheet } from "../../components/BottomSheet";
 import { PlayerSearch } from "../../components/PlayerSearch";
+import type { PlayerSearchEntry } from "../../hooks/usePlayer";
 import {
   EMPTY_TOURNAMENT_HANDICAP_FORMAT,
   useTournamentFormat,
@@ -11,6 +12,7 @@ import {
   type TournamentRound,
 } from "../../hooks/useTournament";
 import { useMobileNav } from "../../context/MobileNavContext";
+import { formatPlayerSearchLabel, resolvePlayerSearchEntry } from "../../lib/playerSearchLabel";
 export type TournamentFilterBarProps = {
   season: string;
   seasons: string[];
@@ -22,14 +24,15 @@ export type TournamentFilterBarProps = {
   rounds: TournamentRound[];
   roundsLoading: boolean;
   player: string;
-  players: string[];
+  playerId: string;
+  players: PlayerSearchEntry[];
   playersLoading: boolean;
   playerMode: boolean;
   showEventDetail: boolean;
   onSeasonChange: (v: string) => void;
   onTournamentChange: (v: string) => void;
   onRoundChange: (v: string) => void;
-  onPlayerChange: (v: string) => void;
+  onPlayerChange: (entry: PlayerSearchEntry | null) => void;
   t: (key: string, fallback?: string) => string;
   pageHeading: string;
 };
@@ -69,7 +72,7 @@ type FormatTriggerProps = {
 
 function FilterRailDesktop(props: TournamentFilterBarProps & FormatTriggerProps) {
   const { t } = props;
-  const playerEntries = usePlayerEntries(props.players);
+  const playerSearchValue = playerSearchDisplayValue(props);
   const playerSearchDisabled = props.playersLoading;
 
   return (
@@ -108,13 +111,13 @@ function FilterRailDesktop(props: TournamentFilterBarProps & FormatTriggerProps)
         )}
         <FilterField label={t("ui.tournament.player", "Spieler")}>
           <PlayerSearch
-            value={props.player}
-            players={playerEntries}
+            value={playerSearchValue}
+            players={props.players}
             isLoading={playerSearchDisabled}
             placeholder={t("ui.tournament.player_search_placeholder", "Spieler suchen…")}
             ariaLabel={t("ui.tournament.player", "Spieler")}
             clearAriaLabel={t("ui.tournament.clear_player", "Spieler-Auswahl löschen")}
-            onSelect={(entry) => props.onPlayerChange(entry?.name ?? "")}
+            onSelect={props.onPlayerChange}
           />
         </FilterField>
       </div>
@@ -133,7 +136,7 @@ function FilterBarMobile(props: TournamentFilterBarProps & FormatTriggerProps) {
       ? !!(props.round || props.player)
       : !!props.player;
 
-  const playerEntries = usePlayerEntries(props.players);
+  const playerSearchValue = playerSearchDisplayValue(props);
   const playerSearchDisabled = props.playersLoading;
   const summary = buildDrillDownSummary(props, t);
 
@@ -194,13 +197,13 @@ function FilterBarMobile(props: TournamentFilterBarProps & FormatTriggerProps) {
           <FilterField label={t("ui.tournament.player", "Spieler")}>
             <div className="w-full min-w-0 [&_input]:h-11 [&_input]:text-[15px]">
               <PlayerSearch
-                value={props.player}
-                players={playerEntries}
+                value={playerSearchValue}
+                players={props.players}
                 isLoading={playerSearchDisabled}
                 placeholder={t("ui.tournament.player_search_placeholder", "Spieler suchen…")}
                 ariaLabel={t("ui.tournament.player", "Spieler")}
                 clearAriaLabel={t("ui.tournament.clear_player", "Spieler-Auswahl löschen")}
-                onSelect={(entry) => props.onPlayerChange(entry?.name ?? "")}
+                onSelect={props.onPlayerChange}
               />
             </div>
           </FilterField>
@@ -270,13 +273,13 @@ function FilterBarMobile(props: TournamentFilterBarProps & FormatTriggerProps) {
             <FilterField label={t("ui.tournament.player", "Spieler")}>
               <div className="w-full min-w-0 [&_input]:h-11 [&_input]:text-[15px]">
                 <PlayerSearch
-                  value={props.player}
-                  players={playerEntries}
+                  value={playerSearchValue}
+                  players={props.players}
                   isLoading={playerSearchDisabled}
                   placeholder={t("ui.tournament.player_search_placeholder", "Spieler suchen…")}
                   ariaLabel={t("ui.tournament.player", "Spieler")}
                   clearAriaLabel={t("ui.tournament.clear_player", "Spieler-Auswahl löschen")}
-                  onSelect={(entry) => props.onPlayerChange(entry?.name ?? "")}
+                  onSelect={props.onPlayerChange}
                 />
               </div>
             </FilterField>
@@ -416,7 +419,11 @@ function buildDrillDownSummary(
     parts.push(roundLabel(props.round, props.rounds, t));
   }
   if (props.player) {
-    parts.push(props.player);
+    const known = resolvePlayerSearchEntry(props.players, {
+      name: props.player,
+      id: props.playerId,
+    });
+    parts.push(known ? formatPlayerSearchLabel(known) : props.player);
   }
   return parts.join(" · ");
 }
@@ -479,8 +486,16 @@ function formatHandicapMetricLine(
     .replace("{mean}", String(b.mean));
 }
 
-function usePlayerEntries(players: string[]) {
-  return useMemo(() => players.map((name) => ({ id: name, name })), [players]);
+function playerSearchDisplayValue(
+  props: Pick<TournamentFilterBarProps, "player" | "playerId" | "players">,
+): string {
+  if (!props.player && !props.playerId) return "";
+  const known = resolvePlayerSearchEntry(props.players, {
+    name: props.player,
+    id: props.playerId,
+  });
+  if (known) return formatPlayerSearchLabel(known);
+  return props.player;
 }
 
 function FormatInfoIconButton({

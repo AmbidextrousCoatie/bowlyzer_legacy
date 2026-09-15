@@ -10,7 +10,26 @@ from app.config.database_config import database_config
 from app.services.league_service import LeagueService
 from app.services.tournament_service import TournamentService
 from data_access.competition_schema import competition_event_column
+from data_access.player_id_name_normalization import normalize_player_id
 from data_access.schema import Columns
+
+# Dummy EDV patterns from the player-id audit (all 1s / all 9s, or ≥4 leading 1s/9s).
+_PLACEHOLDER_PREFIX_LEN = 4
+
+
+def _is_placeholder_player_id(player_id: str) -> bool:
+    pid = normalize_player_id(player_id)
+    if not pid:
+        return True
+    if pid.upper().startswith("UNK"):
+        return True
+    if not pid.isdigit():
+        return False
+    if set(pid) <= {"1"} or set(pid) <= {"9"}:
+        return True
+    return pid.startswith("1" * _PLACEHOLDER_PREFIX_LEN) or pid.startswith(
+        "9" * _PLACEHOLDER_PREFIX_LEN
+    )
 
 
 def _league_frame(df: pd.DataFrame) -> pd.DataFrame:
@@ -38,14 +57,24 @@ def _count_scored_games(frame: pd.DataFrame) -> int:
 
 
 def _unique_players(*frames: pd.DataFrame) -> int:
-    names: set[str] = set()
+    """Count distinct normalized Player IDs (excludes Team Total / empty / placeholders)."""
+    ids: set[str] = set()
     for frame in frames:
-        if frame.empty or Columns.player_name not in frame.columns:
+        if frame is None or frame.empty or Columns.player_id not in frame.columns:
             continue
-        for name in frame[Columns.player_name].dropna().astype(str):
-            if name.strip():
-                names.add(name.strip())
-    return len(names)
+        names = (
+            frame[Columns.player_name].astype(str).str.strip()
+            if Columns.player_name in frame.columns
+            else pd.Series("", index=frame.index)
+        )
+        for raw_id, name in zip(frame[Columns.player_id].tolist(), names.tolist(), strict=False):
+            if not name or name == "Team Total":
+                continue
+            pid = normalize_player_id(raw_id)
+            if not pid or pid == "0" or _is_placeholder_player_id(pid):
+                continue
+            ids.add(pid)
+    return len(ids)
 
 
 def _unique_seasons(*frames: pd.DataFrame) -> int:

@@ -109,6 +109,15 @@ def test_strip_regional_prefix() -> None:
     assert strip_regional_club_prefix("AUG - Lechbowler Augsburg") == "Lechbowler Augsburg"
 
 
+def test_bare_neu_ulm_is_not_spare_masters_alias() -> None:
+    """City placeholder must not fold onto Spare Masters (short-lived ~2016–20 club)."""
+    from data_access.clubs_registry import canonicalize_club_via_mapping, clear_club_mapping_caches
+
+    clear_club_mapping_caches()
+    assert canonicalize_club_via_mapping("Neu-Ulm") != "Spare Masters Neu-Ulm"
+    assert canonicalize_club_via_mapping("Neu-Ulm") in {"", "Neu-Ulm"}
+
+
 def test_club_mapping_collapses_alternate_canonical(monkeypatch) -> None:
     """Alias in club_mapping.csv must not remain a second canonical club."""
     from data_access import clubs_registry as mod

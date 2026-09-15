@@ -82,4 +82,6 @@ def test_get_player_tournament_results(svc: TournamentService) -> None:
 def test_get_tournament_player_catalog_without_event_scope(svc: TournamentService) -> None:
     players = svc.get_tournament_player_catalog()
     assert players
-    assert all(str(name).strip() for name in players)
+    assert all(isinstance(row, dict) for row in players)
+    assert all(str(row.get("name") or "").strip() for row in players)
+    assert all("id" in row for row in players)

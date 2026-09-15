@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useMobileNav } from "../../context/MobileNavContext";
 import { useMyClub } from "../../hooks/useMyClub";
+import type { PlayerSearchEntry } from "../../hooks/usePlayer";
 import {
   usePlayerSectionForTournament,
   usePlayerTournamentResults,
@@ -15,6 +16,7 @@ import {
 import { useTranslations } from "../../hooks/useTranslations";
 import { TopicPageHeader } from "../../components/TopicPageHeader";
 import { seasonForUrlQuery } from "../../lib/api";
+import { resolvePlayerSearchEntry } from "../../lib/playerSearchLabel";
 import { normalizeUnicodeLabel } from "../../lib/teamUtils";
 import { resolveTournamentPlayerName } from "../../lib/tournamentPlayer";
 import { BestEfforts } from "./blocks/BestEfforts";
@@ -44,6 +46,7 @@ export function TournamentStats() {
   const tournament = searchParams.get("tournament") ?? "";
   const round = searchParams.get("round") ?? "";
   const player = searchParams.get("player") ?? "";
+  const playerId = searchParams.get("player_id") ?? "";
 
   const hasSeason = !!season;
   const hasTournament = !!tournament;
@@ -57,18 +60,28 @@ export function TournamentStats() {
   const roundsQuery = useTournamentRounds(season || null, tournament || null);
   const playersQuery = useTournamentPlayers(season || null, tournament || null, round || null);
   const podiumsQuery = useTournamentPodiums(season || null, tournament || null, clubFilter);
+
+  const roster = playersQuery.data ?? [];
+  const rosterNames = useMemo(() => roster.map((entry) => entry.name), [roster]);
+  const knownPlayer = useMemo(
+    () =>
+      player || playerId
+        ? resolvePlayerSearchEntry(roster, { name: player, id: playerId })
+        : null,
+    [roster, player, playerId],
+  );
+  const resolvedPlayer = useMemo(() => {
+    if (knownPlayer?.name) return knownPlayer.name;
+    if (!player) return "";
+    if (!playersQuery.isSuccess || rosterNames.length === 0) return player;
+    return resolveTournamentPlayerName(player, rosterNames) ?? player;
+  }, [knownPlayer, player, playersQuery.isSuccess, rosterNames]);
+
   const playerResultsQuery = usePlayerTournamentResults(
-    player || null,
+    resolvedPlayer || null,
     season || null,
     tournament || null,
   );
-
-  const roster = playersQuery.data ?? [];
-  const resolvedPlayer = useMemo(() => {
-    if (!player) return "";
-    if (!playersQuery.isSuccess || roster.length === 0) return player;
-    return resolveTournamentPlayerName(player, roster) ?? player;
-  }, [player, playersQuery.isSuccess, roster]);
 
   const sectionQuery = useTournamentSection(
     showEventDetail && !showPlayerDetail ? season : null,
@@ -100,6 +113,7 @@ export function TournamentStats() {
       next.delete("tournament");
       next.delete("round");
       next.delete("player");
+      next.delete("player_id");
       changed = true;
     } else if (
       season &&
@@ -110,6 +124,7 @@ export function TournamentStats() {
       next.delete("tournament");
       next.delete("round");
       next.delete("player");
+      next.delete("player_id");
       changed = true;
     }
     if (changed) setSearchParams(next, { replace: true });
@@ -144,17 +159,34 @@ export function TournamentStats() {
     showEventDetail,
   ]);
   useEffect(() => {
-    if (!playersQuery.isSuccess || !player || !showEventDetail) return;
-    const canonical = resolveTournamentPlayerName(player, playersQuery.data ?? []);
-    if (canonical && canonical !== player) {
-      const next = new URLSearchParams(searchParams);
-      next.set("player", canonical);
-      setSearchParams(next, { replace: true });
+    if (!playersQuery.isSuccess || (!player && !playerId)) return;
+    const next = new URLSearchParams(searchParams);
+    let changed = false;
+    if (knownPlayer?.name && knownPlayer.name !== player) {
+      next.set("player", knownPlayer.name);
+      changed = true;
+    } else if (
+      showEventDetail &&
+      player &&
+      !knownPlayer
+    ) {
+      const canonical = resolveTournamentPlayerName(player, rosterNames);
+      if (canonical && canonical !== player) {
+        next.set("player", canonical);
+        changed = true;
+      }
     }
+    if (knownPlayer?.id && knownPlayer.id !== playerId) {
+      next.set("player_id", knownPlayer.id);
+      changed = true;
+    }
+    if (changed) setSearchParams(next, { replace: true });
   }, [
     playersQuery.isSuccess,
-    playersQuery.data,
+    knownPlayer,
     player,
+    playerId,
+    rosterNames,
     searchParams,
     setSearchParams,
     showEventDetail,
@@ -168,12 +200,31 @@ export function TournamentStats() {
     setSearchParams(next, { replace: false });
   }
 
-  function selectPlayer(name: string) {
-    setParam("player", name);
+  function selectPlayer(entry: PlayerSearchEntry | null) {
+    const next = new URLSearchParams(searchParams);
+    if (!entry) {
+      next.delete("player");
+      next.delete("player_id");
+    } else {
+      next.set("player", entry.name);
+      if (entry.id) next.set("player_id", entry.id);
+      else next.delete("player_id");
+    }
+    setSearchParams(next, { replace: false });
+  }
+
+  function selectPlayerByName(name: string) {
+    const trimmed = name.trim();
+    if (!trimmed) {
+      selectPlayer(null);
+      return;
+    }
+    const known = resolvePlayerSearchEntry(roster, { name: trimmed });
+    selectPlayer(known ?? { id: "", name: trimmed });
   }
 
   function clearPlayer() {
-    setParam("player", "");
+    selectPlayer(null);
   }
 
   const stageLabel = useMemo(() => {
@@ -232,14 +283,15 @@ export function TournamentStats() {
         rounds={roundsQuery.data ?? []}
         roundsLoading={roundsQuery.isPending}
         player={resolvedPlayer}
+        playerId={knownPlayer?.id ?? playerId}
         players={roster}
         playersLoading={playersQuery.isPending}
         playerMode={showPlayerDetail}
         showEventDetail={showEventDetail}
-        onSeasonChange={(v) => setParam("season", v, ["round", "player"])}
-        onTournamentChange={(v) => setParam("tournament", v, ["round", "player"])}
+        onSeasonChange={(v) => setParam("season", v, ["round", "player", "player_id"])}
+        onTournamentChange={(v) => setParam("tournament", v, ["round", "player", "player_id"])}
         onRoundChange={(v) => setParam("round", v)}
-        onPlayerChange={(v) => setParam("player", v)}
+        onPlayerChange={selectPlayer}
         t={t}
       />
 
@@ -285,7 +337,7 @@ export function TournamentStats() {
                 heatmapEnabled={heatmapEnabled}
                 onToggleHeatmap={() => setHeatmapEnabled((v) => !v)}
                 onBack={clearPlayer}
-                onPlayerClick={selectPlayer}
+                onPlayerClick={selectPlayerByName}
                 t={t}
               />
             )}
@@ -336,21 +388,21 @@ export function TournamentStats() {
                 <SummaryCards
                   cards={sectionQuery.data.cards ?? []}
                   overviewStageLabel={overviewStageLabel}
-                  onPlayerClick={selectPlayer}
+                  onPlayerClick={selectPlayerByName}
                   t={t}
                 />
                 <BestEfforts bestEfforts={sectionQuery.data.best_efforts} t={t} />
                 {showKoBracket && sectionQuery.data.ko_bracket ? (
                   <KoBracket
                     bracket={sectionQuery.data.ko_bracket}
-                    onPlayerClick={selectPlayer}
+                    onPlayerClick={selectPlayerByName}
                     t={t}
                   />
                 ) : null}
                 <Leaderboard
                   data={sectionQuery.data.leaderboard}
                   stageLabel={stageLabel}
-                  onPlayerClick={selectPlayer}
+                  onPlayerClick={selectPlayerByName}
                   t={t}
                 />
                 {round && sectionQuery.data.round_results ? (
@@ -359,7 +411,7 @@ export function TournamentStats() {
                     heatmapEnabled={heatmapEnabled}
                     onToggleHeatmap={() => setHeatmapEnabled((v) => !v)}
                     stageLabel={stageLabel}
-                    onPlayerClick={selectPlayer}
+                    onPlayerClick={selectPlayerByName}
                     t={t}
                   />
                 ) : null}

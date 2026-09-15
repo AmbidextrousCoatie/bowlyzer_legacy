@@ -76,6 +76,15 @@ def _rangliste_crosswalk_path() -> Path:
     )
 
 
+def _vereine_seed_path() -> Path:
+    return (
+        Path(__file__).resolve().parents[1]
+        / "database"
+        / "relational_csv"
+        / "vereine_seed.csv"
+    )
+
+
 def _split_pipe_list(raw: object) -> List[str]:
     return [part.strip() for part in str(raw or "").split("|") if part.strip()]
 
@@ -90,7 +99,18 @@ def _join_pipe(values: Iterable[str]) -> str:
 
 
 def verein_identity_key(label: object) -> str:
-    return normalize_unicode_label(label).casefold()
+    """
+    Stable match key for Verein labels.
+
+    Collapses hyphen/space/slash noise and optional leading ordinals so
+    ``1. BSV Ulm/Neu Ulm``, ``1.BSV Ulm/Neu-Ulm``, and ``BSV Ulm/Neu-Ulm`` align.
+    """
+    text = normalize_unicode_label(label).casefold()
+    if not text:
+        return ""
+    text = re.sub(r"^(\d+)\.\s*", "", text)
+    text = re.sub(r"[\s\-_/]+", " ", text)
+    return re.sub(r"\s+", " ", text).strip()
 
 
 def canonicalize_verein_label(label: object) -> str:
@@ -479,23 +499,120 @@ def load_affiliation_index_df() -> Optional[pd.DataFrame]:
     return pd.read_csv(load_path, sep=";", dtype=str, keep_default_na=False)
 
 
+def load_vereine_seed_df() -> pd.DataFrame:
+    """Manual Verein aliases + member clubs (fills gaps when Rangliste is absent)."""
+    path = _vereine_seed_path()
+    if not path.is_file():
+        return pd.DataFrame(columns=list(VEREINE_REGISTRY_COLUMNS))
+    return pd.read_csv(path, sep=";", dtype=str, keep_default_na=False)
+
+
+def merge_vereine_registry_frames(
+    published: Optional[pd.DataFrame],
+    seed: Optional[pd.DataFrame] = None,
+) -> pd.DataFrame:
+    """Merge published Vereine with seed; seed aliases/member_clubs union into matches."""
+    seed_df = seed if seed is not None else load_vereine_seed_df()
+    frames: List[pd.DataFrame] = []
+    if published is not None and not published.empty:
+        frames.append(published.copy())
+    if seed_df is not None and not seed_df.empty:
+        frames.append(seed_df.copy())
+    if not frames:
+        return pd.DataFrame(columns=list(VEREINE_REGISTRY_COLUMNS))
+
+    buckets: Dict[str, Dict[str, Any]] = {}
+    for frame in frames:
+        for row in frame.itertuples(index=False):
+            canonical = normalize_unicode_label(getattr(row, "canonical_verein", "") or "")
+            if not canonical:
+                continue
+            key = verein_identity_key(canonical)
+            bucket = buckets.setdefault(
+                key,
+                {
+                    "canonical_verein": canonical,
+                    "aliases": set(),
+                    "member_clubs": set(),
+                    "source": normalize_unicode_label(getattr(row, "source", "") or "") or "seed",
+                    "updated_at": normalize_unicode_label(getattr(row, "updated_at", "") or ""),
+                },
+            )
+            aliases = _split_pipe_list(getattr(row, "aliases", ""))
+            members = _split_pipe_list(getattr(row, "member_clubs", ""))
+            for alias in aliases:
+                if alias != bucket["canonical_verein"]:
+                    bucket["aliases"].add(alias)
+            if canonical != bucket["canonical_verein"]:
+                bucket["aliases"].add(canonical)
+            for club in members:
+                bucket["member_clubs"].add(club)
+            src = normalize_unicode_label(getattr(row, "source", "") or "")
+            if src and bucket["source"] in {"", "seed"}:
+                bucket["source"] = src
+            updated = normalize_unicode_label(getattr(row, "updated_at", "") or "")
+            if updated:
+                bucket["updated_at"] = updated
+
+    rows = [
+        {
+            "canonical_verein": item["canonical_verein"],
+            "aliases": _join_pipe(sorted(item["aliases"])),
+            "member_clubs": _join_pipe(sorted(item["member_clubs"])),
+            "source": item["source"],
+            "updated_at": item["updated_at"],
+        }
+        for _, item in sorted(buckets.items(), key=lambda kv: kv[1]["canonical_verein"].casefold())
+    ]
+    return pd.DataFrame(rows, columns=list(VEREINE_REGISTRY_COLUMNS))
+
+
 @lru_cache(maxsize=1)
 def load_vereine_registry_df() -> Optional[pd.DataFrame]:
     path = _vereine_registry_path()
     from data_access.parquet_sidecar import data_file_exists, resolve_load_path
 
-    if not data_file_exists(path):
+    published: Optional[pd.DataFrame] = None
+    if data_file_exists(path):
+        load_path = resolve_load_path(path)
+        if load_path.suffix.lower() == ".parquet":
+            published = pd.read_parquet(load_path)
+        else:
+            published = pd.read_csv(load_path, sep=";", dtype=str, keep_default_na=False)
+    merged = merge_vereine_registry_frames(published)
+    if merged.empty:
         return None
-    load_path = resolve_load_path(path)
-    if load_path.suffix.lower() == ".parquet":
-        return pd.read_parquet(load_path)
-    return pd.read_csv(load_path, sep=";", dtype=str, keep_default_na=False)
+    return merged
+
+
+def build_club_to_verein_lookup(
+    vereine_df: Optional[pd.DataFrame] = None,
+) -> Dict[str, str]:
+    """Map club identity key → canonical Verein (from ``member_clubs``)."""
+    df = vereine_df if vereine_df is not None else load_vereine_registry_df()
+    out: Dict[str, str] = {}
+    if df is None or df.empty:
+        return out
+    for row in df.itertuples(index=False):
+        canonical = normalize_unicode_label(getattr(row, "canonical_verein", "") or "")
+        if not canonical:
+            continue
+        for club in _split_pipe_list(getattr(row, "member_clubs", "")):
+            key = club_identity_key(club)
+            if key and key not in out:
+                out[key] = canonical
+    return out
 
 
 def build_affiliation_lookup(
     affiliation_df: Optional[pd.DataFrame] = None,
+    *,
+    club_to_verein: Optional[Mapping[str, str]] = None,
 ) -> Dict[Tuple[str, str], Dict[str, str]]:
     df = affiliation_df if affiliation_df is not None else load_affiliation_index_df()
+    club_map = club_to_verein
+    if club_map is None:
+        club_map = build_club_to_verein_lookup()
     out: Dict[Tuple[str, str], Dict[str, str]] = {}
     if df is None or df.empty:
         return out
@@ -504,11 +621,19 @@ def build_affiliation_lookup(
         season = normalize_unicode_label(getattr(row, "season", ""))
         if not player_id or not season:
             continue
+        club_canonical = normalize_unicode_label(getattr(row, "club_canonical", "") or "")
+        club_raw = normalize_unicode_label(getattr(row, "club_raw", "") or "")
+        verein_canonical = normalize_unicode_label(getattr(row, "verein_canonical", "") or "")
+        verein_raw = normalize_unicode_label(getattr(row, "verein_raw", "") or "")
+        if not verein_canonical and not verein_raw and club_map:
+            inferred = club_map.get(club_identity_key(club_canonical or club_raw), "")
+            if inferred:
+                verein_canonical = inferred
         out[(player_id, season)] = {
-            "club_raw": normalize_unicode_label(getattr(row, "club_raw", "") or ""),
-            "verein_raw": normalize_unicode_label(getattr(row, "verein_raw", "") or ""),
-            "club_canonical": normalize_unicode_label(getattr(row, "club_canonical", "") or ""),
-            "verein_canonical": normalize_unicode_label(getattr(row, "verein_canonical", "") or ""),
+            "club_raw": club_raw,
+            "verein_raw": verein_raw,
+            "club_canonical": club_canonical,
+            "verein_canonical": verein_canonical,
             "is_einzelmitglied": str(getattr(row, "is_einzelmitglied", "") or "").strip().lower() == "true",
             "source": normalize_unicode_label(getattr(row, "source", "") or ""),
         }

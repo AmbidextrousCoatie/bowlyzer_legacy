@@ -11,6 +11,10 @@ from data_access.player_id_name_normalization import (
     apply_player_id_name_normalization,
     load_player_id_only_remapping_rules,
 )
+from data_access.player_name_normalization import (
+    canonicalize_player_name,
+    normalize_player_label,
+)
 from data_access.players_registry import (
     apply_legacy_player_id_remapping,
     apply_players_registry,
@@ -25,11 +29,42 @@ from data_access.schema import Columns
 from data_access.text_norm import normalize_unicode_label
 
 
+def apply_player_name_format_canonicalization(
+    df: pd.DataFrame,
+) -> Tuple[pd.DataFrame, Dict[str, int]]:
+    """
+    Rewrite ``Given Family`` labels to canonical ``Family, Given`` when no comma is present.
+
+    Used after players-registry apply so unresolved (or unregistered) tournament rows
+    still match league / Spieler display form. Skips walkover tags and single-token names.
+    """
+    if df is None or df.empty or Columns.player_name not in df.columns:
+        return df, {"player_name_format_rows_changed": 0}
+
+    out = df.copy()
+    changed = 0
+    for idx, raw in out[Columns.player_name].items():
+        label = normalize_player_label(raw)
+        if not label or "," in label or "(" in label:
+            continue
+        if label.casefold() == "team total":
+            continue
+        if len(label.split()) < 2:
+            continue
+        canon = canonicalize_player_name(label)
+        if not canon or normalize_player_label(canon) == label:
+            continue
+        out.at[idx, Columns.player_name] = canon
+        changed += 1
+    return out, {"player_name_format_rows_changed": changed}
+
+
 def normalize_tournament_dataframe(
     df: pd.DataFrame,
     *,
     normalize_clubs: bool = True,
     normalize_player_ids: bool = True,
+    normalize_player_names: bool = True,
     resolve_affiliations: bool = True,
     reporting_mode: str | None = None,
 ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
@@ -49,11 +84,22 @@ def normalize_tournament_dataframe(
         "club_registry_unresolved": 0,
         "player_id_rows_changed": 0,
         "registry_rows_changed": 0,
+        "player_name_format_rows_changed": 0,
         "affiliation_rows_changed": 0,
         "legacy_id_remapped": 0,
     }
 
     if normalize_player_ids:
+        if Columns.player_id in out.columns:
+            from data_access.player_id_name_normalization import normalize_player_id as _norm_pid
+
+            before = out[Columns.player_id].fillna("").astype(str).str.strip()
+            after = before.map(_norm_pid)
+            # Preserve blanks; collapse zero-padded EDVs (``016008`` → ``16008``).
+            rewritten = after.where(after.ne(""), before)
+            stats["player_id_zero_padded"] = int((rewritten != before).sum())
+            out[Columns.player_id] = rewritten
+
         out, legacy_stats = apply_legacy_player_id_remapping(out)
         stats["legacy_id_remapped"] = int(legacy_stats.get("legacy_id_remapped") or 0)
 
@@ -76,6 +122,12 @@ def normalize_tournament_dataframe(
                 + registry_stats.get("registry_substring", 0)
             )
             stats["registry_rule_hits"] = dict(registry_stats)
+
+    if normalize_player_names and Columns.player_name in out.columns:
+        out, format_stats = apply_player_name_format_canonicalization(out)
+        stats["player_name_format_rows_changed"] = int(
+            format_stats.get("player_name_format_rows_changed") or 0
+        )
 
     if resolve_affiliations and Columns.club in out.columns:
         out, aff_stats = apply_tournament_affiliation_resolution(
@@ -157,6 +209,9 @@ def format_tournament_normalization_summary(stats: Mapping[str, Any]) -> str:
     reg = int(stats.get("registry_rows_changed") or 0)
     if reg:
         lines.append(f"Players registry: {reg} row(s)")
+    fmt = int(stats.get("player_name_format_rows_changed") or 0)
+    if fmt:
+        lines.append(f"Player name format: {fmt} row(s)")
     aff = int(stats.get("affiliation_rows_changed") or 0)
     if aff or stats.get("affiliation_rule_hits"):
         lines.append(format_tournament_affiliation_summary(stats.get("affiliation_rule_hits") or {}))

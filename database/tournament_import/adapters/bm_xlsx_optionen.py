@@ -12,7 +12,7 @@ from database.tournament_import.config import ImportEntry
 
 
 def _load_legacy_module():
-    path = REPO_ROOT / "database" / "input" / "import_bayerische_meisterschaft_xlsx.py"
+    path = REPO_ROOT / "scripts" / "data" / "import_bayerische_meisterschaft_xlsx.py"
     name = "import_bayerische_meisterschaft_xlsx"
     mod = sys.modules.get(name)
     if mod is not None:

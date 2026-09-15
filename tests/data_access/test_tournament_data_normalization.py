@@ -25,6 +25,41 @@ def test_normalize_tournament_club_names() -> None:
     assert int(stats.get("club_cells_normalized") or 0) >= 0
 
 
+def test_normalize_player_name_format_to_family_given() -> None:
+    df = pd.DataFrame(
+        [
+            {
+                Columns.season: "25/26",
+                Columns.player_name: "Christian Feller",
+                Columns.player_id: "99999",
+                Columns.event_type: "tournament",
+            },
+            {
+                Columns.season: "25/26",
+                Columns.player_name: "Lechner, Christian",
+                Columns.player_id: "88888",
+                Columns.event_type: "tournament",
+            },
+            {
+                Columns.season: "25/26",
+                Columns.player_name: "Ghost (No show)",
+                Columns.player_id: "",
+                Columns.event_type: "tournament",
+            },
+        ]
+    )
+    out, stats = normalize_tournament_dataframe(
+        df,
+        normalize_player_ids=False,
+        normalize_clubs=False,
+        resolve_affiliations=False,
+    )
+    assert out.iloc[0][Columns.player_name] == "Feller, Christian"
+    assert out.iloc[1][Columns.player_name] == "Lechner, Christian"
+    assert out.iloc[2][Columns.player_name] == "Ghost (No show)"
+    assert int(stats.get("player_name_format_rows_changed") or 0) == 1
+
+
 def test_normalize_collapses_affiliation_sourced_club_aliases() -> None:
     """Index hits must still fold club_mapping aliases (Spiele nach Club vs Clubzugehörigkeit)."""
     df = pd.DataFrame(

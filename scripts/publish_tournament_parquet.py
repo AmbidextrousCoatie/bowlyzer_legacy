@@ -37,9 +37,11 @@ def merge_tournament_sources(
 
     frames = []
     norm_stats_total: dict[str, Any] = {
-        "club_cells_normalized": 0,
+        "club_registry_rows_changed": 0,
         "player_id_rows_changed": 0,
         "registry_rows_changed": 0,
+        "player_name_format_rows_changed": 0,
+        "affiliation_rows_changed": 0,
     }
     for path in input_paths:
         frame = pd.read_csv(path, **CSV_READ_KW)
@@ -50,8 +52,16 @@ def merge_tournament_sources(
             )
 
             frame, batch_stats = normalize_tournament_dataframe(frame)
-            for key in ("club_cells_normalized", "player_id_rows_changed", "registry_rows_changed"):
+            for key in (
+                "club_registry_rows_changed",
+                "player_id_rows_changed",
+                "registry_rows_changed",
+                "player_name_format_rows_changed",
+                "affiliation_rows_changed",
+            ):
                 norm_stats_total[key] = int(norm_stats_total.get(key, 0)) + int(batch_stats.get(key) or 0)
+            if batch_stats.get("affiliation_rule_hits"):
+                norm_stats_total["affiliation_rule_hits"] = batch_stats["affiliation_rule_hits"]
         frames.append(frame)
 
     combined = pd.concat(frames, ignore_index=True, sort=False)

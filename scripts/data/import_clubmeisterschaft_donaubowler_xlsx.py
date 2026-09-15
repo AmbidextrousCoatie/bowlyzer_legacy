@@ -64,15 +64,13 @@ NUM_SET_BLOCKS = 6  # six sets in stage 1
 
 EVENT_NAME = "Clubmeisterschaft Donaubowler 2026"
 
-# Finals workbook: "Last, First" / typos → preferred display (qualifying uses "First Last").
-FINALE_NAME_ALIASES = {
-    "harteil, volkmar": "Volkmar Hartfeil",
-    "hartfeil, volkmar": "Volkmar Hartfeil",
-    "feller, christian": "Christian Feller",
-    "obermeier, kurt": "Kurt Obermeier",
-    "schneider, tobias": "Tobias Schneider",
-    "rettinger, fabian": "Fabian Rettinger",
-    "luu, vinh duc": "Luu Vinh Duc",
+# Typos / multi-token family names that bare format heuristics get wrong.
+# Values are canonical ``Family, Given`` (same as league / players registry).
+PLAYER_NAME_ALIASES = {
+    "harteil, volkmar": "Hartfeil, Volkmar",
+    "volkmar harteil": "Hartfeil, Volkmar",
+    "luu, vinh duc": "Luu, Vinh Duc",
+    "luu vinh duc": "Luu, Vinh Duc",
 }
 
 # Finals sheet columns (1-based): seed, name, hdc/game, then scratch games, then inkl-hdc mirrors.
@@ -198,7 +196,7 @@ def _merge_into_manual_postprocessed(bmi, new_rows: List[Dict[str, str]]) -> Tup
 
 def _load_bayerische_import_module():
     """Load sibling import module (no package __init__)."""
-    path = ROOT / "database" / "input" / "import_bayerische_meisterschaft_xlsx.py"
+    path = ROOT / "scripts" / "data" / "import_bayerische_meisterschaft_xlsx.py"
     name = "import_bayerische_meisterschaft_xlsx"
     spec = importlib.util.spec_from_file_location(name, path)
     mod = importlib.util.module_from_spec(spec)
@@ -394,14 +392,17 @@ def _extract_rows_for_sheet(
     clean_rows: List[Dict[str, str]] = []
     unmatched: List[str] = []
 
-    for row_idx, display_name in _iter_data_rows(ws, first_data_row):
+    for row_idx, raw_name in _iter_data_rows(ws, first_data_row):
         ref_f = _as_float(ws.cell(row=row_idx, column=COL_REF_HANDICAP).value)
         ap_f = _as_float(ws.cell(row=row_idx, column=COL_AP_AVG).value)
         if ref_f is not None and ap_f is not None:
             h_per_game = _handicap_per_game_pins(ref_f, ap_f)
         else:
             h_per_game = 0
+        display_name = _canonicalize_player_display_name(raw_name)
         pid, _matched_key = _resolve_player_id(display_name, player_lookup)
+        if not pid:
+            pid, _matched_key = _resolve_player_id(raw_name, player_lookup)
         if not pid:
             unmatched.append(display_name)
             pid = f"UNK{hashlib.md5(display_name.encode('utf-8')).hexdigest()[:10]}"
@@ -441,19 +442,17 @@ def _extract_rows_for_sheet(
     return clean_rows, unmatched
 
 
-def _canonicalize_finale_name(raw: str) -> str:
+def _canonicalize_player_display_name(raw: str) -> str:
+    """Normalize a sheet label to canonical ``Family, Given`` form."""
     name = (raw or "").strip()
     if not name:
         return name
-    alias = FINALE_NAME_ALIASES.get(_norm_ws(name))
+    alias = PLAYER_NAME_ALIASES.get(_norm_ws(name))
     if alias:
         return alias
-    # "Last, First" → "First Last"
-    if "," in name:
-        parts = [p.strip() for p in name.split(",", 1)]
-        if len(parts) == 2 and parts[0] and parts[1]:
-            return f"{parts[1]} {parts[0]}"
-    return name
+    from data_access.player_name_normalization import canonicalize_player_name
+
+    return canonicalize_player_name(name) or name
 
 
 def _extract_finale_rows_for_sheet(
@@ -499,7 +498,7 @@ def _extract_finale_rows_for_sheet(
         if raw_name is None or not str(raw_name).strip():
             continue
         display_raw = str(raw_name).strip()
-        display_name = _canonicalize_finale_name(display_raw)
+        display_name = _canonicalize_player_display_name(display_raw)
         hdc = _as_int_score(ws.cell(row=row_idx, column=FINALE_COL_HDC).value)
         h_per_game = int(hdc) if hdc is not None else 0
 

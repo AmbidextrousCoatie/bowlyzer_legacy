@@ -36,7 +36,7 @@ export function resolveHomeStats(stats: HomeStats | undefined) {
 
 export function useHomeStats() {
   return useQuery({
-    queryKey: ["home", "stats", "v2"],
+    queryKey: ["home", "stats", "v3"],
     queryFn: () => fetchJson<HomeStats>(buildUrl("/home/stats")),
     staleTime: 5 * 60_000,
   });

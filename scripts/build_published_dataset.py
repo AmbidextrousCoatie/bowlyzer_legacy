@@ -157,6 +157,8 @@ def merge_tournament_sources(
         "club_registry_unresolved": 0,
         "player_id_rows_changed": 0,
         "registry_rows_changed": 0,
+        "player_name_format_rows_changed": 0,
+        "affiliation_rows_changed": 0,
     }
     for path in input_paths:
         frame = pd.read_csv(path, **CSV_READ_KW)
@@ -170,18 +172,19 @@ def merge_tournament_sources(
                 frame,
                 reporting_mode=affiliation_reporting_mode,
             )
-            norm_stats_total["club_registry_rows_changed"] += int(
-                batch_stats.get("club_registry_rows_changed") or 0
-            )
-            norm_stats_total["club_registry_unresolved"] += int(
-                batch_stats.get("club_registry_unresolved") or 0
-            )
-            norm_stats_total["player_id_rows_changed"] += int(
-                batch_stats.get("player_id_rows_changed") or 0
-            )
-            norm_stats_total["registry_rows_changed"] += int(
-                batch_stats.get("registry_rows_changed") or 0
-            )
+            for key in (
+                "club_registry_rows_changed",
+                "club_registry_unresolved",
+                "player_id_rows_changed",
+                "registry_rows_changed",
+                "player_name_format_rows_changed",
+                "affiliation_rows_changed",
+            ):
+                norm_stats_total[key] = int(norm_stats_total.get(key, 0)) + int(
+                    batch_stats.get(key) or 0
+                )
+            if batch_stats.get("affiliation_rule_hits"):
+                norm_stats_total["affiliation_rule_hits"] = batch_stats["affiliation_rule_hits"]
         frames.append(frame)
 
     combined = pd.concat(frames, ignore_index=True, sort=False)

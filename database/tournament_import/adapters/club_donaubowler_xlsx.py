@@ -14,7 +14,7 @@ from openpyxl import load_workbook
 
 
 def _load_club_module():
-    path = REPO_ROOT / "database" / "input" / "import_clubmeisterschaft_donaubowler_xlsx.py"
+    path = REPO_ROOT / "scripts" / "data" / "import_clubmeisterschaft_donaubowler_xlsx.py"
     name = "import_clubmeisterschaft_donaubowler_xlsx"
     mod = sys.modules.get(name)
     if mod is not None:

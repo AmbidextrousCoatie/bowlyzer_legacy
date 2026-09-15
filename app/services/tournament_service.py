@@ -646,13 +646,41 @@ class TournamentService:
             return df.iloc[0:0].copy()
         return df.loc[mask].copy()
 
-    def get_players(self, season: str, tournament: str, round_number: Optional[int] = None) -> List[str]:
+    def _tournament_player_search_entries(self, df: pd.DataFrame) -> List[Dict[str, str]]:
+        """Unique ``{id, name}`` rows for PlayerSearch (Family, Given + EDV id)."""
+        if df is None or df.empty or Columns.player_name not in df.columns:
+            return []
+        names = df[Columns.player_name].astype(str).str.strip()
+        mask = names.ne("") & names.str.casefold().ne("team total")
+        work = df.loc[mask].copy()
+        if work.empty:
+            return []
+        work["_name"] = names.loc[mask]
+        if Columns.player_id in work.columns:
+            raw_ids = work[Columns.player_id].map(
+                lambda v: str(v).strip() if v is not None and str(v).strip().lower() not in {"", "nan", "none"} else ""
+            )
+            work["_id"] = raw_ids.where(raw_ids.ne("0"), "")
+        else:
+            work["_id"] = ""
+
+        by_key: Dict[str, str] = {}
+        for name, pid in zip(work["_name"].tolist(), work["_id"].tolist()):
+            key = pid if pid else name
+            if key not in by_key:
+                by_key[key] = name
+        return sorted(
+            [{"id": pid, "name": name} for pid, name in by_key.items()],
+            key=lambda row: row["name"].casefold(),
+        )
+
+    def get_players(
+        self, season: str, tournament: str, round_number: Optional[int] = None
+    ) -> List[Dict[str, str]]:
         df = self._get_tournament_df(season=season, tournament=tournament)
         if round_number is not None and not df.empty:
             df = self._scope_df(df, round_number)
-        if df.empty or Columns.player_name not in df.columns:
-            return []
-        return sorted([x for x in df[Columns.player_name].dropna().astype(str).unique().tolist() if x.strip()])
+        return self._tournament_player_search_entries(df)
 
     def get_rounds(
         self,
@@ -5677,17 +5705,9 @@ class TournamentService:
         self,
         season: Optional[str] = None,
         tournament: Optional[str] = None,
-    ) -> List[str]:
+    ) -> List[Dict[str, str]]:
         df = self._get_tournament_df(season=season, tournament=tournament)
-        if df.empty or Columns.player_name not in df.columns:
-            return []
-        return sorted(
-            {
-                str(name).strip()
-                for name in df[Columns.player_name].dropna().astype(str).tolist()
-                if str(name).strip()
-            }
-        )
+        return self._tournament_player_search_entries(df)
 
     def get_player_tournament_results(
         self,

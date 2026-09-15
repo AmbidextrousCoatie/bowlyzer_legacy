@@ -7,8 +7,10 @@ import pandas as pd
 from data_access.affiliation_registry import (
     build_affiliation_lookup,
     build_vereine_registry_dataframe,
+    merge_vereine_registry_frames,
     neighbor_seasons,
     resolve_rangliste_club_canonical,
+    verein_identity_key,
 )
 from data_access.aktive_mitglieder_registry import (
     is_einzelmitglied_club,
@@ -93,6 +95,46 @@ def test_build_vereine_registry_from_affiliation_rows() -> None:
 
 def test_neighbor_seasons() -> None:
     assert neighbor_seasons("14/15") == ["13/14", "15/16"]
+
+
+def test_verein_identity_key_collapses_hyphen_space_and_ordinal() -> None:
+    assert verein_identity_key("1. BSV Ulm/Neu Ulm") == verein_identity_key(
+        "1. BSV Ulm/Neu-Ulm"
+    )
+    assert verein_identity_key("1.BSV Ulm/Neu-Ulm") == verein_identity_key(
+        "BSV Ulm/Neu-Ulm"
+    )
+
+
+def test_merge_vereine_seed_unions_aliases_and_member_clubs() -> None:
+    published = pd.DataFrame(
+        [
+            {
+                "canonical_verein": "1. BSV Ulm/Neu-Ulm",
+                "aliases": "1.BSV Ulm/Neu-Ulm",
+                "member_clubs": "Falken Neu-Ulm",
+                "source": "rangliste",
+                "updated_at": "t",
+            }
+        ]
+    )
+    seed = pd.DataFrame(
+        [
+            {
+                "canonical_verein": "1. BSV Ulm/Neu-Ulm",
+                "aliases": "1. BSV Ulm/Neu Ulm",
+                "member_clubs": "Murmels Neu-Ulm|Falken Neu-Ulm",
+                "source": "seed",
+                "updated_at": "t2",
+            }
+        ]
+    )
+    merged = merge_vereine_registry_frames(published, seed)
+    assert len(merged) == 1
+    row = merged.iloc[0]
+    assert "1. BSV Ulm/Neu Ulm" in row["aliases"]
+    assert "Murmels Neu-Ulm" in row["member_clubs"]
+    assert "Falken Neu-Ulm" in row["member_clubs"]
 
 
 def test_build_affiliation_lookup_keyed_by_player_season() -> None:

@@ -80,6 +80,20 @@ def test_build_round_rows_skips_blank_game_cells(imp, monkeypatch: pytest.Monkey
     assert len(rows) == 2
     assert all(int(r["Score"]) > 0 for r in rows)
     assert {r["Game Number"] for r in rows} == {"0", "1"}
+    assert {r["Player"] for r in rows} == {"Spieler, Test"}
+
+
+def test_player_display_name_canonicalizes_given_family(imp) -> None:
+    assert imp._player_display_name("Christian Feller") == "Feller, Christian"
+    assert imp._player_display_name("Feller, Christian") == "Feller, Christian"
+    assert imp._player_display_name("Absent (No show)") == "Absent (No show)"
+
+
+def test_player_id_lookup_accepts_flipped_name(imp) -> None:
+    mapping: dict[str, str] = {}
+    imp._register_player_id(mapping, "Christian Feller", "42")
+    assert imp._lookup_player_id(mapping, "Feller, Christian") == "42"
+    assert imp._lookup_player_id(mapping, "Christian Feller") == "42"
 
 
 def test_extract_ko_rows_skips_zero_pin_games(imp) -> None:
