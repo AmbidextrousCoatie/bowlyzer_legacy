@@ -156,7 +156,7 @@ def _cell_contains(value: Any, needle: str) -> bool:
 
 def _normalize_team_key(name: str) -> str:
     try:
-        from scripts.data.extract_excel_data import normalize_team_name
+        from data_access.team_name_normalization import normalize_team_name
 
         return str(normalize_team_name(name) or "").strip().casefold()
     except Exception:
@@ -778,7 +778,7 @@ def _load_team_number_override_map() -> Dict[Tuple[str, str, str, str], str]:
 
 def _apply_team_name_normalization(team: str) -> str:
     """Single-pass team name normalization (same as merge ``normalize_extracted_dataframe``)."""
-    from scripts.data.extract_excel_data import normalize_team_name
+    from data_access.team_name_normalization import normalize_team_name
 
     return str(normalize_team_name(team) or "").strip()
 

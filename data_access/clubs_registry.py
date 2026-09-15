@@ -13,8 +13,8 @@ import pandas as pd
 
 from data_access.competition_schema import club_name_from_team
 from data_access.schema import Columns
+from data_access.team_name_normalization import normalize_team_name
 from data_access.text_norm import normalize_unicode_label
-from scripts.data.extract_excel_data import normalize_team_name
 
 REGISTRY_COLUMNS = ("canonical_name", "aliases", "team_labels", "source", "updated_at")
 REGISTRY_FORMAT_VERSION = 1
