@@ -1,6 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
-import { buildTournamentUrl, fetchJson } from "../lib/api";
 import type { TableData } from "../lib/datatable/types";
+import {
+  formatFromV1,
+  loadPlayerTournaments,
+  loadTournamentCatalog,
+  loadTournamentDocument,
+  loadTournamentPlayerSection,
+  loadTournamentPlayers,
+  loadTournamentPodiums,
+  playerSectionFromV1,
+  sectionFromV1,
+} from "../lib/tournamentV1";
+import { V1_QUERY_KEY } from "../lib/v1";
 import type { PlayerSearchEntry } from "./usePlayer";
 
 /** List endpoints are backed by server-side CSV revision cache; avoid refetch churn. */
@@ -298,39 +309,37 @@ export type TournamentPlayerResultRow = {
 
 export function useTournamentSeasons(tournament?: string | null, club?: string | null) {
   return useQuery({
-    queryKey: ["tournament", "seasons", tournament ?? "", club ?? ""],
-    queryFn: () =>
-      fetchJson<string[]>(
-        buildTournamentUrl("/tournament/get_available_seasons", {
-          tournament: tournament ?? undefined,
-          club: club || undefined,
-        }),
-      ),
+    queryKey: [V1_QUERY_KEY, "tournaments", "seasons", club ?? "", tournament ?? ""],
+    queryFn: async () => {
+      const catalog = await loadTournamentCatalog({
+        event: tournament || undefined,
+        club: club || undefined,
+      });
+      return catalog.seasons;
+    },
     staleTime: TOURNAMENT_LIST_STALE_MS,
   });
 }
 
 export function useTournamentNames(season: string | null, club?: string | null) {
   return useQuery({
-    queryKey: ["tournament", "tournaments", season ?? "", club ?? ""],
-    queryFn: () =>
-      fetchJson<string[]>(
-        buildTournamentUrl("/tournament/get_available_tournaments", {
-          season: season || undefined,
-          club: club || undefined,
-        }),
-      ),
+    queryKey: [V1_QUERY_KEY, "tournaments", "events", season ?? "", club ?? ""],
+    queryFn: async () => {
+      const catalog = await loadTournamentCatalog({
+        season: season || undefined,
+        club: club || undefined,
+      });
+      return catalog.events;
+    },
     staleTime: TOURNAMENT_LIST_STALE_MS,
   });
 }
 
 export function useTournamentRounds(season: string | null, tournament: string | null) {
   return useQuery({
-    queryKey: ["tournament", "rounds", season, tournament],
-    queryFn: () =>
-      fetchJson<TournamentRound[]>(
-        buildTournamentUrl("/tournament/get_available_rounds", { season, tournament }),
-      ),
+    queryKey: [V1_QUERY_KEY, "tournaments", "document", season, tournament, ""],
+    queryFn: () => loadTournamentDocument(season!, tournament!),
+    select: (raw) => sectionFromV1(raw).rounds ?? [],
     enabled: !!season && !!tournament,
     staleTime: TOURNAMENT_LIST_STALE_MS,
   });
@@ -338,15 +347,18 @@ export function useTournamentRounds(season: string | null, tournament: string | 
 
 export function useTournamentFormat(season: string | null, tournament: string | null) {
   return useQuery({
-    // Bump when API shape changes (e.g. handicap on get_tournament_format) so TanStack Query refetches.
-    queryKey: ["tournament", "format", "v2-handicap", season, tournament],
-    queryFn: () =>
-      fetchJson<TournamentFormatInfo>(
-        buildTournamentUrl("/tournament/get_tournament_format", { season, tournament }),
-      ),
+    queryKey: [V1_QUERY_KEY, "tournaments", "document", season, tournament, ""],
+    queryFn: () => loadTournamentDocument(season!, tournament!),
+    select: (raw) => formatFromV1(asRecord(raw).format),
     enabled: !!season && !!tournament,
     staleTime: TOURNAMENT_LIST_STALE_MS,
   });
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
 }
 
 export function useTournamentPlayers(
@@ -356,15 +368,13 @@ export function useTournamentPlayers(
 ) {
   const needsEventScope = !!round;
   return useQuery({
-    queryKey: ["tournament", "players", "v2", season ?? "", tournament ?? "", round ?? ""],
+    queryKey: [V1_QUERY_KEY, "tournaments", "players", season ?? "", tournament ?? "", round ?? ""],
     queryFn: () =>
-      fetchJson<PlayerSearchEntry[]>(
-        buildTournamentUrl("/tournament/get_available_players", {
-          season: season || undefined,
-          tournament: tournament || undefined,
-          round: round || undefined,
-        }),
-      ),
+      loadTournamentPlayers({
+        season: season || undefined,
+        event: tournament || undefined,
+        round: round || undefined,
+      }),
     enabled: !needsEventScope || (!!season && !!tournament),
     staleTime: TOURNAMENT_LIST_STALE_MS,
   });
@@ -377,16 +387,13 @@ export function useTournamentPodiums(
 ) {
   const showOverview = !(season && tournament);
   return useQuery({
-    queryKey: ["tournament", "podiums", season ?? "", tournament ?? "", club ?? ""],
+    queryKey: [V1_QUERY_KEY, "tournaments", "podiums", season ?? "", tournament ?? "", club ?? ""],
     queryFn: () =>
-      fetchJson<TournamentPodiumsPayload>(
-        buildTournamentUrl("/tournament/get_tournament_podiums", {
-          season: season || undefined,
-          tournament: tournament || undefined,
-          club: club || undefined,
-          n: 3,
-        }),
-      ),
+      loadTournamentPodiums({
+        season: season || undefined,
+        event: tournament || undefined,
+        club: club || undefined,
+      }),
     enabled: showOverview,
     staleTime: TOURNAMENT_LIST_STALE_MS,
   });
@@ -399,15 +406,19 @@ export function usePlayerTournamentResults(
 ) {
   const showOverview = !!player && !(season && tournament);
   return useQuery({
-    queryKey: ["tournament", "player-results", player ?? "", season ?? "", tournament ?? ""],
+    queryKey: [
+      V1_QUERY_KEY,
+      "players",
+      "tournaments",
+      player ?? "",
+      season ?? "",
+      tournament ?? "",
+    ],
     queryFn: () =>
-      fetchJson<TournamentPlayerResultRow[]>(
-        buildTournamentUrl("/tournament/get_player_tournament_results", {
-          player: player!,
-          season: season || undefined,
-          tournament: tournament || undefined,
-        }),
-      ),
+      loadPlayerTournaments(player!, {
+        season: season || undefined,
+        event: tournament || undefined,
+      }),
     enabled: showOverview,
     staleTime: TOURNAMENT_LIST_STALE_MS,
   });
@@ -419,16 +430,9 @@ export function useTournamentSection(
   round: string | null,
 ) {
   return useQuery({
-    queryKey: ["tournament", "section", season, tournament, round ?? ""],
-    queryFn: () =>
-      fetchJson<TournamentSection>(
-        buildTournamentUrl("/tournament/get_section", {
-          season,
-          tournament,
-          round: round || undefined,
-          n: 5,
-        }),
-      ),
+    queryKey: [V1_QUERY_KEY, "tournaments", "document", season, tournament, round ?? ""],
+    queryFn: () => loadTournamentDocument(season!, tournament!, round),
+    select: sectionFromV1,
     enabled: !!season && !!tournament,
   });
 }
@@ -439,15 +443,9 @@ export function usePlayerSectionForTournament(
   player: string | null,
 ) {
   return useQuery({
-    queryKey: ["tournament", "player-section", "v4-hcp-per-spiel", season, tournament, player],
-    queryFn: () =>
-      fetchJson<TournamentPlayerSection>(
-        buildTournamentUrl("/tournament/get_player_section", {
-          season: season!,
-          tournament: tournament!,
-          player: player!,
-        }),
-      ),
+    queryKey: [V1_QUERY_KEY, "tournaments", "player-section", season, tournament, player],
+    queryFn: async () =>
+      playerSectionFromV1(await loadTournamentPlayerSection(season!, tournament!, player!)),
     enabled: Boolean(season && tournament && player),
     retry: 1,
   });
