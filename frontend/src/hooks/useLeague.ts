@@ -1,6 +1,8 @@
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { buildUrl, fetchJson } from "../lib/api";
 import { loadClubMatrix } from "../lib/clubMatrixV1";
+import { loadClubLegends } from "../lib/clubLegendsV1";
+import { loadClubRankings } from "../lib/clubRankingsV1";
 import type { ClubMatrixSeasonCell } from "../lib/clubMatrixCell";
 import type { TableData } from "../lib/datatable/types";
 import { coerceTimetableTable } from "../lib/seasonSpielplan";
@@ -481,14 +483,10 @@ export function normalizeClubRankingsPayload(
 }
 
 export function useClubRankings(options?: { enabled?: boolean }) {
-  const database =
-    typeof window !== "undefined"
-      ? new URLSearchParams(window.location.search).get("database")
-      : null;
   const enabled = options?.enabled ?? true;
   return useQuery({
-    queryKey: ["league", "club-rankings", database ?? ""],
-    queryFn: () => fetchJson<ClubRankingsPayload>(buildUrl("/league/get_club_rankings")),
+    queryKey: [V1_QUERY_KEY, "clubs", "rankings"],
+    queryFn: () => loadClubRankings(),
     select: normalizeClubRankingsPayload,
     staleTime: DIAGNOSIS_LIST_STALE_MS,
     enabled,
@@ -499,19 +497,11 @@ export function useClubLegends(
   club: string | null,
   options?: { enabled?: boolean; season?: string | null },
 ) {
-  const database =
-    typeof window !== "undefined"
-      ? new URLSearchParams(window.location.search).get("database")
-      : null;
   const enabled = options?.enabled ?? true;
   const season = scopedClubSeason(options?.season);
   return useQuery({
-    queryKey: ["league", "club-legends", database ?? "", club ?? "", season ?? "all"],
-    queryFn: () =>
-      fetchJson<ClubLegendsPayload>(
-        buildUrl("/league/get_club_legends", { club: club || undefined, season }),
-      ),
-    select: normalizeClubLegendsPayload,
+    queryKey: [V1_QUERY_KEY, "clubs", "legends", club ?? "", season ?? "all"],
+    queryFn: () => loadClubLegends(club ?? "", season),
     staleTime: DIAGNOSIS_LIST_STALE_MS,
     enabled: enabled && Boolean(club),
   });

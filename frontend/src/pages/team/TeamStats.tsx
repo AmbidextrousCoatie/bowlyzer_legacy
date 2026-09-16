@@ -8,6 +8,7 @@ import { useMyClub } from "../../hooks/useMyClub";
 import { useTeamSeasons, useTeams } from "../../hooks/useTeam";
 import { useTranslations } from "../../hooks/useTranslations";
 import {
+  clubTeamFullName,
   getClubTeamColor,
   normalizeUnicodeLabel,
   splitClubAndTeamNumber,
@@ -56,7 +57,13 @@ export function TeamStats() {
   const allTeams = teamsQuery.data ?? [];
   const clubs = clubsListQuery.data?.clubs ?? clubMatrixQuery.data?.clubs ?? [];
 
-  const clubTeams = useMemo(() => (club ? teamsForClub(allTeams, club) : []), [allTeams, club]);
+  const clubTeams = useMemo(() => {
+    if (!club) return [];
+    const fromFlask = teamsForClub(allTeams, club);
+    if (fromFlask.length > 0) return fromFlask;
+    const rows = clubMatrixQuery.data?.matrix.rows ?? [];
+    return rows.map((row) => clubTeamFullName(resolvedClub || club, row.team_number));
+  }, [allTeams, club, clubMatrixQuery.data, resolvedClub]);
 
   const team = useMemo(() => {
     if (!teamParam) return "";
