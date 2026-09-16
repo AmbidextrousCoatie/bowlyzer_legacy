@@ -48,7 +48,6 @@ export function Home() {
           loading={eventsQuery.isPending}
           error={eventsQuery.isError}
           events={eventsQuery.data ?? []}
-          database={stats?.database ?? "db_real_merged"}
         />
       </div>
 
@@ -102,12 +101,10 @@ function LatestEventsList({
   loading,
   error,
   events,
-  database,
 }: {
   loading: boolean;
   error: boolean;
   events: Array<{ Season: string; League: string; Week: number | string; Date: string }>;
-  database: string;
 }) {
   const link = useAppLink();
 
@@ -135,7 +132,6 @@ function LatestEventsList({
                 season: ev.Season,
                 league: ev.League,
                 week: String(ev.Week),
-                database,
               });
               return (
                 <li key={`${ev.Season}-${ev.League}-${ev.Week}-${ev.Date}`}>

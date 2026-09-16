@@ -1,9 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import { buildUrl, fetchJson } from "../lib/api";
+import { HOME_EVENT_LIMIT, latestEventsFromV1, loadHome, statsFromV1 } from "../lib/homeV1";
+import { V1_QUERY_KEY } from "../lib/v1";
 
 export type HomeStats = {
-  database: string;
-  tournament_database: string;
   games: number;
   league_games: number;
   tournament_games: number;
@@ -11,6 +10,10 @@ export type HomeStats = {
   league_seasons: number;
   tournaments: number;
   players: number;
+  /** @deprecated Flask payload — one warehouse in v1 */
+  database?: string;
+  /** @deprecated Flask payload — one warehouse in v1 */
+  tournament_database?: string;
   /** @deprecated landing-v1 payload */
   seasons?: number;
   /** @deprecated landing-v1 payload */
@@ -24,6 +27,12 @@ export type LatestEvent = {
   Date: string;
 };
 
+const HOME_STALE_MS = 5 * 60_000;
+
+function homeQueryKey(limit: number) {
+  return [V1_QUERY_KEY, "home", limit] as const;
+}
+
 export function resolveHomeStats(stats: HomeStats | undefined) {
   if (!stats) return undefined;
   return {
@@ -36,17 +45,18 @@ export function resolveHomeStats(stats: HomeStats | undefined) {
 
 export function useHomeStats() {
   return useQuery({
-    queryKey: ["home", "stats", "v3"],
-    queryFn: () => fetchJson<HomeStats>(buildUrl("/home/stats")),
-    staleTime: 5 * 60_000,
+    queryKey: homeQueryKey(HOME_EVENT_LIMIT),
+    queryFn: () => loadHome(HOME_EVENT_LIMIT),
+    select: statsFromV1,
+    staleTime: HOME_STALE_MS,
   });
 }
 
-export function useLatestEvents(limit = 8) {
+export function useLatestEvents(limit = HOME_EVENT_LIMIT) {
   return useQuery({
-    queryKey: ["home", "latest-events", limit],
-    queryFn: () =>
-      fetchJson<LatestEvent[]>(buildUrl("/league/get_latest_events", { limit })),
-    staleTime: 60_000,
+    queryKey: homeQueryKey(limit),
+    queryFn: () => loadHome(limit),
+    select: latestEventsFromV1,
+    staleTime: HOME_STALE_MS,
   });
 }
