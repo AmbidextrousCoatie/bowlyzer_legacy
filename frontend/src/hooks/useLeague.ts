@@ -6,7 +6,30 @@ import { loadClubPlayerResults } from "../lib/clubPlayerResultsV1";
 import { loadClubRankings } from "../lib/clubRankingsV1";
 import type { ClubMatrixSeasonCell } from "../lib/clubMatrixCell";
 import type { TableData } from "../lib/datatable/types";
-import { coerceTimetableTable } from "../lib/seasonSpielplan";
+import {
+  compareTableFromV1,
+  detailsViewParam,
+  gameOverviewTableFromV1,
+  gameTeamDetailsTableFromV1,
+  honorFromV1,
+  individualAveragesTableFromV1,
+  loadCompare,
+  loadLeagueStandings,
+  loadMatchday,
+  loadMeta,
+  loadRecords,
+  loadSeasonStandings,
+  loadTeamInLeague,
+  loadTimetable,
+  recordsChartFromV1,
+  recordsTableFromV1,
+  seriesBundleFromV1,
+  standingsTableFromV1,
+  teamAnalysisFromV1,
+  teamDetailsTableFromV1,
+  teamPerformanceTableFromV1,
+  teamWinPercentageTableFromV1,
+} from "../lib/leagueV1";
 import { V1_QUERY_KEY } from "../lib/v1";
 
 export type Season = string;
@@ -53,46 +76,42 @@ export { pickLatestSeason } from "../lib/leagueSeason";
 
 export function useAvailableSeasons() {
   return useQuery({
-    queryKey: ["league", "seasons"],
-    queryFn: () => fetchJson<Season[]>(buildUrl("/league/get_available_seasons")),
+    queryKey: [V1_QUERY_KEY, "meta", "seasons"],
+    queryFn: () => loadMeta(),
+    select: (data) => data.seasons,
   });
 }
 
 export function useAvailableLeagues(season: string | null) {
   const allSeasons = !season;
   return useQuery({
-    queryKey: ["league", "leagues", allSeasons ? "all" : season],
-    queryFn: () =>
-      fetchJson<LeagueOption[]>(
-        allSeasons
-          ? buildUrl("/league/get_available_leagues")
-          : buildUrl("/league/get_available_leagues", { season }),
-      ),
+    queryKey: [V1_QUERY_KEY, "meta", "leagues", allSeasons ? "all" : season],
+    queryFn: () => loadMeta({ season }),
+    select: (data) => data.leagues,
   });
 }
 
 export function useSeasonLeagueStandings(season: string | null) {
   return useQuery({
-    queryKey: ["league", "season-standings", season],
-    queryFn: () =>
-      fetchJson<SeasonLeagueStandings>(buildUrl("/league/get_season_league_standings", { season })),
+    queryKey: [V1_QUERY_KEY, "seasons", "standings", season],
+    queryFn: () => loadSeasonStandings(season!),
     enabled: !!season,
   });
 }
 
 export function useLeagueHistory(season: string | null, league: string | null) {
   return useQuery({
-    queryKey: ["league", "history", season, league],
-    queryFn: () => fetchJson<TableData>(buildUrl("/league/get_league_history", { season, league })),
+    queryKey: [V1_QUERY_KEY, "leagues", "standings", season, league],
+    queryFn: () => loadLeagueStandings(season!, league!),
+    select: (doc) => standingsTableFromV1(doc.standings, { history: true }),
     enabled: !!season && !!league,
   });
 }
 
 export function useSeasonTimetable(season: string | null, league: string | null) {
   return useQuery({
-    queryKey: ["league", "timetable", season, league],
-    queryFn: () => fetchJson<unknown>(buildUrl("/league/get_season_timetable", { season, league })),
-    select: coerceTimetableTable,
+    queryKey: [V1_QUERY_KEY, "leagues", "timetable", season, league],
+    queryFn: () => loadTimetable(season!, league!),
     enabled: !!season && !!league,
   });
 }
@@ -101,10 +120,8 @@ export function useSeasonTimetable(season: string | null, league: string | null)
 export function useSeasonTimetables(season: string | null, leagues: string[], enabled = true) {
   return useQueries({
     queries: leagues.map((league) => ({
-      queryKey: ["league", "timetable", season, league] as const,
-      queryFn: () =>
-        fetchJson<unknown>(buildUrl("/league/get_season_timetable", { season, league })),
-      select: coerceTimetableTable,
+      queryKey: [V1_QUERY_KEY, "leagues", "timetable", season, league] as const,
+      queryFn: () => loadTimetable(season!, league),
       enabled: enabled && !!season && !!league,
     })),
   });
@@ -116,17 +133,14 @@ export function useIndividualAverages(
   week?: string | null,
   team?: string | null,
 ) {
+  const matchday = Boolean(week);
   return useQuery({
-    queryKey: ["league", "individual-averages", season, league, week, team],
+    queryKey: matchday
+      ? [V1_QUERY_KEY, "leagues", "matchday", season, league, week]
+      : [V1_QUERY_KEY, "leagues", "standings", season, league],
     queryFn: () =>
-      fetchJson<TableData>(
-        buildUrl("/league/get_individual_averages", {
-          season,
-          league,
-          week: week ?? undefined,
-          team: team ?? undefined,
-        }),
-      ),
+      matchday ? loadMatchday(season!, league!, week!) : loadLeagueStandings(season!, league!),
+    select: (doc) => individualAveragesTableFromV1(doc.players, team),
     enabled: !!season && !!league,
   });
 }
@@ -137,15 +151,8 @@ export function useTeamVsTeamComparison(
   week?: string | null,
 ) {
   return useQuery({
-    queryKey: ["league", "team-vs-team", season, league, week],
-    queryFn: () =>
-      fetchJson<TableData>(
-        buildUrl("/league/get_team_vs_team_comparison", {
-          season,
-          league,
-          week: week ?? undefined,
-        }),
-      ),
+    queryKey: [V1_QUERY_KEY, "leagues", "compare", season, league, week ?? ""],
+    queryFn: async () => compareTableFromV1(await loadCompare(season!, league!, week)),
     enabled: !!season && !!league,
   });
 }
@@ -159,29 +166,27 @@ export type TeamSeriesPayload = {
 
 export function useTeamPoints(season: string | null, league: string | null) {
   return useQuery({
-    queryKey: ["league", "team-points", season, league],
-    queryFn: () =>
-      fetchJson<TeamSeriesPayload>(buildUrl("/league/get_team_points", { season, league })),
+    queryKey: [V1_QUERY_KEY, "leagues", "standings", season, league],
+    queryFn: () => loadLeagueStandings(season!, league!),
+    select: (doc) => seriesBundleFromV1(doc.series).points,
     enabled: !!season && !!league,
   });
 }
 
 export function useTeamPositions(season: string | null, league: string | null) {
   return useQuery({
-    queryKey: ["league", "team-positions", season, league],
-    queryFn: () =>
-      fetchJson<TeamSeriesPayload>(buildUrl("/league/get_team_positions", { season, league })),
+    queryKey: [V1_QUERY_KEY, "leagues", "standings", season, league],
+    queryFn: () => loadLeagueStandings(season!, league!),
+    select: (doc) => seriesBundleFromV1(doc.series).positions,
     enabled: !!season && !!league,
   });
 }
 
 export function useTeamAverages(season: string | null, league: string | null) {
   return useQuery({
-    queryKey: ["league", "team-averages", season, league],
-    queryFn: () =>
-      fetchJson<TeamSeriesPayload & { sorted_by_average?: string[] }>(
-        buildUrl("/league/get_team_averages", { season, league }),
-      ),
+    queryKey: [V1_QUERY_KEY, "leagues", "standings", season, league],
+    queryFn: () => loadLeagueStandings(season!, league!),
+    select: (doc) => seriesBundleFromV1(doc.series).averages,
     enabled: !!season && !!league,
   });
 }
@@ -190,16 +195,18 @@ export function useTeamAverages(season: string | null, league: string | null) {
 
 export function useAvailableWeeks(season: string | null, league: string | null) {
   return useQuery({
-    queryKey: ["league", "weeks", season, league],
-    queryFn: () => fetchJson<number[]>(buildUrl("/league/get_available_weeks", { season, league })),
+    queryKey: [V1_QUERY_KEY, "meta", "league", season, league],
+    queryFn: () => loadMeta({ season, league }),
+    select: (data) => data.weeks,
     enabled: !!season && !!league,
   });
 }
 
 export function useAvailableTeams(season: string | null, league: string | null) {
   return useQuery({
-    queryKey: ["league", "teams", season, league],
-    queryFn: () => fetchJson<string[]>(buildUrl("/league/get_available_teams", { season, league })),
+    queryKey: [V1_QUERY_KEY, "meta", "league", season, league],
+    queryFn: () => loadMeta({ season, league }),
+    select: (data) => data.teams,
     enabled: !!season && !!league,
   });
 }
@@ -210,9 +217,9 @@ export function useAvailableRounds(
   week: string | null,
 ) {
   return useQuery({
-    queryKey: ["league", "rounds", season, league, week],
-    queryFn: () =>
-      fetchJson<number[]>(buildUrl("/league/get_available_rounds", { season, league, week })),
+    queryKey: [V1_QUERY_KEY, "meta", "league", season, league, week],
+    queryFn: () => loadMeta({ season, league, week }),
+    select: (data) => data.rounds,
     enabled: !!season && !!league && !!week,
   });
 }
@@ -225,18 +232,18 @@ export function useLeagueWeekTable(
   week: string | null,
 ) {
   return useQuery({
-    queryKey: ["league", "week-table", season, league, week],
-    queryFn: () =>
-      fetchJson<TableData>(buildUrl("/league/get_league_week_table", { season, league, week })),
+    queryKey: [V1_QUERY_KEY, "leagues", "matchday", season, league, week],
+    queryFn: () => loadMatchday(season!, league!, week!),
+    select: (doc) => standingsTableFromV1(doc.table),
     enabled: !!season && !!league && !!week,
   });
 }
 
 export function useHonorScores(season: string | null, league: string | null, week: string | null) {
   return useQuery({
-    queryKey: ["league", "honor-scores", season, league, week],
-    queryFn: () =>
-      fetchJson<HonorScores>(buildUrl("/league/get_honor_scores", { season, league, week })),
+    queryKey: [V1_QUERY_KEY, "leagues", "matchday", season, league, week],
+    queryFn: () => loadMatchday(season!, league!, week!),
+    select: (doc) => honorFromV1(doc.honor_scores),
     enabled: !!season && !!league && !!week,
   });
 }
@@ -244,12 +251,6 @@ export function useHonorScores(season: string | null, league: string | null, wee
 // ───── Team details (3 view modes) ───────────────────────────────────────
 
 export type TeamDetailsView = "classic" | "individual" | "headToHead";
-
-const TEAM_DETAILS_ENDPOINTS: Record<TeamDetailsView, string> = {
-  classic: "/league/get_team_week_details_table",
-  individual: "/league/get_team_individual_scores_table",
-  headToHead: "/league/get_team_week_head_to_head_table",
-};
 
 export function useTeamWeekDetails(
   season: string | null,
@@ -259,9 +260,10 @@ export function useTeamWeekDetails(
   view: TeamDetailsView,
 ) {
   return useQuery({
-    queryKey: ["league", "team-week-details", season, league, week, team, view],
+    queryKey: [V1_QUERY_KEY, "leagues", "matchday", season, league, week, team, view],
     queryFn: () =>
-      fetchJson<TableData>(buildUrl(TEAM_DETAILS_ENDPOINTS[view], { season, league, week, team })),
+      loadMatchday(season!, league!, week!, { team: team!, view: detailsViewParam(view) }),
+    select: (doc) => teamDetailsTableFromV1(doc.details, view),
     enabled: !!season && !!league && !!week && !!team,
   });
 }
@@ -281,9 +283,9 @@ export type TeamAnalysis = {
 
 export function useTeamAnalysis(season: string | null, league: string | null, team: string | null) {
   return useQuery({
-    queryKey: ["league", "team-analysis", season, league, team],
-    queryFn: () =>
-      fetchJson<TeamAnalysis>(buildUrl("/league/get_team_analysis", { season, league, team })),
+    queryKey: [V1_QUERY_KEY, "leagues", "team", season, league, team],
+    queryFn: () => loadTeamInLeague(season!, league!, team!),
+    select: (doc) => teamAnalysisFromV1(doc),
     enabled: !!season && !!league && !!team,
   });
 }
@@ -294,11 +296,9 @@ export function useTeamPerformanceTable(
   team: string | null,
 ) {
   return useQuery({
-    queryKey: ["league", "team-performance-table", season, league, team],
-    queryFn: () =>
-      fetchJson<TableData>(
-        buildUrl("/league/get_team_performance_table", { season, league, team }),
-      ),
+    queryKey: [V1_QUERY_KEY, "leagues", "team", season, league, team],
+    queryFn: () => loadTeamInLeague(season!, league!, team!),
+    select: (doc) => teamPerformanceTableFromV1(doc),
     enabled: !!season && !!league && !!team,
   });
 }
@@ -309,15 +309,9 @@ export function useTeamWinPercentageTable(
   team: string | null,
 ) {
   return useQuery({
-    queryKey: ["league", "team-win-percentage-table", season, league, team],
-    queryFn: () =>
-      fetchJson<TableData>(
-        buildUrl("/league/get_team_win_percentage_table", {
-          season,
-          league,
-          team,
-        }),
-      ),
+    queryKey: [V1_QUERY_KEY, "leagues", "team", season, league, team],
+    queryFn: () => loadTeamInLeague(season!, league!, team!),
+    select: (doc) => teamWinPercentageTableFromV1(doc),
     enabled: !!season && !!league && !!team,
   });
 }
@@ -331,9 +325,9 @@ export function useGameOverview(
   round: string | null,
 ) {
   return useQuery({
-    queryKey: ["league", "game-overview", season, league, week, round],
-    queryFn: () =>
-      fetchJson<TableData>(buildUrl("/league/get_game_overview", { season, league, week, round })),
+    queryKey: [V1_QUERY_KEY, "leagues", "matchday", season, league, week],
+    queryFn: () => loadMatchday(season!, league!, week!),
+    select: (doc) => gameOverviewTableFromV1(doc.games, doc.table, round),
     enabled: !!season && !!league && !!week && !!round,
   });
 }
@@ -587,17 +581,9 @@ export function useGameTeamDetails(
   round: string | null,
 ) {
   return useQuery({
-    queryKey: ["league", "game-team-details", season, league, week, team, round],
-    queryFn: () =>
-      fetchJson<TableData>(
-        buildUrl("/league/get_game_team_details", {
-          season,
-          league,
-          week,
-          team,
-          round,
-        }),
-      ),
+    queryKey: [V1_QUERY_KEY, "leagues", "matchday", season, league, week, team, "game", round],
+    queryFn: () => loadMatchday(season!, league!, week!, { team: team!, round: round! }),
+    select: (doc) => gameTeamDetailsTableFromV1(doc.game_details),
     enabled: !!season && !!league && !!week && !!team && !!round,
   });
 }
@@ -610,47 +596,66 @@ export type LeagueHistoryChart = {
   y_axis_title?: string;
 };
 
-function useLeagueAggregationQuery<T>(
-  endpoint: string,
-  league: string | null,
-  extraParams?: Record<string, string>,
-) {
+export function useLeagueAveragesHistory(league: string | null) {
   return useQuery({
-    queryKey: ["league", endpoint, league, extraParams?.debug ?? ""],
-    queryFn: () =>
-      fetchJson<T>(buildUrl(`/league/${endpoint}`, { league: league!, ...extraParams })),
+    queryKey: [V1_QUERY_KEY, "leagues", "records", league],
+    queryFn: () => loadRecords(league!),
+    select: (doc) =>
+      recordsChartFromV1(doc.averages_history, "average", "League Average", "Average Score"),
     enabled: !!league,
   });
 }
 
-export function useLeagueAveragesHistory(league: string | null) {
-  return useLeagueAggregationQuery<LeagueHistoryChart>("get_league_averages_history", league, {
-    debug: "false",
-  });
-}
-
 export function usePointsToWinHistory(league: string | null) {
-  return useLeagueAggregationQuery<LeagueHistoryChart>("get_points_to_win_history", league, {
-    debug: "false",
+  return useQuery({
+    queryKey: [V1_QUERY_KEY, "leagues", "records", league],
+    queryFn: () => loadRecords(league!),
+    select: (doc) => recordsChartFromV1(doc.points_to_win, "points", "Points to Win", "Points"),
+    enabled: !!league,
   });
 }
 
 export function useTopTeamPerformances(league: string | null) {
-  return useLeagueAggregationQuery<TableData>("get_top_team_performances", league);
+  return useQuery({
+    queryKey: [V1_QUERY_KEY, "leagues", "records", league],
+    queryFn: () => loadRecords(league!),
+    select: (doc) => recordsTableFromV1(doc.top_team, "top_team"),
+    enabled: !!league,
+  });
 }
 
 export function useTopIndividualPerformances(league: string | null) {
-  return useLeagueAggregationQuery<TableData>("get_top_individual_performances", league);
+  return useQuery({
+    queryKey: [V1_QUERY_KEY, "leagues", "records", league],
+    queryFn: () => loadRecords(league!),
+    select: (doc) => recordsTableFromV1(doc.top_individual, "top_individual"),
+    enabled: !!league,
+  });
 }
 
 export function useRecordGames(league: string | null) {
-  return useLeagueAggregationQuery<TableData>("get_record_games", league);
+  return useQuery({
+    queryKey: [V1_QUERY_KEY, "leagues", "records", league],
+    queryFn: () => loadRecords(league!),
+    select: (doc) => recordsTableFromV1(doc.record_games, "record_games"),
+    enabled: !!league,
+  });
 }
 
 export function useRecordIndividualGames(league: string | null) {
-  return useLeagueAggregationQuery<TableData>("get_record_individual_games", league);
+  return useQuery({
+    queryKey: [V1_QUERY_KEY, "leagues", "records", league],
+    queryFn: () => loadRecords(league!),
+    select: (doc) => recordsTableFromV1(doc.record_individual ?? doc.record_games, "record_games"),
+    enabled: !!league,
+  });
 }
 
 export function useRecordTeamGames(league: string | null) {
-  return useLeagueAggregationQuery<TableData>("get_record_team_games", league);
+  return useQuery({
+    queryKey: [V1_QUERY_KEY, "leagues", "records", league],
+    queryFn: () => loadRecords(league!),
+    select: (doc) => recordsTableFromV1(doc.record_team, "record_team"),
+    enabled: !!league,
+  });
 }
