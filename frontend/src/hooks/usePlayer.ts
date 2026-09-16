@@ -1,11 +1,18 @@
 import { useQuery } from "@tanstack/react-query";
-import { buildUrl, fetchJson } from "../lib/api";
 import { loadClub300Games } from "../lib/club300V1";
+import { PLAYER_HIGHLIGHTS_TOP_N_ALL } from "../lib/playerHighlights";
+import {
+  loadHighestIndividualGames,
+  loadPlayerLifetimeStats,
+  loadPlayerSearch,
+  loadPlayerSeasons,
+} from "../lib/playerV1";
 import { V1_QUERY_KEY } from "../lib/v1";
 
 export type PlayerSearchEntry = {
   id: string;
   name: string;
+  aliases?: string[];
 };
 
 export type PlayerLifetimeBestGame = {
@@ -91,9 +98,8 @@ export function isAllPlayersScope(stats: PlayerStatsResponse | undefined): boole
 
 export function usePlayerSearch(club?: string | null) {
   return useQuery({
-    queryKey: ["player", "search", club ?? ""],
-    queryFn: () =>
-      fetchJson<PlayerSearchEntry[]>(buildUrl("/player/search", { club: club || undefined })),
+    queryKey: [V1_QUERY_KEY, "player", "search", club ?? ""],
+    queryFn: () => loadPlayerSearch(club),
     staleTime: 5 * 60_000,
   });
 }
@@ -101,15 +107,8 @@ export function usePlayerSearch(club?: string | null) {
 export function usePlayerSeasons(playerName: string, playerId: string, club?: string | null) {
   const clubFilter = !playerName && !playerId ? club || undefined : undefined;
   return useQuery({
-    queryKey: ["player", "seasons", playerName, playerId, clubFilter ?? ""],
-    queryFn: () =>
-      fetchJson<string[]>(
-        buildUrl("/player/get_available_seasons", {
-          ...(playerName ? { player_name: playerName } : {}),
-          ...(playerId ? { player_id: playerId } : {}),
-          ...(clubFilter ? { club: clubFilter } : {}),
-        }),
-      ),
+    queryKey: [V1_QUERY_KEY, "player", "seasons", playerName, playerId, clubFilter ?? ""],
+    queryFn: () => loadPlayerSeasons(playerName, playerId, clubFilter),
   });
 }
 
@@ -120,17 +119,19 @@ export function usePlayerLifetimeStats(
   club?: string | null,
 ) {
   const clubFilter = !playerName && !playerId ? club || undefined : undefined;
+  const topN = !playerName && !playerId ? PLAYER_HIGHLIGHTS_TOP_N_ALL : undefined;
   return useQuery({
-    queryKey: ["player", "lifetime", playerName, playerId, season, clubFilter ?? ""],
-    queryFn: () =>
-      fetchJson<PlayerStatsResponse>(
-        buildUrl("/player/get_lifetime_stats", {
-          ...(playerName ? { player_name: playerName } : {}),
-          ...(playerId ? { player_id: playerId } : {}),
-          ...(clubFilter ? { club: clubFilter } : {}),
-          season: season || "all",
-        }),
-      ),
+    queryKey: [
+      V1_QUERY_KEY,
+      "player",
+      "lifetime",
+      playerName,
+      playerId,
+      season,
+      clubFilter ?? "",
+      topN ?? "",
+    ],
+    queryFn: () => loadPlayerLifetimeStats(playerName, playerId, season, clubFilter, topN),
   });
 }
 
@@ -164,17 +165,24 @@ export function useHighestIndividualGames(
   const clubFilter = !playerName && !playerId ? club || undefined : undefined;
 
   return useQuery({
-    queryKey: ["player", "highest-games", limit, playerName, playerId, season, clubFilter ?? ""],
+    queryKey: [
+      V1_QUERY_KEY,
+      "player",
+      "highest-games",
+      limit,
+      playerName,
+      playerId,
+      season,
+      clubFilter ?? "",
+    ],
     queryFn: () =>
-      fetchJson<IndividualGameRecord[]>(
-        buildUrl("/player/get_highest_individual_games", {
-          limit: String(limit),
-          ...(playerName ? { player_name: playerName } : {}),
-          ...(playerId ? { player_id: playerId } : {}),
-          ...(clubFilter ? { club: clubFilter } : {}),
-          season: season || "all",
-        }),
-      ),
+      loadHighestIndividualGames({
+        limit,
+        playerName,
+        playerId,
+        season,
+        club: clubFilter,
+      }),
     staleTime: 5 * 60_000,
     enabled: enabled && limit > 0,
   });

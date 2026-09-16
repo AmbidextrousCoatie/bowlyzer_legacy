@@ -137,11 +137,11 @@ export function ClubLegends({ club, season = null, t }: Props) {
               {seasonScoped
                 ? t(
                     "ui.team.club_legends_hint_season",
-                    "Spieler-Highlights für diesen Club — Liga-Spiele in der Saison {season}.",
+                    "Spieler-Highlights für diesen Club — Liga- und Turnierspiele in der Saison {season}.",
                   ).replace("{season}", String(season))
                 : t(
                     "ui.team.club_legends_hint",
-                    "Spieler-Highlights für diesen Club — Liga-Spiele, alle Saisons.",
+                    "Spieler-Highlights für diesen Club — Liga- und Turnierspiele, alle Saisons.",
                   )}
             </p>
           </div>

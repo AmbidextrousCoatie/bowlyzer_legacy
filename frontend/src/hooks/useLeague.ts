@@ -2,6 +2,7 @@ import { useQueries, useQuery } from "@tanstack/react-query";
 import { buildUrl, fetchJson } from "../lib/api";
 import { loadClubMatrix } from "../lib/clubMatrixV1";
 import { loadClubLegends } from "../lib/clubLegendsV1";
+import { loadClubPlayerResults } from "../lib/clubPlayerResultsV1";
 import { loadClubRankings } from "../lib/clubRankingsV1";
 import type { ClubMatrixSeasonCell } from "../lib/clubMatrixCell";
 import type { TableData } from "../lib/datatable/types";
@@ -427,21 +428,11 @@ export function useClubPlayerResults(
   club: string | null,
   options?: { enabled?: boolean; season?: string | null },
 ) {
-  const database =
-    typeof window !== "undefined"
-      ? new URLSearchParams(window.location.search).get("database")
-      : null;
   const enabled = options?.enabled ?? true;
   const season = scopedClubSeason(options?.season);
   return useQuery({
-    queryKey: ["league", "club-player-results", database ?? "", club ?? "", season ?? "all"],
-    queryFn: () =>
-      fetchJson<ClubPlayerResultsPayload>(
-        buildUrl("/league/get_club_player_results", {
-          club: club || undefined,
-          season,
-        }),
-      ),
+    queryKey: [V1_QUERY_KEY, "clubs", "players", club ?? "", season ?? "all"],
+    queryFn: () => loadClubPlayerResults(club ?? "", season),
     staleTime: DIAGNOSIS_LIST_STALE_MS,
     enabled: enabled && Boolean(club),
   });

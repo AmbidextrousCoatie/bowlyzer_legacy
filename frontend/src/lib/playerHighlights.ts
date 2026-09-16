@@ -174,7 +174,11 @@ export function buildPlayerHighlights(
   const topN = playerHighlightsTopN(scope);
   const chartRows = input.seasons ?? [];
   const highlightCompetitions =
-    scope === "all" ? (input.playerCompetitions ?? []) : competitionRows(chartRows);
+    scope === "all"
+      ? (input.playerCompetitions ?? []).filter(
+          (row) => String(row.row_type ?? "competition").trim() === "competition",
+        )
+      : competitionRows(chartRows);
   const highlightSeasonTotals =
     scope === "all" ? (input.playerSeasonTotals ?? []) : seasonTotalRows(chartRows);
   const periods = input.periods ?? [];
@@ -196,7 +200,15 @@ export function buildPlayerHighlights(
         })();
 
   const byClub = new Map<string, { games: number; pins: number }>();
-  const clubSourceRows = scope === "all" ? highlightCompetitions : competitionRows(chartRows);
+  const clubTotals = (input.playerCompetitions ?? []).filter(
+    (row) => String(row.row_type ?? "").trim() === "club_total",
+  );
+  const clubSourceRows =
+    scope === "all"
+      ? clubTotals.length
+        ? clubTotals
+        : highlightCompetitions
+      : competitionRows(chartRows);
   for (const row of clubSourceRows) {
     const club = normalizeClub(row.club);
     if (!club) continue;

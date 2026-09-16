@@ -9,17 +9,17 @@ export function formatPlayerSearchLabel(entry: Pick<PlayerSearchEntry, "name" | 
   return `${name} (${id})`;
 }
 
-/** Haystack for fuzzy search — name plus EDV id in one field. */
-export function playerSearchHaystack(entry: Pick<PlayerSearchEntry, "name" | "id">): string {
+/** Haystack for fuzzy search — canonical name, aliases, and EDV id. */
+export function playerSearchHaystack(
+  entry: Pick<PlayerSearchEntry, "name" | "id" | "aliases">,
+): string {
   const name = entry.name.trim();
   const id = String(entry.id ?? "").trim();
-  return id ? `${name} ${id}` : name;
+  const aliases = (entry.aliases ?? []).map((alias) => alias.trim()).filter(Boolean);
+  return [name, ...aliases, id].filter(Boolean).join(" ");
 }
 
-export function playerSearchEntryMatchesQuery(
-  entry: PlayerSearchEntry,
-  query: string,
-): boolean {
+export function playerSearchEntryMatchesQuery(entry: PlayerSearchEntry, query: string): boolean {
   const needle = query.trim().toLowerCase();
   if (!needle) return true;
   const haystack = playerSearchHaystack(entry).toLowerCase();
@@ -44,7 +44,10 @@ export function resolvePlayerSearchEntry(
   if (!name) return null;
 
   const normalized = name.toLowerCase();
-  const byName = players.filter((entry) => entry.name.toLowerCase() === normalized);
+  const byName = players.filter((entry) => {
+    if (entry.name.toLowerCase() === normalized) return true;
+    return (entry.aliases ?? []).some((alias) => alias.trim().toLowerCase() === normalized);
+  });
   if (byName.length === 1) return byName[0];
   return null;
 }

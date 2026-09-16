@@ -57,11 +57,11 @@ export function ClubPlayerResults({ club, season = null, t }: Props) {
           {seasonScoped
             ? t(
                 "ui.team.club_player_results_hint_season",
-                "Liga-Spiele in dieser Club-Zugehörigkeit in der Saison {season} — eine Zeile pro Spieler.",
+                "Spiele in dieser Club-Zugehörigkeit in der Saison {season} — Liga und Turnier, eine Zeile pro Spieler.",
               ).replace("{season}", String(season))
             : t(
                 "ui.team.club_player_results_hint",
-                "Liga-Spiele in dieser Club-Zugehörigkeit — eine Zeile pro Spieler.",
+                "Spiele in dieser Club-Zugehörigkeit — Liga und Turnier, eine Zeile pro Spieler.",
               )}
         </p>
       </header>
