@@ -4,8 +4,9 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 
 // Match Flask default from `python wsgi.py` (app.run). Override if needed:
-//   set BOWLYZER_DEV_API=http://127.0.0.1:PORT && npm run dev
+//   set BOWLYZER_DEV_API=http://127.0.0.1:PORT
 const BACKEND = process.env.BOWLYZER_DEV_API ?? "http://127.0.0.1:5000";
+const V1 = process.env.BOWLYZER_V1_API ?? "http://127.0.0.1:8080";
 
 /** League cold-cache builds can take 15–30s; default proxy timeouts abort → Vite logs ECONNRESET. */
 const DEV_PROXY_TIMEOUT_MS = 120_000;
@@ -34,11 +35,24 @@ const DEV_API_PROXY_PATHS = [
   "/set-season",
 ] as const;
 
+function v1ApiProxy() {
+  return {
+    target: V1,
+    changeOrigin: true,
+    agent: devProxyAgent,
+    proxyTimeout: DEV_PROXY_TIMEOUT_MS,
+    timeout: DEV_PROXY_TIMEOUT_MS,
+  };
+}
+
 export default defineConfig({
   lint: { options: { typeAware: true, typeCheck: true } },
   plugins: [react(), tailwindcss()],
   server: {
     port: 5173,
-    proxy: Object.fromEntries(DEV_API_PROXY_PATHS.map((path) => [path, devApiProxy()])),
+    proxy: {
+      "/api/v1": v1ApiProxy(),
+      ...Object.fromEntries(DEV_API_PROXY_PATHS.map((path) => [path, devApiProxy()])),
+    },
   },
 });

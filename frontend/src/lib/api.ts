@@ -1,8 +1,9 @@
 /**
- * Thin fetch wrapper. The Vite dev server proxies /league, /player, /team,
- * /tournament, /pipeline to Flask (default http://127.0.0.1:5000; see vite.config.ts), so these calls work
- * unchanged in dev. In production, Flask serves the built SPA from
- * `frontend/dist` on the same origin, so relative API paths still work.
+ * Thin fetch wrapper for Flask RPCs. The Vite dev server proxies /league,
+ * /player, /team, /tournament, /pipeline to Flask (default
+ * http://127.0.0.1:5000; see vite.config.ts) and `/api/v1` to bowlyzer-api
+ * (default http://127.0.0.1:8080). Migrated hooks use `fetchV1` in `v1.ts`
+ * and do not send `?database=`. Unmigrated hooks keep this Flask helper.
  */
 
 import { readStoredLanguage } from "./language";

@@ -1,8 +1,10 @@
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { buildUrl, fetchJson } from "../lib/api";
+import { loadClubMatrix } from "../lib/clubMatrixV1";
 import type { ClubMatrixSeasonCell } from "../lib/clubMatrixCell";
 import type { TableData } from "../lib/datatable/types";
 import { coerceTimetableTable } from "../lib/seasonSpielplan";
+import { V1_QUERY_KEY } from "../lib/v1";
 
 export type Season = string;
 
@@ -520,20 +522,10 @@ export function useClubMatrix(
   onlyUnnumbered: boolean,
   options?: { enabled?: boolean },
 ) {
-  const database =
-    typeof window !== "undefined"
-      ? new URLSearchParams(window.location.search).get("database")
-      : null;
   const enabled = options?.enabled ?? true;
   return useQuery({
-    queryKey: ["league", "club-matrix", database ?? "", club ?? "", onlyUnnumbered],
-    queryFn: () =>
-      fetchJson<ClubMatrixPayload>(
-        buildUrl("/league/get_club_matrix", {
-          club: club || undefined,
-          only_unnumbered: onlyUnnumbered ? 1 : undefined,
-        }),
-      ),
+    queryKey: [V1_QUERY_KEY, "clubs", "matrix", club ?? "", onlyUnnumbered],
+    queryFn: () => loadClubMatrix(club, onlyUnnumbered),
     staleTime: DIAGNOSIS_LIST_STALE_MS,
     enabled,
   });
@@ -541,20 +533,10 @@ export function useClubMatrix(
 
 /** One matrix fetch per club (parallel) for diagnosis multi-club view. */
 export function useClubMatrices(selectedClubs: string[], onlyUnnumbered: boolean) {
-  const database =
-    typeof window !== "undefined"
-      ? new URLSearchParams(window.location.search).get("database")
-      : null;
   return useQueries({
     queries: selectedClubs.map((club) => ({
-      queryKey: ["league", "club-matrix", database ?? "", club, onlyUnnumbered],
-      queryFn: () =>
-        fetchJson<ClubMatrixPayload>(
-          buildUrl("/league/get_club_matrix", {
-            club,
-            only_unnumbered: onlyUnnumbered ? 1 : undefined,
-          }),
-        ),
+      queryKey: [V1_QUERY_KEY, "clubs", "matrix", club, onlyUnnumbered],
+      queryFn: () => loadClubMatrix(club, onlyUnnumbered),
       staleTime: DIAGNOSIS_LIST_STALE_MS,
       enabled: Boolean(club),
     })),

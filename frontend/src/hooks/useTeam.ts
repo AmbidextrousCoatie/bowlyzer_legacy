@@ -3,7 +3,7 @@ import { buildUrl, fetchJson } from "../lib/api";
 
 const TEAM_STALE_MS = 5 * 60_000;
 
-/** Must match `useClubMatrix` — cache is keyed per `?database=` so sources do not bleed. */
+/** Flask team RPCs are still keyed per `?database=`. Club matrix is v1 (one warehouse). */
 export function teamQueryDatabase(): string {
   if (typeof window === "undefined") return "";
   return new URLSearchParams(window.location.search).get("database") ?? "";
@@ -108,7 +108,8 @@ export function useTeamHistory(teamName: string | null) {
   const database = teamQueryDatabase();
   return useQuery({
     queryKey: ["team", "history", database, teamName],
-    queryFn: () => fetchJson<TeamHistory>(buildUrl("/team/get_team_history", { team_name: teamName })),
+    queryFn: () =>
+      fetchJson<TeamHistory>(buildUrl("/team/get_team_history", { team_name: teamName })),
     enabled: !!teamName,
     staleTime: TEAM_STALE_MS,
   });
@@ -119,9 +120,7 @@ export function useLeagueComparison(teamName: string | null) {
   return useQuery({
     queryKey: ["team", "league-comparison", database, teamName],
     queryFn: () =>
-      fetchJson<LeagueComparison>(
-        buildUrl("/team/get_league_comparison", { team_name: teamName }),
-      ),
+      fetchJson<LeagueComparison>(buildUrl("/team/get_league_comparison", { team_name: teamName })),
     enabled: !!teamName,
     staleTime: TEAM_STALE_MS,
   });
