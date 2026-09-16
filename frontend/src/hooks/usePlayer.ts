@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { buildUrl, fetchJson } from "../lib/api";
+import { loadClub300Games } from "../lib/club300V1";
+import { V1_QUERY_KEY } from "../lib/v1";
 
 export type PlayerSearchEntry = {
   id: string;
@@ -180,11 +182,8 @@ export function useHighestIndividualGames(
 
 export function useClub300Games(club?: string | null) {
   return useQuery({
-    queryKey: ["player", "club-300", club ?? ""],
-    queryFn: () =>
-      fetchJson<IndividualGameRecord[]>(
-        buildUrl("/player/get_club_300", { club: club || undefined }),
-      ),
+    queryKey: [V1_QUERY_KEY, "honor", "300", club ?? ""],
+    queryFn: () => loadClub300Games(club),
     staleTime: 5 * 60_000,
   });
 }
