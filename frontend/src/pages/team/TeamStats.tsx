@@ -59,8 +59,8 @@ export function TeamStats() {
 
   const clubTeams = useMemo(() => {
     if (!club) return [];
-    const fromFlask = teamsForClub(allTeams, club);
-    if (fromFlask.length > 0) return fromFlask;
+    const fromList = teamsForClub(allTeams, club);
+    if (fromList.length > 0) return fromList;
     const rows = clubMatrixQuery.data?.matrix.rows ?? [];
     return rows.map((row) => clubTeamFullName(resolvedClub || club, row.team_number));
   }, [allTeams, club, clubMatrixQuery.data, resolvedClub]);

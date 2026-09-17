@@ -1,13 +1,19 @@
 import { useQuery } from "@tanstack/react-query";
-import { buildUrl, fetchJson } from "../lib/api";
+import {
+  clutchFromV1,
+  consistencyFromV1,
+  DEFAULT_CLUTCH_THRESHOLD,
+  historyFromV1,
+  leagueComparisonFromV1,
+  loadTeamDocument,
+  loadTeamList,
+  seasonsFromV1,
+  specialMatchesFromV1,
+  teamsFromV1,
+} from "../lib/teamV1";
+import { V1_QUERY_KEY } from "../lib/v1";
 
 const TEAM_STALE_MS = 5 * 60_000;
-
-/** Flask team RPCs are still keyed per `?database=`. Club matrix is v1 (one warehouse). */
-export function teamQueryDatabase(): string {
-  if (typeof window === "undefined") return "";
-  return new URLSearchParams(window.location.search).get("database") ?? "";
-}
 
 export type TeamHistorySeason = {
   league_name: string;
@@ -84,43 +90,48 @@ export type SpecialMatches = {
   biggest_loss_margin?: SpecialMatchRow[];
 };
 
+function seasonKey(season: string | null | undefined): string {
+  return season && season !== "all" ? season : "";
+}
+
+function teamDocumentKey(team: string, season = "", threshold = "") {
+  return [V1_QUERY_KEY, "teams", "document", team, season, threshold] as const;
+}
+
 export function useTeams() {
-  const database = teamQueryDatabase();
   return useQuery({
-    queryKey: ["team", "list", database],
-    queryFn: () => fetchJson<string[]>(buildUrl("/team/get_teams")),
+    queryKey: [V1_QUERY_KEY, "teams"],
+    queryFn: loadTeamList,
+    select: teamsFromV1,
     staleTime: TEAM_STALE_MS,
   });
 }
 
 export function useTeamSeasons(teamName: string | null) {
-  const database = teamQueryDatabase();
   return useQuery({
-    queryKey: ["team", "seasons", database, teamName],
-    queryFn: () =>
-      fetchJson<string[]>(buildUrl("/team/get_available_seasons", { team_name: teamName })),
+    queryKey: teamDocumentKey(teamName ?? ""),
+    queryFn: () => loadTeamDocument(teamName!),
+    select: seasonsFromV1,
     enabled: !!teamName,
     staleTime: TEAM_STALE_MS,
   });
 }
 
 export function useTeamHistory(teamName: string | null) {
-  const database = teamQueryDatabase();
   return useQuery({
-    queryKey: ["team", "history", database, teamName],
-    queryFn: () =>
-      fetchJson<TeamHistory>(buildUrl("/team/get_team_history", { team_name: teamName })),
+    queryKey: teamDocumentKey(teamName ?? ""),
+    queryFn: () => loadTeamDocument(teamName!),
+    select: historyFromV1,
     enabled: !!teamName,
     staleTime: TEAM_STALE_MS,
   });
 }
 
 export function useLeagueComparison(teamName: string | null) {
-  const database = teamQueryDatabase();
   return useQuery({
-    queryKey: ["team", "league-comparison", database, teamName],
-    queryFn: () =>
-      fetchJson<LeagueComparison>(buildUrl("/team/get_league_comparison", { team_name: teamName })),
+    queryKey: teamDocumentKey(teamName ?? ""),
+    queryFn: () => loadTeamDocument(teamName!),
+    select: leagueComparisonFromV1,
     enabled: !!teamName,
     staleTime: TEAM_STALE_MS,
   });
@@ -129,54 +140,41 @@ export function useLeagueComparison(teamName: string | null) {
 export function useClutchAnalysis(
   teamName: string | null,
   season: string | null,
-  clutchThreshold = 10,
+  clutchThreshold = DEFAULT_CLUTCH_THRESHOLD,
 ) {
-  const seasonParam = season && season !== "all" ? season : undefined;
-  const database = teamQueryDatabase();
+  const seasonParam = seasonKey(season);
+  const thresholdKey =
+    clutchThreshold === DEFAULT_CLUTCH_THRESHOLD ? "" : String(clutchThreshold);
   return useQuery({
-    queryKey: ["team", "clutch", database, teamName, seasonParam ?? "", clutchThreshold],
+    queryKey: teamDocumentKey(teamName ?? "", seasonParam, thresholdKey),
     queryFn: () =>
-      fetchJson<ClutchAnalysis>(
-        buildUrl("/team/get_clutch_analysis", {
-          team_name: teamName,
-          season: seasonParam,
-          clutch_threshold: clutchThreshold,
-        }),
-      ),
+      loadTeamDocument(teamName!, {
+        season: seasonParam || undefined,
+        threshold: clutchThreshold,
+      }),
+    select: clutchFromV1,
     enabled: !!teamName,
     staleTime: TEAM_STALE_MS,
   });
 }
 
 export function useConsistencyMetrics(teamName: string | null, season: string | null) {
-  const seasonParam = season && season !== "all" ? season : undefined;
-  const database = teamQueryDatabase();
+  const seasonParam = seasonKey(season);
   return useQuery({
-    queryKey: ["team", "consistency", database, teamName, seasonParam ?? ""],
-    queryFn: () =>
-      fetchJson<ConsistencyMetrics>(
-        buildUrl("/team/get_consistency_metrics", {
-          team_name: teamName,
-          season: seasonParam,
-        }),
-      ),
+    queryKey: teamDocumentKey(teamName ?? "", seasonParam),
+    queryFn: () => loadTeamDocument(teamName!, { season: seasonParam || undefined }),
+    select: consistencyFromV1,
     enabled: !!teamName,
     staleTime: TEAM_STALE_MS,
   });
 }
 
 export function useSpecialMatches(teamName: string | null, season: string | null) {
-  const seasonParam = season && season !== "all" ? season : undefined;
-  const database = teamQueryDatabase();
+  const seasonParam = seasonKey(season);
   return useQuery({
-    queryKey: ["team", "special-matches", database, teamName, seasonParam ?? ""],
-    queryFn: () =>
-      fetchJson<SpecialMatches>(
-        buildUrl("/team/get_special_matches", {
-          team_name: teamName,
-          season: seasonParam,
-        }),
-      ),
+    queryKey: teamDocumentKey(teamName ?? "", seasonParam),
+    queryFn: () => loadTeamDocument(teamName!, { season: seasonParam || undefined }),
+    select: specialMatchesFromV1,
     enabled: !!teamName,
     staleTime: TEAM_STALE_MS,
   });
