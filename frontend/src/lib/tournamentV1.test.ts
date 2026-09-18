@@ -38,7 +38,20 @@ describe("tournamentV1 adapters", () => {
     expect(fields).toContain("total_net");
     expect(fields).toContain("avg_net");
     expect(table.data[0]).toMatchObject({ player: "Alpha", total_score: 1180 });
+    expect(table.default_sort).toEqual({ field: "rank", dir: "asc" });
     expect(table.metadata).toMatchObject({ leaderboard_mode: "scratch_net_handicap" });
+  });
+
+  test("overall leaderboard with KO sorts by position, not pins", () => {
+    const table = leaderboardTableFromV1(
+      [
+        { rank: 5, player: "Low place high pins", total_score: 2000 },
+        { rank: 1, player: "Champion", total_score: 1500 },
+      ],
+      { koBracketFormat: "tree" },
+    );
+    expect(table.default_sort).toEqual({ field: "rank", dir: "asc" });
+    expect(table.metadata).toMatchObject({ initial_sort: [{ field: "rank", dir: "asc" }] });
   });
 
   test("single-round leaderboard uses stage and cumulative totals", () => {
@@ -111,6 +124,17 @@ describe("tournamentV1 adapters", () => {
     expect(format.handicap?.used).toBe(true);
     expect(format.handicap?.pins).toEqual({ kind: "uniform", value: 12 });
     expect(format.config).toEqual({});
+  });
+
+  test("format and section pass KO fields through", () => {
+    const format = formatFromV1({
+      rounds: [{ round_number: 9, round_name: "KO-Finale", is_ko_finale_cluster: true }],
+      ko_bracket_format: "seeded_elim_stepladder",
+      ko_finale_series_label_de: "Finale inkl. Handicap",
+    });
+    expect(format.ko_bracket_format).toBe("seeded_elim_stepladder");
+    expect(format.rounds?.[0]?.is_ko_finale_cluster).toBe(true);
+    expect(format.ko_finale_series_label_de).toContain("Handicap");
   });
 
   test("player results unwrap named tournament rows", () => {

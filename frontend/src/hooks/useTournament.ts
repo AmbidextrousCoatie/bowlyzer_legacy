@@ -20,6 +20,7 @@ const TOURNAMENT_LIST_STALE_MS = 10 * 60 * 1000;
 export type TournamentRound = {
   round_number?: number | string;
   round_name?: string | null;
+  is_ko_finale_cluster?: boolean;
 };
 
 /** Uniform vs spread for numeric handicap fields in format infobox */

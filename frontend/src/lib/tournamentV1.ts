@@ -89,7 +89,7 @@ function roundFields(rows: Dict[]): number[] {
 
 export function leaderboardTableFromV1(
   raw: unknown,
-  extra: { rounds?: TournamentRound[]; useNet?: boolean } = {},
+  extra: { rounds?: TournamentRound[]; useNet?: boolean; koBracketFormat?: string } = {},
 ): TableData {
   const rows = asList(raw).map(asRecord);
   const useNet =
@@ -321,10 +321,17 @@ export function leaderboardTableFromV1(
       ]),
     );
   }
+  const stepladder = extra.koBracketFormat === "seeded_elim_stepladder";
+  const metadata: Record<string, unknown> = {};
+  if (useNet) metadata.leaderboard_mode = "scratch_net_handicap";
+  if (stepladder) metadata.standings_order = "ko_then_average";
+  if (extra.koBracketFormat) {
+    metadata.initial_sort = [{ field: "rank", dir: "asc" }];
+  }
   return table(columns, data, {
     title: "Leaderboard",
-    default_sort: { field: useNet ? "total_net" : "total_score", dir: "desc" },
-    metadata: useNet ? { leaderboard_mode: "scratch_net_handicap" } : {},
+    default_sort: { field: "rank", dir: "asc" },
+    metadata,
     config: { stripedColGroups: true, stickyHeader: true, striped: true },
   });
 }
@@ -732,6 +739,11 @@ export function formatFromV1(raw: unknown): TournamentFormatInfo {
     }),
     handicap: handicapInfo,
     ko_finale_round_number_in_data: asNum(rec.ko_finale_round_number_in_data),
+    ko_bracket_format: asStr(rec.ko_bracket_format) || undefined,
+    ko_decision_basis: asStr(rec.ko_decision_basis) || undefined,
+    ko_finale_series: asStr(rec.ko_finale_series) || undefined,
+    ko_finale_series_label_de: asStr(rec.ko_finale_series_label_de) || undefined,
+    ko_finale_series_label_en: asStr(rec.ko_finale_series_label_en) || undefined,
     qualifying_cut_span:
       (rec.qualifying_cut_span as TournamentFormatInfo["qualifying_cut_span"]) ?? null,
     qualifying_cut_pair:
@@ -762,12 +774,16 @@ export function sectionFromV1(raw: unknown): TournamentSection {
     return {
       round_number: asNum(row.round_number) ?? row.round_number,
       round_name: asStr(row.round_name),
+      is_ko_finale_cluster: Boolean(row.is_ko_finale_cluster),
     };
   });
   const useNet = Boolean(rec.use_net);
+  const koBracketFormat =
+    asStr(asRecord(rec.format).ko_bracket_format) ||
+    asStr(asRecord(rec.ko_bracket).ko_bracket_format);
   return {
     cards: asList(rec.cards) as TournamentSummaryCard[],
-    leaderboard: leaderboardTableFromV1(rec.leaderboard, { rounds, useNet }),
+    leaderboard: leaderboardTableFromV1(rec.leaderboard, { rounds, useNet, koBracketFormat }),
     round_results: roundResultsTableFromV1(rec.round_results, { useNet }),
     rounds,
     best_efforts: asRecord(rec.best_efforts) as TournamentBestEfforts,
