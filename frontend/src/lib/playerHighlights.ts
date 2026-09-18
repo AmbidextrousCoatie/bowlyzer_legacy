@@ -149,8 +149,8 @@ function buildAllPlayersClubAffiliation(
     .map((entry, idx) => ({
       id: `club-aff-${entry.player}-${idx}`,
       label: entry.player,
-      value: entry.club,
-      detail: joinDetail(entry.period, `${entry.games} Spiele`),
+      value: String(entry.games),
+      detail: joinDetail(entry.club, entry.period),
       href: playerPageHref(entry.player, entry.playerId),
       title: `${entry.player} · ${entry.club}`,
     }));

@@ -561,6 +561,18 @@ flowchart LR
 
 **Migration:** Phase 2b — build registry from existing configs + annotated CSVs; import audit rows into registry; flip `blocks_publish` when coverage is sufficient.
 
+**Open gap (2026-09-18):** many published `game_line` / `tournament_line` rows
+have a `player_name` and **empty `player_id`**, especially before ~10/11.
+Club totals count those rows (`coalesce(id, name)`); a Spieler document keyed
+only on EDV id does not. Example: Hartfeil, Volkmar (`7830`) at Donaubowler —
+1001 club games vs ~6xx on `/spieler`, seasons starting 10/11.
+
+The stats API currently joins empty-id rows by unique canonical name / alias
+([`bowlyzer-api/docs/player-identity.md`](../../../bowlyzer-api/docs/player-identity.md)).
+That is a bandage. Publish should **stamp `player_id` at merge** from the
+registry when the label uniquely maps to one EDV id; leave homonyms in the
+audit CSV. Do this in the registry/normalization job, not in Flask.
+
 **Not in scope:** biographical data, club affiliation history, photos, BV API sync automation (manual `dbu_id` annotations remain the source for official corrections).
 
 ---
