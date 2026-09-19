@@ -9,12 +9,8 @@ import {
   type ReactNode,
 } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  LANGUAGE_STORAGE_KEY,
-  readStoredLanguage,
-  type AppLanguage,
-} from "../lib/language";
-import { postJson } from "../lib/api";
+import { LANGUAGE_STORAGE_KEY, readStoredLanguage, type AppLanguage } from "../lib/language";
+import { isFlaskUnavailableError, postJson } from "../lib/api";
 
 export type { AppLanguage };
 
@@ -37,6 +33,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     void syncServerLanguage(readStoredLanguage()).catch((error) => {
+      if (isFlaskUnavailableError(error)) return;
       console.error("[language] initial sync failed", error);
     });
   }, []);
@@ -51,6 +48,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     try {
       await syncServerLanguage(next);
     } catch (error) {
+      if (isFlaskUnavailableError(error)) return;
       setLanguageState(previous);
       localStorage.setItem(LANGUAGE_STORAGE_KEY, previous);
       console.error("[language] set_language failed", error);

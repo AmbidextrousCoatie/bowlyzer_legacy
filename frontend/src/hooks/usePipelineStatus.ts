@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { buildUrl, fetchJson } from "../lib/api";
+import { buildUrl, fetchJson, flaskQueryRetry } from "../lib/api";
 
 export type PipelineArtifact = {
   id: string;
@@ -93,5 +93,6 @@ export function usePipelineStatus() {
     queryKey: ["pipeline-status"],
     queryFn: () => fetchJson<PipelineStatusResponse>(buildUrl("/pipeline/status")),
     staleTime: STALE_MS,
+    retry: flaskQueryRetry,
   });
 }

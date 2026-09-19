@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { buildUrl, fetchJson } from "../lib/api";
+import { buildUrl, fetchJson, flaskQueryRetry } from "../lib/api";
 
 export type TournamentCoverageStatus =
   | "not_available"
@@ -47,5 +47,6 @@ export function useTournamentCoverage() {
     queryKey: ["tournament-coverage"],
     queryFn: () => fetchJson<TournamentCoverageResponse>(buildUrl("/pipeline/tournament_coverage")),
     staleTime: STALE_MS,
+    retry: flaskQueryRetry,
   });
 }

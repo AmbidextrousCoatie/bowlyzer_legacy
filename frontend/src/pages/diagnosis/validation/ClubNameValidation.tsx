@@ -2,11 +2,16 @@ import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { ClubSearch } from "../../../components/ClubSearch";
 import {
+  FlaskQueryError,
+  UnavailableInCurrentApi,
+} from "../../../components/UnavailableInCurrentApi";
+import {
   useClubNameValidation,
   useSaveClubNameMappings,
   type ClubNameValidationRow,
 } from "../../../hooks/useClubNameValidation";
 import { useTranslations } from "../../../hooks/useTranslations";
+import { FLASK_UNAVAILABLE_MESSAGE, isFlaskUnavailableError } from "../../../lib/api";
 import { querySuffixForPath } from "../../../lib/navigationQuery";
 
 const PLACEHOLDER_VALUE = "";
@@ -81,7 +86,13 @@ export function ClubNameValidation() {
       );
       await query.refetch();
     } catch (error) {
-      setSaveError(error instanceof Error ? error.message : String(error));
+      setSaveError(
+        isFlaskUnavailableError(error)
+          ? FLASK_UNAVAILABLE_MESSAGE
+          : error instanceof Error
+            ? error.message
+            : String(error),
+      );
     }
   }
 
@@ -101,9 +112,7 @@ export function ClubNameValidation() {
         <p className="text-label uppercase text-muted mb-2">
           {t("ui.diagnosis.eyebrow", "Diagnose")}
         </p>
-        <h1 className="text-h1">
-          {t("ui.diagnosis.club_mapping_title", "Club-Zuordnung")}
-        </h1>
+        <h1 className="text-h1">{t("ui.diagnosis.club_mapping_title", "Club-Zuordnung")}</h1>
         <p className="text-body text-muted mt-2 max-w-[72ch]">
           {t(
             "ui.diagnosis.club_mapping_desc",
@@ -116,9 +125,13 @@ export function ClubNameValidation() {
         <p className="text-body text-muted">{t("ui.common.loading", "Laden…")}</p>
       )}
       {query.isError && (
-        <p className="text-body text-rose-600">
-          {t("ui.diagnosis.standings_validation_error", "Validierung konnte nicht geladen werden.")}
-        </p>
+        <FlaskQueryError
+          error={query.error}
+          fallback={t(
+            "ui.diagnosis.standings_validation_error",
+            "Validierung konnte nicht geladen werden.",
+          )}
+        />
       )}
 
       {query.data && (
@@ -181,7 +194,11 @@ export function ClubNameValidation() {
             {saveMessage && (
               <p className="text-body text-emerald-700 dark:text-emerald-400">{saveMessage}</p>
             )}
-            {saveError && <p className="text-body text-rose-600">{saveError}</p>}
+            {saveError === FLASK_UNAVAILABLE_MESSAGE ? (
+              <UnavailableInCurrentApi />
+            ) : (
+              saveError && <p className="text-body text-rose-600">{saveError}</p>
+            )}
           </div>
 
           <section className="mt-8 rounded-sm border border-border bg-surface overflow-x-auto w-full">

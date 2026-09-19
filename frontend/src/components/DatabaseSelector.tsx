@@ -1,4 +1,5 @@
 import { Database } from "lucide-react";
+import { FlaskQueryError } from "./UnavailableInCurrentApi";
 import { useDatabaseSelection } from "../hooks/useDatabase";
 import { useTranslations } from "../hooks/useTranslations";
 
@@ -14,15 +15,28 @@ export function DatabaseSelector({
   collapsed = false,
 }: DatabaseSelectorProps) {
   const { t } = useTranslations();
-  const { currentId, currentDisplayName, sourceIds, sources, setDatabase, isLoading, isError, error } =
-    useDatabaseSelection();
+  const {
+    currentId,
+    currentDisplayName,
+    sourceIds,
+    sources,
+    setDatabase,
+    isLoading,
+    isError,
+    error,
+  } = useDatabaseSelection();
 
   if (isError) {
-    const message = error instanceof Error ? error.message : "Fehler";
     return (
-      <p className={`text-small text-danger-fg ${className}`}>
-        {t("ui.database.load_error", "Datenquelle konnte nicht geladen werden")}: {message}
-      </p>
+      <FlaskQueryError
+        className={`text-small ${className}`}
+        error={error}
+        fallback={
+          error instanceof Error
+            ? `${t("ui.database.load_error", "Datenquelle konnte nicht geladen werden")}: ${error.message}`
+            : t("ui.database.load_error", "Datenquelle konnte nicht geladen werden")
+        }
+      />
     );
   }
 
@@ -44,8 +58,7 @@ export function DatabaseSelector({
       className={
         (isSidebar
           ? "flex w-full flex-col gap-1 px-2"
-          : "flex min-w-[min(100%,320px)] flex-1 flex-col gap-1.5") +
-        ` ${className}`
+          : "flex min-w-[min(100%,320px)] flex-1 flex-col gap-1.5") + ` ${className}`
       }
     >
       <span

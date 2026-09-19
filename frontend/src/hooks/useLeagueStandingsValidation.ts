@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { buildUrl, fetchJson } from "../lib/api";
+import { buildUrl, fetchJson, flaskQueryRetry } from "../lib/api";
 
 export const VALIDATION_ERROR_CATEGORIES = [
   "perfect",
@@ -159,5 +159,6 @@ export function useLeagueStandingsValidation(filters?: {
         buildUrl("/pipeline/league_standings_validation", params),
       ),
     staleTime: STALE_MS,
+    retry: flaskQueryRetry,
   });
 }

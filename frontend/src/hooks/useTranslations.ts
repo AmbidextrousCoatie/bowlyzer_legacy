@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { useLanguage } from "../context/LanguageContext";
 
-import { buildUrl, fetchJson } from "../lib/api";
+import { buildUrl, fetchJson, flaskQueryRetry } from "../lib/api";
 import { formatCompetitionLabel } from "../lib/competitionDisplayName";
 
 type TranslationsPayload = {
@@ -27,6 +27,7 @@ export function useTranslations() {
       fetchJson<TranslationsPayload>(buildUrl("/league/get_translations", { language })),
     staleTime: 60 * 60_000,
     gcTime: 24 * 60 * 60_000,
+    retry: flaskQueryRetry,
   });
 
   const translations = query.data?.translations ?? {};
@@ -40,10 +41,7 @@ export function useTranslations() {
     return fallback ?? key;
   }
 
-  function formatCompetition(
-    name: string,
-    options?: { isTournament?: boolean },
-  ): string {
+  function formatCompetition(name: string, options?: { isTournament?: boolean }): string {
     return formatCompetitionLabel(name, {
       isTournament: options?.isTournament,
       tournamentAbbreviations,

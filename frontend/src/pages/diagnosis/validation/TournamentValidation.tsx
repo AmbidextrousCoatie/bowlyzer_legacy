@@ -1,6 +1,7 @@
 import { Link, useSearchParams } from "react-router-dom";
 import { useMemo } from "react";
 import { DiagnosisToolbar } from "../../../components/DiagnosisToolbar";
+import { FlaskQueryError } from "../../../components/UnavailableInCurrentApi";
 import { useAvailableSeasons } from "../../../hooks/useLeague";
 import { useLeagueStandingsValidation } from "../../../hooks/useLeagueStandingsValidation";
 import { useTranslations } from "../../../hooks/useTranslations";
@@ -8,7 +9,11 @@ import { buildUrl, seasonForUrlQuery } from "../../../lib/api";
 import { querySuffixForPath, searchParamsForPath } from "../../../lib/navigationQuery";
 import { STATUS_CLASS, TOURNAMENT_STATUS_KEYS } from "./validationUi";
 
-function tournamentValidationPath(season: string, tournament: string, searchParams: URLSearchParams): string {
+function tournamentValidationPath(
+  season: string,
+  tournament: string,
+  searchParams: URLSearchParams,
+): string {
   const params = new URLSearchParams();
   params.set("season", seasonForUrlQuery(season));
   params.set("tournament", tournament);
@@ -210,9 +215,7 @@ export function TournamentValidation() {
             type="checkbox"
             className="size-4 rounded-sm border border-border"
             checked={nonGreenOnly}
-            onChange={(event) =>
-              updateSearchParam("non_green", event.target.checked ? "1" : null)
-            }
+            onChange={(event) => updateSearchParam("non_green", event.target.checked ? "1" : null)}
           />
           <span>{t("ui.diagnosis.standings_non_green", "Nur nicht grün")}</span>
         </label>
@@ -222,9 +225,14 @@ export function TournamentValidation() {
         <p className="text-body text-muted mt-6">{t("ui.common.loading", "Laden…")}</p>
       )}
       {query.isError && (
-        <p className="text-body text-rose-600 mt-6">
-          {t("ui.diagnosis.standings_validation_error", "Validierung konnte nicht geladen werden.")}
-        </p>
+        <FlaskQueryError
+          className="mt-6"
+          error={query.error}
+          fallback={t(
+            "ui.diagnosis.standings_validation_error",
+            "Validierung konnte nicht geladen werden.",
+          )}
+        />
       )}
 
       {data && (
@@ -314,80 +322,77 @@ export function TournamentValidation() {
                     searchParams,
                   );
                   return (
-                  <tr
-                    key={`${row.season}-${row.event_name}`}
-                    className="border-t border-border align-top"
-                  >
-                    <td className="px-4 py-2 whitespace-nowrap">
-                      <Link
-                        to={tournamentPath}
-                        className="text-primary underline-offset-2 hover:underline"
-                      >
-                        {row.season}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-2 font-medium min-w-[12rem]">
-                      <Link
-                        to={tournamentPath}
-                        className="text-primary underline-offset-2 hover:underline"
-                        title={row.event_name}
-                      >
-                        {tournamentLabel}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-2 whitespace-nowrap">
-                      {pdfBasename ? (
-                        <span className="inline-flex flex-col gap-0.5">
-                          <a
-                            href={tournamentSourceFileUrl(pdfBasename)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary underline-offset-2 hover:underline font-mono text-caption"
-                          >
-                            {sourceFileLinkLabel(pdfBasename)}
-                          </a>
-                          {sourceSheet ? (
-                            <span className="text-caption text-muted">Blatt {sourceSheet}</span>
-                          ) : null}
-                        </span>
-                      ) : (
-                        <span className="text-muted">—</span>
-                      )}
-                    </td>
-                    <td className={`px-4 py-2 capitalize ${STATUS_CLASS[row.status] ?? ""}`}>
-                      {row.status}
-                    </td>
-                    <td className="px-4 py-2 tabular-nums">{row.row_count ?? 0}</td>
-                    <td className="px-4 py-2 tabular-nums">{row.player_count ?? 0}</td>
-                    <td className="px-4 py-2 tabular-nums">{row.missing_player_id ?? 0}</td>
-                    <td className="px-4 py-2 tabular-nums">{row.missing_club ?? 0}</td>
-                    <td className="px-4 py-2 tabular-nums">{row.club_unknown ?? 0}</td>
-                    <td className="px-4 py-2 tabular-nums">{row.same_name_different_ids ?? 0}</td>
-                    <td className="px-4 py-2 tabular-nums">{row.same_id_different_names ?? 0}</td>
-                    <td className="px-4 py-2 text-caption">
-                      {(row.findings?.length ?? 0) > 0 ? (
-                        <ul className="space-y-1">
-                          {row.findings!.map((line) => (
-                            <li key={line} className="font-mono text-[0.8125rem]">
-                              {line}
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <span className="text-muted">—</span>
-                      )}
-                    </td>
-                  </tr>
+                    <tr
+                      key={`${row.season}-${row.event_name}`}
+                      className="border-t border-border align-top"
+                    >
+                      <td className="px-4 py-2 whitespace-nowrap">
+                        <Link
+                          to={tournamentPath}
+                          className="text-primary underline-offset-2 hover:underline"
+                        >
+                          {row.season}
+                        </Link>
+                      </td>
+                      <td className="px-4 py-2 font-medium min-w-[12rem]">
+                        <Link
+                          to={tournamentPath}
+                          className="text-primary underline-offset-2 hover:underline"
+                          title={row.event_name}
+                        >
+                          {tournamentLabel}
+                        </Link>
+                      </td>
+                      <td className="px-4 py-2 whitespace-nowrap">
+                        {pdfBasename ? (
+                          <span className="inline-flex flex-col gap-0.5">
+                            <a
+                              href={tournamentSourceFileUrl(pdfBasename)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-primary underline-offset-2 hover:underline font-mono text-caption"
+                            >
+                              {sourceFileLinkLabel(pdfBasename)}
+                            </a>
+                            {sourceSheet ? (
+                              <span className="text-caption text-muted">Blatt {sourceSheet}</span>
+                            ) : null}
+                          </span>
+                        ) : (
+                          <span className="text-muted">—</span>
+                        )}
+                      </td>
+                      <td className={`px-4 py-2 capitalize ${STATUS_CLASS[row.status] ?? ""}`}>
+                        {row.status}
+                      </td>
+                      <td className="px-4 py-2 tabular-nums">{row.row_count ?? 0}</td>
+                      <td className="px-4 py-2 tabular-nums">{row.player_count ?? 0}</td>
+                      <td className="px-4 py-2 tabular-nums">{row.missing_player_id ?? 0}</td>
+                      <td className="px-4 py-2 tabular-nums">{row.missing_club ?? 0}</td>
+                      <td className="px-4 py-2 tabular-nums">{row.club_unknown ?? 0}</td>
+                      <td className="px-4 py-2 tabular-nums">{row.same_name_different_ids ?? 0}</td>
+                      <td className="px-4 py-2 tabular-nums">{row.same_id_different_names ?? 0}</td>
+                      <td className="px-4 py-2 text-caption">
+                        {(row.findings?.length ?? 0) > 0 ? (
+                          <ul className="space-y-1">
+                            {row.findings!.map((line) => (
+                              <li key={line} className="font-mono text-[0.8125rem]">
+                                {line}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <span className="text-muted">—</span>
+                        )}
+                      </td>
+                    </tr>
                   );
                 })}
               </tbody>
             </table>
             {visibleRows.length === 0 && (
               <p className="px-4 py-6 text-body text-muted">
-                {t(
-                  "ui.diagnosis.tournament_quality_empty",
-                  "Keine Turnier-Zeilen für den Filter.",
-                )}
+                {t("ui.diagnosis.tournament_quality_empty", "Keine Turnier-Zeilen für den Filter.")}
               </p>
             )}
           </section>

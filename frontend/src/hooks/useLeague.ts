@@ -1,9 +1,9 @@
 import { useQueries, useQuery } from "@tanstack/react-query";
-import { buildUrl, fetchJson } from "../lib/api";
 import { loadClubMatrix } from "../lib/clubMatrixV1";
 import { loadClubLegends } from "../lib/clubLegendsV1";
 import { loadClubPlayerResults } from "../lib/clubPlayerResultsV1";
 import { loadClubRankings } from "../lib/clubRankingsV1";
+import { loadOddities, loadWeekMatrix } from "../lib/diagnosisV1";
 import type { ClubMatrixSeasonCell } from "../lib/clubMatrixCell";
 import type { TableData } from "../lib/datatable/types";
 import {
@@ -519,13 +519,9 @@ export function useClubMatrices(selectedClubs: string[], onlyUnnumbered: boolean
 }
 
 export function useWeekMatrix() {
-  const database =
-    typeof window !== "undefined"
-      ? new URLSearchParams(window.location.search).get("database")
-      : null;
   return useQuery({
-    queryKey: ["league", "week-matrix", database ?? ""],
-    queryFn: () => fetchJson<WeekMatrixPayload>(buildUrl("/league/get_week_matrix")),
+    queryKey: [V1_QUERY_KEY, "diagnosis", "week-matrix"],
+    queryFn: () => loadWeekMatrix(),
     staleTime: DIAGNOSIS_LIST_STALE_MS,
   });
 }
@@ -556,19 +552,10 @@ export type DataOdditiesPayload = {
 };
 
 export function useDataOddities(types: DataOddityType[]) {
-  const database =
-    typeof window !== "undefined"
-      ? new URLSearchParams(window.location.search).get("database")
-      : null;
   const typesKey = types.slice().sort().join(",");
   return useQuery({
-    queryKey: ["league", "data-oddities", database ?? "", typesKey],
-    queryFn: () =>
-      fetchJson<DataOdditiesPayload>(
-        buildUrl("/league/get_data_oddities", {
-          types: types.length > 0 ? types.join(",") : undefined,
-        }),
-      ),
+    queryKey: [V1_QUERY_KEY, "diagnosis", "oddities", typesKey],
+    queryFn: () => loadOddities(types),
     staleTime: DIAGNOSIS_LIST_STALE_MS,
   });
 }

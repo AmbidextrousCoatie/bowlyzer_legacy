@@ -1,5 +1,6 @@
 import { Fragment } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { FlaskQueryError } from "../../components/UnavailableInCurrentApi";
 import { usePipelineStatus } from "../../hooks/usePipelineStatus";
 import { useTranslations } from "../../hooks/useTranslations";
 import { querySuffixForPath } from "../../lib/navigationQuery";
@@ -56,9 +57,7 @@ export function DataPipeline() {
         <p className="text-label uppercase text-muted mb-2">
           {t("ui.diagnosis.eyebrow", "Diagnose")}
         </p>
-        <h1 className="text-h1">
-          {t("ui.diagnosis.pipeline_title", "Datenpipeline")}
-        </h1>
+        <h1 className="text-h1">{t("ui.diagnosis.pipeline_title", "Datenpipeline")}</h1>
         <p className="text-body text-muted mt-2 max-w-[72ch]">
           {t(
             "ui.diagnosis.pipeline_desc",
@@ -73,9 +72,13 @@ export function DataPipeline() {
         <p className="text-body text-muted">{t("ui.common.loading", "Laden…")}</p>
       )}
       {query.isError && (
-        <p className="text-body text-rose-600">
-          {t("ui.diagnosis.pipeline_error", "Pipeline-Status konnte nicht geladen werden.")}
-        </p>
+        <FlaskQueryError
+          error={query.error}
+          fallback={t(
+            "ui.diagnosis.pipeline_error",
+            "Pipeline-Status konnte nicht geladen werden.",
+          )}
+        />
       )}
 
       {data && (
@@ -129,7 +132,7 @@ export function DataPipeline() {
               {
                 label: t("ui.diagnosis.pipeline_kpi_manifest", "Publish-Manifest"),
                 value: manifest?.present
-                  ? manifest.run_id ?? t("ui.common.yes", "ja")
+                  ? (manifest.run_id ?? t("ui.common.yes", "ja"))
                   : t("ui.common.no", "nein"),
               },
               {
@@ -184,10 +187,7 @@ export function DataPipeline() {
                 </thead>
                 <tbody>
                   {(manifest.artifacts ?? []).map((row) => (
-                    <tr
-                      key={`${row.job}-${row.source_id}`}
-                      className="border-t border-border"
-                    >
+                    <tr key={`${row.job}-${row.source_id}`} className="border-t border-border">
                       <td className="px-4 py-2 font-mono text-caption">{row.job ?? "—"}</td>
                       <td className="px-4 py-2">
                         {row.stream ?? "—"}
@@ -197,7 +197,9 @@ export function DataPipeline() {
                       </td>
                       <td className="px-4 py-2 tabular-nums">{formatRows(row.row_count)}</td>
                       <td className="px-4 py-2 tabular-nums">{row.input_source_count ?? "—"}</td>
-                      <td className="px-4 py-2 font-mono text-caption">{row.columns_hash ?? "—"}</td>
+                      <td className="px-4 py-2 font-mono text-caption">
+                        {row.columns_hash ?? "—"}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -264,9 +266,7 @@ export function DataPipeline() {
                 <tr className="border-t border-border text-label uppercase text-muted">
                   <th className="px-4 py-2 font-medium">Quelle</th>
                   <th className="px-4 py-2 font-medium">Aktiv</th>
-                  {exposePaths && (
-                    <th className="px-4 py-2 font-medium">Datei</th>
-                  )}
+                  {exposePaths && <th className="px-4 py-2 font-medium">Datei</th>}
                   <th className="px-4 py-2 font-medium">Status</th>
                 </tr>
               </thead>
@@ -277,7 +277,9 @@ export function DataPipeline() {
                       <span className="font-medium">{row.display_name}</span>
                       <span className="block text-caption text-muted">{row.source_id}</span>
                       {!exposePaths && row.filename && (
-                        <span className="block text-caption text-muted font-mono">{row.filename}</span>
+                        <span className="block text-caption text-muted font-mono">
+                          {row.filename}
+                        </span>
                       )}
                     </td>
                     <td className="px-4 py-2">{row.is_enabled ? "ja" : "nein"}</td>

@@ -1,8 +1,12 @@
 import { Link, useSearchParams } from "react-router-dom";
 import { useMemo } from "react";
 import { DiagnosisToolbar } from "../../components/DiagnosisToolbar";
+import { FlaskQueryError } from "../../components/UnavailableInCurrentApi";
 import { useAvailableSeasons } from "../../hooks/useLeague";
-import { useLeagueStandingsValidation, VALIDATION_ERROR_CATEGORIES } from "../../hooks/useLeagueStandingsValidation";
+import {
+  useLeagueStandingsValidation,
+  VALIDATION_ERROR_CATEGORIES,
+} from "../../hooks/useLeagueStandingsValidation";
 import { useTranslations } from "../../hooks/useTranslations";
 import { seasonForUrlQuery } from "../../lib/api";
 import { querySuffixForPath } from "../../lib/navigationQuery";
@@ -25,7 +29,9 @@ const WEEK_STATUS_CLASS: Record<string, string> = {
   critical: "text-rose-700 dark:text-rose-400",
 };
 
-function findingKind(line: string): "team" | "pos" | "pts" | "pts-total" | "pts-week" | "pins" | "corrected" {
+function findingKind(
+  line: string,
+): "team" | "pos" | "pts" | "pts-total" | "pts-week" | "pins" | "corrected" {
   if (line.startsWith("corrected: ")) return "corrected";
   if (line.startsWith("pts-week: ")) return "pts-week";
   if (line.startsWith("pts-total: ")) return "pts-total";
@@ -45,7 +51,14 @@ const FINDING_CLASS: Record<string, string> = {
   pins: "text-rose-800 dark:text-rose-300",
 };
 
-const STATUS_FILTER_KEYS = ["perfect", "corrected", "yellow", "red", "skipped", "week_incomplete"] as const;
+const STATUS_FILTER_KEYS = [
+  "perfect",
+  "corrected",
+  "yellow",
+  "red",
+  "skipped",
+  "week_incomplete",
+] as const;
 type StatusFilterKey = (typeof STATUS_FILTER_KEYS)[number];
 
 const STATUS_FILTER_LABEL: Record<StatusFilterKey, string> = {
@@ -161,7 +174,7 @@ function formatTeamMismatchPipeline(row: {
   const unique = parts.every((v) => v === parts[0]);
   const chain = unique ? String(parts[0]) : parts.join("→");
   const step = row.team_resolution_step?.trim();
-  const stepLabel = step ? PROCESSING_STEP_LABEL[step] ?? step : "";
+  const stepLabel = step ? (PROCESSING_STEP_LABEL[step] ?? step) : "";
   const statusHint =
     row.status_raw && row.status_raw !== row.status
       ? ` · Status ${row.status_raw}→${row.status}`
@@ -169,9 +182,7 @@ function formatTeamMismatchPipeline(row: {
   if (!step && parts[0] === 0) {
     return null;
   }
-  return stepLabel
-    ? `${chain} (${stepLabel})${statusHint}`
-    : `${chain}${statusHint}`;
+  return stepLabel ? `${chain} (${stepLabel})${statusHint}` : `${chain}${statusHint}`;
 }
 
 export function LeagueStandingsValidation() {
@@ -299,19 +310,14 @@ export function LeagueStandingsValidation() {
 
       <DiagnosisToolbar>
         <label className="flex flex-col gap-1 text-caption">
-          <span className="text-muted uppercase text-label">
-            {t("season", "Saison")}
-          </span>
+          <span className="text-muted uppercase text-label">{t("season", "Saison")}</span>
           <select
             className="rounded-sm border border-border bg-background px-3 py-2 text-body min-w-[10rem]"
             value={seasonFilter}
             disabled={seasonsQuery.isPending}
             onChange={(event) => {
               const value = event.target.value;
-              updateSearchParam(
-                "season",
-                value ? seasonForUrlQuery(value) : null,
-              );
+              updateSearchParam("season", value ? seasonForUrlQuery(value) : null);
             }}
           >
             <option value="">{t("ui.diagnosis.standings_all_seasons", "Alle Saisons")}</option>
@@ -327,9 +333,7 @@ export function LeagueStandingsValidation() {
             type="checkbox"
             className="size-4 rounded-sm border border-border"
             checked={nonGreenOnly}
-            onChange={(event) =>
-              updateSearchParam("non_green", event.target.checked ? "1" : null)
-            }
+            onChange={(event) => updateSearchParam("non_green", event.target.checked ? "1" : null)}
           />
           <span>{t("ui.diagnosis.standings_non_green", "Nur nicht grün")}</span>
         </label>
@@ -342,9 +346,7 @@ export function LeagueStandingsValidation() {
               updateSearchParam("weeks_complete", event.target.checked ? "1" : null)
             }
           />
-          <span>
-            {t("ui.diagnosis.standings_complete_weeks", "Nur vollständige Ligen")}
-          </span>
+          <span>{t("ui.diagnosis.standings_complete_weeks", "Nur vollständige Ligen")}</span>
         </label>
         <p className="text-small text-muted max-w-[48ch] self-end pb-2">
           <Link
@@ -387,12 +389,14 @@ export function LeagueStandingsValidation() {
         <p className="text-body text-muted mt-6">{t("ui.common.loading", "Laden…")}</p>
       )}
       {query.isError && (
-        <p className="text-body text-rose-600 mt-6">
-          {t(
+        <FlaskQueryError
+          className="mt-6"
+          error={query.error}
+          fallback={t(
             "ui.diagnosis.standings_validation_error",
             "Validierung konnte nicht geladen werden.",
           )}
-        </p>
+        />
       )}
 
       {data && (
@@ -411,8 +415,8 @@ export function LeagueStandingsValidation() {
               const active = statusFilter.has(key);
               const count =
                 key === "week_incomplete"
-                  ? summary?.week_incomplete ?? 0
-                  : summary?.[key as keyof typeof summary] ?? 0;
+                  ? (summary?.week_incomplete ?? 0)
+                  : (summary?.[key as keyof typeof summary] ?? 0);
               const disabled = key !== "week_incomplete" && count === 0 && !active;
               return (
                 <button
@@ -458,7 +462,9 @@ export function LeagueStandingsValidation() {
                   ? ` / ${data.row_count}`
                   : ""}{" "}
                 {t("ui.diagnosis.standings_rows", "Zeilen")}
-                {nonGreenOnly ? ` (${t("ui.diagnosis.standings_non_green", "Nur nicht grün")})` : ""}
+                {nonGreenOnly
+                  ? ` (${t("ui.diagnosis.standings_non_green", "Nur nicht grün")})`
+                  : ""}
                 {completeWeeksOnly
                   ? ` (${t("ui.diagnosis.standings_complete_weeks", "Nur vollständige Ligen")})`
                   : ""}
@@ -493,14 +499,10 @@ export function LeagueStandingsValidation() {
                   >
                     <td className="px-4 py-2 whitespace-nowrap">{row.season}</td>
                     <td className="px-4 py-2 font-medium whitespace-nowrap">{row.league}</td>
-                    <td
-                      className={`px-4 py-2 capitalize ${STATUS_CLASS[row.status] ?? ""}`}
-                    >
+                    <td className={`px-4 py-2 capitalize ${STATUS_CLASS[row.status] ?? ""}`}>
                       {row.status}
                     </td>
-                    <td className="px-4 py-2 tabular-nums whitespace-nowrap">
-                      {formatWeeks(row)}
-                    </td>
+                    <td className="px-4 py-2 tabular-nums whitespace-nowrap">{formatWeeks(row)}</td>
                     <td
                       className={`px-4 py-2 capitalize ${
                         WEEK_STATUS_CLASS[row.week_coverage_status ?? ""] ?? "text-muted"
@@ -551,9 +553,7 @@ export function LeagueStandingsValidation() {
                         );
                       })()}
                     </td>
-                    <td className="px-4 py-2 text-caption text-muted">
-                      {row.notes || "—"}
-                    </td>
+                    <td className="px-4 py-2 text-caption text-muted">{row.notes || "—"}</td>
                   </tr>
                 ))}
               </tbody>

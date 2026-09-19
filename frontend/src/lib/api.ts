@@ -17,6 +17,23 @@ export class ApiError extends Error {
   }
 }
 
+/** Shown when a remaining Flask RPC is unreachable (Vite 502 / no process on :5000). */
+export const FLASK_UNAVAILABLE_MESSAGE = "Information noch nicht in aktueller API verfügbar";
+
+export function isFlaskUnavailableStatus(status: number): boolean {
+  return status === 502 || status === 503 || status === 504;
+}
+
+export function isFlaskUnavailableError(error: unknown): boolean {
+  if (error instanceof ApiError) return isFlaskUnavailableStatus(error.status);
+  return error instanceof Error && error.message === FLASK_UNAVAILABLE_MESSAGE;
+}
+
+export function flaskQueryRetry(failureCount: number, error: unknown): boolean {
+  if (isFlaskUnavailableError(error)) return false;
+  return failureCount < 2;
+}
+
 export async function postJson<T = unknown>(url: string, body: unknown): Promise<T> {
   return fetchJson<T>(url, {
     method: "POST",
@@ -26,11 +43,19 @@ export async function postJson<T = unknown>(url: string, body: unknown): Promise
 }
 
 export async function fetchJson<T = unknown>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, {
-    credentials: "same-origin",
-    ...init,
-  });
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      credentials: "same-origin",
+      ...init,
+    });
+  } catch {
+    throw new ApiError(FLASK_UNAVAILABLE_MESSAGE, 503);
+  }
   if (!res.ok) {
+    if (isFlaskUnavailableStatus(res.status)) {
+      throw new ApiError(FLASK_UNAVAILABLE_MESSAGE, res.status);
+    }
     let message = `HTTP ${res.status} ${res.statusText}`;
     try {
       const body = (await res.json()) as { error?: string; message?: string };

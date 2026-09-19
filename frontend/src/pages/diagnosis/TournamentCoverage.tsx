@@ -1,5 +1,6 @@
 import { Link, useSearchParams } from "react-router-dom";
 import { useMemo } from "react";
+import { FlaskQueryError } from "../../components/UnavailableInCurrentApi";
 import {
   useTournamentCoverage,
   type TournamentCoverageCell,
@@ -8,7 +9,9 @@ import {
 import { useTranslations } from "../../hooks/useTranslations";
 import { buildUrl } from "../../lib/api";
 import { querySuffixForPath } from "../../lib/navigationQuery";
-import { normalizeTournamentGroupName } from "../../lib/tournamentGroupName";const STATUS_LABEL: Record<TournamentCoverageStatus, string> = {
+import { normalizeTournamentGroupName } from "../../lib/tournamentGroupName";
+
+const STATUS_LABEL: Record<TournamentCoverageStatus, string> = {
   not_available: "Nicht verfügbar",
   available: "Vorhanden",
   published_flaws: "Veröffentlicht (Mängel)",
@@ -88,9 +91,13 @@ export function TournamentCoverage() {
         <p className="text-body text-muted">{t("ui.common.loading", "Laden…")}</p>
       )}
       {query.isError && (
-        <p className="text-body text-rose-600">
-          {t("ui.diagnosis.tournament_coverage_error", "Turnier-Übersicht konnte nicht geladen werden.")}
-        </p>
+        <FlaskQueryError
+          error={query.error}
+          fallback={t(
+            "ui.diagnosis.tournament_coverage_error",
+            "Turnier-Übersicht konnte nicht geladen werden.",
+          )}
+        />
       )}
 
       {data && (
@@ -160,8 +167,7 @@ export function TournamentCoverage() {
                         .filter(Boolean)
                         .join(" · ");
                       const eventSlug =
-                        cell?.event_slug ||
-                        normalizeTournamentGroupName(tournament.long_name);
+                        cell?.event_slug || normalizeTournamentGroupName(tournament.long_name);
                       const symbol = STATUS_SYMBOL[status];
                       const canLink = isLinkableStatus(status) && Boolean(eventSlug);
                       return (

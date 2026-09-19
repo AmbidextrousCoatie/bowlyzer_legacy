@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { buildUrl, postJson } from "../lib/api";
+import { buildUrl, fetchJson, flaskQueryRetry, postJson } from "../lib/api";
 
 export type ClubNameValidationRow = {
   club_label: string;
@@ -58,8 +58,10 @@ const STALE_MS = 10 * 60 * 1000;
 export function useClubNameValidation() {
   return useQuery({
     queryKey: ["club-name-validation"],
-    queryFn: () => fetchClubNameValidation(),
+    queryFn: () =>
+      fetchJson<ClubNameValidationResponse>(buildUrl("/pipeline/club_name_validation")),
     staleTime: STALE_MS,
+    retry: flaskQueryRetry,
   });
 }
 
@@ -67,29 +69,11 @@ export function useSaveClubNameMappings() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (mappings: Array<{ unresolved_label: string; canonical_name: string }>) =>
-      postJson<ClubNameMappingSaveResponse>(
-        buildUrl("/pipeline/club_name_validation/save"),
-        { mappings },
-      ),
+      postJson<ClubNameMappingSaveResponse>(buildUrl("/pipeline/club_name_validation/save"), {
+        mappings,
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["club-name-validation"] });
     },
   });
-}
-
-async function fetchClubNameValidation(): Promise<ClubNameValidationResponse> {
-  const res = await fetch(buildUrl("/pipeline/club_name_validation"), {
-    credentials: "same-origin",
-  });
-  if (!res.ok) {
-    let message = `HTTP ${res.status} ${res.statusText}`;
-    try {
-      const body = (await res.json()) as { error?: string };
-      if (body.error) message = body.error;
-    } catch {
-      /* not JSON */
-    }
-    throw new Error(message);
-  }
-  return (await res.json()) as ClubNameValidationResponse;
 }

@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useSearchParams } from "react-router-dom";
-import { buildUrl, fetchJson, isTournamentDatabaseId } from "../lib/api";
+import { buildUrl, fetchJson, flaskQueryRetry, isTournamentDatabaseId } from "../lib/api";
 
 export type DataSourceInfo = {
   filename: string;
@@ -35,6 +35,7 @@ export function useDatabaseSelection() {
         buildUrl("/get-data-sources-info", databaseParam ? { database: databaseParam } : {}),
       ),
     staleTime: 60_000,
+    retry: flaskQueryRetry,
   });
 
   const sources = infoQuery.data?.sources_info ?? {};

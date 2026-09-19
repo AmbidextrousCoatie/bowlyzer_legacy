@@ -1,4 +1,5 @@
 import { Link, useSearchParams } from "react-router-dom";
+import { FlaskQueryError } from "../../../components/UnavailableInCurrentApi";
 import { useLeagueStandingsValidation } from "../../../hooks/useLeagueStandingsValidation";
 import { useClubNameValidation } from "../../../hooks/useClubNameValidation";
 import { useTranslations } from "../../../hooks/useTranslations";
@@ -25,7 +26,8 @@ export function ValidationHub() {
   const clubQuery = useClubNameValidation();
   const leagueSummary = query.data?.summary;
   const tournamentSummary = query.data?.tournament_quality?.summary;
-  const clubSummary = clubQuery.data?.summary;  const querySuffix = querySuffixForPath("/diagnose/validierung", searchParams);
+  const clubSummary = clubQuery.data?.summary;
+  const querySuffix = querySuffixForPath("/diagnose/validierung", searchParams);
 
   return (
     <div className="w-full min-w-0 px-4 pt-8 pb-24 lg:px-8 lg:pt-12">
@@ -33,9 +35,7 @@ export function ValidationHub() {
         <p className="text-label uppercase text-muted mb-2">
           {t("ui.diagnosis.eyebrow", "Diagnose")}
         </p>
-        <h1 className="text-h1">
-          {t("ui.diagnosis.validation_hub_title", "Validierung")}
-        </h1>
+        <h1 className="text-h1">{t("ui.diagnosis.validation_hub_title", "Validierung")}</h1>
         <p className="text-body text-muted mt-2 max-w-[72ch]">
           {t(
             "ui.diagnosis.validation_hub_desc",
@@ -47,14 +47,20 @@ export function ValidationHub() {
       {query.isLoading && (
         <p className="text-body text-muted">{t("ui.common.loading", "Laden…")}</p>
       )}
-      {query.isError && (
-        <p className="text-body text-rose-600">
-          {t("ui.diagnosis.standings_validation_error", "Validierung konnte nicht geladen werden.")}
-        </p>
+      {(query.isError || clubQuery.isError) && (
+        <FlaskQueryError
+          error={query.error ?? clubQuery.error}
+          fallback={t(
+            "ui.diagnosis.standings_validation_error",
+            "Validierung konnte nicht geladen werden.",
+          )}
+        />
       )}
 
       {query.data && (
-        <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">          <section className="rounded-sm border border-border bg-surface">
+        <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+          {" "}
+          <section className="rounded-sm border border-border bg-surface">
             <div className="border-b border-border px-5 py-4 flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-h3">{t("league", "Liga")}</h2>
@@ -89,7 +95,6 @@ export function ValidationHub() {
               {t("ui.diagnosis.standings_kpi_source", "Quelle")}: {query.data.source}
             </p>
           </section>
-
           <section className="rounded-sm border border-border bg-surface">
             <div className="border-b border-border px-5 py-4 flex items-center justify-between gap-3">
               <div>
@@ -127,11 +132,12 @@ export function ValidationHub() {
               {query.data.tournament_quality?.source ?? "absent"}
             </p>
           </section>
-
           <section className="rounded-sm border border-border bg-surface">
             <div className="border-b border-border px-5 py-4 flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-h3">{t("ui.diagnosis.club_mapping_title", "Club-Zuordnung")}</h2>
+                <h2 className="text-h3">
+                  {t("ui.diagnosis.club_mapping_title", "Club-Zuordnung")}
+                </h2>
                 <p className="text-small text-muted mt-1">
                   {t(
                     "ui.diagnosis.validation_club_blurb",
@@ -173,8 +179,7 @@ export function ValidationHub() {
               </div>
             </div>
             <p className="px-5 pb-4 text-caption text-muted">
-              {clubQuery.data?.row_count ?? 0}{" "}
-              {t("ui.diagnosis.standings_rows", "Zeilen")} ·{" "}
+              {clubQuery.data?.row_count ?? 0} {t("ui.diagnosis.standings_rows", "Zeilen")} ·{" "}
               {t("ui.diagnosis.standings_kpi_source", "Quelle")}:{" "}
               {clubQuery.data?.source ?? "absent"}
             </p>
